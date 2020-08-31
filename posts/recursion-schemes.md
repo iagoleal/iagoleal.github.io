@@ -3,8 +3,9 @@ title: 'Recursion Schemes: Applying Greek to Programming'
 tags: category-theory recursion-schemes functional-programming
 ---
 
-## A (pseudo-)historical introduction
+\DeclareMathOperator{\fat}{fat}
 
+## A not so historical introduction
 
 ### Imperative programming
 
@@ -15,11 +16,10 @@ the way to program was quite _unestructured_.
 The code of a program was essentially given by a sequence of commands
 whereas the data was simply piled up in a stack.
 
-
     +---+---+---+---+---+---+---+---+---+---+---+          +---+
     |   |   |   |   |   |   |   |   |   |   |   |          |   |
     +---+---+---+---+---+---+---+---+---+---+---+          +---+
-    Control flow                                           |   |
+     Control Flow                                          |   |
                                                            +---+
                                                            |   |
                                                            +---+
@@ -100,6 +100,47 @@ but there is no guarantee that a program with a `goto` statement must terminate.
 
 ### Functional Programming
 
+So far so good for the development of imperative programming,
+but the world of programming languages is not so uniform.
+Other paradigms exist.
+And the one that mostly fits in what we will see today is
+_functional programming_.
+
+While the imperative paradigm views the code as a sequence of commands
+the programmer gives the computer to execute (hence the name, _imperative_),
+the functional paradigm views the code as a composition of functions in the mathematical sense.
+A function takes a value as input, does some processing to it, calling other functions for it,
+and returns another value as output.
+
+        +---+             +---+             +---+
+    ----| f |------------>| g |------------>| h |------
+        +---+             +---+             +---+
+
+If every program consists only of applying a finite amount of previously defined functions,
+the language's expressiveness seems rather limited.
+To overcome this, we need some form of control flow,
+which is achieved via _recursion_.
+
+A recursive function is a function that,
+in order to process its input into the output,
+may call itself in an intermediate step.
+Probably the most famous recursive function is the factorial,
+defined as
+$$ \fat(n) = \begin{cases}
+        1,& n = 0 \\
+        n \cdot \fat(n-1),& \text{otherwise}.
+    \end{cases}
+$$
+
+The expressiveness gained from recursion is essentially the same as
+the one gained from `goto` in imperative languages.
+That is, the control flow given by function composition together with recursion
+allows one to do anything imaginable with the programming language.
+However,
+all this expressiveness comes with its caveats.
+It is easy to write a functional spaghetti code if recursion is used too indiscriminately.
+Because of all its power, recursive code lacks in safety.
+It would even be fair to say that, like `goto`, it is too _unestructured_.
 
 ##  Algebraic Data Types
 
