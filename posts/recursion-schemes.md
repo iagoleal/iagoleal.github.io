@@ -62,8 +62,8 @@ Data is no long viewed as simply a stack of memory
 but classified into types.
 There are some primitive types
 as well as structures to combine them into more complex types.
-For example,
-in a language like C, there are `struct` types, `union` types and arrays.
+In a language like C, for example,
+there are `struct` types, `union` types, and array types.
 
 The changes also arrived to the control flow
 and an effort was made to tame the once wild `goto`.
@@ -138,15 +138,45 @@ That is, the control flow given by function composition together with recursion
 allows one to do anything imaginable with the programming language.
 However,
 all this expressiveness comes with its caveats.
-It is easy to write a functional spaghetti code if recursion is used too indiscriminately.
+It is too easy to write a functional spaghetti code if recursion is used indiscriminately.
 Because of all its power, recursive code lacks in safety.
 It would even be fair to say that, like `goto`, it is too _unestructured_.
 
-##  Algebraic Data Types
+The idea of structured control flow really caught on in the imperative world.
+One hardly sees a wild `goto` in the middle of a modern piece of code.
+In fact, many languages don't even allow it.
+In the functional world, on the other side,
+the trendy for taming recursion never really caught on.
+Despite many functional languages organizing their data using types,
+control is still done using crude recursion.
+
+**Recursion schemes** are ways to organize and structure
+different kinds of recursive functions.
+Instead of writing a recursive function in terms of itself,
+we define higher order functions
+that receive an ordinary function as argument,
+do some recursive magic on it,
+and return a recursive analogue of that function as output.
+It is similar to how a `while` loop takes a boolean statement
+and a block of code,
+and turns them into a repeating block of code.
+If it seems too confusing, just keep on.
+What I mean in here will become clearer after we [construct catamorphisms](#sec:f-algebras).
+
+Before we end this motivation and proceed to the actual construction of recursion schemes,
+there is an intuition that, I think, is useful to have in mind.
+In imperative programming,
+there is a close relationship between how we structure data and how we structure the control flow.
+Working with arrays almost asks the programmer to design programs with `for` loops.
+Similarly, it is natural to deal with `union` types using `switch` statements
+(also called `case` or `cond` statements in some languages).
+Recursion schemes will arise as an analogous to this idea in the functional programming setting.
+
+##  Algebraic Data Types {#sec:ADT}
 
 List, Nat, some trees
 
-# Functors and their fixed points
+# Functors and their fixed points {#sec:f-algebras}
 
 F-algebras
 
