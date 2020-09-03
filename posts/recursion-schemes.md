@@ -14,14 +14,14 @@ that takes a function which knows how to deal with individual parts of a structu
 and turns it into a function defined for the entire structure.
 The canonical example for this perspective is turning the binary function $+$,
 which adds two numbers,
-into a new function that sums all elements of a list with arbitrary length[^1].
+into a new function that sums all elements of a list with arbitrary length[^sum].
 
 [^sum]: This sum example is simple to code with a loop or linear recursion.
 Recursion schemes really shine when manipulating more complex data structures,
 such as trees with varying arity.
 
 The first time I heard about recursion schemes was after stumbling
-in the paper [...].
+with the paper [Functional Programming with Bananas, Lenses, Envelopes and Barbed Wire](https://maartenfokkinga.github.io/utwente/mmf91m.pdf) by Erik Meijer, Maarten Fokkinga, and Ross Paterson.
 It is a real gem of functional wisdom but the authors choice of using the
 [Squiggol](https://en.wikipedia.org/wiki/Bird%E2%80%93Meertens_formalism) notation
 made some parts really hard to decipher.
@@ -36,7 +36,9 @@ with more cohesion and much less of my bad drawings.
 
 In the spirit of the original presentation,
 I've decided to make this post completely language-agnostic[^cd].
-My hope is that anyone with some understanding of programming and mathematics
+I also tried to keep any type theory or lambda calculus to a minimum
+in order to make it easier to grasp.
+My hope is that anyone with some experience in programming and mathematics
 will be able to read this,
 instead of confining this post only to people that know a certain programming language.
 Of course, in doing that I'm risking that no one will understand this.
@@ -46,12 +48,10 @@ But, very well, I will do my best.
 
 ## A not so historical introduction
 
-### Imperative programming
-
-We begin our journey in the prehistory of imperative programming;
-that time when computers where still made of coconuts and mammoth fur.
+We begin our journey in the prehistory of programming;
+that time when computers where still mostly made of coconuts and mammoth fur.
 At the time,
-the way to program was quite _unestructured_.
+the way to program was quite unstructured.
 The code of a program was essentially given by a sequence of commands
 whereas the data was simply piled up in a stack.
 
@@ -72,7 +72,7 @@ In this programming paradigm,
 there is a special command called `goto`
 which allows one to jump to any labeled part of the program.
 In fact,
-this is the _only_ command responsible for the program's control flow.
+this is the only command responsible for the program's control flow.
 
            +-----------------------------+
            |   +--------------+          |
@@ -125,7 +125,7 @@ having more abstract roles in the code.
 In terms of computational expressiveness,
 nothing changes.
 What the processor sees is the same in both unstructured and structured programming.
-The benefit lies in the _programmer's expressivenes_.
+The benefit lies in the programmer's expressiveness.
 With more specific statements,
 it becomes easier to write larger, more complex programs
 as well as properly debug them.
@@ -137,12 +137,10 @@ On the other side,
 the general character of the `goto` allows us to simulate the behavior of a `for`
 but there is no guarantee that a program with a `goto` statement must terminate.
 
-### Functional Programming
-
-So far so good for the development of imperative programming,
+Until now, we were looking at a programming paradigm called _imperative programming_,
 but the world of programming languages is not so uniform.
 Other paradigms exist.
-And the one that mostly fits in what we will see today is
+And the one that mostly fits what we will see today is called
 _functional programming_.
 
 While the imperative paradigm views the code as a sequence of commands
@@ -158,9 +156,9 @@ and returns another value as output.
 If every program consists only of applying a finite amount of previously defined functions,
 the language's expressiveness seems rather limited.
 To overcome this, we need some form of control flow,
-which is achieved via _recursion_.
+which is achieved via recursion.
 
-A recursive function is a function that,
+A _recursive function_ is a function that,
 in order to process its input into the output,
 may call itself in an intermediate step.
 Probably the most famous recursive function is the factorial,
@@ -179,7 +177,7 @@ However,
 all this expressiveness comes with its caveats.
 It is too easy to write a functional spaghetti code if recursion is used indiscriminately.
 Because of all its power, recursive code lacks in safety.
-It would even be fair to say that, like `goto`, it is too _unestructured_.
+It would even be fair to say that, like `goto`, it is too unstructured.
 
 The idea of structured control flow really caught on in the imperative world.
 One hardly sees a wild `goto` in the middle of a modern piece of code.
@@ -189,7 +187,7 @@ the trendy for taming recursion never really caught on.
 Despite many functional languages organizing their data using types,
 control is still done using crude recursion.
 
-**Recursion schemes** are ways to organize and structure
+Recursion schemes are ways to organize and structure
 different kinds of recursive functions.
 Instead of writing a recursive function in terms of itself,
 we define higher order functions
@@ -208,8 +206,9 @@ In imperative programming,
 there is a close relationship between how we structure data and how we structure the control flow.
 Working with arrays almost asks the programmer to design programs with `for` loops.
 Similarly, it is natural to deal with `union` types using `switch` statements
-(also called `case` or `cond` statements in some languages).
+(also called `case` or `cond` in some languages).
 Recursion schemes will arise as an analogous to this idea in the functional programming setting.
+So far so good for motivation, let's dive into some math.
 
 ##  Algebraic Data Types {#sec:ADT}
 
