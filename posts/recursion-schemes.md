@@ -5,6 +5,45 @@ tags: category-theory recursion-schemes functional-programming
 
 \DeclareMathOperator{\fat}{fat}
 
+Recursion schemes are a neat construction that allows one
+to better organize and reason about recursive functions.
+Instead of viewing recursion as functions that call themselves,
+these schemes allow us to take a higher-order point of view.
+Most of recursive definitions may be abstracted as some operator
+that takes a function which knows how to deal with individual parts of a structure
+and turns it into a function defined for the entire structure.
+The canonical example for this perspective is turning the binary function $+$,
+which adds two numbers,
+into a new function that sums all elements of a list with arbitrary length[^1].
+
+[^sum]: This sum example is simple to code with a loop or linear recursion.
+Recursion schemes really shine when manipulating more complex data structures,
+such as trees with varying arity.
+
+The first time I heard about recursion schemes was after stumbling
+in the paper [...].
+It is a real gem of functional wisdom but the authors choice of using the
+[Squiggol](https://en.wikipedia.org/wiki/Bird%E2%80%93Meertens_formalism) notation
+made some parts really hard to decipher.
+Fortunately,
+I later found [Patrick Thomson's excellent series of posts](https://blog.sumtypeofway.com/posts/introduction-to-recursion-schemes.html),
+which explain recursion schemes using Haskell code.
+After absorbing this content,
+I tried to explain the idea to some friends who don't know Haskell
+but know some category theory.
+This post is an enriched version of that presentation
+with more cohesion and much less of my bad drawings.
+
+In the spirit of the original presentation,
+I've decided to make this post completely language-agnostic[^cd].
+My hope is that anyone with some understanding of programming and mathematics
+will be able to read this,
+instead of confining this post only to people that know a certain programming language.
+Of course, in doing that I'm risking that no one will understand this.
+But, very well, I will do my best.
+
+[^cd]: Well, in terms of programming languages. There will be commutative diagrams, be warned.
+
 ## A not so historical introduction
 
 ### Imperative programming
