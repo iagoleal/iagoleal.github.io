@@ -4,6 +4,11 @@ tags: category-theory recursion-schemes functional-programming
 ---
 
 \DeclareMathOperator{\fat}{fat}
+\DeclareMathOperator{\maybe}{\mathtt{maybe}}
+\DeclareMathOperator{\true}{true}
+\DeclareMathOperator{\false}{false}
+\def\catC{\mathcal{C}}
+\def\abs#1{\left|#1\right|}
 
 Recursion schemes are a neat construction that allows one
 to better organize and reason about recursive functions.
@@ -212,7 +217,148 @@ So far so good for motivation, let's dive into some math.
 
 ##  Algebraic Data Types {#sec:ADT}
 
-List, Nat, some trees
+\def\Bool{\mathtt{Bool}}
+\def\N{\mathbb{N}}
+\def\op#1{\operatorname{\mathrm{#1}}}
+
+The simplest form to write a type is by enumerating its elements
+such as
+$$\Bool \coloneqq \true \mid \false.$$
+This way,
+we define the type of boolean values.
+That is, a type with exactly two terms called $\true$ and $\false$.
+In general any finite type can be written just by enumerating its elements.
+As another example, there is the type of musical notes
+$$ \mathtt{Notes} \coloneqq
+    \mathtt{do} \mid
+    \mathtt{re} \mid
+    \mathtt{mi} \mid
+    \mathtt{fa} \mid
+    \mathtt{sol}\mid
+    \mathtt{la} \mid
+    \mathtt{si}.$$
+Nevertheless, in practice we also want to deal with types that are more complex than simply
+finite collections.
+The solution to this is assuming that the programming language comes with some built-in types
+such as integers, characters, and floating-point numbers,
+together with structures that allow us to compose these types.
+
+One common compound type consists of a structure capable of storing
+data of more than one type at the same time.
+As an example, let's say we are in a spacial war against many alien species.
+Your job is to catalogue how many battleships each army has.
+One way to store this data is with a type containing a string for the species which the army belongs
+together with a natural number for how many battleships they have.
+We will write this type as
+$$\mathtt{Army} \coloneqq \op{ships}\; \mathtt{String} \times \N.$$
+Here, $\op{ships} \colon \mathtt{String} \times \N \to \mathtt{Army}$
+is called a _constructor_ for the type $\mathtt{Army}$.
+Constructors are (possibly multivariate) functions that receive terms as arguments
+and return an term of a compound type.
+
+After you finish your catalogue,
+orders arrive for you to develop a new laser cannon to be used in the war.
+This weapon should scan the sky to find the enemy armies' positions (modeled in a type $\mathtt{Pos}$ and shoot them.
+But beware! There are also allied bases around, encapsulated in the type $\mathtt{Base}$.
+Since friendly fire is really far from the ideal,
+our target type should have two different constructors,
+one for allies and another for enemies:
+$$\mathtt{Target} \coloneqq \op{ally}\; \mathtt{Position} \times \mathtt{Base}
+                  \mid \op{enemy}\; \mathtt{Position} \times \mathtt{Army}.$$
+In here we extended our notation for enumerating types to also accept constructors.
+Different constructors always produce different terms of the compound type,
+thus, we may view the functions
+$\op{ally} \colon \mathtt{Position} \times \mathtt{Base} \to \mathtt{Target}$
+and $\op{enemy} \colon \mathtt{Position} \times \mathtt{Army} \to \mathtt{Target}$
+as tags representing from which type our $\mathtt{Target}$ was constructed.
+This works as if we are storing a element of type $\mathtt{Army}$ together with a tag $\op{enemy}$
+on the type $\mathtt{Target}$.
+So the definition of target is saying that its terms are of the form $\op{ally}(p, x)$
+or $\op{enemy}(p,x)$,
+just like we previously enumerated the terms of finite types.
+
+This point of view allows us to define functions on compound types
+by enumerating what it does on the different constructors,
+a method called _pattern matching_.
+For example, the function $\op{not} \colon \Bool \to \Bool$
+is defined as
+$$ \begin{aligned}
+    &\op{not} \true &=&\; \false& \\
+    &\op{not} \false&=&\;\true.&
+\end{aligned}$$
+While our ally-aware cannon shooting function may be defined as something like
+$$ \begin{aligned}
+    &\op{shoot}(\op{enemy}(p, y)) &=&\; \mathtt{laser\_blast}(p) \\
+    &\op{shoot}(\op{ally}(p, x)) &=&\; \mathtt{wave\_your\_hand}(p).
+\end{aligned}$$
+Taking advantage of the type system via pattern matching
+is a nice way to make it obvious that our code does what it should.
+In this case, the types don't allow us to obliterate our friends.
+
+Although these compound types are nice to organize our data,
+the true power of types comes from taking advantage of two other constructions:
+_function types_ and _fixed point types_.
+The function type between two types $A$ and $B$,
+represents all the functions receiving an input of type $A$ and returning an argument of type $B$.
+To mimic the usual notation for type signatures,
+this function type is denoted as $A \to B$.
+A type system with function types allows us to define higher-order functions.
+For example, given a function $\phi \colon A \to B$,
+the composition operator $C_\phi$ defined as
+$$ C_\phi f = f \circ \phi$$
+has type signature $C_\phi \colon (B \to C) \to (A \to C)$.
+It takes a function and turns it into another one.
+This was a simple example but be sure that many more will soon come.
+Higher-order functions are at the heart of recursion schemes.
+
+Now we arrive at the last kind of compound type we are going to discuss today:
+fixed point types.
+These are the star of today's show, so pay attention.
+We may define a compound data type that is parameterized by some variable
+(a function between types, if you prefer) such as
+$$\maybe A = \op{nothing} \mid \op{just} A.$$
+Given a type $A$, an term of type $\maybe A$
+is either $\op{nothing}$ or the constructor $\op{just}$
+applied to a term of type $A$.
+Thus, $\maybe$ receives a type and augments it with a special point[^maybe].
+
+[^maybe]: This is also called `Option` in some languages and is specially useful to safely model partial functions and computations that may fail.
+
+Given a type operator $F$,
+a fixed point of $F$ is a type $X$ satisfying
+$$X \simeq FX.$$
+In here, we use the isomorphism sign $\simeq$ instead of equality
+because there is some boilerplate involved regarding tags.
+Although this is a simple construction,
+the concept is extremely powerful,
+being directly connected to recursion.
+
+As an example let's explore the fixed point of $\maybe$.
+It is a type $N$ satisfying
+$$N \simeq \maybe N = \op{nothing} \mid \op{just} N.$$
+This means that any term of $N$ is either $\op{nothing}$.
+or $\op{just}$ a term of $N$.
+Since we know $\op{nothing}$,
+we can construct a new term $\op{just}(\op{nothing})$,
+then $\op{just}(\op{just}(\op{nothing}))$,
+and proceed successively in this way.
+Thus for any natural number $n$,
+applying $\op{just}$ to $\op{nothing}$ $n$ times
+defines a unique term of $N$.
+Moreover, the definition of $N$ says that all of its terms are of this form,
+meaning that $N$ is isomorphic to the natural numbers[^nat].
+
+[^nat]: Using the letter $N$ was no accident..
+
+If you find this last result strange,
+remember that the natural numbers are inductively defined
+as being either zero or the successor of another natural number.
+Using our notation for types, this is equivalent to saying
+$$\N = \op{zero} \mid \op{succ} \N.$$
+If we alter the tag names,
+this tells us that $\N$ is a fixed point of $\maybe$ as expected.
+
+### An example with lists
 
 # Functors and their fixed points {#sec:f-algebras}
 
