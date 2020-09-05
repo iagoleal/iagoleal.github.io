@@ -3,12 +3,19 @@ title: 'Recursion Schemes: Applying Greek to Programming'
 tags: category-theory recursion-schemes functional-programming
 ---
 
+\def\op#1{\operatorname{\mathrm{#1}}}
+\def\catC{\mathcal{C}}
+\def\abs#1{\left|#1\right|}
 \DeclareMathOperator{\fat}{fat}
 \DeclareMathOperator{\maybe}{\mathtt{maybe}}
 \DeclareMathOperator{\true}{true}
 \DeclareMathOperator{\false}{false}
-\def\catC{\mathcal{C}}
-\def\abs#1{\left|#1\right|}
+\def\Bool{\mathtt{Bool}}
+\def\nil{\op{nil}}
+\def\cons{\op{cons}}
+\def\N{\mathbb{N}}
+\def\Z{\mathbb{Z}}
+\def\R{\mathbb{R}}
 
 Recursion schemes are a neat construction that allows one
 to better organize and reason about recursive functions.
@@ -217,9 +224,6 @@ So far so good for motivation, let's dive into some math.
 
 ##  Algebraic Data Types {#sec:ADT}
 
-\def\Bool{\mathtt{Bool}}
-\def\N{\mathbb{N}}
-\def\op#1{\operatorname{\mathrm{#1}}}
 
 The simplest form to write a type is by enumerating its elements
 such as
@@ -359,6 +363,136 @@ If we alter the tag names,
 this tells us that $\N$ is a fixed point of $\maybe$ as expected.
 
 ### An example with lists
+
+Surely the natural numbers are the most famous example
+of an inductive type.
+Nevertheless,
+almost no one thing of them like that while programming.
+Treating $3$ as $\op{succ}(\op{succ}(\op{succ}(\op{zero})))$
+would be cumbersome, to say the least.
+Any language comes with a (possibly signed) integer type
+already bundled with the usual arithmetic operations defined for it.
+Thus, let's discuss a little bit about another inductive type
+that is also pretty famous but has more of a inductive data structure flavour to it:
+the _linked list_.
+
+Let $A$ be your favorite type.
+Intuitively, a list over $A$ is a finite-length sequence of elements of $A$.
+The simplest case possible is an empty list.
+To represent a non-empty list,
+we notice that any non-empty list with $n$ elements
+may be "factorized" into its first element and another list with the remaining $n-1$ elements.
+
+    +-------+               +-------+               +-------+               +-------+               +---+
+    |   |   +-------------->|   |   +-------------->|   |   +-------------->|   |   +-------------->+   |
+    +-------+               +-------+               +-------+               +-------+               +---+
+
+Thus, by defining a type operator $P$ as
+$$P X \coloneqq \nil \mid \cons\, A \times X.$$
+The previous discussion shows that the type of lists over $A$,
+hereby denoted $L(A)$ is a fixed point of $P$,
+$$L(A) \simeq \nil \mid \cons\, A \times L(A).$$
+Here,
+the constructor $\nil$ takes the role of the empty list
+while the constructor $\cons$ represents a pair
+with an element of $A$ and another list.
+
+This inductive definition of lists
+allows us to recursively define operations over it.
+For example,
+let's construct a function that sums all the elements in a list of integers.
+Its signature is $\op{sum} \colon L(\Z) \to \Z$.
+If the list is empty, the sum returns zero.
+Otherwise, it takes the first element and adds it to the sum of what remains,
+$$ \begin{aligned}
+\op{sum}(\nil) &= 0, \\
+\op{sum}(\cons(x, l)) &= x + \op{sum}(l).
+\end{aligned}$$
+
+This last definition conceals an extremely useful pattern.
+To define a function that multiplies a list of real numbers,
+$\op{prod} \colon L(\R) \to \R$,
+all we need to do is take the definition of $\op{sum}$,
+replace $0$ by $1$, replace addition by product
+and it is all done!
+$$ \begin{aligned}
+\op{prod}(\nil) &= 1, \\
+\op{prod}(\cons(x, l)) &= x \cdot \op{prod}(l).
+\end{aligned}$$
+Every time we want to somehow combine the elements of a list into a single value,
+this pattern appears.
+It is so common that people have abstracted it
+on a function called $\op{reduce}$[^foldr].
+Its type signature is
+$$\op{reduce} \colon B \times (A \times B \to B) \to (L(A) \to B).$$
+Pretty scary, right? Let's break it down.
+To collapse a list of type $L(A)$ into a value of type $B$, we need two things:
+an initial value of type $B$ to apply on the empty list
+and a rule saying how we combine a term of type $A$ with the result
+of applying this same process to the remainder of the list.
+Thus, $\op{reduce}$ is an instance of what we call an _higher-order function_.
+It is a machine that takes an initial value and a binary function
+and outputs another function, now defined on lists.
+We call it higher-order because it don't work with ordinary data, no,
+it transform simple functions into recursive ones!
+Considering what it do, its definition is actually rather simple.
+The result $h = \op{reduce}(v,g)$ is the function that does
+$$ \begin{aligned}
+h(\nil) &= v, \\
+h(\cons(x,l)) &= g(x,h(l)).
+\end{aligned}$$
+Take a moment to absorb this definition, there really is a lot encapsulated on this.
+First substitute $v$ by $0$ and $g$ by $+$ to see that it becomes $\op{sum}$.
+Then, substitute $v$ by $1$ and $g$ by $\cdot$ to see that it becomes $\op{prod}$.
+Finally, congratulate yourself because you've understood your first recursion scheme!
+
+[^foldr]: Also known as `foldr` in some languages. The 'r' stands from the fact that this function folds a list from the right.
+
+If the way $\op{reduce}$ was introduced
+made you think that it is only used to collapse a list
+into a primitive type,
+you should know that it is much more ubiquitous than that.
+Two of the most used list-manipulating functions in functional programming
+are $\op{map}$ and $\op{filter}$. And, guess what, both are implementable in terms of $\op{reduce}$.
+The first, $\op{map}$,
+takes a function $f \colon A \to B$
+and turns it into another function that applies $f$ elementwisely to a list.
+Its type signature for $\op{map}$ is therefore
+$$ \op{map} \colon (A \to B) \to (L(A) \to L(B)).$$
+On the empty list, $\op{map}(f)$ does nothing since it has no elements.
+On a $\cons$ node, it should apply $f$ to the element stored on it
+and reapply the $\cons$ constructor.
+Thus, the definition of $\op{map}$ in terms of $\op{reduce}$ is
+$$ \begin{aligned}
+g(x, l) &= \cons(f(x), l), \\
+\op{map}(f) &= \op{reduce}(\nil, g).
+\end{aligned} $$
+If it is hard to wrap your head around this last definition,
+try doing it step by step with a simple function such as $x^2$ and a small list such as $(1,2,3,4)$.
+I promise you it will be enlightening.
+
+The $\op{filter}$ function takes a predicate, represented as
+$p \colon A \to \Bool$,
+and outputs a function that filters a list.
+That is removes all elements of the list for which $p$ is false.
+Its type signature is thus
+$$ \op{filter} \colon (A \to \Bool) \to (L(A) \to L(A)).$$
+Since the empty list has no elements, there is nothing to do in this case.
+In a $\cons(x,l)$, we should return it exactly if $p(x)$ is true
+and return just $l$ otherwise.
+We can assembly this in terms of $\op{reduce}$ as
+$$ \begin{aligned}
+h(x, l) &= \begin{cases}
+    \cons(x,l),& \text{if } p(x) = \true \\
+    l,& \text{if } p(x) = \false
+\end{cases}\\
+\op{reduce}(f) &= \op{reduce}(\nil, h).
+\end{aligned}$$
+
+I hope you liked these examples because the next step in our journey
+is generalizing $\op{reduce}$ to any inductive datatype!
+To achieve this,
+we must go through the land of category theory.
 
 # Functors and their fixed points {#sec:f-algebras}
 
