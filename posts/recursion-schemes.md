@@ -224,7 +224,6 @@ So far so good for motivation, let's dive into some math.
 
 ##  Algebraic Data Types {#sec:ADT}
 
-
 The simplest form to write a type is by enumerating its elements
 such as
 $$\Bool \coloneqq \true \mid \false.$$
@@ -308,9 +307,9 @@ To mimic the usual notation for type signatures,
 this function type is denoted as $A \to B$.
 A type system with function types allows us to define higher-order functions.
 For example, given a function $\phi \colon A \to B$,
-the composition operator $C_\phi$ defined as
-$$ C_\phi f = f \circ \phi$$
-has type signature $C_\phi \colon (B \to C) \to (A \to C)$.
+the composition operator $K_\phi$ defined as
+$$ K_\phi f = f \circ \phi$$
+has type signature $K_\phi \colon (B \to C) \to (A \to C)$.
 It takes a function and turns it into another one.
 This was a simple example but be sure that many more will soon come.
 Higher-order functions are at the heart of recursion schemes.
@@ -320,7 +319,7 @@ fixed point types.
 These are the star of today's show, so pay attention.
 We may define a compound data type that is parameterized by some variable
 (a function between types, if you prefer) such as
-$$\maybe A = \op{nothing} \mid \op{just} A.$$
+$$\maybe A \coloneqq \op{nothing} \mid \op{just} A.$$
 Given a type $A$, an term of type $\maybe A$
 is either $\op{nothing}$ or the constructor $\op{just}$
 applied to a term of type $A$.
@@ -352,7 +351,7 @@ defines a unique term of $N$.
 Moreover, the definition of $N$ says that all of its terms are of this form,
 meaning that $N$ is isomorphic to the natural numbers[^nat].
 
-[^nat]: Using the letter $N$ was no accident..
+[^nat]: Choosing the letter $N$ was no accident.
 
 If you find this last result strange,
 remember that the natural numbers are inductively defined
@@ -364,8 +363,7 @@ this tells us that $\N$ is a fixed point of $\maybe$ as expected.
 
 ### An example with lists
 
-Surely the natural numbers are the most famous example
-of an inductive type.
+The natural numbers are surely the most famous example of an inductive type.
 Nevertheless,
 almost no one thing of them like that while programming.
 Treating $3$ as $\op{succ}(\op{succ}(\op{succ}(\op{zero})))$
@@ -408,34 +406,47 @@ $$ \begin{aligned}
 \op{sum}(\nil) &= 0, \\
 \op{sum}(\cons(x, l)) &= x + \op{sum}(l).
 \end{aligned}$$
-
 This last definition conceals an extremely useful pattern.
-To define a function that multiplies a list of real numbers,
-$\op{prod} \colon L(\R) \to \R$,
-all we need to do is take the definition of $\op{sum}$,
-replace $0$ by $1$, replace addition by product
+It is the programming analogue of a proof by induction over the list.
+The empty list is the base case, which we set to zero.
+On a list of length $n>0$, we assume that we've already solved the computation
+for the sublist of length $n-1$ and them add it to the remaining element.
+Just like an inductive proof, see?
+
+As it stands,
+you would be right to guess that constructing functions in this
+way is so pervasive in programming as proofs by induction are in mathematics.
+A simple variation of $\op{sum}$ would be a function that multiplies a list of real numbers,
+$\op{prod} \colon L(\R) \to \R$.
+To construct it, all we need to do is take the definition of $\op{sum}$,
+replace $0$ by $1$, replace addition by multiplication,
 and it is all done!
 $$ \begin{aligned}
 \op{prod}(\nil) &= 1, \\
 \op{prod}(\cons(x, l)) &= x \cdot \op{prod}(l).
 \end{aligned}$$
-Every time we want to somehow combine the elements of a list into a single value,
-this pattern appears.
+As expected, this pattern appears every time
+we want to somehow combine the elements of a list into a single value.
 It is so common that people have abstracted it
 on a function called $\op{reduce}$[^foldr].
 Its type signature is
 $$\op{reduce} \colon B \times (A \times B \to B) \to (L(A) \to B).$$
-Pretty scary, right? Let's break it down.
-To collapse a list of type $L(A)$ into a value of type $B$, we need two things:
-an initial value of type $B$ to apply on the empty list
-and a rule saying how we combine a term of type $A$ with the result
-of applying this same process to the remainder of the list.
+Pretty scary, right?
+Let's break it down to see how it is just good ol' induction.
+When reducing a list of type $L(A)$ into a value of type $B$,
+there are two situations we may encounter.
+In the base case the list is empty, thus we must specify a value of type $B$ to be returned.
+In the other steps,
+we consider that we already know the solution for the sublist of length $n-1$,
+which yields a value of type $B$,
+and then need a rule to combine this value of the remaining term of type $A$
+into another term of type $B$.
 Thus, $\op{reduce}$ is an instance of what we call an _higher-order function_.
 It is a machine that takes an initial value and a binary function
 and outputs another function, now defined on lists.
-We call it higher-order because it don't work with ordinary data, no,
-it transform simple functions into recursive ones!
-Considering what it do, its definition is actually rather simple.
+We call it higher-order because it doesn't work with ordinary data, no,
+it transforms simple functions into recursive ones!
+Considering what it does, its definition is actually rather simple.
 The result $h = \op{reduce}(v,g)$ is the function that does
 $$ \begin{aligned}
 h(\nil) &= v, \\
@@ -444,9 +455,9 @@ h(\cons(x,l)) &= g(x,h(l)).
 Take a moment to absorb this definition, there really is a lot encapsulated on this.
 First substitute $v$ by $0$ and $g$ by $+$ to see that it becomes $\op{sum}$.
 Then, substitute $v$ by $1$ and $g$ by $\cdot$ to see that it becomes $\op{prod}$.
-Finally, congratulate yourself because you've understood your first recursion scheme!
+Finally, congratulate yourself because you just understood your first recursion scheme!
 
-[^foldr]: Also known as `foldr` in some languages. The 'r' stands from the fact that this function folds a list from the right.
+[^foldr]: Also known as `accumulate` or `foldr` in some languages. The 'r' means that this function folds a list from the right.
 
 If the way $\op{reduce}$ was introduced
 made you think that it is only used to collapse a list
@@ -461,7 +472,7 @@ Its type signature for $\op{map}$ is therefore
 $$ \op{map} \colon (A \to B) \to (L(A) \to L(B)).$$
 On the empty list, $\op{map}(f)$ does nothing since it has no elements.
 On a $\cons$ node, it should apply $f$ to the element stored on it
-and reapply the $\cons$ constructor.
+and then proceed to apply $f$ to the list's tail.
 Thus, the definition of $\op{map}$ in terms of $\op{reduce}$ is
 $$ \begin{aligned}
 g(x, l) &= \cons(f(x), l), \\
@@ -491,10 +502,9 @@ h(x, l) &= \begin{cases}
 
 I hope you liked these examples because the next step in our journey
 is generalizing $\op{reduce}$ to any inductive datatype!
-To achieve this,
-we must go through the land of category theory.
+To achieve this, we must pass through the land of category theory.
 
-# Functors and their fixed points {#sec:f-algebras}
+## Functors and their fixed points {#sec:f-algebras}
 
 F-algebras
 
