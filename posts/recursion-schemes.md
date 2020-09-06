@@ -5,14 +5,17 @@ tags: category-theory recursion-schemes functional-programming
 
 \def\op#1{\operatorname{\mathrm{#1}}}
 \def\catC{\mathcal{C}}
+\def\catD{\mathcal{D}}
 \def\abs#1{\left|#1\right|}
 \DeclareMathOperator{\fat}{fat}
 \DeclareMathOperator{\maybe}{\mathtt{maybe}}
 \DeclareMathOperator{\true}{true}
 \DeclareMathOperator{\false}{false}
+\def\Types{\mathtt{Types}}
 \def\Bool{\mathtt{Bool}}
 \def\nil{\op{nil}}
 \def\cons{\op{cons}}
+\def\id{\op{id}}
 \def\N{\mathbb{N}}
 \def\Z{\mathbb{Z}}
 \def\R{\mathbb{R}}
@@ -504,32 +507,194 @@ I hope you liked these examples because the next step in our journey
 is generalizing $\op{reduce}$ to any inductive datatype!
 To achieve this, we must pass through the land of category theory.
 
-## Functors and their fixed points {#sec:f-algebras}
+## A walk through the land of categories {#sec:categories}
 
-F-algebras
+While the previous sections dealt more with programming,
+this one leans more to the mathematical side.
+But be assured that the fruits of all this abstraction will pay well.
 
-<div class="theorem">
-    Lasagna.
-</div>
-<div class="proof">
-So that is...
-</div>
+A nice thing about types and functions between them
+is that they form a _category_.[^hask]
+In fact, with all the structure we defined, they have the much more powerful structure of a
+[Cartesian closed category](https://en.wikipedia.org/wiki/Cartesian_closed_category).
+But we aren't going to use this last part today.
+If you happen to not know what a category is,
+I'm afraid I can't properly introduce them in here.[^cat]
+But I will go through the basics for the sake of completeness.
 
-# The good side of a catastrophe
+[^hask]: This is not entirely true.
+    Questions such as non-termination or laziness/strictenss may break this structure in some languages,
+    see [this link](https://wiki.haskell.org/Hask) for a discussion concerning Haskell.
+    Nevertheless, types are similar enough to a category to be worth it to think of them as forming one.
+[^cat]: Take a look on chapter 1 of [Emily Riehl's book](http://www.math.jhu.edu/~eriehl/context.pdf)
+    if you want to learn this (and much more) properly. It's a great book.
 
-\begin{tikzpicture}
+A category $\catC$ may be imagined as a special kind of graph.
+There is a collection of vertices, called its _objects_
+and between each pair of vertices there is a collection of _directed edges_,
+called _arrows_ or _morphisms_.
+The $A$ and $B$ are objects,
+the notation for an arrow $r$ from $A$ to $B$ is the same as for functions,
+$r \colon A \to B$.
+Soon we will see why.
+What differentiates a category from a simple directed graph
+is that we have a notion of _composition_ between the arrows.
+That is,
+if $f \colon A \to B$ and $g \colon B \to C$,
+there always exists another arrow $g \circ f \colon A \to C$.
+You may think of arrows as representing paths
+and $g \circ f$ as the arrow consisting going through $f$ and then through $g$.
 
-\def \n {5}
-\def \radius {3cm}
-\def \margin {8} % margin in angles, depends on the radius
+    TIKZ HERE 0 -> 0
+              |
+              v
 
-\foreach \s in {1,...,\n}
-{
-  \node[draw, circle] at ({360/\n * (\s - 1)}:\radius) {$\s$};
-  \draw[->, >=latex] ({360/\n * (\s - 1)+\margin}:\radius)
-    arc ({360/\n * (\s - 1)+\margin}:{360/\n * (\s)-\margin}:\radius);
-}
-\end{tikzpicture}
+To call $\catC$ a category,
+composition must also satisfy two laws.
+First, it must be associative.
+That is, for any composable triple of arrows,
+$$ h \circ (g \circ f) = (h \circ g) \circ f.$$
+Second, for each object $X$, an special arrow $\id_X \colon X \to X$ must exist,
+called the _identity_ for $X$, with the special property that for any $f \colon A \to B$,
+$$f \circ \id_A = \id_B \circ f = f. $$
+
+Now, back to types.
+Probably the most striking feature of functional programming
+is that it is stateless.
+That is, we don't think of functions as a series of procedures mutating some registers,
+we think of them as mathematical functions
+and as such, we must have that $f(x)$ returns the exact same value no matter when we execute it.
+For us, the main consequence of this is that function composition becomes associative.
+Thus,
+there is a category $\Types$ whose objects are types and arrows are functions between types.
+Composition is the usual for functions and the identities are the identity functions $\id_A(x) = x$.
+
+    TIKZ HERE 0 -> 0
+              |
+              v
+
+Category theory is not only concerned with categories
+but also with transformations between them.
+As in most of mathematics, we study the transformations that preserve the structure of composition and identity,
+called _functors_.
+More precisely,
+a functor from $\catC$ to $\catD$ is comprised of a function
+taking objects of $\catC$ to objects of $\catD$
+and a function taking arrows of $\catC$ to arrows of $\catD$
+(normally both denoted by $F$)
+such that composition and identities are preserved,
+$$ \begin{aligned}
+F(g \circ f) &= F(g) \circ F(f) \\
+F(\id) &= \id.
+\end{aligned}$$
+As an example,
+the type operator $\maybe$ is a functor from $\Types$ to itself
+when coupled with the operation on arrows
+$$ \begin{aligned}
+\maybe(f)(\op{nothing}) &= \op{nothing} \\
+\maybe(f)(\op{just}(x)) &= \op{just} (f(x)).
+\end{aligned} $$
+More generally,
+if a type operator $G$ is defined using only products, coproducts,
+and function types with the variable appearing only on the right-hand side
+and other functors,
+there is a canonical way to turn it into a functor from $\Types$ to itself.
+Some compilers, such as Haskell's GHC
+[can even do that automatically for us](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/derive-functor).
+Instead of going through the constructions gory details,
+I think doing an example is better to elucidate how the method.
+Say we have a type operator
+$$ G X = \op{pig} A \mid \op{chicken} A \times X \times (\maybe X) \mid \op{cow} B \times (C \to X).$$
+To turn it into a functor, we define an action on functions as
+$$ \begin{aligned}
+(G\,f)(\op{pig}(a)) &= \op{pig}(a) \\
+(G\,f)(\op{chicken}(a, x, m)) &= \op{chicken}(a, f(x), \maybe(f)(m)) \\
+(G\,f)(\op{cow}(b, g)) &= \op{cow}(c, f \circ g)
+\end{aligned} $$
+Essentially, what $G\,f$ does is to unwrap each constructor
+and pass $f$ to each of its arguments according to one of the following rules:
+
+1. If the term if of type $X$, apply $f$ to it.
+2. If the term is of type $(A \to X)$, compose $f$ with it.
+3. If the term is of type $F X$ for some functor $F$, apply $F\,f$ to it.
+4. Otherwise, just return the term itself.
+
+### Functors and their fixed points {#sec:f-algebras}
+
+Now we know that both the natural numbers and lists are not the fixed points
+of ordinary type operators but of functors from $\Types$ to itself.
+But is there anything special in this?
+As you may expect, the answer is _yes_.
+If a type is the fixed point of a functor,
+then we can define recursion schemes for it that work very much like structural induction.
+Since this construction works on any category,
+it won't bite to do that in full generality.
+We begin by fixing a category $\catC$ and a functor $F$ from $\catC$ to itself.
+From $F$, we will construct an auxiliary category,
+called the category of _$F$-algebras_.
+
+An $F$-algebra is an object $X$ of $\catC$
+together with an arrow $f \colon F X \to X$.
+Morphisms between $F$-algebras $f \colon F X \to X$ and $g \colon F Y \to Y$
+are given by an arrow $g \colon X \to Y$
+such that the following diagram commutes
+
+\begin{tikzcd}
+F X \ar[d, "f"'] \ar[r, "F g"] & F Y \ar[d, "g"] \\
+X \ar[r, "g"'] & Y
+\end{tikzcd}
+
+You can check that this definition turns $F$-algebras into a category
+where the identity for $f \colon F X \to X$ is given by $\id_X$ itself.
+On this category, we are interested in an special kind of object
+called an _initial $F$-algebra_.
+That is an $F$-algebra $\phi$ with the special property
+that for any other $F$-algebra $f$ there is a _unique_ morphism going from $\phi$ to $f$.
+Ok, time for some action. We haven't proved any theorem in this post yet.
+
+::: Theorem
+Any initial $F$-algebra $\phi \colon F I \to I$ is an isomorphism in $\catC$.
+:::
+
+Before we prove this theorem,
+notice that it implies that $I$ is a fixed point of $F$!
+It's not every fixed point that defines an initial algebra,
+but the just the ones that are "smallest" in a certain sense.[^lfp]
+Nevertheless, finite length inductive data structures are generally initial.
+
+[^lfp]: The technical term is _least fixed point_.
+
+::: Proof
+First, notice that if $\phi \colon F I \to I$
+is an $F$-algebra,
+so is $F\phi \colon F(FI) \to F I$.
+Since $\phi$ is initial,
+there is a unique arrow $g \colon I \to FI$
+making the following diagram commute
+\begin{tikzcd}
+F I \ar[d, "f"'] \ar[r, "F g"] & F (FI) \ar[d, "F \phi"] \\
+I \ar[r, dashed, "g"'] & Y
+\end{tikzcd}
+Since $\phi$ itself may be viewed as a morphism between
+the $F$-algebras $F \phi$ and $\phi$,
+we get that their composition is a morphism from $\phi$ to itself
+represented by the following diagram, where all paths still commute
+\begin{tikzcd}
+    F I \ar[r, "F g"] \ar[d, "\phi"'] & F(F I) \ar[r, "F \phi"] \ar[d, "F \phi"] & F I \ar[d, "\phi"] \\
+    I   \ar[r, dashed, "g"'] & F I    \ar[r, "\phi"'] &  I
+\end{tikzcd}
+
+Since $\phi$ is initial, the unique arrows going from it to itself
+is the identity.
+Thus, we must have $g \circ \phi = \id$.
+Moreover, from the definition of functor and the previous diagram,
+$$ \phi \circ g = (Fg) \circ (F\phi) = F(g \circ \phi) = F(\id) = \id.$$
+Therefore, $g$ is an inverse to $\phi$, concluding the proof.
+:::
+
+## The good side of a catastrophe
+
+% forest for trees
 
 Before proceeding, I must allow myself a little rant:
 mathematicians and theoretical computer scientists
