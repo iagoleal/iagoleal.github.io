@@ -15,10 +15,17 @@ tags: category-theory recursion-schemes functional-programming
 \def\Bool{\mathtt{Bool}}
 \def\nil{\op{nil}}
 \def\cons{\op{cons}}
+\def\zero{\op{zero}}
+\def\succ{\op{succ}}
 \def\id{\op{id}}
 \def\N{\mathbb{N}}
 \def\Z{\mathbb{Z}}
 \def\R{\mathbb{R}}
+\def\cata{\op{cata}}
+\def\ana{\op{ana}}
+\def\hylo{\op{hylo}}
+\def\in{\op{in}}
+\def\out{\op{out}}
 
 Recursion schemes are a neat construction that allows one
 to better organize and reason about recursive functions.
@@ -213,7 +220,7 @@ It is similar to how a `while` loop takes a boolean statement
 and a block of code,
 and turns them into a repeating block of code.
 If it seems too confusing, just keep on.
-What I mean in here will become clearer after we [construct catamorphisms](#sec:f-algebras).
+What I mean in here will become clearer after we [construct catamorphisms](#sec:cata).
 
 Before we end this motivation and proceed to the actual construction of recursion schemes,
 there is an intuition that, I think, is useful to have in mind.
@@ -364,7 +371,7 @@ $$\N = \op{zero} \mid \op{succ} \N.$$
 If we alter the tag names,
 this tells us that $\N$ is a fixed point of $\maybe$ as expected.
 
-### An example with lists
+### An example with lists {sec:lists}
 
 The natural numbers are surely the most famous example of an inductive type.
 Nevertheless,
@@ -692,23 +699,210 @@ $$ \phi \circ g = (Fg) \circ (F\phi) = F(g \circ \phi) = F(\id) = \id.$$
 Therefore, $g$ is an inverse to $\phi$, concluding the proof.
 :::
 
-## The good side of a catastrophe
+## Using catastrophes in your favor {#sec:cata}
 
-% forest for trees
+We finally have the necessary tools to define our first
+recursion scheme in all its glory and generality.
+Consider, just as in the previous section,
+a functor $F$ from $\Types$ to itself
+and call its initial algebra $\in \colon F A \to A$.
+Given a $F$-algebra $f \colon F X \to X$,
+its _catamorphism_, which we will denote by $\cata f$, is the unique arrow from $A$ to $X$
+given by the initially of $\phi$.
 
 Before proceeding, I must allow myself a little rant:
-mathematicians and theoretical computer scientists
-are simply _terrible_ name-givers.
-What in hell is a catamorphism?
-Sometimes, when I am working with other, more applied, fields
-###
-_extreme gradient boosting_ or _uncertainty principles_.
-At the same time,
-a super cool concept such as the catamorphism requires one to know ancient Greek in order to get some intuition.
+sometimes mathematicians are just terrible name-givers.
+Like, what in hell is a catamorphism?
+What kind of intuition should it elicit?
+Well... as a matter of fact the name makes a lot of sense
+if you happen to be speaking in ancient greek.
+Since, despite the arcane name,
+the catamorphism is a super cool concept,
+I think it deserves that we do a little etymological break
+to explain where its name comes from.
 
-Luckily for me, I like ancient Greek.
-Thus, let's take a break from the mathematics
-to unravel the catamorphism from an etymological point of view.
+The word catamorphism has two parts,
+_cata-_ + _morphism_.
+The later comes comes from the Greek ['μορφή']{lang=grc}
+and means ["form" or "shape"](https://outils.biblissima.fr/fr/eulexis-web/?lemma=%CE%BC%CE%BF%CF%81%CF%86%CE%AE&dict=LSJ).
+Its use is common in category theory
+and stems from the fact that usually,
+the arrows in a category are structure (or shape) preserving functions.
+For example, in the category of $F$-algebras,
+the morphisms are functions that commute with the algebras,
+thus "preserving" its application.
+The suffix "cata-" comes from the Greek ['κατά']{lang=grc}
+and means something like a ["downward motion"](https://outils.biblissima.fr/fr/eulexis-web/?lemma=%CE%BA%CE%B1%CF%84%CE%AC&dict=LSJ).
+It is the same suffix as in "cataclysm" or "catastrophe"
+and this is the intuition we shall keep in mind.
+If you think of an inductive data structure as a great tower piercing the sky,
+the catamorphism is a divine smite that, in a catastrophic manner,
+collapses the tower into a single value.[^babel]
+
+[^babel]: Fortunately, as functional languages have no side-effects,
+    applying a catamorphism doesn't make everyone start talking in a different language.
+
+Ok, back to mathematics.
+
+As you may have imagined,
+the catamorphism is a generalization of the $\op{reduce}$ operator.
+The difference is that while $\op{reduce}$ only works for lists,
+$\cata$ can collapse the initial algebra of any functor.
+But, in all this generality, how do we actually compute a catamorphism?
+Let's start by taking a look at its type signature:
+$$ \cata \colon (F X \to X) \to (A \to X).$$
+It is a higher-order operator that takes
+a function from $F X$ to $X$ and turns it into another function,
+now from the fixed point $A$ to $X$.
+Intuitively, what it encapsulates is that
+if we know how to collapse one step of a data structure,
+then we can use structural induction to collapse the entire structure.
+
+To properly calculate $\cata$,
+let's take a look at the commutative diagram defining it,
+
+\begin{tikzcd}
+F A \ar[d, "\operatorname{in}"] \ar[r, "F(\operatorname{cata} f)"] & F X \ar[d, "f"] \\
+A \ar[u, bend left=45, "\operatorname{in}^{-1}"], \ar[r, dashed, "\operatorname{cata} f"'] & X
+\end{tikzcd}
+
+In this diagram, there are two ways to go from $A$ to $X$.
+From its commutativity, we know that they are equal.
+Hence, $\cata$ must satisfy
+$$ \cata f = f \circ F(\cata f) \circ \in^{-1}.$$
+So, that's a pretty concise formula.
+Let's unpack it with some examples before trying to give a full explanation.
+
+The first inductive data type we encountered where the natural numbers,
+defined as the least fixed point of
+$$F X = \zero \mid \succ\, X.$$
+For it, the initial algebra and its inverse are defined as
+$$\begin{aligned}
+\in(\zero) &= 0, \\
+\in(\succ n) &= n+1,
+\end{aligned}\quad
+\begin{aligned}
+\in^{-1}(0) &= \zero, \\
+\in^{-1}(n) &= \succ(n-1).
+\end{aligned}$$
+If these definitions seem too obvious,
+remember that the $\N$ are the natural numbers as we think of them everyday
+while $\zero$ and $\succ$ are the formal constructors of the functor $F$.
+Keeping track of this boilerplate is essential.
+
+As our first example,
+let's construct the function $\exp \colon \N \to \R$,
+which takes a natural $n$ to the real number $e^n$,
+as a catamorphism.
+Exponentiation is recursively defined by the equations
+$$\begin{aligned}
+e^{0} &= 1 \\
+e^{n+1} &= e \cdot e^n.
+\end{aligned}$$
+In terms of an algebra $f \colon F \R \to \R$,
+this means that on the constructor $\zero$ we must return $1$
+while in each $\succ$ step, we must return $e$ times the already accumulated value.
+Then, $\exp = \cata f$, where
+$$\begin{aligned}
+f(\zero) &= 1 \\
+f(\succ x) &= e \cdot x.
+\end{aligned}$$
+Let's use the catamorphism formula to unwrap the calculations of $\exp$.
+First, $in^{-1}$ writes a number as the $\succ$ of its predecessor.
+Then, the way we defined the functor action of a data type
+means that $F (\cata f)$ unwraps $\succ n$
+to apply $\cata f$ to the natural number $n$ stored inside it
+and then reapplies the constructor, leaving us with $\succ((\cata f)(n))$.
+This process recursively continues until we encounter a $\zero$.
+But this time $F (\cata f)$ _does not_ reapplies $\cata f$;
+instead, it returns $\zero$ as is.
+At this point, our call stack is consists of the function $f$
+applied exactly $n$ times to the constructor $\succ$
+applied exactly $n$ times to $\zero$.
+For example, let's take a look at the traceback of calling $\exp(2)$:
+$$\begin{aligned}
+\exp(2) &= (f \circ F(\cata f) \circ \in^{-1})(2) \\
+        &= f(F(\cata f)(\in^{-1}(2))) \\
+        &= f(F(\cata f)(\succ 1)) \\
+        &= f(\succ (\cata f(1))) \\
+        &= f(\succ (f(F(\cata f)(\in^{-1}(1))))) \\
+        &= f(\succ (f(F(\cata f)(\succ 0)))) \\
+        &= f(\succ (f(\succ (\cata f (0)))) \\
+        &= f(\succ (f(\succ (f(F(\cata f)(\in^{-1}(0))))))) \\
+        &= f(\succ (f(\succ (f(F(\cata f)(\zero)))))) \\
+        &= f(\succ (f(\succ (f(\zero))))) \\
+        &= f(\succ (f(\succ 1))) \\
+        &= f(\succ (e\cdot 1)) \\
+        &= e \cdot (e \cdot 1).
+\end{aligned}$$
+Ok, these were a lot of parentheses.
+However, if you actually followed that mess above,
+the catamorphism's pattern should be clear by now.
+
+As a final example of catamorphism, let's write a little calculator
+that supports addition, multiplication and exponentiation by a natural.
+A calculator should take an arithmetic expression and return a real number.
+We define an expression recursively.
+It may be a real number,
+the sum of two other expressions,
+the multiplication of two expressions,
+or an expression raised to a natural exponent.
+This is represented by a type $\Expr$
+which is the least fixed point of the functor
+$$F\,X \simeq \op{const}\, \R \mid \op{add}\, X \times X \mid \op{mult}\, X \times X \mid \op{pow}\,X \times\N.$$
+
+To evaluate an expression, we need an appropriate $F$-algebra
+$f \colon F \R \to \R$.
+As with natural numbers, the idea in here is to treat
+the constructor $\op{const}$ where $X$ don't appear as a base case
+and to think of the others constructors as storing an already solved problem on the $X$.
+With this in mind, the evaluator $F$-algebra is
+$$\begin{aligned}
+f(\op{const}(a)) &= a \\
+f(\op{add}(x,y)) &= x + y \\
+f(\op{mult}(x,y)) &= x \cdot y \\
+f(\op{pow}(x,n)) &= x^n.
+\end{aligned}$$
+And the evaluator $\op{eval} \colon \Expr \to \R$ is just $\cata f$.
+
+Another application of a catamorphism is if instead of evaluating the expression,
+we want to print it as a string.
+Let's say we have a method $\op{str}$ that converts numbers to strings
+and an operator $\diamond$ that concatenates two strings.
+Erring on the side of too many parentheses,
+a candidate $F$-algebra is
+$$\begin{aligned}
+g(\op{const}(a)) &= \op{str}(a) \\
+g(\op{add}(x,y)) &= x \diamond \mathtt{"\mathord{+}"} \diamond y \\
+g(\op{mult}(x,y)) &= \mathtt{"("} \diamond x \diamond \mathtt{")\mathord*("} \diamond y \diamond \mathtt{")"} \\
+g(\op{pow}(x,n)) &= \mathtt{"("} \diamond x \diamond \mathtt{")\char`\^"} \diamond \op{str}(n).
+\end{aligned}$$
+As you probably already expect,
+the function $\op{show} \colon \Expr \to \mathtt{String}$
+that converts an expression to a string is just $\cata g$.
+
+Least fixed points are recursive data structures.
+The catamorphism abstracts the process of transforming these structures
+into another type via structural induction.
+All recursion occurs inside the formula for $\cata$.
+If you just use it as a black box that turns functions $F X \to X$
+into functions $A \to X$ (where A is the fixed point),
+you will never actually see the recursion's autoreference.
+The operator $\cata$ abstracts recursion just like
+a `for` loop abstracts the `goto` away.
+It is still there but following a fixed structure.
+
+Since $\cata$ is a more rigid structure than general recursion,
+it is easier to reason about it.
+For example,
+one of the strongest properties of catamorphisms is that
+if the recursive data structure is finite,
+then $\cata f$ is guaranteed to eventually stop;
+no matter what $F$-algebra $f$ we use.
+As a lot of applications use finite data,
+this facilitates a lot the act of debugging a program.
+
+
 
 # Growing your lists up
 
