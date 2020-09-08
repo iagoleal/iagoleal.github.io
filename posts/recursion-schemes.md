@@ -910,16 +910,187 @@ then $\cata f$ is also guaranteed to eventually stop;
 As a lot of applications use finite data,
 this facilitates a lot the act of debugging a program.
 
+## Taking your functions to the gym {#sec:ana}
 
+Collapsing a data structure into a value
+has many use cases but is not the end of the story.
+Sometimes we want to do the exact opposite:
+take a value as a seed to construct a list or another structure from it.
+This notion is dual to the catamorphism and, of course,
+there is also a recursion scheme to encapsulate it: the _anamorphism_.[^unfold]
 
-# Growing your lists up
+[^unfold]: Also called a `unfold` in the context of lists.
 
-anamorphisms
+Again we have a pretty arcane name in our hands.
+Let's take a look at its etymology in order to clarify things.
+The prefix _ana-_ comes from the Greek ['ἀνα']{lang=grc}
+and generally means ["upward motion"](https://outils.biblissima.fr/fr/eulexis-web/?lemma=%E1%BC%80%CE%BD%CE%B1&dict=LSJ)
+but is also used to mean "strengthening" or "spreading all over".
+It is the same prefix of _analogy_ and of _anabolic steroids_.
+In both these words, the prefix means that we are building something up.
 
-# Dividing to conquer
+In order to describe the catamorphism in all its generality
+and yet with a concise formula,
+we had to dive into some categorical abstract nonsense.
+As you might expect, the same applies to the anamorphism.
+Fortunately, there is a tool in category theory called [duality](https://en.wikipedia.org/wiki/Dual_%28category_theory%29).
+If we simply reverse the arrows in a theorem,
+its conclusion still holds but also with some arrows reversed.
 
-hylomorphisms
+Given a category $\catC$ and a functor $F \colon \catC \to \catC$,
+we define a $F$-coalgebra to a object $X$ of $\catC$
+together with an arrow $f \colon X \to F X$.
+The $F$-coalgebras form a category where the morphisms
+between $f \colon X \to F X$ and $g \colon Y \to F Y$
+are arrows $h \colon X \to Y$ such that the diagram below commutes.
 
-# Summary
+```tikzcd
+F X \ar[r, "F h"] & F Y \\
+X \ar[u, "f"] \ar[r, "h"] & Y \ar[u, "g"']
+```
+The dual notion to an initial object $F-$algebra is a _terminal_ $F$-coalgebra.
+Namely, a algebra $\out \colon S \to F S$ such that there is a unique morphim
+from any other $F$-coalgebra to $\out$.
+As you probably already expect, terminal coalgebras are always isomorphisms.
+The proof is essentially the same as the one for initial $F$-algebras.
+The only difference being some arrows reversed.
+
+::: Theorem
+Any terminal $F$-coalgebra $\out \colon C \to F S$ is an isomorphism.
+:::
+
+The most direct consequence of this theorem is that $S$ must be a fixed point of $F$.
+Since there is an arrow from every other coalgebra to $S$,
+it is called the _greatest fixed point_ of $F$.
+For this presentation, there is no need to discriminate between least and greatest fixed points.
+Specially because there are languages such as Haskell where they are the same.
+Just keep in mind that when working with coalgebras,
+there is no guarantee that functions must eventually stop.
+We are no longer on the land of finite data structures
+but in the much greater land of possibly infinite data structures.
+
+Given a $F$-coalgebra $f \colon X \to F X$,
+its anamorphism $\ana f$ is defined as the unique arrow
+from $f$ to the terminal object
+``` {.tikzcd usepackage="amsmath"}
+F S \ar[d, bend right=45, "\operatorname{out}^{-1}"']  & F X \ar[l, "F(\operatorname{ana} f)"']  \\
+S \ar[u, "\operatorname{out}"']  & X \ar[u, "f"'] \ar[l, dashed, "\operatorname{ana} f"]
+```
+Thus, the type signature of $\ana$ viewed as a higher-order operator is
+$$\ana \colon (X \to F X) \to (X \to S).$$
+It turns a coalgebra, which we may view as one construction step,
+into a function that constructs an entire inductive data structure.
+If we pay attention to the commutative diagram above,
+we can see that there is a concise recursive formula defining $\ana$,
+$$ \ana f = \out^{-1} \circ F (\ana f) \circ f.$$
+This is the same formula we had for $\cata$,
+but the order of composition reversed!
+This reversion, however, means that we are building structures instead of collapsing them.
+
+Let's do some examples with lists.
+Recall that the type $L(A)$ of lists with elements of type $A$
+is a fixed point of the functor
+$$P X = \nil \mid \cons\, A \times X.$$
+Using the usual notation $[a,b,c,\ldots]$ to represent lists,
+the $F$-coalgebra $\out$ is defined as
+$$ \begin{aligned}
+\out([\;]) &= \nil \\
+\out([a,b,c,\ldots]) &= \cons(a, [b,c,\ldots]).
+\end{aligned}$$
+One of the simplest list anamorphisms is a function that receives a natural number $n$
+and returns a decreasing list from $n$ to $0$.
+It is defined as $\ana g$, where $g$ is the coalgebra
+$$ g(n) = \begin{cases}
+    \nil,& n = 0 \\
+    \cons(n, n-1),& \text{otherwise}.
+\end{cases}
+$$
+
+In practice, it is most common to use an increasing list, however.
+The induction on this one is a little trickier but nothing an anamorphism can't handle.
+To make it more fun,
+let's construct a function $\op{range} \colon \Z \times \Z \to L(\Z)$
+taking a pair of integers to the closed integer interval between them.
+We want $\op{range}(-2, 1) = [-2,-1,0,1]$ and $\op{range}(7,5) = [\;]$,
+for example.
+To achieve this, we will need a family of coalgebras
+$$ g_b(n) = \begin{cases}
+    \nil,& n > b \\
+    \cons(n, n+1), & \text{otherwise}.
+\end{cases}$$
+Then, our range function is the anamorphism
+$$ \op{range}(a,b) = (\ana g_b)(a).$$
+
+If you ever dealt with plotting libraries,
+you are probably familiar with a `linspace` method.
+It receives two real arguments $a$, $b$, and a natural argument $n$
+and returns a list of $n$ points uniformly distributed between $a$ and $b$.
+The construction of such a function
+$$\op{linspace} \colon \R \times \R \times \N \to L(\R)$$
+is a simple variation on the $\op{range}$ we defined earlier.
+We start with a family of coalgebras
+$$ g(b, n)(x) = \begin{cases}
+    \nil,& x > b \\
+    \cons(x, x + \frac{b-a}{n}), & \text{otherwise},
+\end{cases}$$
+and define it to be the anamorphism
+$$\op{linspace}(a,b,n) = (\ana g(b,n))(a).$$
+
+To end this section,
+let's turn to a example from number theory.
+We will construct the [sieve of Eratosthenes](https://en.wikipedia.org/Sieve_of_Eratosthenes).[^era]
+This algorithm receives a natural number $n$ and returns a list of all primes below $n$.
+The idea is to start with a list of numbers between $2$ and $n$,
+and to recursively refine it eliminating all multiples of a given prime.
+Let $\op{test}(p)$ be the predicate that test if a number is not divisible by $p$.
+You can implement it by testing if the remainder of the input by $p$ equals zero,
+for example.
+This refinement process is encapsulated by the function
+$\op{sieve} = \ana g$ where $g$ is the coalgebra
+$$ \begin{aligned}
+\op{g}([\;]) &= \nil \\
+\op{g}([p, x,\ldots]) &= \cons(p, (\op{filter}(\op{test}(p))([x,\ldots]))).
+\end{aligned}
+$$
+And our prime-listing function is the composition
+$$ \op{era}(n) = \op{sieve}(\op{range}(2,n)).$$
+This process works because after each filtering, the list's first element
+cannot be divisible by any number below it. Thus it must be prime.
+Notice that this function eventually stop because as soon as we reach an empty list,
+the algorithm returns a $\nil$.
+
+Finally,
+to show the power of anamorphisms coupled with lazy evaluation,
+let's use $\op{sieve}$ to compute a list of all primes.
+We begin by writing a list $l$ of all natural numbers starting at $2$,
+$$\begin{aligned}
+h(x) &= \cons(x, x+1) \\
+\op{l} &= (\ana h)(2).
+\end{aligned}$$
+This lust must be infinite because, since $h$ never returns $\nil$,
+the anamorphism must recurse forever.
+Unsurprisingly, the list of all primes is defined as
+$\op{primes} = \op{sieve}(l)$.
+At first, this may not seem very useful
+since any computer would take infinite time to calculate $\op{primes}$.
+But, after some thought, you will notice
+that the way $\op{sieve}$ calculates its output is very special.
+After it produces an element of the list, it never touches that element again!
+Thus, although it's impossible to properly calculate $\op{primes}$,
+we have that for any natural $N$, the first $N$ elements of $\op{primes}$
+are calculated in a finite amount of time.
+So you can think of $\op{primes}$ as an iterator that generates $\op{era}(n)$ in finite time.
+
+This last property is common to all anamorphisms.
+Although their output can be a possible infinite data structure (even if the input is finite),
+it is produced in a extremely structured manner.
+When a value is computed, it is never touched again.
+Therefore, we can still use an anamorphism to calculate finite data
+so long as we properly say when we wish to stop.
+
+[^era]: This example is adapted from an anamorphism in the lectures notes
+[Programming with Categories](http://brendanfong.com/programmingcats_files/cats4progs-DRAFT.pdf)
+by Brendan Fong, Bartosz Milewski and David I. Spivak.
+
 
 # Bibliography
