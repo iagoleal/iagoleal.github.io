@@ -648,13 +648,13 @@ called the category of _$F$-algebras_.
 An $F$-algebra is an object $X$ of $\catC$
 together with an arrow $f \colon F X \to X$.
 Morphisms between $F$-algebras $f \colon F X \to X$ and $g \colon F Y \to Y$
-are given by an arrow $g \colon X \to Y$
+are given by an arrow $h \colon X \to Y$
 such that the following diagram commutes
 
-\begin{tikzcd}
-F X \ar[d, "f"'] \ar[r, "F g"] & F Y \ar[d, "g"] \\
-X \ar[r, "g"'] & Y
-\end{tikzcd}
+```tikzcd
+F X \ar[d, "f"'] \ar[r, "F h"] & F Y \ar[d, "g"] \\
+X \ar[r, "h"'] & Y
+```
 
 You can check that this definition turns $F$-algebras into a category
 where the identity for $f \colon F X \to X$ is given by $\id_X$ itself.
@@ -683,18 +683,21 @@ so is $F\phi \colon F(FI) \to F I$.
 Since $\phi$ is initial,
 there is a unique arrow $g \colon I \to FI$
 making the following diagram commute
-\begin{tikzcd}
+
+```tikzcd
 F I \ar[d, dashed, "f"'] \ar[r, "F g"] & F (FI) \ar[d, "F \phi"] \\
 I \ar[r, dashed, "g"'] & Y
-\end{tikzcd}
+```
+
 Since $\phi$ itself may be viewed as a morphism between
 the $F$-algebras $F \phi$ and $\phi$,
 we get that their composition is a morphism from $\phi$ to itself
 represented by the following diagram, where all paths still commute
-\begin{tikzcd}
+
+```tikzcd
     F I \ar[r, dashed, "F g"] \ar[d, "\phi"'] & F(F I) \ar[r, "F \phi"] \ar[d, "F \phi"] & F I \ar[d, "\phi"] \\
     I   \ar[r, dashed, "g"'] & F I    \ar[r, "\phi"'] &  I
-\end{tikzcd}
+```
 
 Since $\phi$ is initial, the unique arrows going from it to itself
 is the identity.
@@ -766,10 +769,10 @@ then we can use structural induction to collapse the entire structure.
 To properly calculate $\cata$,
 let's take a look at the commutative diagram defining it,
 
-\begin{tikzcd}
+``` {.tikzcd usepackage="amsmath"}
 F A \ar[d, "\operatorname{in}"] \ar[r, "F(\operatorname{cata} f)"] & F X \ar[d, "f"] \\
 A \ar[u, bend left=45, "\operatorname{in}^{-1}"], \ar[r, dashed, "\operatorname{cata} f"'] & X
-\end{tikzcd}
+```
 
 In this diagram, there are two ways to go from $A$ to $X$.
 From its commutativity, we know that they are equal.
