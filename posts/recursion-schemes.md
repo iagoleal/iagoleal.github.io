@@ -1,12 +1,12 @@
 ---
 title: 'Recursion Schemes: Applying Greek to Programming'
-tags: category-theory recursion-schemes functional-programming
+keywords: category-theory recursion-schemes functional-programming
+lang: en
 ---
 
 \def\op#1{\operatorname{\mathrm{#1}}}
 \def\catC{\mathcal{C}}
 \def\catD{\mathcal{D}}
-\def\abs#1{\left|#1\right|}
 \DeclareMathOperator{\fat}{fat}
 \DeclareMathOperator{\maybe}{\mathtt{maybe}}
 \DeclareMathOperator{\true}{true}
@@ -26,9 +26,10 @@ tags: category-theory recursion-schemes functional-programming
 \def\hylo{\op{hylo}}
 \def\in{\op{in}}
 \def\out{\op{out}}
+\def\Expr{\mathtt{Expr}}
 
 Recursion schemes are a neat construction that allows one
-to better organize and reason about recursive functions.
+to better structure and reason about recursive functions.
 Instead of viewing recursion as functions that call themselves,
 these schemes allow us to take a higher-order point of view.
 Most of recursive definitions may be abstracted as some operator
@@ -37,6 +38,12 @@ and turns it into a function defined for the entire structure.
 The canonical example for this perspective is turning the binary function $+$,
 which adds two numbers,
 into a new function that sums all elements of a list with arbitrary length[^sum].
+Another use case is, when writing an evaluator for an expression tree,
+to only tell your program how to deal with each node
+and let a recursion scheme turn it into a full evaluator.
+In this post, we will take a look at the three simplest varieties of recursion schemes:
+namely catamorphims, anamorphisms, and hylomorphisms;
+al of them deeply linked with structural induction.
 
 [^sum]: This sum example is simple to code with a loop or linear recursion.
 Recursion schemes really shine when manipulating more complex data structures,
@@ -44,9 +51,9 @@ such as trees with varying arity.
 
 The first time I heard about recursion schemes was after stumbling
 with the paper [Functional Programming with Bananas, Lenses, Envelopes and Barbed Wire](https://maartenfokkinga.github.io/utwente/mmf91m.pdf) by Erik Meijer, Maarten Fokkinga, and Ross Paterson.
-It is a real gem of functional wisdom but the authors choice of using the
-[Squiggol](https://en.wikipedia.org/wiki/Bird%E2%80%93Meertens_formalism) notation
-made some parts really hard to decipher.
+It is a real gem of functional wisdom but the authors use a notation called
+[Squiggol](https://en.wikipedia.org/wiki/Bird%E2%80%93Meertens_formalism),
+which I had a really hard time trying to grasp.
 Fortunately,
 I later found [Patrick Thomson's excellent series of posts](https://blog.sumtypeofway.com/posts/introduction-to-recursion-schemes.html),
 which explain recursion schemes using Haskell code.
@@ -57,16 +64,15 @@ This post is an enriched version of that presentation
 with more cohesion and much less of my bad drawings.
 
 In the spirit of the original presentation,
-I've decided to make this post completely language-agnostic[^cd].
+I've decided to make this post completely language-agnostic.
 I also tried to keep any type theory or lambda calculus to a minimum
 in order to make it easier to grasp.
 My hope is that anyone with some experience in programming and mathematics
 will be able to read this,
 instead of confining this post only to people that know a certain programming language.
-Of course, in doing that I'm risking that no one will understand this.
+Of course, in doing that I'm risking that no one besides me will actually understand this post.
 But, very well, I will do my best.
 
-[^cd]: Well, in terms of programming languages. There will be commutative diagrams, be warned.
 
 ## A not so historical introduction
 
@@ -371,7 +377,7 @@ $$\N = \op{zero} \mid \op{succ} \N.$$
 If we alter the tag names,
 this tells us that $\N$ is a fixed point of $\maybe$ as expected.
 
-### An example with lists {sec:lists}
+### An example with lists {#sec:lists}
 
 The natural numbers are surely the most famous example of an inductive type.
 Nevertheless,
@@ -534,7 +540,7 @@ But I will go through the basics for the sake of completeness.
     see [this link](https://wiki.haskell.org/Hask) for a discussion concerning Haskell.
     Nevertheless, types are similar enough to a category to be worth it to think of them as forming one.
 [^cat]: Take a look on chapter 1 of [Emily Riehl's book](http://www.math.jhu.edu/~eriehl/context.pdf)
-    if you want to learn this (and much more) properly. It's a great book.
+    if you want to learn this (and much more) properly. Trust me, it's a great book for the mathematically inclined.
 
 A category $\catC$ may be imagined as a special kind of graph.
 There is a collection of vertices, called its _objects_
@@ -602,9 +608,8 @@ $$ \begin{aligned}
 \maybe(f)(\op{just}(x)) &= \op{just} (f(x)).
 \end{aligned} $$
 More generally,
-if a type operator $G$ is defined using only products, coproducts,
+if a type operator $G$ is defined using only products, coproducts, other functors,
 and function types with the variable appearing only on the right-hand side
-and other functors,
 there is a canonical way to turn it into a functor from $\Types$ to itself.
 Some compilers, such as Haskell's GHC
 [can even do that automatically for us](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/derive-functor).
@@ -628,7 +633,7 @@ and pass $f$ to each of its arguments according to one of the following rules:
 
 ### Functors and their fixed points {#sec:f-algebras}
 
-Now we know that both the natural numbers and lists are not the fixed points
+Now we know that both the natural numbers and lists aren't just the fixed points
 of ordinary type operators but of functors from $\Types$ to itself.
 But is there anything special in this?
 As you may expect, the answer is _yes_.
@@ -679,7 +684,7 @@ Since $\phi$ is initial,
 there is a unique arrow $g \colon I \to FI$
 making the following diagram commute
 \begin{tikzcd}
-F I \ar[d, "f"'] \ar[r, "F g"] & F (FI) \ar[d, "F \phi"] \\
+F I \ar[d, dashed, "f"'] \ar[r, "F g"] & F (FI) \ar[d, "F \phi"] \\
 I \ar[r, dashed, "g"'] & Y
 \end{tikzcd}
 Since $\phi$ itself may be viewed as a morphism between
@@ -687,7 +692,7 @@ the $F$-algebras $F \phi$ and $\phi$,
 we get that their composition is a morphism from $\phi$ to itself
 represented by the following diagram, where all paths still commute
 \begin{tikzcd}
-    F I \ar[r, "F g"] \ar[d, "\phi"'] & F(F I) \ar[r, "F \phi"] \ar[d, "F \phi"] & F I \ar[d, "\phi"] \\
+    F I \ar[r, dashed, "F g"] \ar[d, "\phi"'] & F(F I) \ar[r, "F \phi"] \ar[d, "F \phi"] & F I \ar[d, "\phi"] \\
     I   \ar[r, dashed, "g"'] & F I    \ar[r, "\phi"'] &  I
 \end{tikzcd}
 
@@ -731,9 +736,9 @@ the arrows in a category are structure (or shape) preserving functions.
 For example, in the category of $F$-algebras,
 the morphisms are functions that commute with the algebras,
 thus "preserving" its application.
-The suffix "cata-" comes from the Greek ['κατά']{lang=grc}
+The prefix "cata-" comes from the Greek ['κατά']{lang=grc}
 and means something like a ["downward motion"](https://outils.biblissima.fr/fr/eulexis-web/?lemma=%CE%BA%CE%B1%CF%84%CE%AC&dict=LSJ).
-It is the same suffix as in "cataclysm" or "catastrophe"
+It is the same prefix as in "cataclysm" or "catastrophe"
 and this is the intuition we shall keep in mind.
 If you think of an inductive data structure as a great tower piercing the sky,
 the catamorphism is a divine smite that, in a catastrophic manner,
@@ -896,9 +901,9 @@ Since $\cata$ is a more rigid structure than general recursion,
 it is easier to reason about it.
 For example,
 one of the strongest properties of catamorphisms is that
-if the recursive data structure is finite,
-then $\cata f$ is guaranteed to eventually stop;
-no matter what $F$-algebra $f$ we use.
+if the recursive data structure is finite
+and $f$ is total function,
+then $\cata f$ is also guaranteed to eventually stop;
 As a lot of applications use finite data,
 this facilitates a lot the act of debugging a program.
 
