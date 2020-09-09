@@ -1,10 +1,22 @@
+--[[
+    Turns code block with id 'tikz' or 'tikzcd'
+    into embedded vector images.
+
+    Depends on:
+        - pdflatex
+        - dvisvgm
+
+    Code adapted from diagram-generator.lua in
+        https://github.com/pandoc/lua-filters/blob/master/diagram-generator/diagram-generator.lua
+]]
 local tikz_template = [[
 \documentclass[tikz]{standalone}
-\usepackage{xcolor,tikz}
+\usepackage{xcolor,lmodern,tikz}
 %% Additional packages: usepackage
 \usepackage{%s}
 %% Libraries for tikz: tikzlibrary
 \usetikzlibrary{%s}
+\tikzset{%s}
 \begin{document}
 \nopagecolor
 \begin{%s}
@@ -13,21 +25,23 @@ local tikz_template = [[
 \end{document}
 ]]
 
-local function format_tikz(body, env, pkgs, libs)
-    return tikz_template:format(pkgs, libs, env, body, env)
+local function format_tikz(body, env, pkgs, libs, options)
+    return tikz_template:format(pkgs, libs, options, env, body, env)
 end
 
-extension_for = {
-  html = 'svg',
-  html4 = 'svg',
-  html5 = 'svg',
-  latex = 'pdf',
-  beamer = 'pdf' }
+local extension_for = {
+    html   = 'svg',
+    html4  = 'svg',
+    html5  = 'svg',
+    latex  = 'pdf',
+    beamer = 'pdf' }
 
-mimetype_for = {
+local mimetype_for = {
     svg = 'image/svg+xml',
     pdf = 'application/pdf'
 }
+
+local cachedir = 'cache/'
 
 local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' -- You will need this for encoding/decoding
 -- encoding
@@ -60,13 +74,13 @@ function decodeURI(data)
     end))
 end
 
-local function tikz2image(src, filetype)
+local function tex2image(src, filetype)
     return pandoc.system.with_temporary_directory('tikz2image', function (tmpdir)
         return pandoc.system.with_working_directory(tmpdir, function()
             local file_template = "%s/tikz-image.%s"
             local tikzfile = file_template:format(tmpdir, "tex")
-            local pdffile = file_template:format(tmpdir, "pdf")
-            local outfile = file_template:format(tmpdir, filetype)
+            local pdffile  = file_template:format(tmpdir, "pdf")
+            local outfile  = file_template:format(tmpdir, filetype)
             -- Create latex
             local file = io.open(tikzfile, 'w')
             file:write(src)
@@ -74,7 +88,6 @@ local function tikz2image(src, filetype)
             os.execute('cp ' .. tikzfile .. ' /tmp/')
             -- Compile latex -> pdf
             pandoc.pipe("pdflatex", {"-output-directory", tmpdir}, tikzfile)
-            print(outfile)
             -- Compile pdf -> svg
             if filetype == "svg" then
                 -- pandoc.pipe("dvisvgm", {'--pdf', "-o", outfile}, pdffile)
@@ -92,40 +105,78 @@ local function tikz2image(src, filetype)
     end)
 end
 
-function CodeBlock(block)
-        local filetype = extension_for[FORMAT] or 'svg'
-        local mimetype = mimetype_for[filetype] or 'image/svg+xml'
-        local additionalpkgs = block.attributes["usepackage"] or ""
-        local tikzlibs = block.attributes["tikzlibrary"] or ""
-        local latex_env = ""
-        if block.classes[1] == "tikz" then
-            latex_env = "tikzpicture"
-        elseif block.classes[1] == "tikzcd" then
-            latex_env = "tikzcd"
-            additionalpkgs = additionalpkgs .. ",tikz-cd"
-        else -- Not a codeblock we care about
-            return nil
-        end
-        -- Substitute data on tikz template
-        local fullsrc = format_tikz(block.text, latex_env, additionalpkgs, tikzlibs)
-        local success, img = pcall(tikz2image, fullsrc, filetype)
-        if success and img then
+local function cache_fetch(fname)
+    local f = io.open(fname, 'rb')
+    if f then
+        local img = f:read("*all")
+        f:close()
+        return img
+    end
+    return nil
+end
 
-            if filetype == 'svg' then
-                -- Embed image in html
-                content = "data:image/svg+xml;base64," .. encodeURI(img)
-            else
-                -- Hash the figure name and content:
-                content = pandoc.sha1(img) .. "." .. filetype
-            end
-            -- Store the data in the media bag:
-            pandoc.mediabag.insert(content, mimetype, img)
-            return pandoc.Para({pandoc.Image({}, content)})
-        else
-            -- Print image content and leave
-            io.stderr:write(tostring(img))
-            io.stderr:write('\n')
-            error 'Image conversion failed'
-        end
+function cache_write(img, fname)
+    res, err, code = os.rename(cachedir, cachedir)
+    if res then
+        local f = io.open(fname, 'w')
+        f:write(img)
+        f:close()
+        return true
+    end
+    print("Warning: cache directory '".. cachedir .."' not found.")
+    return false
+end
+
+local function mkblock(img, filetype)
+    local mimetype = mimetype_for[filetype] or 'image/svg+xml'
+    if filetype == 'svg' then
+        -- Embed image in html
+        content = "data:image/svg+xml;base64," .. encodeURI(img)
+    else
+        -- Hash the figure name and content:
+        content = pandoc.sha1(img) .. "." .. filetype
+    end
+    -- Store the data in the media bag:
+    pandoc.mediabag.insert(content, mimetype, img)
+    return pandoc.Para({pandoc.Image({}, content)})
+end
+
+function CodeBlock(block)
+    local filetype = extension_for[FORMAT] or 'svg'
+    local additionalpkgs = block.attributes["usepackage"] or ''
+    local tikzlibs = block.attributes["tikzlibrary"] or ''
+    local envoptions = block.attributes["tikzset"] or ''
+    local latexenv = ''
+    if block.classes[1]     == "tikz"   then
+        latexenv = "tikzpicture"
+    elseif block.classes[1] == "tikzcd" then
+        latexenv = "tikzcd"
+        additionalpkgs = additionalpkgs .. ",tikz-cd"
+    elseif block.classes[1] == "forest" then
+        latexenv = "forest"
+        additionalpkgs = additionalpkgs .. ",forest"
+    else -- Not a codeblock we care about
+        return nil
+    end
+    -- Substitute data on tikz template
+    local fullsrc = format_tikz(block.text, latexenv, additionalpkgs, tikzlibs, envoptions)
+    -- Verify cached data
+    local fname = cachedir .. pandoc.sha1(fullsrc) .. "." .. filetype
+    local img = cache_fetch(fname)
+    if img then
+        return mkblock(img, filetype)
+    end
+    -- Actually produce image
+    local success, img = pcall(tex2image, fullsrc, filetype)
+    if success and img then
+        -- Write file to cache
+        cache_write(img, fname)
+        return mkblock(img, filetype)
+    else
+        -- Print image content and leave
+        io.stderr:write(tostring(img))
+        io.stderr:write('\n')
+        error 'Image conversion failed'
+    end
     return nil
 end
