@@ -1,5 +1,6 @@
 ---
-title: 'Recursion Schemes: Applying Greek to Programming'
+title: Recursion Schemes
+subtitle: Programming with Induction
 keywords: category-theory recursion-schemes functional-programming
 lang: en
 ---
@@ -42,9 +43,13 @@ into a new function that sums all elements of a list with arbitrary length[^sum]
 Another use case is, when writing an evaluator for an expression tree,
 to only tell your program how to deal with each node
 and let a recursion scheme turn it into a full evaluator.
+
 In this post, we will take a look at the three simplest varieties of recursion schemes:
-namely catamorphims, anamorphisms, and hylomorphisms;
-al of them deeply linked with structural induction.
+catamorphims, anamorphisms, and hylomorphisms;
+all of them deeply linked with structural induction.
+As we will see,
+they respectively encapsulate the notions of folding a data structure,
+constructing a data structure and using a data structure as an intermediate step.
 
 [^sum]: This sum example is simple to code with a loop or linear recursion.
 Recursion schemes really shine when manipulating more complex data structures,
@@ -74,8 +79,7 @@ instead of confining this post only to people that know a certain programming la
 Of course, in doing that I'm risking that no one besides me will actually understand this post.
 But, very well, I will do my best.
 
-
-## A not so historical introduction
+## A not so historical introduction {#sec:intro}
 
 We begin our journey in the prehistory of programming;
 that time when computers where still mostly made of coconuts and mammoth fur.
@@ -356,7 +360,7 @@ being directly connected to recursion.
 As an example let's explore the fixed point of $\maybe$.
 It is a type $N$ satisfying
 $$N \simeq \maybe N = \op{nothing} \mid \op{just} N.$$
-This means that any term of $N$ is either $\op{nothing}$.
+This means that any term of $N$ is either $\op{nothing}$
 or $\op{just}$ a term of $N$.
 Since we know $\op{nothing}$,
 we can construct a new term $\op{just}(\op{nothing})$,
@@ -398,19 +402,29 @@ To represent a non-empty list,
 we notice that any non-empty list with $n$ elements
 may be "factorized" into its first element and another list with the remaining $n-1$ elements.
 
-    +-------+               +-------+               +-------+               +-------+               +---+
-    |   |   +-------------->|   |   +-------------->|   |   +-------------->|   |   +-------------->+   |
-    +-------+               +-------+               +-------+               +-------+               +---+
+``` {.tikz
+      tikzlibrary="calc,shapes.multipart,chains,arrows"
+      tikzset="list/.style={rectangle split, rectangle split parts=2,
+      draw, rectangle split horizontal}, >=stealth, start chain"}
+  \node[list,on chain] (A) {12};
+  \node[list,on chain] (B) {99};
+  \node[list,on chain] (C) {37};
+  \node[on chain,draw,inner sep=6pt] (D) {};
+  \draw (D.north east) -- (D.south west);
+  \draw (D.north west) -- (D.south east);
+  \draw[*->] let \p1 = (A.two), \p2 = (A.center) in (\x1,\y2) -- (B);
+  \draw[*->] let \p1 = (B.two), \p2 = (B.center) in (\x1,\y2) -- (C);
+  \draw[*->] let \p1 = (C.two), \p2 = (C.center) in (\x1,\y2) -- (D);
+```
 
 Thus, by defining a type operator $P$ as
-$$P X \coloneqq \nil \mid \cons\, A \times X.$$
-The previous discussion shows that the type of lists over $A$,
-hereby denoted $L(A)$ is a fixed point of $P$,
+$$P X \coloneqq \nil \mid \cons\, A \times X,$$
+the previous discussion shows that the type of lists over $A$,
+hereby denoted $L(A)$, is a fixed point of $P$,
 $$L(A) \simeq \nil \mid \cons\, A \times L(A).$$
-Here,
-the constructor $\nil$ takes the role of the empty list
+Here, the constructor $\nil$ takes the role of the empty list
 while the constructor $\cons$ represents a pair
-with an element of $A$ and another list.
+containing an element of $A$ and another list.
 
 This inductive definition of lists
 allows us to recursively define operations over it.
@@ -518,7 +532,7 @@ h(x, l) &= \begin{cases}
 \end{aligned}$$
 
 I hope you liked these examples because the next step in our journey
-is generalizing $\op{reduce}$ to any inductive datatype!
+is generalizing $\op{reduce}$ to any inductive data type!
 To achieve this, we must pass through the land of category theory.
 
 ## A walk through the land of categories {#sec:categories}
@@ -537,7 +551,7 @@ I'm afraid I can't properly introduce them in here.[^cat]
 But I will go through the basics for the sake of completeness.
 
 [^hask]: This is not entirely true.
-    Questions such as non-termination or laziness/strictenss may break this structure in some languages,
+    Questions such as non-termination or laziness/strictness may break this structure in some languages,
     see [this link](https://wiki.haskell.org/Hask) for a discussion concerning Haskell.
     Nevertheless, types are similar enough to a category to be worth it to think of them as forming one.
 [^cat]: Take a look on chapter 1 of [Emily Riehl's book](http://www.math.jhu.edu/~eriehl/context.pdf)
@@ -661,12 +675,12 @@ You can check that this definition turns $F$-algebras into a category
 where the identity for $f \colon F X \to X$ is given by $\id_X$ itself.
 On this category, we are interested in an special kind of object
 called an _initial $F$-algebra_.
-That is an $F$-algebra $\phi$ with the special property
-that for any other $F$-algebra $f$ there is a _unique_ morphism going from $\phi$ to $f$.
+That is an $F$-algebra $\in$ with the special property
+that for any other $F$-algebra $f$ there is a _unique_ morphism going from $\in$ to $f$.
 Ok, time for some action. We haven't proved any theorem in this post yet.
 
 ::: Theorem
-Any initial $F$-algebra $\phi \colon F I \to I$ is an isomorphism in $\catC$.
+Any initial $F$-algebra $\in \colon F I \to I$ is an isomorphism in $\catC$.
 :::
 
 Before we prove this theorem,
@@ -678,34 +692,34 @@ Nevertheless, finite length inductive data structures are generally initial.
 [^lfp]: The technical term is _least fixed point_.
 
 ::: Proof
-First, notice that if $\phi \colon F I \to I$
+First, notice that if $\in \colon F I \to I$
 is an $F$-algebra,
-so is $F\phi \colon F(FI) \to F I$.
-Since $\phi$ is initial,
+so is $F\in \colon F(FI) \to F I$.
+Since $\in$ is initial,
 there is a unique arrow $g \colon I \to FI$
 making the following diagram commute
 
-```tikzcd
-F I \ar[d, dashed, "f"'] \ar[r, "F g"] & F (FI) \ar[d, "F \phi"] \\
+```{.tikzcd usepackage="amsmath"}
+F I \ar[d, dashed, "f"'] \ar[r, "F g"] & F (FI) \ar[d, "F \operatorname{in}"] \\
 I \ar[r, dashed, "g"'] & Y
 ```
 
-Since $\phi$ itself may be viewed as a morphism between
-the $F$-algebras $F \phi$ and $\phi$,
-we get that their composition is a morphism from $\phi$ to itself
+Since $\in$ itself may be viewed as a morphism between
+the $F$-algebras $F \in$ and $\in$,
+we get that their composition is a morphism from $\in$ to itself
 represented by the following diagram, where all paths still commute
 
-```tikzcd
-    F I \ar[r, dashed, "F g"] \ar[d, "\phi"'] & F(F I) \ar[r, "F \phi"] \ar[d, "F \phi"] & F I \ar[d, "\phi"] \\
-    I   \ar[r, dashed, "g"'] & F I    \ar[r, "\phi"'] &  I
+```{.tikzcd usepackage="amsmath"}
+    F I \ar[r, dashed, "F g"] \ar[d, "\operatorname{in}"'] & F(F I) \ar[r, "F \operatorname{in}"] \ar[d, "F \operatorname{in}"] & F I \ar[d, "\operatorname{in}"] \\
+    I   \ar[r, dashed, "g"'] & F I    \ar[r, "\operatorname{in}"'] &  I
 ```
 
-Since $\phi$ is initial, the unique arrows going from it to itself
+Since $\in$ is initial, the unique arrows going from it to itself
 is the identity.
-Thus, we must have $g \circ \phi = \id$.
+Thus, we must have $g \circ \in = \id$.
 Moreover, from the definition of functor and the previous diagram,
-$$ \phi \circ g = (Fg) \circ (F\phi) = F(g \circ \phi) = F(\id) = \id.$$
-Therefore, $g$ is an inverse to $\phi$, concluding the proof.
+$$ \in \circ g = (Fg) \circ (F\in) = F(g \circ \in) = F(\id) = \id.$$
+Therefore, $g$ is an inverse to $\in$, concluding the proof.
 :::
 
 ## Using catastrophes in your favor {#sec:cata}
@@ -717,14 +731,14 @@ a functor $F$ from $\Types$ to itself
 and call its initial algebra $\in \colon F A \to A$.
 Given a $F$-algebra $f \colon F X \to X$,
 its _catamorphism_, which we will denote by $\cata f$, is the unique arrow from $A$ to $X$
-given by the initially of $\phi$.
+given by the initially of $\in$.
 
 Before proceeding, I must allow myself a little rant:
 sometimes mathematicians are just terrible name-givers.
 Like, what in hell is a catamorphism?
 What kind of intuition should it elicit?
 Well... as a matter of fact the name makes a lot of sense
-if you happen to be speaking in ancient greek.
+if you happen to be speaking in ancient Greek.
 Since, despite the arcane name,
 the catamorphism is a super cool concept,
 I think it deserves that we do a little etymological break
@@ -770,7 +784,7 @@ then we can use structural induction to collapse the entire structure.
 To properly calculate $\cata$,
 let's take a look at the commutative diagram defining it,
 
-``` {.tikzcd usepackage="amsmath"}
+```{.tikzcd usepackage="amsmath"}
 F A \ar[d, "\operatorname{in}"] \ar[r, "F(\operatorname{cata} f)"] & F X \ar[d, "f"] \\
 A \ar[u, bend left=45, "\operatorname{in}^{-1}"], \ar[r, dashed, "\operatorname{cata} f"'] & X
 ```
@@ -920,7 +934,7 @@ take a value as a seed to construct a list or another structure from it.
 This notion is dual to the catamorphism and, of course,
 there is also a recursion scheme to encapsulate it: the _anamorphism_.[^unfold]
 
-[^unfold]: Also called a `unfold` in the context of lists.
+[^unfold]: Also called an `unfold` in the context of lists.
 
 Again we have a pretty arcane name in our hands.
 Let's take a look at its etymology in order to clarify things.
@@ -950,7 +964,7 @@ F X \ar[r, "F h"] & F Y \\
 X \ar[u, "f"] \ar[r, "h"] & Y \ar[u, "g"']
 ```
 The dual notion to an initial object $F-$algebra is a _terminal_ $F$-coalgebra.
-Namely, a algebra $\out \colon S \to F S$ such that there is a unique morphim
+Namely, a algebra $\out \colon S \to F S$ such that there is a unique morphism
 from any other $F$-coalgebra to $\out$.
 As you probably already expect, terminal coalgebras are always isomorphisms.
 The proof is essentially the same as the one for initial $F$-algebras.
@@ -999,10 +1013,10 @@ $$ \begin{aligned}
 \out([a,b,c,\ldots]) &= \cons(a, [b,c,\ldots]).
 \end{aligned}$$
 One of the simplest list anamorphisms is a function that receives a natural number $n$
-and returns a decreasing list from $n$ to $0$.
+and returns a decreasing list from $n$ to $1$.
 It is defined as $\ana g$, where $g$ is the coalgebra
 $$ g(n) = \begin{cases}
-    \nil,& n = 0 \\
+    \nil,& n < 1 \\
     \cons(n, n-1),& \text{otherwise}.
 \end{cases}
 $$
@@ -1059,6 +1073,10 @@ This process works because after each filtering, the list's first element
 cannot be divisible by any number below it. Thus it must be prime.
 Notice that this function eventually stop because as soon as we reach an empty list,
 the algorithm returns a $\nil$.
+
+[^era]: This example is adapted from an anamorphism in the lectures notes
+[Programming with Categories](http://brendanfong.com/programmingcats_files/cats4progs-DRAFT.pdf)
+by Brendan Fong, Bartosz Milewski and David I. Spivak.
 
 Finally,
 to show the power of anamorphisms coupled with lazy evaluation,
@@ -1162,7 +1180,8 @@ Recall how we defined $\exp$ as a catamorphism.
 For what we knew at the time, it was fine
 but, at its $O(n)$ complexity, it's just too slow.
 With a hylomorphism, we can do better than that.
-The trick is to notice that the exponential satisfies
+[The trick](https://en.wikipedia.org/wiki/Exponentiation_by_squaring)
+is noticing that for even values, the exponential satisfies
 $e^{2n} = (e^{n/2})^2$,
 which gives us a much better recursive relation.
 Thus, instead of multiplying $e$ $n$ times,
@@ -1208,22 +1227,25 @@ we get an algorithm with complexity $O(\log n)$.
 This is much better!
 If you're not impressed, take a look at the call tree generated for $n=100$
 and see how it requires much less than 100 computations!
-Better yet, to compute $e^200$, this tree would only be augmented by one node.
+Better yet, to compute $e^{200}$, this tree would have to be augmented by only one node.
 
 ```forest
-[square [square [mult [e] [square [square [square [mult [e] [square [e]]]]]]]]]
+for tree={grow''=east,draw},
+[square, for tree={draw}[square [mult [e]
+                      [square [square [square [mult [e]
+                                                    [square [e]]]]]]]]]
 ```
 
-Hylomorphisms really shine as a way to implement algorithms
-where an intermediate data structure needs to be used but is not returned.
-A special class of algorithms that lend themselves to be written as hylomorphisms are
-divide-and-conquer algorithms.
-Examples such as merge sort, quick sort, convex hull and many others
-can be written as a anamorphism that divides the input in a structured manner
+Hylomorphisms really shine when an algorithm
+implements an intermediate data structure that is used but not returned.
+A special class of such are the divide-and-conquer algorithms,
+whose structure lend them to have elegant implementations as hylomorphisms.
+There are many examples such as merge sort, quick sort, convex hull and many others
+that can be written as a anamorphism that divides the input in a structured manner
 followed by a catamorphism that conquers the output from it.
 Please try to write any of these as a $\hylo$!
 If you pick your favorite algorithm,
-there is a great chance it can be written in a clearer manner as a hylomorphism.
+there is a great chance it can be written in a clear manner as a hylomorphism.
 
 To end this section (and this post),
 we will do a last derivation showing that hylomorphisms
@@ -1240,8 +1262,8 @@ $$ \hylo f\,g = f \circ F (\hylo f\,g) \circ g.$$
 ::: Proof
 We begin by recalling the formulas for the other recursion schemes,
 $$\begin{aligned}
-\cata f &= f \circ F(\cata f) \circ \in^{-1} \\
-\ana g &= \out^{-1} \mathbin{\circ} F(\ana g) \circ g,
+\cata f &= f \circ F(\cata f) \circ \in^{-1}, \\
+\ana g &= \out^{-1} \mathbin{\circ} F(\ana g) \circ g.
 \end{aligned}$$
 Since we're assuming that the least and greatest fixed points of $F$ are equal,
 we have that $\in$ and $\out$ must be inverses to each other.
