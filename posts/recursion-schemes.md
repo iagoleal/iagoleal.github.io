@@ -27,6 +27,7 @@ lang: en
 \def\in{\op{in}}
 \def\out{\op{out}}
 \def\Expr{\mathtt{Expr}}
+\def\fat{\op{fat}}
 
 Recursion schemes are a neat construction that allows one
 to better structure and reason about recursive functions.
@@ -1084,13 +1085,201 @@ So you can think of $\op{primes}$ as an iterator that generates $\op{era}(n)$ in
 This last property is common to all anamorphisms.
 Although their output can be a possible infinite data structure (even if the input is finite),
 it is produced in a extremely structured manner.
-When a value is computed, it is never touched again.
+When a value is computed, we go to the next and it is never touched again.
 Therefore, we can still use an anamorphism to calculate finite data
 so long as we properly say when we wish to stop.
+In fact, if we take a look at programs such as games or operational systems,
+this is exactly the behaviour we want from them.
+Imagine if any OS terminated after a finite amount of steps...
+No, what we want is for the OS to run indefinitely
+producing some well-defined actions in finite time.
 
-[^era]: This example is adapted from an anamorphism in the lectures notes
-[Programming with Categories](http://brendanfong.com/programmingcats_files/cats4progs-DRAFT.pdf)
-by Brendan Fong, Bartosz Milewski and David I. Spivak.
+## Building up to a collapse {#sec:hylo}
 
+By now, we've seem two kinds of recursion schemes.
+Anamorphisms start with a seed value and end with a data structure constructed from it,
+while catamorphisms start with a data structure and collapse it to end with result.
+Both of these are powerful tools but their type signatures are too constrained.
+They must explicitly return or receive a data structure.
+What if we want to write a recursive function from a primitive value to another primitive value?
+Our next (and last for today) recursion scheme addresses exactly this.
 
-# Bibliography
+Our strategy will be to use a inductive type as our middle man.
+The _hylomorphism_ takes a value,
+applies an anamorphism to turn it into a data structure
+and then applies a catamorphism to collapse it into another value.[^simcity]
+This means that we don't need to go through yet another category to define it.
+No, given a functor $F$, the type signature for $\hylo$ is
+$$ \hylo \colon (F B \to B) \times (A \to F A) \to (A \to B)$$
+and the definition is simply[^fixed-point]
+$$ \hylo f\,g = \cata f \circ \ana g.$$
+
+[^simcity]: As it stands, hylomorphisms are the theoretical analogous of me playing any construction game as a kid.
+[^fixed-point]: To write that, we must assume that the least and the greatest fixed point of $F$ coincide.
+    Although this assumption may sound strange, it always holds for languages such as Haskell.
+
+The etymology for hylomorphism is a little harder to motivate
+but let's try anyway.
+The prefix _hylo-_ comes from the Greek ['ὕλη']{lang=grc}
+and means ["wood" or "matter"](https://outils.biblissima.fr/fr/eulexis-web/?lemma=%E1%BD%95%CE%BB%CE%B7&dict=LSJ).
+And as we've previously seem, the term morphism comes from the Greek word for form.
+The name hylomorphism is a pun on a Aristotelian theory of the same name
+which says that the being is composed from matter and form.
+Since I never really understood Aristotle's writings
+and was unable to find another word starting with _hylo-_ outside the context of philosophy,
+I will just try to improvise an intuition.
+Let's think of algebras and coalgebras as ways to give form or create matter
+and a $\hylo$ combines them into a single being.
+It's kinda lame but was the best I could think of.
+
+Although the first recursive function introduced in this post was the factorial
+(way back in the [motivation](#sec:motivation))
+we haven't rewritten it as a recursion scheme yet.
+It's time to fix that.
+If you open the definition of $\fat$,
+you will see that $\fat(n)$ stand for the product of the first $n$ natural numbers,
+$$ \fat(n) = \prod_{k=1}^n k.$$
+Thus, an algorithm to compute the factorial
+is to first construct a decreasing list of integers from $n$ to $1$
+and them collapse multiplying all its elements.
+We've already constructed both these functions but let's rewrite their definitions
+for the sake of completeness.
+We start with the coalgebra and algebra,
+$$\begin{aligned}
+g(n) &= \begin{cases}
+    \nil,& n < 1 \\
+    \cons(n, n-1),& \text{otherwise},
+\end{cases} \\
+f(\nil) &= 1, \\
+f(\cons(x,y)) &= x \cdot y,
+\end{aligned}$$
+and finally define the factorial as $\fat = \hylo f\,g.$
+
+Time for a more complex example,
+let's see how to use hylomorphisms to better shape
+the call procedure tree and get faster algorithms.
+Recall how we defined $\exp$ as a catamorphism.
+For what we knew at the time, it was fine
+but, at its $O(n)$ complexity, it's just too slow.
+With a hylomorphism, we can do better than that.
+The trick is to notice that the exponential satisfies
+$e^{2n} = (e^{n/2})^2$,
+which gives us a much better recursive relation.
+Thus, instead of multiplying $e$ $n$ times,
+we can construct a much smaller call tree
+and collapse it to get the desired result.
+We define a type $\mathtt{CallTree}$ as the fixed point of the functor
+$$T X = \op{leaf} \R \mid \op{square} X \mid \op{mult} \R \times X.$$
+This type encapsulates the call tree.
+As base cases,
+$n$ equal to zero or one means that we store $e^n$ on a $\op{leaf}$ node.
+If $n$ is even, we construct a $\op{square}$ node and pass $n/2$ to it,
+meaning that the value of this node will be squared on the algebra.
+Finally, if $n$ is odd, we store $e$ and $n-1$ on this node,
+which will be multiplied when folding with the algebra.
+The coalgebra that construct this structure is
+$$
+g(n) = \begin{cases}
+    \op{leaf}(1),& n=0 \\
+    \op{leaf}(e),& n=1 \\
+    \op{square}(\frac{n}{2}),& n \text{ is even} \\
+    \op{mult}(e, n-1),& n \text{ is odd}.
+\end{cases}
+$$
+To collapse the tree, we will use the algebra
+$$\begin{aligned}
+f(\op{leaf}\,x) &= x \\
+f(\op{square}(x)) &= x^2  \\
+f(\op{mult}(x,y)) &= x \cdot y.
+\end{aligned}$$
+Finally, we define the exponential as the hylomorphism $\exp = \hylo f\,g$.
+
+When we analyzed the traceback for the exponential as a catamorphism,
+we noticed that it did a multiplication for each $\succ$ that appeared until we reached $\zero$.
+Since a natural number $n$ is the $n$-th successor of zero,
+this amounts to $n$ multiplications.
+Viewing a natural number in such a unary representation has its theoretical advantages
+but is too slow and cumbersome in practice.
+With our new definition using a hylomorphism,
+we let the binary representation of $n$ aid us
+in designing a more efficient call tree.
+Since the number of multiplications necessary is proportional to $\log_2 n$,
+we get an algorithm with complexity $O(\log n)$.
+This is much better!
+If you're not impressed, take a look at the call tree generated for $n=100$
+and see how it requires much less than 100 computations!
+Better yet, to compute $e^200$, this tree would only be augmented by one node.
+
+```forest
+[square [square [mult [e] [square [square [square [mult [e] [square [e]]]]]]]]]
+```
+
+Hylomorphisms really shine as a way to implement algorithms
+where an intermediate data structure needs to be used but is not returned.
+A special class of algorithms that lend themselves to be written as hylomorphisms are
+divide-and-conquer algorithms.
+Examples such as merge sort, quick sort, convex hull and many others
+can be written as a anamorphism that divides the input in a structured manner
+followed by a catamorphism that conquers the output from it.
+Please try to write any of these as a $\hylo$!
+If you pick your favorite algorithm,
+there is a great chance it can be written in a clearer manner as a hylomorphism.
+
+To end this section (and this post),
+we will do a last derivation showing that hylomorphisms
+do not need to be defined in the way they were.
+No, they accept a recursive definition in terms of themselves
+as any good recursion scheme should.
+
+::: Theorem
+Given a $F$-algebra $f$ and a $F$-coalgebra $g$,
+their hylomorphism satisfies
+$$ \hylo f\,g = f \circ F (\hylo f\,g) \circ g.$$
+:::
+
+::: Proof
+We begin by recalling the formulas for the other recursion schemes,
+$$\begin{aligned}
+\cata f &= f \circ F(\cata f) \circ \in^{-1} \\
+\ana g &= \out^{-1} \mathbin{\circ} F(\ana g) \circ g,
+\end{aligned}$$
+Since we're assuming that the least and greatest fixed points of $F$ are equal,
+we have that $\in$ and $\out$ must be inverses to each other.
+Thus, the definition of $\hylo$ becomes
+$$\begin{aligned}
+\hylo f\,g &= \cata f \circ \ana g \\
+&= f \circ F(\cata f) \circ \in^{-1} \circ \out^{-1} \mathbin{\circ} F(\ana g) \circ g \\
+&= f \circ F(\cata f) \circ F(\ana g) \circ g \\
+&= f \circ F(\cata f \circ \ana g) \circ g \\
+&= f \circ F(\hylo f\,g) \circ g \\
+\end{aligned}$$
+This concludes the proof.
+:::
+
+Although our definition of a $\hylo$ is good to reason about,
+this formula has two advantages over it.
+The first one is practical:
+because there is less boilerplate happening,
+we only have half the function calls happening.
+As you can see in the proof's second line,
+our definition requires $\hylo$ to first recurse through $\ana$,
+stacking a pile of calls to $\out^{-1}$,
+to immediately after recurse through $\cata$,
+canceling each $\out^{-1}$ with a $\in^{-1}$.
+This does not change the algorithm's complexity but still hinders its efficiency.
+In very large programs that run for weeks, even the complexity constant hurts.
+There is a practical difference between a program that runs in a week and a program that runs in two.
+
+The second reason is more theoretical:
+This last formula has no reference to fixed points.
+There is no explicit mention of any data structure whatsoever.
+All we have to do is give $\hylo$ one rule saying how to construct each step
+and one rule saying how to destruct each step
+and the call stack becomes our intermediate data structure!
+This is much cleaner and spare us from thinking
+about least and greatest fixed points.
+For short, when thinking about hylomorphisms,
+use the definition as an anamorphism followed by a catamorphism
+but when actually implementing one, use this formula instead.
+
+## Summary {#sec:conclusion}
