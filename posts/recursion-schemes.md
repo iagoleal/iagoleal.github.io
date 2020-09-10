@@ -88,35 +88,62 @@ the way to program was quite unstructured.
 The code of a program was essentially given by a sequence of commands
 whereas the data was simply piled up in a stack.
 
-    +---+---+---+---+---+---+---+---+---+---+---+          +---+
-    |   |   |   |   |   |   |   |   |   |   |   |          |   |
-    +---+---+---+---+---+---+---+---+---+---+---+          +---+
-     Control Flow                                          |   |
-                                                           +---+
-                                                           |   |
-                                                           +---+
-                                                           |   |
-                                                           +---+
-                                                           Stack
+```{.tikz tikzlibrary="scopes,chains,bending,arrows.meta"}
+\def\colors{red!30!blue!50, red!50, green!30, blue!50, blue!50, red!50, green!30, red!30!blue!50, blue!20}
+\begin{scope}[start chain=ctrl going right,
+    node distance=0.3mm]
+    { [minimum size=0.5cm,
+       every join/.style={-{Latex[length=1mm]}, shorten <= 0.5mm,shorten >= 0.5mm, in=-110, out=-80, looseness=2}]
+        \foreach \c in \colors
+            \node [fill=\c, on chain, join] {\phantom{\tt goto}};
+    }
+    \node [on chain] {~~~};
+    { [orange, node distance = 0.2mm, minimum size=0.4cm]
+        \node [fill, on chain] {};
+        { [start branch=stckup going above]
+            \foreach \i in {1,...,2}
+                \node [draw,on chain] {};
+        }
+        { [start branch=stckdown going below]
+            \foreach \i in {1,...,3}
+                \node [fill, on chain] {};
+            \node[on chain, black] (stacklabel) {Stack};
+        }
+    }
+    \node[yshift=-0.9cm] at (ctrl-1.south east) {Control flow};
+\end{scope}
+```
 
 But the program does not have to execute the instructions in order.
-No, it would be rather boring and inexpressive...
+Oh no, it would be rather boring and inexpressive...
 In this programming paradigm,
 there is a special command called `goto`
 which allows one to jump to any labeled part of the program.
-In fact,
-this is the only command responsible for the program's control flow.
+In fact, this is the only command responsible for the program's control flow.
 
-           +-----------------------------+
-           |   +--------------+          |
-           |   |              |          |
-           v   |              v          |
-    +---+---+----+---+---+---+---+---+----+---+---+
-    |   |   |goto|   |   |   |   |   |goto|   |   |
-    +---+---+----+---+---+---+---+---+----+-+---+-+
-      |  ^ |  ^                |  ^ |  ^
-      |  | |  |                |  | |  |
-      +--+ +--+                +--+ +--+
+```{.tikz tikzlibrary="scopes,chains,bending,arrows.meta"}
+{ [start chain=ctrl going right,
+   node distance=0.3mm,
+   minimum size=0.5cm,
+   arrstl/.style={-{Latex[length=1mm]}, shorten <= 0.5mm,shorten >= 0.5mm}]
+
+    \node[fill=red!30!blue!50, on chain]        {\phantom{\tt goto}};
+    \node[fill=red!50, on chain]         {\phantom{\tt goto}};
+    \node[fill=green!30, on chain]       {\tt goto};
+    \node[fill=blue!50, on chain]       {\phantom{\tt goto}};
+    \node[fill=blue!50, on chain]        {\phantom{\tt goto}};
+    \node[fill=red!50, on chain]         {\phantom{\tt goto}};
+    \node[fill=green!30, on chain] {\tt goto};
+    \node[fill=red!30!blue!50, on chain] {\phantom{\tt goto}};
+    \node[fill=blue!20, on chain]        {\phantom{\tt goto}};
+
+    \draw[arrstl] (ctrl-1) to [in=-110, out=-80, looseness=2] (ctrl-2);
+    \draw[arrstl] (ctrl-2) to [in=-110, out=-80, looseness=2] (ctrl-3);
+    \draw[arrstl] (ctrl-3) to [in=80, out=110] (ctrl-6);
+    \draw[arrstl] (ctrl-6) to [in=-110, out=-80, looseness=2] (ctrl-7);
+    \draw[arrstl] (ctrl-7) to [in=110, out=80] (ctrl-2);
+}
+```
 
 The `goto` is a pretty powerful construction,
 but it also has its caveats.
@@ -182,9 +209,19 @@ the functional paradigm views the code as a composition of functions in the math
 A function takes a value as input, does some processing to it, calling other functions for it,
 and returns another value as output.
 
-        +---+             +---+             +---+
-    ----| f |------------>| g |------------>| h |------
-        +---+             +---+             +---+
+```{.tikz
+     tikzlibrary="chains,scopes,arrows.meta"}
+\begin{scope}[start chain=funcs going right,
+              every join/.style={-{latex}, thick},
+              minimum size=0.8cm]
+    \node[on chain] {input};
+    \node[fill=blue!20!green!20, draw=black, circle, on chain, join] {$f$};
+    \node[fill=red!20, draw=black, circle,, on chain, join] {$g$};
+    \node[on chain,join] {$\cdots$};
+    \node[fill=blue!70!red!30, draw=black, circle, on chain, join] {$h$};
+    \node[on chain, join] {output};
+\end{scope}
+```
 
 If every program consists only of applying a finite amount of previously defined functions,
 the language's expressiveness seems rather limited.
@@ -403,18 +440,19 @@ we notice that any non-empty list with $n$ elements
 may be "factorized" into its first element and another list with the remaining $n-1$ elements.
 
 ``` {.tikz
-      tikzlibrary="calc,shapes.multipart,chains,arrows"
-      tikzset="list/.style={rectangle split, rectangle split parts=2,
-      draw, rectangle split horizontal}, >=stealth, start chain"}
-  \node[list,on chain] (A) {12};
-  \node[list,on chain] (B) {99};
-  \node[list,on chain] (C) {37};
+      tikzlibrary="calc,shapes.multipart,chains,arrows, arrows.meta,scopes"}
+\begin{scope}[list/.style={rectangle split, rectangle split parts=2,
+                           draw, rectangle split horizontal}, >=stealth, start chain]
+  \node[list,on chain] (A) {$10$};
+  \node[list,on chain] (B) {$150$};
+  \node[list,on chain] (C) {$87$};
   \node[on chain,draw,inner sep=6pt] (D) {};
   \draw (D.north east) -- (D.south west);
-  \draw (D.north west) -- (D.south east);
-  \draw[*->] let \p1 = (A.two), \p2 = (A.center) in (\x1,\y2) -- (B);
-  \draw[*->] let \p1 = (B.two), \p2 = (B.center) in (\x1,\y2) -- (C);
-  \draw[*->] let \p1 = (C.two), \p2 = (C.center) in (\x1,\y2) -- (D);
+  % \draw (D.north west) -- (D.south east);
+  \draw[Circle->] let \p1 = (A.two), \p2 = (A.center) in (\x1,\y2) -- (B);
+  \draw[Circle->] let \p1 = (B.two), \p2 = (B.center) in (\x1,\y2) -- (C);
+  \draw[Circle->] let \p1 = (C.two), \p2 = (C.center) in (\x1,\y2) -- (D);
+\end{scope}
 ```
 
 Thus, by defining a type operator $P$ as
@@ -571,11 +609,31 @@ That is,
 if $f \colon A \to B$ and $g \colon B \to C$,
 there always exists another arrow $g \circ f \colon A \to C$.
 You may think of arrows as representing paths
-and $g \circ f$ as the arrow consisting going through $f$ and then through $g$.
+and $g \circ f$ as the arrow path going through $f$ and then through $g$.
 
-    TIKZ HERE 0 -> 0
-              |
-              v
+```{.tikz tikzlibrary="arrows.meta,bending,scopes"}
+{ [scale=2.5, obj/.style={circle, minimum size=3.5pt, inner sep=0pt, outer sep=0pt, fill, draw=black},
+   morph/.style={-{Stealth[length=1.5mm]}, thin, shorten >= 0.5mm, shorten <= 0.5mm}]
+    \node[obj, fill=green!30] (A) at (0,0) {};
+    \node[obj, fill=orange!50] (B) at (1,-1) {};
+    \node[obj, fill=green!70!black] (C) at (1.5,1) {};
+    \node[obj, fill=red!30!blue!50] (D) at (2.5,0.6) {};
+    \node[obj, fill=purple!70] (E) at (2.3,-0.5) {};
+    \node[obj, fill=yellow!90!black] (F) at (3,0.8) {};
+
+    \draw[morph] (A) edge (B);
+    \draw[morph] (B) edge (E);
+    \draw[morph] (C) edge [bend right] (B);
+    \draw[morph] (D) edge [bend left=10] (E);
+    \draw[morph] (D) edge [bend right=10] (C);
+    \draw[morph] (E) edge [in=270, out=10, looseness=30] (E);
+    \draw[morph] (D) edge [bend right=50] (F);
+    \draw[morph] (D) edge [bend left=40] (F);
+
+    \draw[morph, teal] (A) .. controls (1, -1.7) .. (E);
+    \draw[morph, teal] (D) edge [bend right] (B);
+}
+```
 
 To call $\catC$ a category,
 composition must also satisfy two laws.
@@ -597,9 +655,36 @@ Thus,
 there is a category $\Types$ whose objects are types and arrows are functions between types.
 Composition is the usual for functions and the identities are the identity functions $\id_A(x) = x$.
 
-    TIKZ HERE 0 -> 0
-              |
-              v
+```{.tikz
+     usepackage="amsmath,amssymb"
+     tikzlibrary="arrows.meta,bending,scopes"}
+\def\N{\mathbb{N}}
+\def\Z{\mathbb{Z}}
+\def\C{\mathbb{C}}
+\def\R{\mathbb{R}}
+\def\op#1{\operatorname{\mathrm{#1}}}
+\begin{scope} [scale=2.5,
+   morph/.style={-{Stealth[length=1.5mm]}, thin, shorten >= 0.5mm, shorten <= 0.5mm}]
+    \node (A) at (0,0) {$L(\Z)$};
+    \node (B) at (1,-1) {$L(\R)$};
+    \node (C) at (1.5,1) {$(A \to \mathtt{maybe} B)$};
+    \node (D) at (2.5,0.6) {$\N$};
+    \node (E) at (2.3,-0.5) {$\mathbb{R}$};
+    \node (F) at (3,0.8) {$\mathtt{Bool}$};
+
+    \draw[morph] (A) edge node[above, sloped] {\small $\op{map}\,\sqrt{\,\cdot\,}$} (B);
+    \draw[morph] (B) edge node[above, sloped] {\small $\op{prod}$} (E);
+    \draw[morph] (C) edge [bend right] node[left, midway] {\small $g$}(B);
+    \draw[morph] (D) edge [bend left=10] node[right] {\small $\sqrt{\,\cdot\,}$} (E);
+    \draw[morph] (D) edge [bend right=10] node[above] {\small $f$} (C);
+    \draw[morph] (E) edge [in=300, out=10, looseness=5] node[right] {\small $\op{id}$} (E);
+    \draw[morph] (D) edge [bend left=50] node[above, sloped] {\small odd} (F);
+    \draw[morph] (D) edge [bend right=40] node[below, sloped] {\small $\op{even}$} (F);
+
+    \draw[morph] (A) .. controls (1, -1.7) .. node [below] {\small $\op{prod} \circ (\op{map}\, \sqrt{\,\cdot\,})$} (E);
+    \draw[morph] (D) edge [bend right] node [midway, above, sloped] {\small $g \circ f$} (B);
+\end{scope}
+```
 
 Category theory is not only concerned with categories
 but also with transformations between them.
@@ -1231,9 +1316,10 @@ Better yet, to compute $e^{200}$, this tree would have to be augmented by only o
 
 ```forest
 for tree={grow''=east,draw},
-[square, for tree={draw}[square [mult [e]
-                      [square [square [square [mult [e]
-                                                    [square [e]]]]]]]]]
+[square, for tree={draw}
+    [square [mult [e]
+                  [square [square [square [mult [e]
+                                                [square [e]]]]]]]]]
 ```
 
 Hylomorphisms really shine when an algorithm
