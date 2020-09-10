@@ -1,0 +1,72 @@
+html {
+  scroll-behavior: smooth;
+  position: relative;
+  min-height:100%;
+}
+
+img {
+    margin: auto;
+    display: block;
+    max-width: 90%;
+}
+
+/* Class dependent part */
+
+/* Header */
+nav {
+    height: 50px;
+}
+
+#top-bar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+#top-bar li {
+    padding: 14px 16px;
+    display: inline;
+}
+ .home-button {
+    display: inline;
+    float: left;
+}
+.nav-links {
+    display: inline;
+    float: right;
+}
+#top-bar a {
+    text-decoration: none;
+    color: black;
+}
+
+/* Footer */
+body {
+    margin-bottom: 150px;
+}
+#bottom-bar {
+    font-size: 14px;
+    text-align: center;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 20px;
+    max-width: 500px;
+    overflow:hidden;
+}
+
+/* Subtitles */
+.subheading h2 {
+    margin-bottom : 0;
+}
+
+.subheading p {
+    color      : #666;
+    font-style : italic;
+    margin-top : 7px;
+    text-indent: 1.5em;
+}
+
