@@ -1391,3 +1391,38 @@ use the definition as an anamorphism followed by a catamorphism
 but when actually implementing one, use this formula instead.
 
 ## Summary {#sec:conclusion}
+
+This was a long journey but we finally got to the end.
+Throughout it we met with our three heros:
+catamorphism, anamorphism, and hylomorphism,
+and I truly hope that the ideas they encapsulate will appear on your future programs.
+
+Although these three are powerful tools,
+they're not the only recursion schemes available.
+Oh no, there is an entire [zoo of them](https://ipfs.io/ipfs/QmTppu1VDAQWsdiyVSZX6qb8PErdpwzNP2oKfEhcgaBvWR/guide-to-morphisms.pdf)
+and, as you may expect, every single one has an arcane ancient Greek prefix.
+Each recursion scheme encapsulates a common pattern of recursion
+and comes in two flavours: construction and destruction of an inductive type.
+The ones we've seem today are the schemes for structural recursion
+but if instead we wanted primitive recursion,
+we would use a para- or apomorphism.
+It is even possible to combine different schemes
+to end up with monsters such as the infamous
+[zygohistomorphic prepromorphisms](https://wiki.haskell.org/Zygohistomorphic_prepromorphisms).
+Moreover, as one can expect of anything related to category theory,
+all of them are special cases of [a certain categorical construction](https://www.researchgate.net/publication/220673192_Recursion_Schemes_from_Comonads).
+
+Another topic I haven't given the deserved attention
+are the fusion laws for a recursion scheme.
+The recursive formulas we derived for each scheme
+may be seem as certain algebraic equations that they must obey.
+Besides these, there are some other laws related to composition of schemes
+or other contexts.
+These give us some of the guarantees of structured programming we talked earlier.
+If a compiler knows that the code only use certain recursion schemes,
+it can use the fusion laws to substitute your code for something
+semantically equivalent but much more efficient.
+You get the type safe, organized code and the machine gets the faster, optimized one.
+Win-win.
+
+Well, that's all for today. Good recursion for y'all!
