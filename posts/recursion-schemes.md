@@ -1,8 +1,8 @@
 ---
 title: Recursion Schemes
-subtitle: Programming with Induction
+subtitle: A gentle introduction to programming with induction
 keywords: category-theory recursion-schemes functional-programming
-lang: en
+date: 2020-09-10
 ---
 
 \def\op#1{\operatorname{\mathrm{#1}}}
@@ -56,7 +56,8 @@ Recursion schemes really shine when manipulating more complex data structures,
 such as trees with varying arity.
 
 The first time I heard about recursion schemes was after stumbling
-with the paper [Functional Programming with Bananas, Lenses, Envelopes and Barbed Wire](https://maartenfokkinga.github.io/utwente/mmf91m.pdf) by Erik Meijer, Maarten Fokkinga, and Ross Paterson.
+with the paper [Functional Programming with Bananas, Lenses, Envelopes and Barbed Wire](https://maartenfokkinga.github.io/utwente/mmf91m.pdf)
+by Erik Meijer, Maarten Fokkinga, and Ross Paterson.
 It is a real gem of functional wisdom but the authors use a notation called
 [Squiggol](https://en.wikipedia.org/wiki/Bird%E2%80%93Meertens_formalism),
 which I had a really hard time trying to grasp.
@@ -88,14 +89,15 @@ the way to program was quite unstructured.
 The code of a program was essentially given by a sequence of commands
 whereas the data was simply piled up in a stack.
 
-```{.tikz tikzlibrary="scopes,chains,bending,arrows.meta"}
+```{.tikz tikzlibrary="scopes,chains,bending,arrows.meta,shapes.misc"}
 \def\colors{red!30!blue!50, red!50, green!30, blue!50, blue!50, red!50, green!30, red!30!blue!50, blue!20}
 \begin{scope}[start chain=ctrl going right,
     node distance=0.3mm]
     { [minimum size=0.5cm,
+       tmcell/.style={fill,draw=black, rounded corners=1.618},
        every join/.style={-{Latex[length=1mm]}, shorten <= 0.5mm,shorten >= 0.5mm, in=-110, out=-80, looseness=2}]
         \foreach \c in \colors
-            \node [fill=\c, on chain, join] {\phantom{\tt goto}};
+            \node [tmcell,fill=\c, on chain, join] {\phantom{\tt goto}};
     }
     \node [on chain] {~~~};
     { [orange, node distance = 0.2mm, minimum size=0.4cm]
@@ -125,23 +127,24 @@ In fact, this is the only command responsible for the program's control flow.
 { [start chain=ctrl going right,
    node distance=0.3mm,
    minimum size=0.5cm,
+   tmcell/.style={fill,draw=black, rounded corners=1.618},
    arrstl/.style={-{Latex[length=1mm]}, shorten <= 0.5mm,shorten >= 0.5mm}]
 
-    \node[fill=red!30!blue!50, on chain]        {\phantom{\tt goto}};
-    \node[fill=red!50, on chain]         {\phantom{\tt goto}};
-    \node[fill=green!30, on chain]       {\tt goto};
-    \node[fill=blue!50, on chain]       {\phantom{\tt goto}};
-    \node[fill=blue!50, on chain]        {\phantom{\tt goto}};
-    \node[fill=red!50, on chain]         {\phantom{\tt goto}};
-    \node[fill=green!30, on chain] {\tt goto};
-    \node[fill=red!30!blue!50, on chain] {\phantom{\tt goto}};
-    \node[fill=blue!20, on chain]        {\phantom{\tt goto}};
+    \node[tmcell, fill=red!30!blue!50, on chain]  {\phantom{\tt goto}};
+    \node[tmcell, fill=red!50        , on chain]  {\phantom{\tt goto}};
+    \node[tmcell, fill=green!30      , on chain]  {\tt goto};
+    \node[tmcell, fill=blue!50       , on chain]  {\phantom{\tt goto}};
+    \node[tmcell, fill=blue!50       , on chain]  {\phantom{\tt goto}};
+    \node[tmcell, fill=red!50        , on chain]  {\phantom{\tt goto}};
+    \node[tmcell, fill=green!30      , on chain]  {\tt goto};
+    \node[tmcell, fill=red!30!blue!50, on chain]  {\phantom{\tt goto}};
+    \node[tmcell, fill=blue!20       , on chain]  {\phantom{\tt goto}};
 
     \draw[arrstl] (ctrl-1) to [in=-110, out=-80, looseness=2] (ctrl-2);
     \draw[arrstl] (ctrl-2) to [in=-110, out=-80, looseness=2] (ctrl-3);
-    \draw[arrstl] (ctrl-3) to [in=80, out=110] (ctrl-6);
+    \draw[arrstl] (ctrl-3) to [in=80,   out=110]              (ctrl-6);
     \draw[arrstl] (ctrl-6) to [in=-110, out=-80, looseness=2] (ctrl-7);
-    \draw[arrstl] (ctrl-7) to [in=110, out=80] (ctrl-2);
+    \draw[arrstl] (ctrl-7) to [in=110,  out=80]               (ctrl-2);
 }
 ```
 
@@ -383,7 +386,8 @@ is either $\op{nothing}$ or the constructor $\op{just}$
 applied to a term of type $A$.
 Thus, $\maybe$ receives a type and augments it with a special point[^maybe].
 
-[^maybe]: This is also called `Option` in some languages and is specially useful to safely model partial functions and computations that may fail.
+[^maybe]: This is also called `Option` in some languages and is specially useful
+    to safely model partial functions and computations that may fail.
 
 Given a type operator $F$,
 a fixed point of $F$ is a type $X$ satisfying
@@ -504,7 +508,8 @@ Pretty scary, right?
 Let's break it down to see how it is just good ol' induction.
 When reducing a list of type $L(A)$ into a value of type $B$,
 there are two situations we may encounter.
-In the base case the list is empty, thus we must specify a value of type $B$ to be returned.
+In the base case the list is empty,
+and we must specify a value of type $B$ to be returned.
 In the other steps,
 we consider that we already know the solution for the sublist of length $n-1$,
 which yields a value of type $B$,
@@ -526,14 +531,16 @@ First substitute $v$ by $0$ and $g$ by $+$ to see that it becomes $\op{sum}$.
 Then, substitute $v$ by $1$ and $g$ by $\cdot$ to see that it becomes $\op{prod}$.
 Finally, congratulate yourself because you just understood your first recursion scheme!
 
-[^foldr]: Also known as `accumulate` or `foldr` in some languages. The 'r' means that this function folds a list from the right.
+[^foldr]: Also known as `accumulate` or `foldr` in some languages.
+    The 'r' means that this function folds a list from the right.
 
 If the way $\op{reduce}$ was introduced
 made you think that it is only used to collapse a list
 into a primitive type,
 you should know that it is much more ubiquitous than that.
 Two of the most used list-manipulating functions in functional programming
-are $\op{map}$ and $\op{filter}$. And, guess what, both are implementable in terms of $\op{reduce}$.
+are $\op{map}$ and $\op{filter}$.
+And, guess what, both are implementable in terms of $\op{reduce}$.
 The first, $\op{map}$,
 takes a function $f \colon A \to B$
 and turns it into another function that applies $f$ elementwisely to a list.
@@ -548,7 +555,8 @@ g(x, l) &= \cons(f(x), l), \\
 \op{map}(f) &= \op{reduce}(\nil, g).
 \end{aligned} $$
 If it is hard to wrap your head around this last definition,
-try doing it step by step with a simple function such as $x^2$ and a small list such as $(1,2,3,4)$.
+try doing it step by step with a simple function such as $x^2$
+and a small list such as $(1,2,3,4)$.
 I promise you it will be enlightening.
 
 The $\op{filter}$ function takes a predicate, represented as
