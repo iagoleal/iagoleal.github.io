@@ -79,19 +79,20 @@ local function tex2image(src, filetype)
         return pandoc.system.with_working_directory(tmpdir, function()
             local file_template = "%s/tikz-image.%s"
             local tikzfile = file_template:format(tmpdir, "tex")
-            local pdffile  = file_template:format(tmpdir, "pdf")
+            local dvifile  = file_template:format(tmpdir, "dvi")
             local outfile  = file_template:format(tmpdir, filetype)
-            -- Create latex
+            -- Create tex source file
             local file = io.open(tikzfile, 'w')
             file:write(src)
             file:close()
             os.execute('cp ' .. tikzfile .. ' /tmp/')
-            -- Compile latex -> pdf
-            pandoc.pipe("pdflatex", {"-output-directory", tmpdir}, tikzfile)
-            -- Compile pdf -> svg
-            if filetype == "svg" then
-                -- pandoc.pipe("dvisvgm", {'--pdf', "-o", outfile}, pdffile)
-                os.execute("dvisvgm --pdf -o " .. outfile .. " " .. pdffile)
+            if filetype == 'pdf' then
+            -- Compile tex -> pdf
+                pandoc.pipe("pdflatex", {"-output-directory", tmpdir}, tikzfile)
+            elseif filetype == "svg" then
+                -- Compile tex -> dvi -> svg
+                pandoc.pipe("latex", {"-output-directory", tmpdir}, tikzfile)
+                os.execute("dvisvgm --scale=2 --optimize=all --font-format=woff -o " .. outfile .. " " .. dvifile)
             end
             -- Try to open and read the image:
             local img_data
@@ -127,7 +128,7 @@ function cache_write(img, fname)
     return false
 end
 
-local function mkblock(img, filetype)
+local function mkblock(img, filetype, attrs)
     local mimetype = mimetype_for[filetype] or 'image/svg+xml'
     if filetype == 'svg' then
         -- Embed image in html
@@ -138,7 +139,7 @@ local function mkblock(img, filetype)
     end
     -- Store the data in the media bag:
     pandoc.mediabag.insert(content, mimetype, img)
-    return pandoc.Para({pandoc.Image({}, content)})
+    return pandoc.Para({pandoc.Image({}, content, "", attrs)})
 end
 
 function CodeBlock(block)
@@ -146,6 +147,9 @@ function CodeBlock(block)
     local additionalpkgs = block.attributes["usepackage"] or ''
     local tikzlibs = block.attributes["tikzlibrary"] or ''
     local envoptions = block.attributes["tikzset"] or ''
+    for _, k in pairs({"usepackage", "tikzlibrary", "tikzset"}) do
+        block.attributes[k] = nil
+    end
     local latexenv = ''
     if block.classes[1]     == "tikz"   then
         latexenv = "tikzpicture"
@@ -164,16 +168,15 @@ function CodeBlock(block)
     local fname = cachedir .. pandoc.sha1(fullsrc) .. "." .. filetype
     local img = cache_fetch(fname)
     if img then
-        return mkblock(img, filetype)
+        return mkblock(img, filetype, block.attributes)
     end
     -- Actually produce image
     local success, img = pcall(tex2image, fullsrc, filetype)
     if success and img then
-        -- Write file to cache
         cache_write(img, fname)
-        return mkblock(img, filetype)
+        return mkblock(img, filetype, block.attributes)
     else
-        -- Print image content and leave
+        -- Error print image content and leave
         io.stderr:write(tostring(img))
         io.stderr:write('\n')
         error 'Image conversion failed'
