@@ -1,0 +1,30 @@
+# Compilation parameters
+template: templates/default.html
+standalone: true
+self-contained: false
+to: html5
+
+metadata:
+    author-meta: Iago Leal de Freitas
+    lang: en
+
+variables:
+    github: https://github.com/iagoleal
+    site-repo: https://github.com/iagoleal/site
+
+# Log boilerplate
+verbosity: INFO
+log-file: pandoc-log.json
+
+# Styling
+strip-comments: true
+highlight-style: monochrome
+
+html-math-method:
+      method: katex
+
+reference-links: false
+# block, section, or document
+reference-location: document
+
+fail-if-warnings: true

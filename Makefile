@@ -16,29 +16,25 @@ STATIC_FILES = $(addprefix $(BUILDDIR)/, $(wildcard data/*) $(wildcard img/*))
 
 all: pages $(DIRS)
 
-pages: $(BUILDDIR)/posts.html $(BUILDDIR)/index.html $(BUILDDIR)/projects.html $(DIRS) $(POSTS) $(STATIC_FILES)
+pages: $(BUILDDIR)/posts.html $(BUILDDIR)/index.html $(BUILDDIR)/projects.html $(DIRS) $(POSTS) $(STATIC_FILES) pandoc.yaml
 
 $(POSTS): $(BUILDDIR)/%.html : %.md $(FILTERS) $(CSS) $(DIRS) $(TEMPLATES)
-	pandoc --metadata-file=config.yaml \
+	pandoc --defaults=pandoc.yaml \
 	       --lua-filter filters/tikz.lua \
-	       --template=templates/default.html \
-               --katex -s -f markdown -t html5 -o "$@" "$<"
+               -f markdown -t html5 -o "$@" "$<"
 
 $(BUILDDIR)/index.html: index.html $(CSS) $(DIRS) $(TEMPLATES)
-	pandoc --metadata-file=config.yaml \
-	       --template=templates/default.html \
-               -s -f html -t html5 -o "$@" "$<"
+	pandoc --defaults=pandoc.yaml \
+		--metadata=title:'Iago Leal' \
+               -f html -t html5 -o "$@" "$<"
 
 $(BUILDDIR)/projects.html: projects.md $(CSS) $(DIRS) $(TEMPLATES)
-	pandoc --metadata-file=config.yaml \
-	       --template=templates/default.html \
-               -s -f markdown -t html5 -o "$@" "$<"
+	pandoc --defaults=pandoc.yaml \
+               -f markdown -t html5 -o "$@" "$<"
 
 $(BUILDDIR)/posts.html: posts.md $(CSS) $(DIRS) $(TEMPLATES)
-	pandoc --metadata-file=config.yaml \
-	       --template=templates/default.html \
-               -s -f markdown -t html5 -o "$@" "$<"
-
+	pandoc --defaults=pandoc.yaml \
+               -f markdown -t html5 -o "$@" "$<"
 
 $(CSS): $(BUILDDIR)/css/%.css : css/%.css $(DIRS)
 	cp "$<" "$@"
@@ -56,3 +52,4 @@ server: ## Preview site
 clean: ## Delete cache and build files
 	if [ -d $(BUILDDIR) ]; then rm -r $(BUILDDIR); fi
 	if [ -d $(CACHEDIR) ]; then rm -r $(CACHEDIR); fi
+	if [ -f 'pandoc-log.json' ]; then rm pandoc-log.json; fi
