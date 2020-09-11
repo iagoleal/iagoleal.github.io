@@ -10,6 +10,10 @@ img {
     max-width: 90%;
 }
 
+ul {
+    list-style-type: square;
+}
+
 /* Class dependent part */
 
 /* Header */
@@ -27,11 +31,11 @@ nav {
     padding: 14px 16px;
     display: inline;
 }
- .home-button {
+#top-bar .home-button {
     display: inline;
     float: left;
 }
-.nav-links {
+#top-bar .nav-links {
     display: inline;
     float: right;
 }
