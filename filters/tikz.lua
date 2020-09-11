@@ -16,7 +16,8 @@ local tikz_template = [[
 \usepackage{%s}
 %% Libraries for tikz: tikzlibrary
 \usetikzlibrary{%s}
-\tikzset{%s}
+%% Additional preamble; loaded after tikz
+%s
 \begin{document}
 \nopagecolor
 \begin{%s}
@@ -25,8 +26,8 @@ local tikz_template = [[
 \end{document}
 ]]
 
-local function format_tikz(body, env, pkgs, libs, options)
-    return tikz_template:format(pkgs, libs, options, env, body, env)
+local function format_tikz(body, env, pkgs, libs, preamble)
+    return tikz_template:format(pkgs, libs, preamble, env, body, env)
 end
 
 local extension_for = {
@@ -146,7 +147,7 @@ function CodeBlock(block)
     local filetype = extension_for[FORMAT] or 'svg'
     local additionalpkgs = block.attributes["usepackage"] or ''
     local tikzlibs = block.attributes["tikzlibrary"] or ''
-    local envoptions = block.attributes["tikzset"] or ''
+    local preamble = block.attributes["preamble"] or ''
     for _, k in pairs({"usepackage", "tikzlibrary", "tikzset"}) do
         block.attributes[k] = nil
     end
@@ -163,7 +164,7 @@ function CodeBlock(block)
         return nil
     end
     -- Substitute data on tikz template
-    local fullsrc = format_tikz(block.text, latexenv, additionalpkgs, tikzlibs, envoptions)
+    local fullsrc = format_tikz(block.text, latexenv, additionalpkgs, tikzlibs, preamble)
     -- Verify cached data
     local fname = cachedir .. pandoc.sha1(fullsrc) .. "." .. filetype
     local img = cache_fetch(fname)
