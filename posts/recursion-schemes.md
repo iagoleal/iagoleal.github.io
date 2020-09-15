@@ -1,6 +1,6 @@
 ---
 title: Recursion Schemes
-subtitle: A gentle introduction to programming with induction
+subtitle: An introduction to programming with induction
 keywords: category-theory recursion-schemes functional-programming
 date: 2020-09-10
 ---
@@ -182,11 +182,9 @@ just to name a few.
 Both in regards to data and control flow,
 the movement we encounter in here
 consists of substituting general purpose structures
-that concretely represent the instructions we are given to the processor
-for more specific structures,
-having more abstract roles in the code.
-In terms of computational expressiveness,
-nothing changes.
+that concretely represent the instructions we give to the processor
+by specific structures having more abstract roles in the code.
+In terms of computational expressiveness, nothing changes.
 What the processor sees is the same in both unstructured and structured programming.
 The benefit lies in the programmer's expressiveness.
 With more specific statements,
@@ -274,7 +272,7 @@ If it seems too confusing, just keep on.
 What I mean in here will become clearer after we [construct catamorphisms](#sec:cata).
 
 Before we end this motivation and proceed to the actual construction of recursion schemes,
-there is an intuition that, I think, is useful to have in mind.
+there is an intuition that I believe useful to have in mind.
 In imperative programming,
 there is a close relationship between how we structure data and how we structure the control flow.
 Working with arrays almost asks the programmer to design programs with `for` loops.
@@ -1150,7 +1148,7 @@ We will construct the [sieve of Eratosthenes](https://en.wikipedia.org/Sieve_of_
 This algorithm receives a natural number $n$ and returns a list of all primes below $n$.
 The idea is to start with a list of numbers between $2$ and $n$,
 and to recursively refine it eliminating all multiples of a given prime.
-Let $\op{test}(p)$ be the predicate that test if a number is not divisible by $p$.
+Let $\op{test}(p)$ be the predicate that tests if a number is not divisible by $p$.
 You can implement it by testing if the remainder of the input by $p$ equals zero,
 for example.
 This refinement process is encapsulated by the function
@@ -1177,10 +1175,10 @@ let's use $\op{sieve}$ to compute a list of all primes.
 We begin by writing a list $l$ of all natural numbers starting at $2$,
 $$\begin{aligned}
 h(x) &= \cons(x, x+1) \\
-\op{l} &= (\ana h)(2).
+l &= (\ana h)(2).
 \end{aligned}$$
-This lust must be infinite because, since $h$ never returns $\nil$,
-the anamorphism must recurse forever.
+This list must be infinite because, since $h$ never returns $\nil$,
+the anamorphism recurses forever.
 Unsurprisingly, the list of all primes is defined as
 $\op{primes} = \op{sieve}(l)$.
 At first, this may not seem very useful
