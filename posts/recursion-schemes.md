@@ -316,7 +316,7 @@ $$\mathtt{Army} \coloneqq \op{ships}\; \mathtt{String} \times \N.$$
 Here, $\op{ships} \colon \mathtt{String} \times \N \to \mathtt{Army}$
 is called a _constructor_ for the type $\mathtt{Army}$.
 Constructors are (possibly multivariate) functions that receive terms as arguments
-and return an term of a compound type.
+and return a term of a compound type.
 
 After you finish your catalogue,
 orders arrive for you to develop a new laser cannon to be used in the war.
@@ -379,7 +379,7 @@ These are the star of today's show, so pay attention.
 We may define a compound data type that is parameterized by some variable
 (a function between types, if you prefer) such as
 $$\maybe A \coloneqq \op{nothing} \mid \op{just} A.$$
-Given a type $A$, an term of type $\maybe A$
+Given a type $A$, a term of type $\maybe A$
 is either $\op{nothing}$ or the constructor $\op{just}$
 applied to a term of type $A$.
 Thus, $\maybe$ receives a type and augments it with a special point[^maybe].
@@ -513,7 +513,7 @@ we consider that we already know the solution for the sublist of length $n-1$,
 which yields a value of type $B$,
 and then need a rule to combine this value of the remaining term of type $A$
 into another term of type $B$.
-Thus, $\op{reduce}$ is an instance of what we call an _higher-order function_.
+Thus, $\op{reduce}$ is an instance of what we call a _higher-order function_.
 It is a machine that takes an initial value and a binary function
 and outputs another function, now defined on lists.
 We call it higher-order because it doesn't work with ordinary data, no,
@@ -646,7 +646,7 @@ composition must also satisfy two laws.
 First, it must be associative.
 That is, for any composable triple of arrows,
 $$ h \circ (g \circ f) = (h \circ g) \circ f.$$
-Second, for each object $X$, an special arrow $\id_X \colon X \to X$ must exist,
+Second, for each object $X$, a special arrow $\id_X \colon X \to X$ must exist,
 called the _identity_ for $X$, with the special property that for any $f \colon A \to B$,
 $$f \circ \id_A = \id_B \circ f = f. $$
 
@@ -751,7 +751,7 @@ We begin by fixing a category $\catC$ and a functor $F$ from $\catC$ to itself.
 From $F$, we will construct an auxiliary category,
 called the category of _$F$-algebras_.
 
-An $F$-algebra is an object $X$ of $\catC$
+A $F$-algebra is an object $X$ of $\catC$
 together with an arrow $f \colon F X \to X$.
 Morphisms between $F$-algebras $f \colon F X \to X$ and $g \colon F Y \to Y$
 are given by an arrow $h \colon X \to Y$
@@ -764,9 +764,9 @@ X \ar[r, "h"'] & Y
 
 You can check that this definition turns $F$-algebras into a category
 where the identity for $f \colon F X \to X$ is given by $\id_X$ itself.
-On this category, we are interested in an special kind of object
+On this category, we are interested in a special kind of object
 called an _initial $F$-algebra_.
-That is an $F$-algebra $\in$ with the special property
+That is a $F$-algebra $\in$ with the special property
 that for any other $F$-algebra $f$ there is a _unique_ morphism going from $\in$ to $f$.
 Ok, time for some action. We haven't proved any theorem in this post yet.
 
@@ -784,7 +784,7 @@ Nevertheless, finite length inductive data structures are generally initial.
 
 ::: Proof
 First, notice that if $\in \colon F I \to I$
-is an $F$-algebra,
+is a $F$-algebra,
 so is $F\in \colon F(FI) \to F I$.
 Since $\in$ is initial,
 there is a unique arrow $g \colon I \to FI$
@@ -1184,7 +1184,7 @@ $\op{primes} = \op{sieve}(l)$.
 At first, this may not seem very useful
 since any computer would take infinite time to calculate $\op{primes}$.
 But, after some thought, you will notice
-that the way $\op{sieve}$ calculates its output is very special.
+that the way $\op{sieve}$ calculates its output is rather special.
 After it produces an element of the list, it never touches that element again!
 Thus, although it's impossible to properly calculate $\op{primes}$,
 we have that for any natural $N$, the first $N$ elements of $\op{primes}$
