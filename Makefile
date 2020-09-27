@@ -44,8 +44,12 @@ $(BUILDDIR)/posts/index.html: posts.md $(CSS) $(DIRS) $(TEMPLATES)
 	pandoc --defaults=pandoc.yaml \
                -f markdown -t html5 -o "$@" "$<"
 
+# Order of minifying:
+# - Remove all newlines
+# - Remove all spaces after ':', ';', '{', ',', '>'
+# - Remove all spaces before '{'
 $(CSS): $(BUILDDIR)/css/%.css : css/%.css $(DIRS)
-	cp "$<" "$@"
+	cat "$<" | tr -d '\n' | sed 's/\([{:;,>]\)\s\+/\1/' | sed 's/\s\+\({\)/\1/' > "$@"
 
 $(STATIC_FILES): $(BUILDDIR)/% : % $(DIRS)
 	cp "$<" "$@"
