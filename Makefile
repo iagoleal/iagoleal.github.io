@@ -3,7 +3,7 @@ PYTHON_3?=python3
 BUILDDIR = build
 POSTSDIR = posts
 CACHEDIR = cache
-POSTS= $(addprefix $(BUILDDIR)/, $(patsubst %.md,%.html, $(wildcard $(POSTSDIR)/*.md)))
+POSTS= $(addprefix $(BUILDDIR)/, $(patsubst %.md,%, $(wildcard $(POSTSDIR)/*.md)))
 CSS = $(addprefix $(BUILDDIR)/, $(wildcard css/*.css))
 FILTERS = $(wildcard filters/*.lua)
 DIRS = $(addprefix $(BUILDDIR)/, $(POSTSDIR) css data img) $(CACHEDIR)
@@ -12,27 +12,35 @@ STATIC_FILES = $(addprefix $(BUILDDIR)/, $(wildcard data/*) $(wildcard img/*))
 
 
 .DEFAULT: all
-.PHONY: all clean server pages
+.PHONY: all clean server pages postspage projectspage
 
 all: pages $(DIRS)
 
-pages: $(BUILDDIR)/posts.html $(BUILDDIR)/index.html $(BUILDDIR)/projects.html $(DIRS) $(POSTS) $(STATIC_FILES) pandoc.yaml
+pages: postspage projectspage $(BUILDDIR)/index.html $(DIRS) $(POSTS) $(STATIC_FILES) pandoc.yaml
 
-$(POSTS): $(BUILDDIR)/%.html : %.md $(FILTERS) $(CSS) $(DIRS) $(TEMPLATES)
+projectspage: $(BUILDDIR)/projects/index.html
+
+postspage: $(BUILDDIR)/posts/index.html
+
+$(POSTS): $(BUILDDIR)/% : %.md $(FILTERS) $(CSS) $(DIRS) $(TEMPLATES)
+	mkdir -p "$@"
 	pandoc --defaults=pandoc.yaml \
 	       --lua-filter filters/tikz.lua \
-               -f markdown -t html5 -o "$@" "$<"
+	       --lua-filter filters/wc.lua \
+               -f markdown -t html5 -o "$@/index.html" "$<"
 
 $(BUILDDIR)/index.html: index.html $(CSS) $(DIRS) $(TEMPLATES)
 	pandoc --defaults=pandoc.yaml \
 		--metadata=title:'Iago Leal' \
                -f html -t html5 -o "$@" "$<"
 
-$(BUILDDIR)/projects.html: projects.md $(CSS) $(DIRS) $(TEMPLATES)
+$(BUILDDIR)/projects/index.html: projects.md $(CSS) $(DIRS) $(TEMPLATES)
+	mkdir -p "$(BUILDDIR)/projects"
 	pandoc --defaults=pandoc.yaml \
                -f markdown -t html5 -o "$@" "$<"
 
-$(BUILDDIR)/posts.html: posts.md $(CSS) $(DIRS) $(TEMPLATES)
+$(BUILDDIR)/posts/index.html: posts.md $(CSS) $(DIRS) $(TEMPLATES)
+	mkdir -p "$(BUILDDIR)/posts"
 	pandoc --defaults=pandoc.yaml \
                -f markdown -t html5 -o "$@" "$<"
 
