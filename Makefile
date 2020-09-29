@@ -25,6 +25,7 @@ postspage: $(BUILDDIR)/posts/index.html
 $(POSTS): $(BUILDDIR)/% : %.md $(FILTERS) $(CSS) $(DIRS) $(TEMPLATES)
 	mkdir -p "$@"
 	pandoc --defaults=pandoc.yaml \
+		   --highlight-style=kate \
 	       --lua-filter filters/tikz.lua \
 	       --lua-filter filters/wc.lua \
                -f markdown -t html5 -o "$@/index.html" "$<"
