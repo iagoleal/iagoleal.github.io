@@ -1,7 +1,7 @@
 ---
 title: Recursion Schemes
 subtitle: An introduction to programming with induction
-keywords: category-theory recursion-schemes functional-programming
+keywords: [category-theory, recursion-schemes, functional-programming]
 date: 2020-09-10
 ---
 

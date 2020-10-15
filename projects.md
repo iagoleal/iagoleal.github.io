@@ -8,11 +8,11 @@ Mostly, the stuff in here is concerned with
 optimization problems or mathematical modeling.
 
 <header class="subheading">
-<h2>Convexification by Averages</h2>
+<h2 id="convexification-by-averages">Convexification by Averages</h2>
 <p>Master's thesis</p>
 </header>
 
-<img src="img/cvxavg-thumbnail.svg"
+<img src="/img/cvxavg-thumbnail.svg"
      alt="Average of non-convex functions"
      title="Average of non-convex functions can be convex."
      width="95%"/>
@@ -35,7 +35,7 @@ improvement in the convergence of multistage stochastic optimization problems
 that are fundamental to the Brazilian distribution of energy.
 
 <header class="subheading">
-<h2>Hodge.jl</h2>
+<h2 id="hodge-jl">Hodge.jl</h2>
 <p>Applications of Hodge Theory to statistical rankings</p>
 </header>
 
@@ -62,11 +62,11 @@ or take a look at the
 Comments and contributions are always welcome!
 
 <header class="subheading">
-<h2>DeformableBodies.jl</h2>
+<h2 id="deformablebodies-jl">DeformableBodies.jl</h2>
 <p>Simulate the dynamics of self-deforming bodies</p>
 </header>
 
-<img src="img/falling-cat.gif"
+<img src="/img/falling-cat.gif"
      alt="Falling cat simulation"
      title="A falling cat, as seem from both the perspective of a rotating frame of reference and an inertial one."
      width="95%"/>
