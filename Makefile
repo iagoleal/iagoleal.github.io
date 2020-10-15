@@ -16,34 +16,43 @@ STATIC_FILES = $(addprefix $(BUILDDIR)/, $(wildcard data/*) $(wildcard img/*))
 
 all: pages $(DIRS)
 
-pages: postspage projectspage $(BUILDDIR)/index.html $(DIRS) $(POSTS) $(STATIC_FILES) pandoc.yaml
+pages: postspage projectspage aboutpage $(BUILDDIR)/index.html $(DIRS) $(POSTS) $(STATIC_FILES) pandoc.yaml
 
 projectspage: $(BUILDDIR)/projects/index.html
 
 postspage: $(BUILDDIR)/posts/index.html
 
+aboutpage: $(BUILDDIR)/about/index.html
+
 $(POSTS): $(BUILDDIR)/% : %.md $(FILTERS) $(CSS) $(DIRS) $(TEMPLATES)
 	mkdir -p "$@"
 	pandoc --defaults=pandoc.yaml \
-		   --highlight-style=kate \
+	       --highlight-style=kate \
 	       --lua-filter filters/tikz.lua \
 	       --lua-filter filters/wc.lua \
-               -f markdown -t html5 -o "$@/index.html" "$<"
+	       --css='/css/theorems.css' \
+	       -f markdown -t html5 -o "$@/index.html" "$<"
 
 $(BUILDDIR)/index.html: index.html $(CSS) $(DIRS) $(TEMPLATES)
 	pandoc --defaults=pandoc.yaml \
-		--metadata=title:'Iago Leal' \
-               -f html -t html5 -o "$@" "$<"
+	       --metadata=title:'Welcome!' \
+	       --css='/css/portfolio.css' \
+	       -t html5 -o "$@" "$<"
+
+$(BUILDDIR)/about/index.html: about.md $(CSS) $(DIRS) $(TEMPLATES)
+	mkdir -p "$(BUILDDIR)/about"
+	pandoc --defaults=pandoc.yaml \
+           -f markdown -t html5 -o "$@" "$<"
 
 $(BUILDDIR)/projects/index.html: projects.md $(CSS) $(DIRS) $(TEMPLATES)
 	mkdir -p "$(BUILDDIR)/projects"
 	pandoc --defaults=pandoc.yaml \
-               -f markdown -t html5 -o "$@" "$<"
+           -f markdown -t html5 -o "$@" "$<"
 
 $(BUILDDIR)/posts/index.html: posts.md $(CSS) $(DIRS) $(TEMPLATES)
 	mkdir -p "$(BUILDDIR)/posts"
 	pandoc --defaults=pandoc.yaml \
-               -f markdown -t html5 -o "$@" "$<"
+           -f markdown -t html5 -o "$@" "$<"
 
 # Order of minifying:
 # - Remove all newlines
