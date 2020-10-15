@@ -6,8 +6,8 @@ The site theme is built upon oxalorg's
 The math is rendered using [katex](https://katex.org/).
 
 ## Dependencies
-- pandoc
-- make
-- latex (including tikz)
-- dvisvgm
+- pandoc 2.9.2.1
+- make 4.3
+- latex (texlive pdftex 3.14) (including tikz)
+- dvisvgm 2.9.1
 
