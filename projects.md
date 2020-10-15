@@ -33,6 +33,8 @@ The last project applied the ideas in my thesis
 to show the possibility of
 improvement in the convergence of multistage stochastic optimization problems
 that are fundamental to the Brazilian distribution of energy.
+We wrote two technical reports (in Portuguese) for these projects,
+which can be found [here](http://www.im.ufrj.br/bernardofpc/relatorios/Relatorio-20172018.pdf) and [here](http://www.im.ufrj.br/bernardofpc/relatorios/Relatorio-2019.pdf).
 
 <header class="subheading">
 <h2 id="hodge-jl">Hodge.jl</h2>
