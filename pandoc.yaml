@@ -18,10 +18,10 @@ log-file: pandoc-log.json
 
 # Styling
 strip-comments: true
-highlight-style: monochrome
+highlight-style: kate
 
 html-math-method:
-      method: katex
+    method: katex
 
 reference-links: false
 # block, section, or document
