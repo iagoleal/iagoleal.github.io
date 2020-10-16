@@ -1025,7 +1025,7 @@ take a value as a seed to construct a list or another structure from it.
 This notion is dual to the catamorphism and, of course,
 there is also a recursion scheme to encapsulate it: the _anamorphism_.[^unfold]
 
-[^unfold]: Also called an `unfold` in the context of lists.
+[^unfold]: Also called `unfold` in the context of lists.
 
 Again we have a pretty arcane name in our hands.
 Let's take a look at its etymology in order to clarify things.
