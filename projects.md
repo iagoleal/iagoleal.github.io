@@ -22,8 +22,8 @@ The main concern consists of taking advantage of
 the natural probabilistic nature of these problems
 to make them more computationally tractable.
 
-You can read the [thesis](data/mscthesis.pdf)
-or just take a peek at the [defense's slides](data/mscslides.pdf)
+You can read the [thesis](/data/mscthesis.pdf)
+or just take a peek at the [defense's slides](/data/mscslides.pdf)
 to know what it is all about.
 
 Throughout my Masters,
