@@ -7,6 +7,18 @@ html {
   font-family: 'Fira Sans', 'Roboto', 'Helvetica Neue', 'Noto Sans', sans-serif;
 }
 
+p {
+    text-align: justify;
+    hyphens: auto;
+}
+
+@media (max-width: 382px) {
+    p {
+        text-align: left;
+        hyphens: none;
+    }
+}
+
 img {
     margin: auto;
     display: block;
@@ -27,8 +39,8 @@ pre {
 
 /* Header */
 nav {
-    font-size: 20px;
-    height: 50px;
+    font-size: 1.8rem;
+    height: 4.5rem;
 }
 
 #top-bar ul {
@@ -56,10 +68,10 @@ nav {
 
 /* Footer */
 body {
-    margin-bottom: 150px;
+    margin-bottom: 13rem;
 }
 #bottom-bar {
-    font-size: 14px;
+    font-size: 1.2rem;
     text-align: center;
     position: absolute;
     left: 0;
@@ -67,7 +79,7 @@ body {
     bottom: 0;
     margin-left: auto;
     margin-right: auto;
-    margin-bottom: 20px;
+    margin-bottom: 1.8rem;
     max-width: 500px;
     overflow:hidden;
 }

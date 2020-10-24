@@ -42,24 +42,27 @@ $(BUILDDIR)/index.html: index.html $(CSS) $(DIRS) $(TEMPLATES)
 $(BUILDDIR)/about/index.html: about.md $(CSS) $(DIRS) $(TEMPLATES)
 	mkdir -p "$(BUILDDIR)/about"
 	pandoc --defaults=pandoc.yaml \
-           -f markdown -t html5 -o "$@" "$<"
+	       -f markdown -t html5 -o "$@" "$<"
 
 $(BUILDDIR)/projects/index.html: projects.md $(CSS) $(DIRS) $(TEMPLATES)
 	mkdir -p "$(BUILDDIR)/projects"
 	pandoc --defaults=pandoc.yaml \
-           -f markdown -t html5 -o "$@" "$<"
+	       -f markdown -t html5 -o "$@" "$<"
 
 $(BUILDDIR)/posts/index.html: posts.md $(CSS) $(DIRS) $(TEMPLATES)
 	mkdir -p "$(BUILDDIR)/posts"
 	pandoc --defaults=pandoc.yaml \
-           -f markdown -t html5 -o "$@" "$<"
+	       -f markdown -t html5 -o "$@" "$<"
 
 # Order of minifying:
 # - Remove all newlines
-# - Remove all spaces after ':', ';', '{', ',', '>'
-# - Remove all spaces before '{'
+# - Remove comments
+# - Remove all spaces after ':', ';', '{', ',', '>', '}'
+# - Remove all spaces before '{', ':', ';', ',',  '}'
 $(CSS): $(BUILDDIR)/css/%.css : css/%.css $(DIRS)
-	cat "$<" | tr -d '\n' | sed 's/\([{:;,>]\)\s\+/\1/' | sed 's/\s\+\({\)/\1/' > "$@"
+	cat "$<" | tr -d '\n' | perl -0777 -pe 's{/\*.*?\*/}{}gs' \
+	| sed 's/\([{}:;,>]\)\s\+/\1/g' \
+	| sed 's/\s\+\([{},:;]\)/\1/g' > "$@" \
 
 $(STATIC_FILES): $(BUILDDIR)/% : % $(DIRS)
 	cp "$<" "$@"
