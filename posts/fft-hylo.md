@@ -39,7 +39,7 @@ One way to look at the discrete Fourier transform
 is as a exchange between orthonormal bases on $\C^N$.
 Given a vector $v \in \C^n$  and a basis $e_t$,
 we can write $v$ as[^coefs-zero]
-$$ v = \sum_{t=0}^{N-1} x_t e_t$$,
+$$v = \sum_{t=0}^{N-1} x_t e_t,$$
 where $(x_0,\ldots, x_{N-1})$ are the coefficients of $v$ on the basis $e_t$.
 If, for example, $v$ represents a discrete temporal series,
 its coefficients would represent the amplitude at each sampled instant.
@@ -105,19 +105,23 @@ A way to exploit this pattern is encoded in the Danielson-Lanczos Lemma.
 ::: Lemma
 In even dimensions,
 the Fourier transform satisfies
+$$y_k = y^{(e)}_k + e^{-{2\pi i \over N} k} \cdot y^{(o)}_k,$$
+where $y^{(e)}$ is the Fourier transform of its even-indexed coefficients
+and $y^{(o)}$ is the Fourier transform of its odd-indexed coefficients.
+:::
+
+::: Proof
 $$ \begin{aligned}
 y_k &= \sum_{t=0}^{N-1} x_t \cdot e^{-{2\pi i \over N} t k} \\
     &= \sum_{t=0}^{N/2-1} x_{2t} \cdot e^{-{2\pi i \over (N/2)} t k}
      + e^{-{2\pi i \over N} k} \sum_{t=0}^{N/2-1} x_{2t + 1} \cdot e^{-{2\pi i \over (N/2)} t k} \\
     &= y^{(e)}_k + e^{-{2\pi i \over N} k} \cdot y^{(o)}_k.
 \end{aligned}$$
-where $y^{(e)}$ is the Fourier transform of its even-indexed coefficients
-and $y^{(o)}$ is the Fourier transform of its odd-indexed coefficients.
 :::
 
 Well, that's a lot of symbols...
 The important part for us is that we can break the DFT into two smaller problems
-and them merge them back together with a $O(N)$ procedure.
+and then merge them back together with a $O(N)$ procedure.
 A divide-and-conquer algorithm!
 
 Let's model this as a hylomorphism.
@@ -138,7 +142,7 @@ fft = hylo conquer divide
 ```
 
 Alright, time to implement the actual algorithm.
-Let's begin with the `divide` method.
+Let's begin with the `divide` step.
 Our algorithm must take a list of complex numbers and
 rewrite it as a binary tree whose leafs are sublists of odd dimension
 and nodes represent splitting an even-dimensional list.
