@@ -73,7 +73,7 @@ a {
   color: #008b6a; }
   a:hover {
     color: #4ed0eb;
-    border-bottom: 2px solid #222222; }
+    }
 
 ul {
   padding-left: 1.4em;
