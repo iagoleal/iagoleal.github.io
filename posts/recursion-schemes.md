@@ -1165,7 +1165,7 @@ cannot be divisible by any number below it. Thus it must be prime.
 Notice that this function eventually stop because as soon as we reach an empty list,
 the algorithm returns a $\nil$.
 
-[^era]: This example is adapted from an anamorphism in the lectures notes
+[^era]: This example is adapted from an anamorphism in the lecture notes
 [Programming with Categories](http://brendanfong.com/programmingcats_files/cats4progs-DRAFT.pdf)
 by Brendan Fong, Bartosz Milewski and David I. Spivak.
 
@@ -1250,7 +1250,7 @@ you will see that $\fat(n)$ stand for the product of the first $n$ natural numbe
 $$ \fat(n) = \prod_{k=1}^n k.$$
 Thus, an algorithm to compute the factorial
 is to first construct a decreasing list of integers from $n$ to $1$
-and them collapse multiplying all its elements.
+and then collapse it by multiplying all its elements.
 We've already constructed both these functions but let's rewrite their definitions
 for the sake of completeness.
 We start with the coalgebra and algebra,
