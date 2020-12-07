@@ -27,4 +27,8 @@ reference-links: false
 # block, section, or document
 reference-location: document
 
-fail-if-warnings: true
+fail-if-warnings: false
+
+filters:
+- filters/tikz.lua
+- filters/wc.lua
