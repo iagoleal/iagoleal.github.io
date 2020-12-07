@@ -19,6 +19,8 @@
         </style>
         <link rel="stylesheet" href="/css/sakura-earthly.css"/>
         <link rel="stylesheet" href="/css/krkis.css"/>
+        <link rel="stylesheet" href="/css/theorems.css"/>
+        <link rel="stylesheet" href="/css/portfolio.css"/>
     $for(css)$
         <link rel="stylesheet" href="$css$" />
     $endfor$
@@ -40,7 +42,7 @@ $endfor$
 $if(title)$
 <header id="title-block-header">
     <header class="subheading">
-        <h1 class="title">$title$</h1>
+        $if(title)$<h1 class="title">$title$</h1>$endif$
         $if(subtitle)$
         <p>$subtitle$</p>
         $endif$

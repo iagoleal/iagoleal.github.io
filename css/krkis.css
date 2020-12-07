@@ -49,6 +49,10 @@ hr {
 
 /* Header */
 
+#top-bar {
+  margin-bottom: 3rem;
+}
+
 #top-bar ul {
     font-size: 2rem;
     height: min-content;
