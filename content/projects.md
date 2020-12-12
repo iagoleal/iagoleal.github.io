@@ -1,6 +1,4 @@
----
-title: Projects
----
+# Projects
 
 These are some of the projects
 that I have been engaged in the last few years.

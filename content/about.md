@@ -1,6 +1,4 @@
----
-title: About me
----
+# About me
 
 I am Iago Leal de Freitas,
 an applied mathematician

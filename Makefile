@@ -8,11 +8,13 @@ cache   = cache
 build   = build
 
 # The important files
-posts-src    = $(wildcard $(content)/posts/*md)
+posts-src    = $(wildcard $(content)/posts/*.md)
 posts-result = $(patsubst $(content)/posts/%.md,$(build)/posts/%/index.html,$(posts-src))
 
+# All additional pages go here
 pages-names  = about projects posts
-pages-result = $(addprefix $(build)/,$(addsuffix /index.html,$(pages-names)) index.html 404.html)
+pages-result = $(addprefix $(build)/,$(addsuffix /index.html,$(pages-names)) \
+                 index.html 404.html)
 
 css-src    = $(wildcard css/*.css)
 css-result = $(addprefix $(build)/,$(css-src))
@@ -32,6 +34,13 @@ define generate_page
   $(shell [ ! -d $(@D) ] && mkdir -p $(@D))
   $(PANDOC) --defaults=pandoc.yaml \
     -f $(3) -t html5 -o "$(2)" "$(1)"
+endef
+
+define generate_post
+  $(shell [ ! -d $(@D) ] && mkdir -p $(@D))
+  $(PANDOC) --defaults=pandoc.yaml \
+            --template=templates/post.html \
+    -f markdown -t html5 -o "$(2)" "$(1)"
 endef
 
 ############
@@ -65,7 +74,7 @@ serve:
 posts: $(posts-result)
 
 $(build)/posts/%/index.html: $(content)/posts/%.md $(filters) $(templates) $(config)
-	$(call generate_page,"$<","$@",markdown)
+	$(call generate_post,"$<","$@")
 
 ###############
 # Other Pages #
