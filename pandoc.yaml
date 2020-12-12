@@ -5,7 +5,7 @@ self-contained: false
 to: html5
 
 metadata:
-    author-meta: Iago Leal de Freitas
+    author-meta: Iago Leal
     lang: en
 
 variables:
