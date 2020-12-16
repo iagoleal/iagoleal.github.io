@@ -32,3 +32,4 @@ fail-if-warnings: false
 filters:
 - filters/tikz.lua
 - filters/wc.lua
+- filters/date.lua
