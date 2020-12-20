@@ -46,7 +46,7 @@ pre {
 hr {
   border: 0;
   border-bottom: 1px solid #d2d2d2;
-  width: 80%;
+  width: 100%;
 }
 
 /* Class dependent part */
@@ -170,4 +170,38 @@ body {
   font-family: monospace;
   color: #959595;
   margin-left: 2rem;
+}
+
+/* Post typography */
+
+#share-this-page {
+  text-align: right;
+}
+
+.share-link {
+  display: inline-block;
+  margin: 1rem 1rem 0 1rem;
+}
+
+.hr-text {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #d2d2d2;
+    font-size: 1.6rem;
+    font-variant: small-caps;
+    letter-spacing: 0.05em;
+}
+.hr-text::before, .hr-text::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #d2d2d2;
+}
+.hr-text::before {
+    margin-right: .25em;
+    /* margin-left: 3%; */
+}
+.hr-text::after {
+    margin-left: .25em;
+    /* margin-right: 3%; */
 }
