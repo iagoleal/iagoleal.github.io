@@ -44,6 +44,10 @@ local mimetype_for = {
 
 local cachedir = 'cache/'
 
+function mkdir(dirname)
+ os.execute("[ ! -d " .. dirname .. " ] && mkdir " .. dirname)
+end
+
 local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' -- You will need this for encoding/decoding
 -- encoding
 function encodeURI(data)
@@ -118,6 +122,7 @@ local function cache_fetch(fname)
 end
 
 function cache_write(img, fname)
+    mkdir(cachedir)
     res, err, code = os.rename(cachedir, cachedir)
     if res then
         local f = io.open(fname, 'w')
