@@ -325,15 +325,17 @@ But beware! There are also allied bases around, encapsulated in the type $\matht
 Since friendly fire is really far from the ideal,
 our target type should have two different constructors,
 one for allies and another for enemies:
-$$\mathtt{Target} \coloneqq \op{ally}\; \mathtt{Position} \times \mathtt{Base}
-                  \mid \op{enemy}\; \mathtt{Position} \times \mathtt{Army}.$$
+$$\begin{aligned}
+\mathtt{Target} \coloneqq &\;\op{ally}\; \mathtt{Position} \times \mathtt{Base} \\
+                \mid      &\;\op{enemy}\; \mathtt{Position} \times \mathtt{Army}.
+\end{aligned}$$
 In here we extended our notation for enumerating types to also accept constructors.
 Different constructors always produce different terms of the compound type,
 thus, we may view the functions
 $\op{ally} \colon \mathtt{Position} \times \mathtt{Base} \to \mathtt{Target}$
 and $\op{enemy} \colon \mathtt{Position} \times \mathtt{Army} \to \mathtt{Target}$
 as tags representing from which type our $\mathtt{Target}$ was constructed.
-This works as if we are storing a element of type $\mathtt{Army}$ together with a tag $\op{enemy}$
+This works as if we are storing an element of type $\mathtt{Army}$ together with a tag $\op{enemy}$
 on the type $\mathtt{Target}$.
 So the definition of target is saying that its terms are of the form $\op{ally}(p, x)$
 or $\op{enemy}(p,x)$,
@@ -722,11 +724,15 @@ Some compilers, such as Haskell's GHC
 Instead of going through the constructions gory details,
 I think doing an example is better to elucidate how the method.
 Say we have a type operator
-$$ G X = \op{pig} A \mid \op{chicken} A \times X \times (\maybe X) \mid \op{cow} B \times (C \to X).$$
+$$\begin{aligned}
+  G X = &\op{pig} A \\
+      \mid &\op{yak} A \times X \times (\maybe X) \\
+      \mid &\op{cow} B \times (C \to X).
+\end{aligned}$$
 To turn it into a functor, we define an action on functions as
 $$ \begin{aligned}
 (G\,f)(\op{pig}(a)) &= \op{pig}(a) \\
-(G\,f)(\op{chicken}(a, x, m)) &= \op{chicken}(a, f(x), \maybe(f)(m)) \\
+(G\,f)(\op{yak}(a, x, m)) &= \op{yak}(a, f(x), \maybe(f)(m)) \\
 (G\,f)(\op{cow}(b, g)) &= \op{cow}(c, f \circ g)
 \end{aligned} $$
 Essentially, what $G\,f$ does is to unwrap each constructor
@@ -963,7 +969,12 @@ the multiplication of two expressions,
 or an expression raised to a natural exponent.
 This is represented by a type $\Expr$
 which is the least fixed point of the functor
-$$F\,X \simeq \op{const}\, \R \mid \op{add}\, X \times X \mid \op{mult}\, X \times X \mid \op{pow}\,X \times\N.$$
+$$\begin{aligned}
+  F\,X = &\op{const}\, \R \\
+    \mid &\op{add}\, X \times X \\
+    \mid &\op{mult}\, X \times X \\
+    \mid &\op{pow}\,X \times\N.
+\end{aligned}$$
 
 To evaluate an expression, we need an appropriate $F$-algebra
 $f \colon F \R \to \R$.
@@ -1044,7 +1055,7 @@ If we simply reverse the arrows in a theorem,
 its conclusion still holds but also with some arrows reversed.
 
 Given a category $\catC$ and a functor $F \colon \catC \to \catC$,
-we define a $F$-coalgebra to a object $X$ of $\catC$
+we define a $F$-coalgebra to an object $X$ of $\catC$
 together with an arrow $f \colon X \to F X$.
 The $F$-coalgebras form a category where the morphisms
 between $f \colon X \to F X$ and $g \colon Y \to F Y$
@@ -1055,7 +1066,7 @@ F X \ar[r, "F h"] & F Y \\
 X \ar[u, "f"] \ar[r, "h"] & Y \ar[u, "g"']
 ```
 The dual notion to an initial object $F-$algebra is a _terminal_ $F$-coalgebra.
-Namely, a algebra $\out \colon S \to F S$ such that there is a unique morphism
+Namely, an algebra $\out \colon S \to F S$ such that there is a unique morphism
 from any other $F$-coalgebra to $\out$.
 As you probably already expect, terminal coalgebras are always isomorphisms.
 The proof is essentially the same as the one for initial $F$-algebras.
@@ -1143,7 +1154,7 @@ and define it to be the anamorphism
 $$\op{linspace}(a,b,n) = (\ana g(b,n))(a).$$
 
 To end this section,
-let's turn to a example from number theory.
+let's turn to an example from number theory.
 We will construct the [sieve of Eratosthenes](https://en.wikipedia.org/Sieve_of_Eratosthenes).[^era]
 This algorithm receives a natural number $n$ and returns a list of all primes below $n$.
 The idea is to start with a list of numbers between $2$ and $n$,
@@ -1193,7 +1204,7 @@ So you can think of $\op{primes}$ as an iterator that generates $\op{era}(n)$ in
 
 This last property is common to all anamorphisms.
 Although their output can be a possible infinite data structure (even if the input is finite),
-it is produced in a extremely structured manner.
+it is produced in an extremely structured manner.
 When a value is computed, we go to the next and it is never touched again.
 Therefore, we can still use an anamorphism to calculate finite data
 so long as we properly say when we wish to stop.
@@ -1232,7 +1243,7 @@ but let's try anyway.
 The prefix _hylo-_ comes from the Greek ['ὕλη']{lang=grc}
 and means ["wood" or "matter"](https://outils.biblissima.fr/fr/eulexis-web/?lemma=%E1%BD%95%CE%BB%CE%B7&dict=LSJ).
 And as we've previously seem, the term morphism comes from the Greek word for form.
-The name hylomorphism is a pun on a Aristotelian theory of the same name
+The name hylomorphism is a pun on an Aristotelian theory of the same name
 which says that the being is composed from matter and form.
 Since I never really understood Aristotle's writings
 and was unable to find another word starting with _hylo-_ outside the context of philosophy,
@@ -1333,7 +1344,7 @@ implements an intermediate data structure that is used but not returned.
 A special class of such are the divide-and-conquer algorithms,
 whose structure lend them to have elegant implementations as hylomorphisms.
 There are many examples such as merge sort, quick sort, convex hull and many others
-that can be written as a anamorphism that divides the input in a structured manner
+that can be written as an anamorphism that divides the input in a structured manner
 followed by a catamorphism that conquers the output from it.
 Please try to write any of these as a $\hylo$!
 If you pick your favorite algorithm,
@@ -1352,22 +1363,27 @@ $$ \hylo f\,g = f \circ F (\hylo f\,g) \circ g.$$
 :::
 
 ::: Proof
-We begin by recalling the formulas for the other recursion schemes,
+Since the least and greatest fixed points of $F$ are equal,
+we can assume that $\in$ and $\out$ are inverses to each other.
+By pasting together the diagrams defining the anamorphism and the catamorphism
+we get
+
+``` {.tikzcd usepackage="amsmath"}
+F X \ar[r, "F(\operatorname{ana} g)"] & F S \ar[d, bend right=15, "\operatorname{in}"']  \ar[r, "F(\operatorname{cata} f)"] & F Y  \ar[d, "f"]\\
+X   \ar[u, "g"] \ar[r, dashed, "\operatorname{ana} g"'] & S \ar[u, bend right=15, "\operatorname{out}"']  \ar[r, dashed, "\operatorname{cata} f"'] & Y
+```
+
+Going from $X$ to $Y$ through the bottom path
+amounts for our definition of hylomorphism.
+Since the diagram is commutative,
+it must be equivalent to trace the top path.
+This, together with the functoriality of $F$, implies
 $$\begin{aligned}
-\cata f &= f \circ F(\cata f) \circ \in^{-1}, \\
-\ana g &= \out^{-1} \mathbin{\circ} F(\ana g) \circ g.
+\hylo f\,g &= f \circ F(\cata f) \circ F(\ana g) \circ g \\
+           &= f \circ F(\cata f \circ \ana g) \circ g \\
+           &= f \circ F(\hylo f\,g) \circ g. \\
 \end{aligned}$$
-Since we're assuming that the least and greatest fixed points of $F$ are equal,
-we have that $\in$ and $\out$ must be inverses to each other.
-Thus, the definition of $\hylo$ becomes
-$$\begin{aligned}
-\hylo f\,g &= \cata f \circ \ana g \\
-&= f \circ F(\cata f) \circ \in^{-1} \circ \out^{-1} \mathbin{\circ} F(\ana g) \circ g \\
-&= f \circ F(\cata f) \circ F(\ana g) \circ g \\
-&= f \circ F(\cata f \circ \ana g) \circ g \\
-&= f \circ F(\hylo f\,g) \circ g \\
-\end{aligned}$$
-This concludes the proof.
+Thus we conclude the proof.
 :::
 
 Although our definition of a $\hylo$ is good to reason about,
@@ -1377,9 +1393,9 @@ because there is less boilerplate happening,
 we only have half the function calls happening.
 As you can see in the proof's second line,
 our definition requires $\hylo$ to first recurse through $\ana$,
-stacking a pile of calls to $\out^{-1}$,
-to immediately after recurse through $\cata$,
-canceling each $\out^{-1}$ with a $\in^{-1}$.
+stacking a pile of calls to $\op{in}$,
+to immediately thereafter recurse through $\cata$,
+canceling each $\op{in}$ with a $\op{out}$.
 This does not change the algorithm's complexity but still hinders its efficiency.
 In very large programs that run for weeks, even the complexity constant hurts.
 There is a practical difference between a program that runs in a week and a program that runs in two.
@@ -1399,7 +1415,7 @@ but when actually implementing one, use this formula instead.
 ## Summary {#sec:conclusion}
 
 This was a long journey but we finally got to the end.
-Throughout it we met with our three heros:
+Throughout it we met with our three heroes:
 catamorphism, anamorphism, and hylomorphism,
 and I truly hope that the ideas they encapsulate will appear on your future programs.
 
