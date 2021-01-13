@@ -106,9 +106,7 @@ stylesheets: $(css-result)
 
 $(build)/css/%: css/%
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
-	cat "$<" | tr -d '\n' | perl -0777 -pe 's{/\*.*?\*/}{}gs' \
-	| sed 's/\([{}:;,>]\)\s\+/\1/g' \
-	| sed 's/\s\+\([{},:;]\)/\1/g' > "$@"
+	hasmin -c "$<" > "$@"
 
 static: $(static-result)
 
