@@ -49,7 +49,7 @@ endef
 
 .DEFAULT: all
 
-.PHONY: all clean serve clean-cache clean-build
+.PHONY: all clean serve clean-cache clean-build deploy
 
 all: pages posts stylesheets static
 
@@ -63,7 +63,10 @@ clean-build:
 	if [ -f 'pandoc-log.json' ]; then rm pandoc-log.json; fi
 
 serve:
-	pushd $(build) && $(PYTHON_3) -m http.server
+	cd $(build) && $(PYTHON_3) -m http.server
+
+deploy:
+	sh deploy
 
 #########
 # Posts #

@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+echo "Starting to deploy site"
+echo "Removing old build files..."
+[ -d build ] && rm -rf build
+git worktree add build gh-pages
+echo "Starting a clean build..."
+make -B
+pushd build
+echo "It's git time!"
+git add .
+git commit -m "Deploy from $(git rev-parse --short master)"
+git push
+popd
+echo "Removing build files..."
+git worktree remove build
