@@ -33,6 +33,7 @@ config = pandoc.yaml
 define generate_page
   $(shell [ ! -d $(@D) ] && mkdir -p $(@D))
   $(PANDOC) --defaults=pandoc.yaml \
+     --metadata title=$(4) \
     -f $(3) -t html5 -o "$(2)" "$(1)"
 endef
 
@@ -88,16 +89,16 @@ $(build)/posts/%/index.html: $(content)/posts/%.md $(filters) $(templates) $(con
 pages: $(pages-result)
 
 $(build)/index.html: $(content)/index.html $(filters) $(templates) $(config)
-	$(call generate_page,"$<","$@",html)
+	$(call generate_page,"$<","$@",html,"Home Sweet Home")
 
 $(build)/404.html: $(content)/404.html $(filters) $(templates) $(config)
-	$(call generate_page,"$<","$@",html)
+	$(call generate_page,"$<","$@",html,"Are you lost?")
 
 $(build)/%/index.html: $(content)/%.md $(filters) $(templates) $(config)
-	$(call generate_page,"$<","$@",markdown)
+	$(call generate_page,"$<","$@",markdown,'')
 
 $(build)/%/index.html: $(content)/%.html $(filters) $(templates) $(config)
-	$(call generate_page,"$<","$@",html)
+	$(call generate_page,"$<","$@",html,'')
 
 ###################
 # Other processes #
