@@ -20,7 +20,7 @@ css-src    = $(wildcard css/*.css)
 css-result = $(addprefix $(build)/,$(css-src))
 
 static-src    = $(wildcard img/*) $(wildcard data/*)
-static-result = $(addprefix $(build)/, $(static-src))
+static-result = $(patsubst %.tex,%.svg,$(addprefix $(build)/, $(static-src)))
 
 # Dependency-only
 filters   = $(wildcard filters/*)
@@ -113,6 +113,11 @@ $(build)/css/%: css/%
 	hasmin -c "$<" > "$@"
 
 static: $(static-result)
+
+$(build)/img/%.svg: img/%.tex
+	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
+	echo "OOOOI"
+	src/tex2svg.sh "$<" "$@"
 
 $(build)/img/%: img/%
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
