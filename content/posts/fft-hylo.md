@@ -51,7 +51,7 @@ $$ v = \sum_{k=0}^{N-1} y_k f_k$$
 where the new coefficients $y_k$ are defined as
 $$ y_k = \sum_{t=0}^{N-1} x_t \cdot e^{-{2\pi i \over N}t k}.$$
 
-[^coefs-zero]: In this context, life gets much easier if the our vectors are zero-indexed.
+[^coefs-zero]: In this context, life gets much easier if our vectors are zero-indexed.
 
 We have our first formula, time to implement it in Haskell!
 Let's begin by importing the libraries we will need.
@@ -79,12 +79,12 @@ This lends us to the following anamorphism:
 dft xs = unfoldr coalg 0
  where
   dim = fromIntegral $ length xs
+  chi k t = cis (-2 * pi * k * t / dim)
   coalg k = if k < dim
-            then let cfs = fmap (\t -> cis (-2 * pi * k * t / dim))
-                                [0 .. dim - 1]
-                     yk  = sum (zipWith (*) cfs xs)
-                 in  Just (yk, k + 1)
-            else Nothing
+             then let cfs = fmap (chi k) [0 .. dim - 1]
+                      yk  = sum (zipWith (*) cfs xs)
+                  in  Just (yk, k + 1)
+             else Nothing
 ```
 
 If you've never seem the function `cis` before,
@@ -156,8 +156,8 @@ instance Functor (CallTree a) where
   fmap f (Branch xs ys) = Branch (f xs) (f ys)
 ```
 
-To bunk of the `divide` step is splitting a list into even and odd components.
-We can do this in $O(n)$ using a fold from a list to a pair of lists.
+The bunk of the `divide` method consists of splitting a list into even and odd components.
+We can do this in $O(n)$ steps using a fold from a list to a pair of lists.
 
 ```haskell
 split :: [a] -> ([a], [a])
@@ -174,8 +174,8 @@ thus we just store the list's DFT in a `Leaf`.
 
 ```haskell
 divide v = if even (length v)
-           then uncurry Branch (split v)
-           else Leaf (dft v)
+            then uncurry Branch (split v)
+            else Leaf (dft v)
 ```
 
 This constructs the call tree.
@@ -197,7 +197,7 @@ conquer (Leaf v)       = v
 conquer (Branch ye yo) = zipWith3 f [0..] ye yo
                          ++ zipWith3 g [0..] ye yo
  where
-  dim = fromIntegral (2 * length x)
+  dim = fromIntegral (2 * length ye)
   f k e o = e + cis (-2 * pi * k / dim) * o
   g k e o = e - cis (-2 * pi * k / dim) * o
 ```
