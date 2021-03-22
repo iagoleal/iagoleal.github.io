@@ -5,9 +5,139 @@
         <meta name="generator" content="pandoc" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
             <meta name="author" content="Iago Leal" />
-                <meta name="dcterms.date" content="2021-02-23" />
+                <meta name="dcterms.date" content="2021-03-21" />
                 <title>Iago Leal | projects</title>
         <style>
+            html {
+              line-height: 1.5;
+              font-family: Georgia, serif;
+              font-size: 20px;
+              color: #1a1a1a;
+              background-color: #fdfdfd;
+            }
+            body {
+              margin: 0 auto;
+              max-width: 36em;
+              padding-left: 50px;
+              padding-right: 50px;
+              padding-top: 50px;
+              padding-bottom: 50px;
+              hyphens: auto;
+              word-wrap: break-word;
+              text-rendering: optimizeLegibility;
+              font-kerning: normal;
+            }
+            @media (max-width: 600px) {
+              body {
+                font-size: 0.9em;
+                padding: 1em;
+              }
+            }
+            @media print {
+              body {
+                background-color: transparent;
+                color: black;
+                font-size: 12pt;
+              }
+              p, h2, h3 {
+                orphans: 3;
+                widows: 3;
+              }
+              h2, h3, h4 {
+                page-break-after: avoid;
+              }
+            }
+            p {
+              margin: 1em 0;
+            }
+            a {
+              color: #1a1a1a;
+            }
+            a:visited {
+              color: #1a1a1a;
+            }
+            img {
+              max-width: 100%;
+            }
+            h1, h2, h3, h4, h5, h6 {
+              margin-top: 1.4em;
+            }
+            h5, h6 {
+              font-size: 1em;
+              font-style: italic;
+            }
+            h6 {
+              font-weight: normal;
+            }
+            ol, ul {
+              padding-left: 1.7em;
+              margin-top: 1em;
+            }
+            li > ol, li > ul {
+              margin-top: 0;
+            }
+            blockquote {
+              margin: 1em 0 1em 1.7em;
+              padding-left: 1em;
+              border-left: 2px solid #e6e6e6;
+              color: #606060;
+            }
+            code {
+              font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+              font-size: 85%;
+              margin: 0;
+            }
+            pre {
+              margin: 1em 0;
+              overflow: auto;
+            }
+            pre code {
+              padding: 0;
+              overflow: visible;
+            }
+            .sourceCode {
+             background-color: transparent;
+             overflow: visible;
+            }
+            hr {
+              background-color: #1a1a1a;
+              border: none;
+              height: 1px;
+              margin: 1em 0;
+            }
+            table {
+              margin: 1em 0;
+              border-collapse: collapse;
+              width: 100%;
+              overflow-x: auto;
+              display: block;
+              font-variant-numeric: lining-nums tabular-nums;
+            }
+            table caption {
+              margin-bottom: 0.75em;
+            }
+            tbody {
+              margin-top: 0.5em;
+              border-top: 1px solid #1a1a1a;
+              border-bottom: 1px solid #1a1a1a;
+            }
+            th {
+              border-top: 1px solid #1a1a1a;
+              padding: 0.25em 0.5em 0.25em 0.5em;
+            }
+            td {
+              padding: 0.125em 0.5em 0.25em 0.5em;
+            }
+            header {
+              margin-bottom: 4em;
+              text-align: center;
+            }
+            #TOC li {
+              list-style: none;
+            }
+            #TOC a:not(:hover) {
+              text-decoration: none;
+            }
             code{white-space: pre-wrap;}
             span.smallcaps{font-variant: small-caps;}
             span.underline{text-decoration: underline;}
@@ -17,6 +147,7 @@
             pre > code.sourceCode { white-space: pre; position: relative; }
             pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
             pre > code.sourceCode > span:empty { height: 1.2em; }
+            .sourceCode { overflow: visible; }
             code.sourceCode > span { color: inherit; text-decoration: inherit; }
             div.sourceCode { margin: 1em 0; }
             pre.sourceCode { margin: 0; }
@@ -145,7 +276,7 @@ Simulate the dynamics of self-deforming bodies
 <p>A common problem when engineering or studying mechanical systems consists of studying the possible motions of a given body in a controlled setting, such as in a lab, and then wanting to understand what will be the body’s motion “in the wild”, when viewed from an inertial frame of reference. Examples where this happens are satellites self-adjusting in space or the complicated moves a cat does to right itself midair.</p>
 <p><code>DeformableBodies.jl</code> is a Julia package dedicated to aid in the construction and simulation of such problems. It allows the user to enter the body’s motion as seem from an arbitrary frame of reference and calculates the motion from the perspective of an inertial frame.</p>
 <p>The package is freely available from the Julia package system, all you have to do is enter <code>]</code> on the Julia REPL and then run</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>pkg<span class="op">&gt;</span> add DeformableBodies</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pkg<span class="op">&gt;</span> add DeformableBodies</span></code></pre></div>
 <p>and you’re ready to go! If you are interested in using this package, be sure to check the guides on the <a href="https://iagoleal.github.io/DeformableBodies.jl/dev/">documentation</a> and also know that the <a href="https://github.com/iagoleal/DeformableBodies.jl">source code</a> is available to everybody.</p>
 <footer id="bottom-bar">
     <span>&copy; Iago Leal de Freitas, 2020-2021</span><br>

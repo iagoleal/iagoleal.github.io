@@ -9,6 +9,136 @@
                 <meta name="keywords" content="fft, haskell, recursion-schemes, functional-programming" />
             <title>Iago Leal | FFT as a Hylomorphism: A Haskell Example</title>
         <style>
+            html {
+              line-height: 1.5;
+              font-family: Georgia, serif;
+              font-size: 20px;
+              color: #1a1a1a;
+              background-color: #fdfdfd;
+            }
+            body {
+              margin: 0 auto;
+              max-width: 36em;
+              padding-left: 50px;
+              padding-right: 50px;
+              padding-top: 50px;
+              padding-bottom: 50px;
+              hyphens: auto;
+              word-wrap: break-word;
+              text-rendering: optimizeLegibility;
+              font-kerning: normal;
+            }
+            @media (max-width: 600px) {
+              body {
+                font-size: 0.9em;
+                padding: 1em;
+              }
+            }
+            @media print {
+              body {
+                background-color: transparent;
+                color: black;
+                font-size: 12pt;
+              }
+              p, h2, h3 {
+                orphans: 3;
+                widows: 3;
+              }
+              h2, h3, h4 {
+                page-break-after: avoid;
+              }
+            }
+            p {
+              margin: 1em 0;
+            }
+            a {
+              color: #1a1a1a;
+            }
+            a:visited {
+              color: #1a1a1a;
+            }
+            img {
+              max-width: 100%;
+            }
+            h1, h2, h3, h4, h5, h6 {
+              margin-top: 1.4em;
+            }
+            h5, h6 {
+              font-size: 1em;
+              font-style: italic;
+            }
+            h6 {
+              font-weight: normal;
+            }
+            ol, ul {
+              padding-left: 1.7em;
+              margin-top: 1em;
+            }
+            li > ol, li > ul {
+              margin-top: 0;
+            }
+            blockquote {
+              margin: 1em 0 1em 1.7em;
+              padding-left: 1em;
+              border-left: 2px solid #e6e6e6;
+              color: #606060;
+            }
+            code {
+              font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+              font-size: 85%;
+              margin: 0;
+            }
+            pre {
+              margin: 1em 0;
+              overflow: auto;
+            }
+            pre code {
+              padding: 0;
+              overflow: visible;
+            }
+            .sourceCode {
+             background-color: transparent;
+             overflow: visible;
+            }
+            hr {
+              background-color: #1a1a1a;
+              border: none;
+              height: 1px;
+              margin: 1em 0;
+            }
+            table {
+              margin: 1em 0;
+              border-collapse: collapse;
+              width: 100%;
+              overflow-x: auto;
+              display: block;
+              font-variant-numeric: lining-nums tabular-nums;
+            }
+            table caption {
+              margin-bottom: 0.75em;
+            }
+            tbody {
+              margin-top: 0.5em;
+              border-top: 1px solid #1a1a1a;
+              border-bottom: 1px solid #1a1a1a;
+            }
+            th {
+              border-top: 1px solid #1a1a1a;
+              padding: 0.25em 0.5em 0.25em 0.5em;
+            }
+            td {
+              padding: 0.125em 0.5em 0.25em 0.5em;
+            }
+            header {
+              margin-bottom: 4em;
+              text-align: center;
+            }
+            #TOC li {
+              list-style: none;
+            }
+            #TOC a:not(:hover) {
+              text-decoration: none;
+            }
             code{white-space: pre-wrap;}
             span.smallcaps{font-variant: small-caps;}
             span.underline{text-decoration: underline;}
@@ -18,6 +148,7 @@
             pre > code.sourceCode { white-space: pre; position: relative; }
             pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
             pre > code.sourceCode > span:empty { height: 1.2em; }
+            .sourceCode { overflow: visible; }
             code.sourceCode > span { color: inherit; text-decoration: inherit; }
             div.sourceCode { margin: 1em 0; }
             pre.sourceCode { margin: 0; }
@@ -88,12 +219,14 @@
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.js"></script>
                 <script>document.addEventListener("DOMContentLoaded", function () {
                  var mathElements = document.getElementsByClassName("math");
+                 var macros = [];
                  for (var i = 0; i < mathElements.length; i++) {
                   var texText = mathElements[i].firstChild;
                   if (mathElements[i].tagName == "SPAN") {
                    katex.render(texText.data, mathElements[i], {
                     displayMode: mathElements[i].classList.contains('display'),
                     throwOnError: false,
+                    macros: macros,
                     fleqn: false
                    });
                 }}});
@@ -130,21 +263,21 @@
 <h2 id="the-discrete-fourier-transform">The Discrete Fourier Transform</h2>
 <p>One way to look at the discrete Fourier transform is as a exchange between orthonormal bases on <span class="math inline">\mathbb{C}^N</span>. Given a vector <span class="math inline">v \in \mathbb{C}^n</span> and a basis <span class="math inline">e_t</span>, we can write <span class="math inline">v</span> as<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> <span class="math display">v = \sum_{t=0}^{N-1} x_t e_t,</span> where <span class="math inline">(x_0,\ldots, x_{N-1})</span> are the coefficients of <span class="math inline">v</span> on the basis <span class="math inline">e_t</span>. If, for example, <span class="math inline">v</span> represents a discrete temporal series, its coefficients would represent the amplitude at each sampled instant. In a lot of cases, however, we are also interested in the amplitudes for the frequencies of this vector. To calculate those, we exchange to another basis <span class="math inline">f_k</span> (related to <span class="math inline">e_t</span>) called the <em>Fourier basis</em> and write <span class="math inline">v</span> as <span class="math display"> v = \sum_{k=0}^{N-1} y_k f_k</span> where the new coefficients <span class="math inline">y_k</span> are defined as <span class="math display"> y_k = \sum_{t=0}^{N-1} x_t \cdot e^{-{2\pi i \over N}t k}.</span></p>
 <p>We have our first formula, time to implement it in Haskell! Let’s begin by importing the libraries we will need.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Data.Complex</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Data.List</span> (foldr, unfoldr)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Complex</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.List</span> (foldr, unfoldr)</span></code></pre></div>
 <p>The functions <code>foldr</code> and <code>unfoldr</code> are, respectively, Haskell’s built-in catamorphism and anamorphism for lists.</p>
 <p>The formula for the <span class="math inline">y</span>’s receives as list of coefficients and returns another list of coefficients</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">dft ::</span> [<span class="dt">Complex</span> <span class="dt">Double</span>] <span class="ot">-&gt;</span> [<span class="dt">Complex</span> <span class="dt">Double</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ot">dft ::</span> [<span class="dt">Complex</span> <span class="dt">Double</span>] <span class="ot">-&gt;</span> [<span class="dt">Complex</span> <span class="dt">Double</span>]</span></code></pre></div>
 <p>The view we will take in here is that the input represents a parameter and we will build a new list in terms of it. This lends us to the following anamorphism:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>dft xs <span class="ot">=</span> unfoldr coalg <span class="dv">0</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a> <span class="kw">where</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>  dim <span class="ot">=</span> <span class="fu">fromIntegral</span> <span class="op">$</span> <span class="fu">length</span> xs</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>  chi k t <span class="ot">=</span> cis (<span class="op">-</span><span class="dv">2</span> <span class="op">*</span> <span class="fu">pi</span> <span class="op">*</span> k <span class="op">*</span> t <span class="op">/</span> dim)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>  coalg k <span class="ot">=</span> <span class="kw">if</span> k <span class="op">&lt;</span> dim</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>             <span class="kw">then</span> <span class="kw">let</span> cfs <span class="ot">=</span> <span class="fu">fmap</span> (chi k) [<span class="dv">0</span> <span class="op">..</span> dim <span class="op">-</span> <span class="dv">1</span>]</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>                      yk  <span class="ot">=</span> <span class="fu">sum</span> (<span class="fu">zipWith</span> (<span class="op">*</span>) cfs xs)</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>                  <span class="kw">in</span>  <span class="dt">Just</span> (yk, k <span class="op">+</span> <span class="dv">1</span>)</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>             <span class="kw">else</span> <span class="dt">Nothing</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>dft xs <span class="ot">=</span> unfoldr coalg <span class="dv">0</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a> <span class="kw">where</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  dim <span class="ot">=</span> <span class="fu">fromIntegral</span> <span class="op">$</span> <span class="fu">length</span> xs</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  chi k t <span class="ot">=</span> cis (<span class="op">-</span><span class="dv">2</span> <span class="op">*</span> <span class="fu">pi</span> <span class="op">*</span> k <span class="op">*</span> t <span class="op">/</span> dim)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  coalg k <span class="ot">=</span> <span class="kw">if</span> k <span class="op">&lt;</span> dim</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>             <span class="kw">then</span> <span class="kw">let</span> cfs <span class="ot">=</span> <span class="fu">fmap</span> (chi k) [<span class="dv">0</span> <span class="op">..</span> dim <span class="op">-</span> <span class="dv">1</span>]</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>                      yk  <span class="ot">=</span> <span class="fu">sum</span> (<span class="fu">zipWith</span> (<span class="op">*</span>) cfs xs)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>                  <span class="kw">in</span>  <span class="dt">Just</span> (yk, k <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>             <span class="kw">else</span> <span class="dt">Nothing</span></span></code></pre></div>
 <p>If you’ve never seem the function <code>cis</code> before, it is Haskell’s imaginary exponential <span class="math inline">a \mapsto e^{i a}</span>. The function <code>dft</code> builds the <code>y</code>’s one step at a time. There are <span class="math inline">N</span> coefficients <span class="math inline">y_k</span> and each of them requires <span class="math inline">O(N)</span> calculations, thus the complexity is <span class="math inline">O(N^2)</span>. Although this is not monstrous, it can be a bottleneck for real-time computations. Fortunately we can do better than this.</p>
 <h2 id="the-fast-fourier-transform">The Fast Fourier Transform</h2>
 <p>The function <code>dft</code> implements the Fourier transform exactly as it is defined. However, if you take a look at the coefficients used, you will see that there’s a certain pattern to them. A way to exploit this pattern is encoded in the Danielson-Lanczos Lemma.</p>
@@ -161,39 +294,39 @@ y_k &amp;= \sum_{t=0}^{N-1} x_t \cdot e^{-{2\pi i \over N} t k} \\
 </div>
 <p>Well, that’s a lot of symbols… The important part for us is that we can break the DFT into two smaller problems and then merge them back together with a <span class="math inline">O(N)</span> procedure. A divide-and-conquer algorithm!</p>
 <p>Let’s model this as a hylomorphism. For simplicity (and to avoid the boilerplate of fixed points) we will use the direct definition of a hylo.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>hylo f g <span class="ot">=</span> f <span class="op">.</span> <span class="fu">fmap</span> (hylo f g) <span class="op">.</span> g</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>hylo f g <span class="ot">=</span> f <span class="op">.</span> <span class="fu">fmap</span> (hylo f g) <span class="op">.</span> g</span></code></pre></div>
 <p>The FFT will take an input list, properly divide it into even and odds indices and then conquer the solution by merging the subproblems into the output list.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="ot">fft ::</span> [<span class="dt">Complex</span> <span class="dt">Double</span>] <span class="ot">-&gt;</span> [<span class="dt">Complex</span> <span class="dt">Double</span>]</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>fft <span class="ot">=</span> hylo conquer divide</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">fft ::</span> [<span class="dt">Complex</span> <span class="dt">Double</span>] <span class="ot">-&gt;</span> [<span class="dt">Complex</span> <span class="dt">Double</span>]</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>fft <span class="ot">=</span> hylo conquer divide</span></code></pre></div>
 <p>Alright, time to implement the actual algorithm. Let’s begin with the <code>divide</code> step. Our algorithm must take a list of complex numbers and rewrite it as a binary tree whose leafs are sublists of odd dimension and nodes represent splitting an even-dimensional list. The data structure that represents this call tree is</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">CallTree</span> a x <span class="ot">=</span> <span class="dt">Leaf</span> [a] <span class="op">|</span> <span class="dt">Branch</span> x x</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Functor</span> (<span class="dt">CallTree</span> a) <span class="kw">where</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>  <span class="fu">fmap</span> _ (<span class="dt">Leaf</span> xs     ) <span class="ot">=</span> <span class="dt">Leaf</span> xs</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>  <span class="fu">fmap</span> f (<span class="dt">Branch</span> xs ys) <span class="ot">=</span> <span class="dt">Branch</span> (f xs) (f ys)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">CallTree</span> a x <span class="ot">=</span> <span class="dt">Leaf</span> [a] <span class="op">|</span> <span class="dt">Branch</span> x x</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> (<span class="dt">CallTree</span> a) <span class="kw">where</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmap</span> _ (<span class="dt">Leaf</span> xs     ) <span class="ot">=</span> <span class="dt">Leaf</span> xs</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmap</span> f (<span class="dt">Branch</span> xs ys) <span class="ot">=</span> <span class="dt">Branch</span> (f xs) (f ys)</span></code></pre></div>
 <p>The bunk of the <code>divide</code> method consists of splitting a list into even and odd components. We can do this in <span class="math inline">O(n)</span> steps using a fold from a list to a pair of lists.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="ot">split ::</span> [a] <span class="ot">-&gt;</span> ([a], [a])</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>split <span class="ot">=</span> <span class="fu">foldr</span> f ([], []) <span class="kw">where</span> f a (v, w) <span class="ot">=</span> (a <span class="op">:</span> w, v)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">split ::</span> [a] <span class="ot">-&gt;</span> ([a], [a])</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>split <span class="ot">=</span> <span class="fu">foldr</span> f ([], []) <span class="kw">where</span> f a (v, w) <span class="ot">=</span> (a <span class="op">:</span> w, v)</span></code></pre></div>
 <p>Finally, <code>divide</code> represents one step of constructing the call tree. If the list’s length is even, we split it into smaller lists and store them in a <code>Branch</code> to later apply the Danielson-Lanczos Lemma. In case it is odd, there are no optimizations we can do, thus we just store the list’s DFT in a <code>Leaf</code>.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a>divide v <span class="ot">=</span> <span class="kw">if</span> <span class="fu">even</span> (<span class="fu">length</span> v)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>            <span class="kw">then</span> <span class="fu">uncurry</span> <span class="dt">Branch</span> (split v)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>            <span class="kw">else</span> <span class="dt">Leaf</span> (dft v)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>divide v <span class="ot">=</span> <span class="kw">if</span> <span class="fu">even</span> (<span class="fu">length</span> v)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>            <span class="kw">then</span> <span class="fu">uncurry</span> <span class="dt">Branch</span> (split v)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>            <span class="kw">else</span> <span class="dt">Leaf</span> (dft v)</span></code></pre></div>
 <p>This constructs the call tree. Now it’s time to deal with the <code>conquer</code> step. First we notice that thanks to the periodicity of the complex exponential (and the famous Euler formula), <span class="math display"> e^{{-2\pi i \over N } (k + {N \over 2})} = -e^{{-2\pi i \over N } k }.</span> From this, we can reconstruct the FFT from the smaller subproblems as <span class="math display">\begin{aligned}
 y_k               &amp;= y^{(e)}_k + e^{-{2\pi i \over N} k} \cdot y^{(o)}_k, \\
 y_{k+{N \over 2}} &amp;= y^{(e)}_k - e^{-{2\pi i \over N} k} \cdot y^{(o)}_k.
 \end{aligned}</span></p>
 <p>In Haskell, we can apply both the reconstruction formulas and then concatenate the results.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a>conquer (<span class="dt">Leaf</span> v)       <span class="ot">=</span> v</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>conquer (<span class="dt">Branch</span> ye yo) <span class="ot">=</span> <span class="fu">zipWith3</span> f [<span class="dv">0</span><span class="op">..</span>] ye yo</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>                         <span class="op">++</span> <span class="fu">zipWith3</span> g [<span class="dv">0</span><span class="op">..</span>] ye yo</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a> <span class="kw">where</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>  dim <span class="ot">=</span> <span class="fu">fromIntegral</span> (<span class="dv">2</span> <span class="op">*</span> <span class="fu">length</span> x)</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>  f k e o <span class="ot">=</span> e <span class="op">+</span> cis (<span class="op">-</span><span class="dv">2</span> <span class="op">*</span> <span class="fu">pi</span> <span class="op">*</span> k <span class="op">/</span> dim) <span class="op">*</span> o</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a>  g k e o <span class="ot">=</span> e <span class="op">-</span> cis (<span class="op">-</span><span class="dv">2</span> <span class="op">*</span> <span class="fu">pi</span> <span class="op">*</span> k <span class="op">/</span> dim) <span class="op">*</span> o</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>conquer (<span class="dt">Leaf</span> v)       <span class="ot">=</span> v</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>conquer (<span class="dt">Branch</span> ye yo) <span class="ot">=</span> <span class="fu">zipWith3</span> f [<span class="dv">0</span><span class="op">..</span>] ye yo</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                         <span class="op">++</span> <span class="fu">zipWith3</span> g [<span class="dv">0</span><span class="op">..</span>] ye yo</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a> <span class="kw">where</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  dim <span class="ot">=</span> <span class="fu">fromIntegral</span> (<span class="dv">2</span> <span class="op">*</span> <span class="fu">length</span> x)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  f k e o <span class="ot">=</span> e <span class="op">+</span> cis (<span class="op">-</span><span class="dv">2</span> <span class="op">*</span> <span class="fu">pi</span> <span class="op">*</span> k <span class="op">/</span> dim) <span class="op">*</span> o</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  g k e o <span class="ot">=</span> e <span class="op">-</span> cis (<span class="op">-</span><span class="dv">2</span> <span class="op">*</span> <span class="fu">pi</span> <span class="op">*</span> k <span class="op">/</span> dim) <span class="op">*</span> o</span></code></pre></div>
 <h2 id="conclusion">Conclusion</h2>
 <p>The main advantage of writing code like this is that it is extremely modularized. We have many small almost-independent snippets of code that are combined through the magic of a <code>hylo</code> into an extremely powerful algorithm. As bonus, if you want to test this code by yourself, you can also invert the fft to recover the original coefficients in <span class="math inline">O(N \log N)</span> through</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a>ifft x <span class="ot">=</span> <span class="fu">fmap</span> ((<span class="op">/</span>dim) <span class="op">.</span> conjugate) <span class="op">.</span> fft <span class="op">.</span> <span class="fu">fmap</span> conjugate <span class="op">$</span> x</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>      <span class="kw">where</span> dim <span class="ot">=</span> <span class="fu">fromIntegral</span> (<span class="fu">length</span> x)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>ifft x <span class="ot">=</span> <span class="fu">fmap</span> ((<span class="op">/</span>dim) <span class="op">.</span> conjugate) <span class="op">.</span> fft <span class="op">.</span> <span class="fu">fmap</span> conjugate <span class="op">$</span> x</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>      <span class="kw">where</span> dim <span class="ot">=</span> <span class="fu">fromIntegral</span> (<span class="fu">length</span> x)</span></code></pre></div>
 <p>Another interesting fact I’ve noticed is that, when working with <code>Double</code>s, the <code>fft</code> has much less rounding errors than the <code>dft</code>. This probably occurs because we make less floating-point operations and not because of the hylomorphism. But I thought it worth noticing anyway.</p>
 <p>Well, it’s all for today. Good morphisms to everyone!</p>
 <section class="footnotes" role="doc-endnotes">
