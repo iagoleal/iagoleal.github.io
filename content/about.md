@@ -14,7 +14,7 @@ simulations of the dynamics of self-deforming bodies
 and some models related to astronomy.
 
 If you want to discuss something I wrote on the blog or just say "hi",
-feel free to send me an [email](mailto:me@iagoleal.com).
+feel free to send me an at `hello[at]iagoleal[dot]com`.
 
 If you liked any of my projects and want to know about my professional records,
 take a look at my [CV](/data/cv.pdf).
