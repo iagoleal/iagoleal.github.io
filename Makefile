@@ -11,6 +11,10 @@ build   = build
 posts-src    = $(wildcard $(content)/posts/*.md)
 posts-result = $(patsubst $(content)/posts/%.md,$(build)/posts/%/index.html,$(posts-src))
 
+# For yet unpublished posts
+unposts-src    = $(wildcard $(content)/unposts/*.md)
+unposts-result = $(patsubst $(content)/unposts/%.md,$(build)/posts/%/index.html,$(unposts-src))
+
 # All additional pages go here
 pages-names  = about projects posts
 pages-result = $(addprefix $(build)/,$(addsuffix /index.html,$(pages-names)) \
@@ -54,6 +58,8 @@ endef
 
 all: pages posts stylesheets static
 
+unpublished: all unposts
+
 clean: clean-cache clean-build
 
 clean-cache:
@@ -73,11 +79,15 @@ deploy:
 # Posts #
 #########
 
-.PHONY: posts
+.PHONY: posts unposts
 
 posts: $(posts-result)
+unposts: $(unposts-result)
 
 $(build)/posts/%/index.html: $(content)/posts/%.md $(filters) $(templates) $(config)
+	$(call generate_post,"$<","$@")
+
+$(build)/posts/%/index.html: $(content)/unposts/%.md $(filters) $(templates) $(config)
 	$(call generate_post,"$<","$@")
 
 ###############
