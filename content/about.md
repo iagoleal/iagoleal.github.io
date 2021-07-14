@@ -21,3 +21,7 @@ take a look at my [CV](/data/cv.pdf).
 
 Most of my personal projects are open source (including this site!)
 and you can find the repositories in my [Github profile](https://github.com/iagoleal).
+
+I am also a regular member of [PowerPointers](https://powerpointers.github.io).
+Every Monday 8 PM (UTC -03) one of us improvises a totally random slide presentation.
+It is open to the public and free to watch! If you speak Portuguese, be sure to check on it!
