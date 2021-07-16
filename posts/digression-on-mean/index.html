@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="generator" content="pandoc" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+            <meta name="author" content="Iago Leal" />
+                <meta name="dcterms.date" content="2021-05-21" />
+                <meta name="keywords" content="math, statistics" />
+            <title>Iago Leal | Digressions on the Mean Value: Is that definition natural?</title>
+        <style>
+            html {
+              line-height: 1.5;
+              font-family: Georgia, serif;
+              font-size: 20px;
+              color: #1a1a1a;
+              background-color: #fdfdfd;
+            }
+            body {
+              margin: 0 auto;
+              max-width: 36em;
+              padding-left: 50px;
+              padding-right: 50px;
+              padding-top: 50px;
+              padding-bottom: 50px;
+              hyphens: auto;
+              word-wrap: break-word;
+              text-rendering: optimizeLegibility;
+              font-kerning: normal;
+            }
+            @media (max-width: 600px) {
+              body {
+                font-size: 0.9em;
+                padding: 1em;
+              }
+            }
+            @media print {
+              body {
+                background-color: transparent;
+                color: black;
+                font-size: 12pt;
+              }
+              p, h2, h3 {
+                orphans: 3;
+                widows: 3;
+              }
+              h2, h3, h4 {
+                page-break-after: avoid;
+              }
+            }
+            p {
+              margin: 1em 0;
+            }
+            a {
+              color: #1a1a1a;
+            }
+            a:visited {
+              color: #1a1a1a;
+            }
+            img {
+              max-width: 100%;
+            }
+            h1, h2, h3, h4, h5, h6 {
+              margin-top: 1.4em;
+            }
+            h5, h6 {
+              font-size: 1em;
+              font-style: italic;
+            }
+            h6 {
+              font-weight: normal;
+            }
+            ol, ul {
+              padding-left: 1.7em;
+              margin-top: 1em;
+            }
+            li > ol, li > ul {
+              margin-top: 0;
+            }
+            blockquote {
+              margin: 1em 0 1em 1.7em;
+              padding-left: 1em;
+              border-left: 2px solid #e6e6e6;
+              color: #606060;
+            }
+            code {
+              font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+              font-size: 85%;
+              margin: 0;
+            }
+            pre {
+              margin: 1em 0;
+              overflow: auto;
+            }
+            pre code {
+              padding: 0;
+              overflow: visible;
+            }
+            .sourceCode {
+             background-color: transparent;
+             overflow: visible;
+            }
+            hr {
+              background-color: #1a1a1a;
+              border: none;
+              height: 1px;
+              margin: 1em 0;
+            }
+            table {
+              margin: 1em 0;
+              border-collapse: collapse;
+              width: 100%;
+              overflow-x: auto;
+              display: block;
+              font-variant-numeric: lining-nums tabular-nums;
+            }
+            table caption {
+              margin-bottom: 0.75em;
+            }
+            tbody {
+              margin-top: 0.5em;
+              border-top: 1px solid #1a1a1a;
+              border-bottom: 1px solid #1a1a1a;
+            }
+            th {
+              border-top: 1px solid #1a1a1a;
+              padding: 0.25em 0.5em 0.25em 0.5em;
+            }
+            td {
+              padding: 0.125em 0.5em 0.25em 0.5em;
+            }
+            header {
+              margin-bottom: 4em;
+              text-align: center;
+            }
+            #TOC li {
+              list-style: none;
+            }
+            #TOC a:not(:hover) {
+              text-decoration: none;
+            }
+            code{white-space: pre-wrap;}
+            span.smallcaps{font-variant: small-caps;}
+            span.underline{text-decoration: underline;}
+            div.column{display: inline-block; vertical-align: top; width: 50%;}
+            div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+            ul.task-list{list-style: none;}
+        </style>
+        <link rel="stylesheet" href="/css/sakura-earthly.css"/>
+        <link rel="stylesheet" href="/css/krkis.css"/>
+        <link rel="stylesheet" href="/css/theorems.css"/>
+        <link rel="stylesheet" href="/css/portfolio.css"/>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.js"></script>
+                <script>document.addEventListener("DOMContentLoaded", function () {
+                 var mathElements = document.getElementsByClassName("math");
+                 var macros = [];
+                 for (var i = 0; i < mathElements.length; i++) {
+                  var texText = mathElements[i].firstChild;
+                  if (mathElements[i].tagName == "SPAN") {
+                   katex.render(texText.data, mathElements[i], {
+                    displayMode: mathElements[i].classList.contains('display'),
+                    throwOnError: false,
+                    macros: macros,
+                    fleqn: false
+                   });
+                }}});
+                </script>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" />
+            <!--[if lt IE 9]>
+            <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+        <![endif]-->
+        </head>
+<body>
+<header id="top-bar">
+    <nav>
+        <ul>
+            <div class="home-button">
+                <li><a href="/">home</a></li>
+            </div>
+            <div class="nav-links">
+                <li><a href="/posts/">blog</a></li>
+                <li><a href="/projects/">projects</a></li>
+                <li><a href="/about/">about</a></li>
+            </div>
+        </ul>
+    </nav>
+</header><header id="title-block-header">
+    <header class="subheading">
+        <h1 class="title">Digressions on the Mean Value</h1>
+                <p class="subtitle">Is that definition natural?</p>
+            </header>
+            <p class="date">21 May 2021</p>
+    </header>
+<p>If there is a concept in mathematics that I really never understood, it must be the mean value. Of course, I use it a lot (really really a lot) and I know very well how useful it is, but I never had a good intuition for it. In fact, I always thought that its importance was purely operational: the average is easy to calculate, useful in practice and there is a lot of powerful theorems related to it.</p>
+<div class="Theorem">
+<p>The mean of a random variable <span class="math inline">X</span> is the constant that is closest to it on the euclidean distance.</p>
+</div>
+<style type="text/css">
+  canvas { border: 1px solid black;
+           width: 100%;
+           height: auto;
+         }
+</style>
+<canvas id="graphic-projection">
+The length of the orthogonal projection on the constant functions equals the mean value.
+</canvas>
+<script>
+  const canvas = document.getElementById('graphic-projection');
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = 'green';
+  ctx.fillRect(10, 10, 150, 100);
+  ctx.fillStyle = 'rgb(200, 0, 0)';
+  ctx.fillRect(10, 10, 50, 50);
+
+  ctx.fillStyle = 'rgba(0, 0, 200, 0.5)';
+  ctx.fillRect(30, 30, 50, 50);
+</script>
+<h2 id="random-variables-as-geometry">Random Variables as Geometry</h2>
+<ul>
+<li>Discrete space</li>
+<li>Indicators for a basis</li>
+<li>Metric
+<ul>
+<li>orthogonal basis</li>
+<li>Constants are independent of prob</li>
+<li>Weights depend on <span class="math inline">p_i</span>
+<ul>
+<li><span class="math inline">\left\lVert\delta_i\right\rVert^2 = p_i</span> (should justify this squared)</li>
+</ul></li>
+</ul></li>
+</ul>
+<p><span class="math display">
+\delta_i(\omega_j) = \begin{cases}
+  1,&amp; i = j \\
+  0,&amp; \text{otherwise}
+\end{cases}
+</span></p>
+<p><span class="math display">
+G = \sum_{i=1}^N g \cdot \delta_i
+  = \underbrace{g}_{\text{number}} \cdot \underbrace{\left(\sum_{i=1}^N \delta_i\right)}_{\text{Direction}}
+</span></p>
+<h2 id="what-about-the-mean">What about the mean?</h2>
+<p><span class="math display">
+\begin{array}{rl}
+    \min\limits_{x} &amp; \left\lVert X - c\right\rVert \\
+    \textrm{s.t.}  &amp; c \text{ is a constant}
+\end{array}
+</span></p>
+<h3 id="another-old-friend-standard-deviation">Another old friend: standard deviation</h3>
+<h2 id="afterthoughts">Afterthoughts</h2>
+<div id="share-this-page">
+  <div class="hr-text">Spread the Word</div>
+  <a class="share-link facebook" target="_blank" title="Share on Facebook" href="https://www.facebook.com/sharer/sharer.php?u={{url}}">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+    </svg>
+  </a>
+  <a class="share-link twitter" target="_blank" title="Share on Twitter" href="https://twitter.com/intent/tweet?text={{text}}&url={{url}}&">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+    </svg>
+  </a>
+  <a class="share-link telegram" target="_blank" title="Share on Telegram" href="https://t.me/share/url?text={{text}}&url={{url}}">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+    </svg>
+  </a>
+  <a class="share-link whatsapp" target="_blank" title="Share on Whatsapp" href="https://wa.me/?text={{text}} {{url}}">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z">
+      </path>
+    </svg>
+  </a>
+  <script>
+    // Put the proper link into each social network
+    var currentURL = new URL(window.location.href);
+    currentURL.hash = '';
+    for (a of document.getElementById("share-this-page").getElementsByTagName("a")) {
+      a.href = a.href.replace("{{url}}", encodeURIComponent(currentURL));
+      let pageTitle = document.getElementById("title-block-header").getElementsByClassName("subheading")[0].innerText.replace("\n\n",": ")
+      a.href = a.href.replace("{{text}}", pageTitle);
+    }
+  </script>
+</div>
+<footer id="bottom-bar">
+    <span>&copy; Iago Leal de Freitas, 2020-2021</span><br>
+    <span>Made with <a href="https://www.gnu.org/software/make">make</a>
+        and <a href="https://pandoc.org">pandoc</a>
+    </span><br/>
+    <span>Source @ <a href="https://github.com/iagoleal/site">Github</a></span>
+</footer>
+</body>
+</html>
