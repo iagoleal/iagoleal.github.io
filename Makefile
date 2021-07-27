@@ -54,7 +54,7 @@ endef
 
 .DEFAULT: all
 
-.PHONY: all clean serve clean-cache clean-build deploy
+.PHONY: all clean serve watch clean-cache clean-build deploy
 
 all: pages posts stylesheets static
 
@@ -71,6 +71,10 @@ clean-build:
 
 serve:
 	cd $(build) && $(PYTHON_3) -m http.server
+
+watch:
+	cd $(build) && $(PYTHON_3) -m http.server &
+	watch -n 0.5 $(MAKE)
 
 deploy:
 	sh deploy
@@ -126,7 +130,6 @@ static: $(static-result)
 
 $(build)/img/%.svg: img/%.tex
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
-	echo "OOOOI"
 	src/tex2svg.sh "$<" "$@"
 
 $(build)/img/%: img/%
