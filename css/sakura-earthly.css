@@ -87,12 +87,13 @@ small, sub, sup {
 hr {
   border-color: #008b6a; }
 
-a {
+a, a:visited {
   text-decoration: none;
-  color: #008b6a; }
-  a:hover {
-    color: #4ed0eb;
-    }
+  color: #008b6a;
+}
+a:hover {
+  color: #4ed0eb;
+}
 
 ul {
   padding-left: 1.4em;
