@@ -33,3 +33,4 @@ filters:
 - filters/tikz.lua
 - filters/wc.lua
 - filters/date.lua
+- filters/post-list.lua

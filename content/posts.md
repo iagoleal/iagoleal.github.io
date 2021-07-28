@@ -1,0 +1,4 @@
+# Posts
+<br/>
+
+{{post-list}}
