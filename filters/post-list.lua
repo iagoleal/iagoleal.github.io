@@ -8,14 +8,13 @@ local function getfilename(s)
   return string.match(s, "^.+/(.+)%..+$")
 end
 
-function split(s, delimiter)
+local function split(s, delimiter)
     result = {}
     for match in (s..delimiter):gmatch("(.-)"..delimiter) do
         table.insert(result, match)
     end
     return result
 end
-
 -- Lua implementation of PHP scandir function
 local function scandir(directory)
     local t = {}
@@ -36,7 +35,11 @@ local function readyaml(fname, keys)
       local k = keys[i]
       local matched = string.match(line, '^' .. k .. ':%s+(.+)%s*$')
       if matched then
-        values[k] = trimspaces(matched)
+        if k == 'date' then
+          values[k] = pandoc.utils.normalize_date(matched)
+        else
+          values[k] = trimspaces(matched)
+        end
         table.remove(keys, i)
         break
       end
@@ -52,38 +55,58 @@ local function format_date(date)
   return string.gsub(date, '-', '.')
 end
 
+local function format_title(title, subtitle)
+  if subtitle then
+    return fmt("%s: %s", title, subtitle)
+  else
+    return title
+  end
+end
+
 local function makeitem(info)
   return pandoc.List {
-    pandoc.Plain { -- This is a <li> 
+    pandoc.Plain { -- This is a <li>
       pandoc.Link ({
-        pandoc.Span(fmt("%s: %s", info.title, info.subtitle), {class = "title"}),
+        pandoc.Span(format_title(info.title, info.subtitle), {class = "title"}),
         pandoc.Span(format_date(info.date), {class = "date"}),
       }, info.href)
     }
   }
 end
 
+local function compare_dates(a, b)
+  local ya, ma, da = table.unpack(split(a.date, '-'))
+  local yb, mb, db = table.unpack(split(b.date, '-'))
+  return os.time({year = ya, month = ma, day = da})
+       > os.time({year = yb, month = mb, day = db})
+end
+
 local function make_postlist(path, n)
   local posts = scandir(path)
   local data = {}
-  -- n = math.min(n, #postsagnas)
+  local headlines = {}
+  n = n and math.min(n, #posts) or #posts
+  print(fmt("Making post list with %d of %d posts", n, #posts))
   for _, post in ipairs(posts) do
-    print("TOC: reading post ", post)
+    print("\tPost list: reading post " .. post)
     local info = readyaml(post, {"title", "subtitle", "date"})
-    print("TOC: href ", info.href)
-    local item = makeitem(info)
-    table.insert(data, item)
+    table.insert(data, info)
   end
-  return pandoc.BulletList(pandoc.List( data))
+  table.sort(data, compare_dates)
+  for i = 1, n do
+    headlines[i] = makeitem(data[i])
+  end
+  return pandoc.BulletList(headlines)
 end
 
 function Block(elem)
-  if elem.content and elem.content[1].text == "{{post-list}}" then
-    local postlist = make_postlist("content/posts")
-    local div = pandoc.Div({postlist})
-    div.classes = {"post-list"}
-    return div
-  else
-    return elem
+  if elem.content then
+    local text = pandoc.utils.stringify(elem.content)
+    local num = string.match(text, "^%s*{{%s*post%-list%s*(%d*)%s*}}%s*$")
+    if num then
+      local postlist = make_postlist("content/posts", tonumber(num))
+      local div = pandoc.Div({postlist}, {class = "post-list"})
+      return div
+    end
   end
 end
