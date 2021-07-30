@@ -5,27 +5,28 @@ self-contained: false
 to: html5
 
 metadata:
-    author-meta: Iago Leal
-    lang: en
+  author-meta: Iago Leal
+  lang: en
 
 variables:
-    github: https://github.com/iagoleal
-    site-repo: https://github.com/iagoleal/site
+  github:    https://github.com/iagoleal
+  site:      https://iagoleal.com
+  site-repo: https://github.com/iagoleal/site
 
 # Log boilerplate
 verbosity: INFO
 log-file: pandoc-log.json
 
 # Styling
-strip-comments: true
+strip-comments:  true
 highlight-style: kate
 
 html-math-method:
-    method: katex
+  method: katex
 
 reference-links: false
 # block, section, or document
-reference-location: document
+reference-location: block
 
 fail-if-warnings: false
 

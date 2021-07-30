@@ -2,29 +2,21 @@
      and properly format it
 --]]
 
-function collect(iter)
-  local t = {}
-  for k in iter do
-    table.insert(t, k)
-  end
-  return t
+local function split(s, delimiter)
+    result = {}
+    for match in (s..delimiter):gmatch("(.-)"..delimiter) do
+        table.insert(result, match)
+    end
+    return result
 end
 
 function Meta(m)
   if m.date == nil then
     m.date = os.date("%e %B %Y")
   else
-    for k, v in pairs(m.date) do
-      if type(v) == "table" and v.t == 'Str' then
-        local matches = collect(v.text:gmatch("%d*"))
-        if #matches == 3 then
-          local date_t = {year = matches[1],
-                          month = matches[2],
-                          day = matches[3]}
-          v.text = os.date("%e %B %Y", os.time(date_t))
-        end
-      end
-    end
+    local date = pandoc.utils.normalize_date(pandoc.utils.stringify(m.date))
+    local year, month, day = table.unpack(split(date, '-'))
+    m.date = os.date("%e %B %Y", os.time({year=year, month=month, day=day}))
   end
   return m
 end
