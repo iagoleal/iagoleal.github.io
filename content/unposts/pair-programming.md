@@ -1,15 +1,18 @@
 ---
 title: Pair Programming in the Pandemic
 keywords: [linux, tmux, vi]
-date: 2021-07-15
+date: 2021-08-02
 ---
 
-The pandemic has been really harsh where I live.
-In order to cope with it,
-I have been meeting (remotely) with a friend every now and then
+I gotta say that this pandemic has been really harsh where I live.
+Most of all, I miss hanging out with my friends,
+be it to chat, play something or work on any project together.
+In order to adapt to this new remote world,
+we had to move everything to be online.
+In this spirit, lately I have been meeting (remotely) with a friend every now and then
 to talk about life and work on a game as a side project[^game-side-project].
 
-I began by teaching some [Lua](https://lua.org)
+I began by teaching my friend some [Lua](https://lua.org)
 and then we started building our game with [love2d](https://love2d.org).
 At first, the setup was basically I sharing my screen
 in Google Meet or Jitsi and he accompanying and asking questions.
@@ -20,9 +23,11 @@ just weren't cutting it.
 Furthermore, sometimes there are connection issues
 and the Meet sharing screen lags a lot.
 
-Thus, I started a quest in search of a better setup.
-This post is a step-by-step guide written for myself in the future
-in case I want to reproduce it or for anybody else that may be interested.
+We had some ups and downs finding a good setup for programming together,
+thus I started a quest in search of a better setup.
+This post is a step-by-step guide written where I try to document everything
+to make life easier for anyone trying to reproduce it
+(myself in the future included).
 
 [^game-side-project]: More on this on another post (someday, I hope).
 
@@ -40,8 +45,8 @@ After that, we just have to navigate to the project's folder
 and play with it as we wish.
 
 Of course most of the steps above will be automatic.
-And did I already mention that he can only stay connected via ssh
-while the tmux session exists?
+And did I already mention that it is only possible 
+to stay connected via ssh while the tmux session exists?
 
 I tested this with my machine running Arch Linux as host
 and my friend's machine running Ubuntu 20.04 or Ubuntu WSL.
@@ -51,7 +56,9 @@ and that `systemd` is installed and in charge of the services.
 But it should be easy adapt it to any other Linux host[^adapt-host].
 For the guest, any system with a ssh client should do.
 
+:::Note
 Note: This guide also assumes you have root access on your machine.
+:::
 
 [^adapt-host]: Probably, all you have to do is
 change `pacman` for your system's package manager (`apt`, `yum`, `xbps` etc.),
@@ -140,11 +147,13 @@ Setting a password for his private key when queried is also a good idea.
 Now the file `~/.ssh/id_rsa.pub` should exist in his machine
 and he can send you the content.
 
+:::Note
 Note: I feel I shouldn't have to mention this but for the sake of comprehensivity
 I will...
 The command `ssh-keygen` creates two files,
 a private key (`id_rsa`) and a public key (`id_rsa.pub`).
 One should **never** send the private key.
+:::
 
 ### Authorize your friend's key
 
@@ -168,7 +177,44 @@ This is discussed more when
 As a positive side effect,
 the connection will only be accepted if the session exists.
 
-### Extra Step: Configure the SSH Server
+### Extra step: configure the SSH Server
+
+This section is totally optional and is here just to added security.
+On some distros, the OpenSSH server defaults to only accept
+connections using key pairs while others will accept logins by password.
+Here we will see how to configure ssh require both a key _and_ a password.
+
+OpenSSH stores its server configuration in the file `/etc/ssh/sshd_config`[^user-cfg].
+Just open it with your favorite editor and add the following line to the end:
+
+    AuthenticationMethods "publickey,password"
+
+Now the server will ask for both a key and a password before allowing login.
+There are also other options for authentication methods besides there two.
+For a full list, take a look at the
+[man page for `sshd_config(5)`](https://man.openbsd.org/sshd_config#AuthenticationMethods).
+
+Also know that these changes only apply after you
+[restart the service](#start-the-ssh-server).
+
+[^user-cfg]: Beware to not mix this up with `/etc/ssh/ssh_config`,
+the file where OpenSSH stores the _client_ configuration.
+
+### Extra step: configure tmux for multiple clients
+
+When multiple clients connect to the same tmux session,
+it will by default resize the screen on each command
+to the same of the last client to do something.
+I personally find all this resizing pretty annoying and prefer to
+configure tmux to stick with a size that fits all connected clients.
+All you have to do is edit `~/.tmux.conf` and add the following lines:
+
+    set -g window-size smallest
+    setw -g aggressive-resize on
+
+Now tmux will always use the smallest size among all clients,
+so it is a good idea to tell everybody working on this setup
+to use their terminals on fullscreen.
 
 ## Start Pair Programming (you)
 
@@ -182,30 +228,29 @@ In Arch (or any other systemd based distro),
 systemctl status sshd
 ```
 
-If it is inactive or dead,
-start it with
+If the service is inactive or dead, start it with
 
 ```sh
 systemctl start sshd
 ```
 
-You will be queried for you password and the it is ready to go.
+You will be queried for your password and then it is ready to go.
 
 :::Note
-
 I also tested this in WSL2[^wsl]
 but in there Ubuntu does not use systemd
 (maybe for some system incompatibilities?).
 If you are following this tutorial from WSL2, the respective commands are
+
 ```sh
 sudo service ssh status
 sudo service ssh start
 ```
 :::
 
-[^wsl]: I know what you're thinking... But I need Windows for ~~gaming~~ work.
+[^wsl]: I know what you're thinking... But I really need Windows for ~~gaming~~ work.
 
-### Create the Shared Tmux Session
+### Create the shared tmux session
 
 We will store the shared session in a temporary file
 that can be accessed both by your and your friend's user.
@@ -234,7 +279,7 @@ chmod g+rw /tmp/sharedtmux
 
 This way, both of them will have total control of the tmux process.
 
-### Start Ngrok Tunnel
+### Start ngrok tunnel
 
 If you followed the steps on ngrok's manual,
 it should suffice to run a tcp connection on port 22
@@ -244,7 +289,7 @@ it should suffice to run a tcp connection on port 22
 ngrok tcp 22
 ```
 
-After it opens a TUI, there will be a line looking something like
+When the TUI starts, there will be a line looking something like
 
     Forwarding          tcp://2.tcp.ngrok.io:15727 -> localhost:22
 
@@ -260,9 +305,14 @@ If you exit it, the process will be killed and the tunnel closed.
 :::
 
 
-### Attach to it
+### Attach to the shared session
 
-    tmux -u -S /tmp/sharedtmux attach -t gamemaking
+Now, in a new terminal you can attach to the tmux session
+and wait for your friend to connect.
+
+```sh
+tmux -u -S /tmp/sharedtmux attach -t gamemaking
+```
 
 ## Start Pair Programming (friend)
 
@@ -272,13 +322,103 @@ and send it.
 Then, connecting should be as simple as running something like
 
 ```sh
-ssh -t -p $PORT frienduser@$HOSTNAME
+ssh -t -p PORT frienduser@HOST
 ```
 
 Now you're ready to go!
 Have fun programming together!
 
+## Extra Step: Query ngrok info from command line
+
+Although the setup above works,
+there is something in it that really bothers me:
+you have to manually look at ngrok's TUI and copy the hostname and port form it.
+C'mon, we're in a Linux shell, the land of automation!
+Of course there is some better way to do that.
+
+I read and reread ngrok's help pages but the binary there doesn't seem to
+directly ask the binary for this information in any way.
+Luckily, I stumbled on
+[this gist](https://gist.github.com/rjz/af40158c529d7c407420fc0de490758b)
+and [this blog post](https://queenofdowntime.com/blog/remote-pair-programming)
+while trying to circumvent it and good news: there is a way!
+
+Apparently ngrok exposes its tunneling information
+on `localhost:4040` in JSON format.
+Thus we can query it  by doing
+
+```sh
+curl -s http://localhost:4040/api/tunnels \
+  | sed -nE 's|.*"public_url":"tcp://([^:]*):([0-9]*)".*|\1 \2|p'
+```
+
+This way, we store the tunnel's host and port at the variables
+`ngrok_host` and `ngrok_port`.
+
+## Extra Step: Turn all that into a script
+
+Now that we solved the last bit of manual work,
+we can put everything together in a script
+that generates a shared tmux session,
+tunnels it with ngrok and tells you how to remotely connect to it.
+Below is a script based on the one found at the end of
+[this guide](https://queenofdowntime.com/blog/remote-pair-programming).
+Also notice that if `sshd` service is inactive,
+you will need the root password to start it.
+
+```sh
+#!/usr/bin/env bash
+
+# Read parameters from command line arguments
+# or use the same defaults as this post
+frienduser="${1:-frienduser}"
+tmux_file="${2:-/tmp/sharedtmux}"
+tmux_session="${3:-gamemaking}"
+tmux_group="${4:-tmux}"
+
+# If sshd is inactive, begin by starting it
+systemctl status sshd.service >/dev/null
+if [[ $? -gt 0 ]]; then
+  sudo systemctl start sshd.service
+fi
+
+# Create shared tmux session
+tmux -S "$tmux_file" new-session -s "$tmux_session" -d
+# Assign right permissions to group
+chgrp $tmux_group "$tmux_file"
+chmod g+rw "$tmux_file"
+
+# Start ngrok using the same tmux socket file
+# but in a different session.
+# This ensures the ngrok TUI will run non-blocking.
+tmux -S "$tmux_file" new-session -s ngrok -d
+tmux -S "$tmux_file" send -t ngrok "ngrok tcp 22" ENTER
+# Wait a little while ngrok starts
+sleep 2
+
+# Query ngrok for host and port
+ngrok_url='http://localhost:4040/api/tunnels'
+query_ngrok() {
+  local ngrok_host ngrok_port
+  read ngrok_host ngrok_port <<< $(curl -s $ngrok_url \
+    | sed -nE 's|.*"public_url":"tcp://([^:]*):([0-9]*)".*|\1 \2|p')
+  echo "ssh -t -p $ngrok_port $frienduser@$ngrok_host"
+}
+
+# Echo the proper ssh command to tmux
+tmux -S "$tmux_file" send -t "$tmux_session" "echo $(query_ngrok)" ENTER
+# And also copy it to X clipboard for convenience
+if command -v xclip &> /dev/null; then
+  query_ngrok | xclip
+fi
+
+# Attach to the shared session
+tmux -u -S "$tmux_file" attach -t "$tmux_session"
+```
+
 ## References
 
-1. https://queenofdowntime.com/blog/remote-pair-programming
-2. https://ptc-it.de/pairing-with-tmux-and-vim/
+1. [Using SSH and Tmux for screen sharing](https://www.redhat.com/sysadmin/ssh-tmux-screen-sharing)
+2. [How to pair-program remotely and not lose the will to live](https://queenofdowntime.com/blog/remote-pair-programming)
+3. [ssh, tmux and vim: A Simple Yet Effective Pair Programming Setup](https://ptc-it.de/pairing-with-tmux-and-vim/)
+4. [rjz/ngrok_hostname.sh](https://gist.github.com/rjz/af40158c529d7c407420fc0de490758b)
