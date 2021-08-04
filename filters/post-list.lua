@@ -29,7 +29,7 @@ end
 -- Iterate over the lines of a file and read the YAML fields into a table.
 -- NOTE: The first match for the field is kept.
 local function readyaml(fname, keys)
-  local values = { href = fmt("posts/%s/", getfilename(fname))}
+  local values = { href = fmt("/posts/%s/", getfilename(fname))}
   for line in io.lines(fname) do
     for i = #keys, 1, -1 do
       local k = keys[i]
