@@ -1,7 +1,7 @@
 ---
 title: Pair Programming in the Pandemic
-keywords: [linux, tmux, vi]
-date: 2021-08-02
+keywords: [linux, tmux, ssh]
+date: 2021-08-03
 ---
 
 I gotta say that this pandemic has been really harsh where I live.
