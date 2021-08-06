@@ -29,6 +29,11 @@ This post is a step-by-step guide written where I try to document everything
 to make life easier for anyone trying to reproduce it
 (myself in the future included).
 
+The video below in an example of this workflow
+using two terminals on the same machine (but still connecting via ssh).
+
+![](/video/demo-pair-programming.webm)
+
 [^game-side-project]: More on this on another post (someday, I hope).
 
 ## The Setup
