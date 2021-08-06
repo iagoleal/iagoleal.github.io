@@ -23,8 +23,8 @@ pages-result = $(addprefix $(build)/,$(addsuffix /index.html,$(pages-names)) \
 css-src    = $(wildcard css/*.css)
 css-result = $(addprefix $(build)/,$(css-src))
 
-static-src    = $(wildcard img/*) $(wildcard data/*) $(wildcard video/*)
-static-result = $(patsubst %.tex,%.svg,$(addprefix $(build)/, $(static-src)))
+static-src    = $(wildcard static/**/*)
+static-result = $(patsubst %.tex,%.svg,$(addprefix $(build)/, $(static-src:static/%=%)))
 
 # Dependency-only
 filters   = $(wildcard filters/*)
@@ -128,18 +128,18 @@ $(build)/css/%: css/%
 
 static: $(static-result)
 
-$(build)/img/%.svg: img/%.tex
+$(build)/img/%.svg: static/img/%.tex
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
 	src/tex2svg.sh "$<" "$@"
 
-$(build)/img/%: img/%
+$(build)/img/%: static/img/%
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
 	cp "$<" "$@"
 
-$(build)/video/%: video/%
+$(build)/video/%: static/video/%
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
 	cp "$<" "$@"
 
-$(build)/data/%: data/%
+$(build)/data/%: static/data/%
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
 	cp "$<" "$@"
