@@ -28,7 +28,7 @@ p {
   }
 }
 
-img {
+img,video {
   margin: auto;
   display: block;
   max-width: 100%;

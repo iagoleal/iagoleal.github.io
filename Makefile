@@ -23,7 +23,7 @@ pages-result = $(addprefix $(build)/,$(addsuffix /index.html,$(pages-names)) \
 css-src    = $(wildcard css/*.css)
 css-result = $(addprefix $(build)/,$(css-src))
 
-static-src    = $(wildcard img/*) $(wildcard data/*)
+static-src    = $(wildcard img/*) $(wildcard data/*) $(wildcard video/*)
 static-result = $(patsubst %.tex,%.svg,$(addprefix $(build)/, $(static-src)))
 
 # Dependency-only
@@ -133,6 +133,10 @@ $(build)/img/%.svg: img/%.tex
 	src/tex2svg.sh "$<" "$@"
 
 $(build)/img/%: img/%
+	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
+	cp "$<" "$@"
+
+$(build)/video/%: video/%
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
 	cp "$<" "$@"
 
