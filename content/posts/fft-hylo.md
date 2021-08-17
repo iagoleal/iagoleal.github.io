@@ -225,4 +225,3 @@ and not because of the hylomorphism.
 But I thought it worth noticing anyway.
 
 Well, it's all for today. Good morphisms to everyone!
-

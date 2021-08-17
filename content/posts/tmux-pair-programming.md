@@ -95,7 +95,8 @@ Therefore, just follow the instructions on [ngrok's site](https://ngrok.com/prod
 sign up for an account, download it and ngrok will be ready to go.
 Also notice that if you are pair programming in a LAN, there is no need for ngrok
 as you may simply ssh using the private IPs.
-In our case, we are a couple states apart so some kind of port forwarding or reverse tunneling is needed.
+In our case, we are some 1000 kilometers away
+so some kind of port forwarding or reverse tunneling is more than needed.
 
 Also ensure that you have a terminal based text editor: neovim, vim, emacs, nano, ed etc.
 
