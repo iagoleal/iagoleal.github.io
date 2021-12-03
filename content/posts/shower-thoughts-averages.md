@@ -1,7 +1,7 @@
 ---
 title: Shower Thoughts about Averages
 keywords: [math, statistics]
-date: 2021-12-27
+date: 2021-12-29
 ---
 
 \def\inlSum{\textstyle\sum}
@@ -117,13 +117,43 @@ $$
 $$
 
 The coefficients of a random variable in this basis are also pretty straightforward.
-They are just the values returned by it for each outcome.
+They are just the values it returns for each outcome.
 That is, if $X \colon \Omega \to \R$ returns the value $x_i$ when we sample an outcome $w_i$,
 then it is decomposable as
 
 $$
 X = \sum_{j = 1}^N x_j \Id_j.
 $$
+
+In two dimensions, we can also visualize this as a figure:
+
+<object type="image/svg+xml"
+        data="/img/shower-thoughts-averages-basis-decomposition.svg"
+        width="100%">
+</object>
+
+<!-- ```{.tikz tikzlibrary="calc,scopes,fadings,shadows,bending,arrows.meta,shapes.misc"} -->
+<!--   \def\vecolor{green!50} -->
+<!--   % Help lines -->
+<!--   \draw [help lines, step=1.2, path fading = east, fading angle = 45] (0,0) grid (4,4); -->
+<!--   \coordinate (I1) at (4, 0); -->
+<!--   \coordinate (I2) at (0, 4); -->
+
+<!--   % Vector and components -->
+<!--   \coordinate (X) at (2.9, 2.4); -->
+<!--   \node at (X) [above right = 0.01cm] {$X$}; -->
+<!--   \coordinate (comp1) at (X |- I1); -->
+<!--   \coordinate (comp2) at (I2 |- X); -->
+<!--   \draw[thin, gray] (X) -- (comp1) node[below, color=black] {$x_1$}; -->
+<!--   \draw[thin, gray] (X) -- (comp2) node[left,  color=black] {$x_2$};; -->
+<!--   \draw[thick, \vecolor, circular glow] (0, 0) -- (X); -->
+<!--   \draw[thick, -stealth] (0, 0) -- (2, 0) node[below] {$\mathbb{I}_1$}; -->
+<!--   \draw[thick, -stealth] (0, 0) -- (0, 3.5) node[left] {$\mathbb{I}_2$};; -->
+
+<!--   \fill[\vecolor, draw=black] (X) circle (2pt); -->
+<!--   \fill[\vecolor] (comp1) circle (1pt); -->
+<!--   \fill[\vecolor] (comp2) circle (1pt); -->
+<!-- ``` -->
 
 Because we are interested in a geometrical definition for the mean,
 let's consider a special example:
@@ -140,6 +170,13 @@ C = \sum_{j = 1}^N c \Id_j
   = \underbrace{c}_{\text{constant}} \cdot \underbrace{\left(\sum_{j=1}^N \Id_j\right)}_{\text{direction}}.
 $$
 
+Or, as a figure:
+
+<object type="image/svg+xml"
+        data="/img/shower-thoughts-averages-constants.svg"
+        width="100%">
+</object>
+
 From this we see that all constants lie on the same line (one-dimensional space),
 given by the diagonal of all indicators.
 Remember that we want a method to find the closest constant to a random variable.
@@ -148,7 +185,7 @@ the random variable into the line of constants.
 So, let's proceed by considering how to project vectors into subspaces.
 
 
-### Where is the probability?
+### What about the probabilities?
 
 Possibly you noticed that until now, we never used the probabilities.
 The random variables represent values attached to some non-determinism outcome
@@ -173,7 +210,7 @@ on the probability $p_i$ if both of them are non-zero for the outcome $\omega_i$
 This restriction represents that the information for one possible outcome is only important for it.
 Some high-level consequences of this restriction are:
 
-- Random variables with disjoint supports,
+- Random variables with disjoint supports
 (That is, every time one of them is zero, the other is non-zero)
 are **orthogonal**.
 
@@ -187,7 +224,7 @@ It is completely determined by how it acts on a basis,
 so let's check these properties for the _indicators_.
 First, the norm of $\Id_j$ can only on the probability $p_j$.
 Also, since they are supported on different outcomes,
-this definition forces the $\Id_J$ to form an orthogonal basis!
+this definition forces the $\Id_j$ to form an orthogonal basis!
 
 $$
 \inner{\Id_i, \Id_j} = \begin{cases}
@@ -265,15 +302,24 @@ $$
 $$
 :::
 
+
 Let's distill this definition a bit.
 For us "closest" means "vector that minimizing the distance".
 Remembering that all constant random variables lie on the same line,
 we get from Geometry/Linear Algebra that $\E{X}$ is
 the result of the _orthogonal projection_ of $X$ on $\sum_j \Id_j$.
 (which is an unitary vector)
-Thus, if we also remember that squaring a non-negative function does not affect
-the point that minimizes it (because it is convex and monotonous),
-our previous definition can be more concretely written
+What we really want to calculate can be summarized as a picture:
+
+<object type="image/svg+xml"
+        data="/img/shower-thoughts-averages-projection.svg"
+        width="100%">
+</object>
+
+In order to represent this as a closed formula,
+we must remember that squaring a non-negative function does not change
+the point that minimizes it (because it is convex and monotone).
+Our previous definition can then be more concretely written
 as this _least squares problem_:
 
 $$
@@ -332,6 +378,11 @@ You probably already know this formula by the name of **standard deviation**!
 Although in probability textbooks it appears as the concise but opaque formula
 $\Std{X} = \sqrt{\E{(X - \E{X})^2}}$, here it naturally appears as the least squares' error
 from approximating $X$ by a constant.
+
+<object type="image/svg+xml"
+        data="/img/shower-thoughts-averages-variance.svg"
+        width="100%">
+</object>
 
 In real world probability, one of the most widely used kinds of random variables
 are certainly the _Gaussian Random Variables_.
