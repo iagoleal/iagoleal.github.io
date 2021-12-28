@@ -24,16 +24,45 @@ In fact, I always thought that its importance was purely operational:
 the average is easy to calculate, has plenty of applications
 and there is a lot of powerful theorems related to it.
 
+Nevertheless this all changed earlier this year.
+I was taking a shower[^shower-why], not even thinking about math
+when I was suddenly struck by a bliss of clarity:
+_the average minimizes the square error_---I said to myself.
+This seemly simple statement is present (normally as an exercise)
+in practically any introductory probability book
+but I had never realized that it implies so much!
+From this, we can construct the average not by a smart formula
+but geometrically using a variational principle.
+
+[^shower-why]: I don't know why, but my best ideas
+always seem to come while I'm sleeping or in the shower.
+
+Let's look at it from an information point of view:
+suppose you are working with a random variable $X$
+but you don't have where to store all its information.
+In fact, for the sake of this example, you can only store
+_a single number_ to represent it.
+What number should you choose?
+You probably already know it is $\E{X}$! But why?
+Well... Because it is in fact the best possible approximation.
+This post will be a digression on this theme:
+
 ::: Theorem
 The closest constant to a random variable is its expected value.
 :::
 
-
-::: Theorem
-The mean of a random variable $X$ is the constant that is closest to it
-on the euclidean distance.
-:::
-
+Of course, there are some things lacking on the theorem above.
+How do you measure the distance between random variables?
+Moreover, constants are numbers and random variables are functions.
+They have different types!
+Then, what does it mean for them to be close together?
+The usual probabilistic view don't emphasize this but we can
+interpret random variables geometrically as points in the space
+and, then, measuring their distance is as simple as taking
+the length of the line segment connecting them.
+And, indeed, if we know the random variables,
+we can even measure this length through
+nothing more, nothing less than Pythagorean Theorem!
 
 ## The Geometry of Random Variables
 
@@ -313,7 +342,7 @@ but I like to think that what makes them so special
 is that they can be recovered solely  by knowing their approximation
 by a constant and how far off this approximation is.
 
-[^std-sigma]: Or variance if prefer it squared.
+[^std-sigma]: Or variance if you prefer it squared.
 
 
 Until now we have only been looking for distances and orthogonal projections
@@ -333,8 +362,8 @@ the cosine of the _angle_ between these errors:
 
 $$
 \begin{aligned}
-  \mathrm{corr}[X, Y] &= \mathrm{angle}(X - \E{X}, Y - \E{Y}) \\
-                      &= \frac{\inner{X - \E{X}, Y - \E{Y}}}{\norm{X - \E{X}}_2 \norm{Y - \E{Y}}_2}
+  \mathrm{corr}[X, Y] &= \cos(X - \E{X}, Y - \E{Y}) \\
+                      &= \frac{\inner{X - \E{X}, Y - \E{Y}}}{\Std{X}\Std{Y}}
 \end{aligned}
 $$
 
@@ -362,7 +391,7 @@ $$
 \norm{X}_1 = \sum_{i = 1}^N p_i |x_i|.
 $$
 
-[^1norm]: Also known as the Manhattan or taxicab's norm.
+[^1norm]: Also known by the much more stylish names of Manhattan or taxicab's norm.
 
 
 This is just like the Euclidean norm we were talking about
@@ -390,7 +419,17 @@ For any measure of distance between random variables between points,
 there is some associated constant that minimizes it and, in general,
 is already an important object in Statistics.
 As an example, try to discover which is the closest constant to $X$
-by using the $\infty$-norm: $\norm{X-Y}_\infty = \max_\omega \abs{X(\omega) - Y(\omega)}$.
+by using the $\infty$-norm: $\norm{X-Y}_\infty = \max_\omega P(\omega)|X(\omega) - Y(\omega)|$.
 In fact, we don't even have to use a norm!
 Any meaningful notion of distance can to be used to project (non-linearly)
 on the space of constants.
+
+As a last example before we finish,
+let's consider a distance that does not come from a norm.
+Consider $\dist(X, Y) = \mathrm{P}(X \ne Y)$.
+This is an interesting distance and widely used in signal processing
+because when $Y = 0$, it measures the sparsity of $X$ as a vector.
+Can you guess what constant minimizes it?
+Try to prove that it is the _mode_[^mode-def] of $X$!
+
+[^mode-def]: The _mode_ is the value returned with greatest probability.
