@@ -351,15 +351,12 @@ while trying to circumvent it and good news: there is a way!
 
 Apparently ngrok exposes its tunneling information
 on `localhost:4040` in JSON format.
-Thus we can query it  by doing
+Thus we can query it with a bit of `sed` magic:
 
 ```sh
 curl -s http://localhost:4040/api/tunnels \
   | sed -nE 's|.*"public_url":"tcp://([^:]*):([0-9]*)".*|\1 \2|p'
 ```
-
-This way, we store the tunnel's host and port at the variables
-`ngrok_host` and `ngrok_port`.
 
 ## Extra Step: Turn all that into a script
 

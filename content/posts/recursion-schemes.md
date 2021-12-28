@@ -371,9 +371,9 @@ For example, given a function $\phi \colon A \to B$,
 the composition operator $K_\phi$ defined as
 $$ K_\phi f = f \circ \phi$$
 has type signature $K_\phi \colon (B \to C) \to (A \to C)$.
-It takes a function and turns it into another one.
-This was a simple example but be sure that many more will soon come.
-Higher-order functions are at the heart of recursion schemes.
+As you can see, it takes a function and turns it into another one.
+This was a simple example but be sure that many more will soon come,
+since higher-order functions are at the heart of recursion schemes.
 
 Now we arrive at the last kind of compound type we are going to discuss today:
 fixed point types.
