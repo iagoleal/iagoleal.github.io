@@ -4,9 +4,12 @@ keywords: [math, statistics]
 date: 2021-12-27
 ---
 
+\def\inlSum{\textstyle\sum}
+
 \def\E#1{\mathbb{E}[#1]}
-\def\inner#1{\left\langle#1\rangle\right}
+\def\inner#1{\left\langle#1\right\rangle}
 \def\norm#1{\left\lVert#1\right\rVert}
+\def\dist(#1,#2){\mathrm{dist}({#1},{#2})}
 
 \def\R{\mathbb{R}}
 \def\Id{\mathbb{I}}
@@ -40,7 +43,7 @@ You can think of it as throwing a dice, pulling a slot machine's lever
 or any other situation where uncertain stuff may happen.
 
 In this framework, we can think of a _random variable_
-as a function that for each possible outcome assigns a real number[^RV-def],
+as a function that for each possible outcome assigns a real number[^rv-def],
 $X \colon \Omega \to \R$.
 As an example, a possible random variable is _how much_ cash
 each outcome of a slot machine gives you.
@@ -116,34 +119,170 @@ So, let's proceed by considering how to project vectors into subspaces.
 
 ### Where is the probability?
 
-- Metric
-  - orthogonal basis
-  - Constants are independent of prob
-  - Weights depend on $p_i$
-    - $\norm{\delta_i}^2 = p_i$ (should justify this squared)
+Possibly you noticed that until now, we never used the probabilities.
+The random variables represent values attached to some non-determinism outcome
+but we haven't used any notion of which outcomes are more probable
+nor how they relate to each other.
 
+Another thing you may have noticed is that the previous section
+was all function algebra, without any real geometry happening.
+There were no angles, distances nor anything like that.
+Very well, this is the time to fix things up
+by killing two birds with one stone.
+Our solution will use the _probabilities_ of the outcomes
+to define an _inner product_ on the space of random variables.
+
+Now it's time for modeling! But how can we embed the probabilistic structure
+into a inner product?
+To have an inner product that somehow reflects the probabilities,
+we will ask that it satisfies some coherence conditions.
+
+We want the inner product of two random variables $X$ and $Y$ to only depend
+on the probability $p_i$ if both of them are non-zero for the outcome $\omega_i$.
+This restriction represents that the information for one possible outcome is only important for it.
+Some high-level consequences of this restriction are:
+
+- Random variables with disjoint supports,
+(That is, every time one of them is zero, the other is non-zero)
+are **orthogonal**.
+
+- The norm of a random variable **only depends
+  on the outcomes for whom it is non-zero**.
+
+
+Now more concretely:
+How does this shape the inner product?
+It is completely determined by how it acts on a basis,
+so let's check these properties for the _indicators_.
+First, the norm of $\Id_j$ can only on the probability $p_j$.
+Also, since they are supported on different outcomes,
+this definition forces the $\Id_J$ to form an orthogonal basis!
 
 $$
-\left\langle \delta_i , \delta_j \right\rangle = \begin{cases}
-  p_i,& i = j \\
-  0,& \text{otherwise}
+\inner{\Id_i, \Id_j} = \begin{cases}
+  f(p_i), & i = j \\
+  0,& \text{otherwise}.
 \end{cases}
+$$
+
+Where $f \colon \R \to \R$ is a yet undetermined function.
+To totally define this inner product, we must enforce another property:
+we require deterministic objects to be unaware of probabilistic structure.
+Since the only way for a random variable to be deterministic is being constant,
+this translates to: _if $C$ is a constant random variable,
+then its norm $\norm{C}_2$ doesn't depend on any $p_i$._
+Moreover, for the sake of consistency, let's also require
+ norm of a constant random variable to be precisely the value that it always returns.
+In math symbols: If for all $\omega$, $C(\omega) = c$ then $\norm{C}_2 = c$.
+Now let's use this new property to determine the inner product values.
+
+$$
+\begin{aligned}
+\norm{C}_2 &= \sqrt{\inner{C,C}} = \sqrt{\inner{c \inlSum_i \Id_i, c \inlSum_j \Id_j}} = c \sqrt{\inlSum_{i,j}\inner{\Id_i, \Id_j}} \\
+           &= c \sqrt{\inlSum_j f(p_j)}
+\end{aligned}
+$$
+
+Because the $p_j$ are the coefficients of a probability distribution,
+they must sum to one.
+Thus, a good choice for $f$ that satisfies our desired properties is
+to set equal to the identity function.
+This way we get
+
+$$
+\norm{C}_2 = c \sqrt{\inlSum_j f(p_j)} = c \sqrt{\inlSum_j p_j} = c \cdot 1 = c
+$$
+
+Now we finally have an inner product that coherently represents
+the probabilistic structure of our random variables!
+On the indicators basis, it is defined as
+
+$$
+\inner{\Id_i, \Id_j} = \begin{cases}
+  p_i, & i = j \\
+  0,& \text{otherwise}.
+\end{cases}
+$$
+
+While for general $X$ and $Y$,
+we can use linearity to discover that this amounts to
+
+$$
+\inner{X, Y} = \sum_{j} p_j x_j y_j.
 $$
 
 
 ## What about the mean?
 
+Recall that what an inner product essentially
+defines are notions of distances and angles between vectors.
+Particularly, the distance is given by $\dist(X, Y) = \sqrt{\norm{X-Y}_2}$.
+Through it, we finally have the necessary tools
+to rigorously describe the **average** using a variational principle,
+as we talked about on the introduction.
+
+
+::: Definition
+Let $X$ be a random variable. We call its _average_ $\E{X}$ the value
+of the constant random variable that is closest to it.
+
 $$
 \begin{array}{rl}
-    \min\limits_{x} & \norm{X - c}_2 \\
-    \textrm{s.t.}  & c \text{ is a constant function}
+    \E{X} = \argmin\limits_{c} & \dist(X, C) \\
+    \textrm{s.t.}  & C(\omega) = c, \forall \omega
 \end{array}
 $$
+:::
 
-Least squares
+Let's distill this definition a bit.
+For us "closest" means "vector that minimizing the distance".
+Remembering that all constant random variables lie on the same line,
+we get from Geometry/Linear Algebra that $\E{X}$ is
+the result of the _orthogonal projection_ of $X$ on $\sum_j \Id_j$.
+(which is an unitary vector)
+Thus, if we also remember that squaring a non-negative function does not affect
+the point that minimizes it (because it is convex and monotonous),
+our previous definition can be more concretely written
+as this _least squares problem_:
+
+$$
+  \begin{array}{rl}
+  \E{X} = \argmin\limits_{c} & \frac{1}{2}\norm{X-C}_2^2 \\
+          \textrm{s.t.}  & C = c \sum_j \Id_j.
+  \end{array}
+$$
+
+Least Squares notoriously have a closed form solution
+but let's derive it on this particular case.
+First we turn it into an unconstrained problem by substituting $C$
+in the objective function; which makes it look like $\frac{1}{2}\sum_j p_i (x_i - c)^2$.
+Since this is convex, all we need to find the minimizer
+is applying the good old method of differentiating **with respect to c** and equating to zero.
+
+$$
+\begin{aligned}
+  0 &= \frac{d}{dc} \left(\frac{1}{2}\inlSum_i p_i (x_i - c)^2\right) \\
+    &= \frac{1}{2}\inlSum_i p_i \cdot 2 (x_i - c) \\
+    &= \inlSum_i p_i x_i  - \inlSum_i p_i c \\
+    &= \left(\inlSum_i p_i x_i\right) - c
+\end{aligned}
+$$
+
+By moving the scalar $c$ to the equation's left-hand side,
+we at last found a formula for the expected value.
+And, of course, it meets our expectation![^pun-E]
+
+$$
+\boxed{\E{X} = \sum_{i=1}^N p_i x_i}
+$$
+
+[^pun-E]: ba dum tss.
 
 
-### Another old friend: standard deviation
+### Let's gather more old friends
+
+- σ
+- Correlation
 
 ## But Iago, I dislike least squares!
 
