@@ -7,6 +7,8 @@ date: 2021-12-27
 \def\inlSum{\textstyle\sum}
 
 \def\E#1{\mathbb{E}[#1]}
+\def\Std#1{\sigma[#1]}
+
 \def\inner#1{\left\langle#1\right\rangle}
 \def\norm#1{\left\lVert#1\right\rVert}
 \def\dist(#1,#2){\mathrm{dist}({#1},{#2})}
@@ -281,11 +283,114 @@ $$
 
 ### Let's gather more old friends
 
-- σ
-- Correlation
+We just defined the average of $X$ through the closest constant to it.
+A question that naturally arises is how well this represents $X$.
+We can answer this by looking to the projection's _error_,
+that is, the distance between $X$ and $\E{X}$.
+(In what follows, we sometimes overload the notation $\E{X}$
+to also mean the constant random variable with norm $\E{X}$.
+What we are talking about should be clear from context)
 
-## But Iago, I dislike least squares!
+$$
+\begin{aligned}
+  \text{error} &= X - \E{X}, \\
+  \Std{X}      &= \norm{\text{error}}_2 = \dist(X, \E{X}) \\
+               &= \sqrt{\sum_{i=1}^N p_i (x_i - \E{X})^2}.
+\end{aligned}
+$$
 
-Talk about median and mode
+You probably already know this formula by the name of **standard deviation**!
+Although in probability textbooks it appears as the concise but opaque formula
+$\Std{X} = \sqrt{\E{(X - \E{X})^2}}$, here it naturally appears as the least squares' error
+from approximating $X$ by a constant.
 
-## Afterthoughts
+In real world probability, one of the most widely used kinds of random variables
+are certainly the _Gaussian Random Variables_.
+Among their fundamental properties is that their distribution is uniquely
+defined by its mean and standard deviation[^std-sigma].
+This part is only my opinion and no mathematics
+but I like to think that what makes them so special
+is that they can be recovered solely  by knowing their approximation
+by a constant and how far off this approximation is.
+
+[^std-sigma]: Or variance if prefer it squared.
+
+
+Until now we have only been looking for distances and orthogonal projections
+but the inner product also tells us about the angle between two vectors!
+From Euclidean Geometry, we know that the angle $\theta$ between two vectors
+satisfies
+
+$$
+\inner{A,B} = \norm{A}_2\norm{B}_2 \cos\theta.
+$$
+
+An interesting use of this angle is in calculating the **correlation**
+between random variables.
+To find it, we first calculate the errors of approximating $X$ and $Y$
+by their means. Then, the correlation is defined exactly as
+the cosine of the _angle_ between these errors:
+
+$$
+\begin{aligned}
+  \mathrm{corr}[X, Y] &= \mathrm{angle}(X - \E{X}, Y - \E{Y}) \\
+                      &= \frac{\inner{X - \E{X}, Y - \E{Y}}}{\norm{X - \E{X}}_2 \norm{Y - \E{Y}}_2}
+\end{aligned}
+$$
+
+What does the correlation mean, you may ask?
+Well, in usual statistical parlance,
+the farther the correlation is from zero, the closer the random variables are
+from being linear functions from one another, i.e. $Y = aX + b$.
+
+## Do we really need those squares?
+
+Up until this point,
+we only considered distances the "classical" or Euclidean sense.
+But sometimes it is not the most appropriate way to measure how far things are.
+For example, if you are driving in a city, there is no way to cross diagonally between blocks.
+The best way to describe the distance between two points is through
+the size of the horizontal and vertical increments
+one has to traverse from one point to another.
+Thus let's talk a bit about these more "exotic" distances.
+
+Coming from our example above,
+we define the $L^1$-norm[^1norm] of $X$
+analogously to the Euclidean norm as
+
+$$
+\norm{X}_1 = \sum_{i = 1}^N p_i |x_i|.
+$$
+
+[^1norm]: Also known as the Manhattan or taxicab's norm.
+
+
+This is just like the Euclidean norm we were talking about
+but exchanging the squares by absolute values.
+Instead of measuring the length of the line segment between points,
+it measures the length we must traverse if we could only walk through a grid
+parallel to the indicator functions $\Id_j$.
+This distance is widely used on the literature for its robustness and sparsity-inducing properties.
+Also, while the Euclidean distance is rotation invariant,
+the $L^1$-norm clearly has some preference towards the outcomes' indicators.
+So, our variational principle using this distance is
+
+$$
+  \begin{array}{rl}
+  \min\limits_{c} & \sum_{i=1}^N p_i |x_i - c|
+  \end{array}
+$$
+
+This optimization problem can be rewritten as a _linear program_
+as has a (possibly non-unique) solution that is also used all around Statistics:
+the **median**. This is a constant $\mu$ with the nice property
+$\mathrm{P}(X \le \mu) \ge \frac{1}{2}$ and $\mathrm{P}(X \ge \mu) \ge \frac{1}{2}$.
+
+For any measure of distance between random variables between points,
+there is some associated constant that minimizes it and, in general,
+is already an important object in Statistics.
+As an example, try to discover which is the closest constant to $X$
+by using the $\infty$-norm: $\norm{X-Y}_\infty = \max_\omega \abs{X(\omega) - Y(\omega)}$.
+In fact, we don't even have to use a norm!
+Any meaningful notion of distance can to be used to project (non-linearly)
+on the space of constants.
