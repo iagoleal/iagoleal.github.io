@@ -22,12 +22,12 @@ Of course, I use it a lot (really really a lot) and I know pretty well how usefu
 but I never had a good intuition for it.
 In fact, I always thought that its importance was purely operational:
 the average is easy to calculate, has plenty of applications
-and there is a lot of powerful theorems related to it.
+and there are a lot of powerful theorems related to it.
 
 Nevertheless this all changed earlier this year.
 I was taking a shower[^shower-why], not even thinking about math
 when I was suddenly struck by a bliss of clarity:
-_the average minimizes the square error_---I said to myself.
+_the average minimizes the squared error_---I said to myself.
 This seemly simple statement is present (normally as an exercise)
 in practically any introductory probability book
 but I had never realized that it implies so much!
@@ -56,13 +56,13 @@ How do you measure the distance between random variables?
 Moreover, constants are numbers and random variables are functions.
 They have different types!
 Then, what does it mean for them to be close together?
-The usual probabilistic view don't emphasize this but we can
+The usual probabilistic view doesn't emphasize this but we can
 interpret random variables geometrically as points in the space
 and, then, measuring their distance is as simple as taking
 the length of the line segment connecting them.
 And, indeed, if we know the random variables,
 we can even measure this length through
-nothing more, nothing less than Pythagorean Theorem!
+nothing more, nothing less than the Pythagorean Theorem!
 
 ## The Geometry of Random Variables
 
@@ -185,7 +185,7 @@ the random variable into the line of constants.
 So, let's proceed by considering how to project vectors into subspaces.
 
 
-### What about the probabilities?
+### Where are all the probabilities?
 
 Possibly you noticed that until now, we never used the probabilities.
 The random variables represent values attached to some non-determinism outcome
@@ -207,7 +207,8 @@ we will ask that it satisfies some coherence conditions.
 
 We want the inner product of two random variables $X$ and $Y$ to only depend
 on the probability $p_i$ if both of them are non-zero for the outcome $\omega_i$.
-This restriction represents that the information for one possible outcome is only important for it.
+This restriction represents that the information
+for one possible outcome is only important for this outcome.
 Some high-level consequences of this restriction are:
 
 - Random variables with disjoint supports
@@ -219,7 +220,7 @@ are **orthogonal**.
 
 
 Now more concretely:
-How does this shape the inner product?
+how does this shape the inner product?
 It is completely determined by how it acts on a basis,
 so let's check these properties for the _indicators_.
 First, the norm of $\Id_j$ can only on the probability $p_j$.
@@ -246,7 +247,9 @@ Now let's use this new property to determine the inner product values.
 
 $$
 \begin{aligned}
-\norm{C}_2 &= \sqrt{\inner{C,C}} = \sqrt{\inner{c \inlSum_i \Id_i, c \inlSum_j \Id_j}} = c \sqrt{\inlSum_{i,j}\inner{\Id_i, \Id_j}} \\
+\norm{C}_2 &= \sqrt{\inner{C,C}} \\
+           &= \sqrt{\inner{c \inlSum_i \Id_i, c \inlSum_j \Id_j}} \\
+           &= c \sqrt{\inlSum_{i,j}\inner{\Id_i, \Id_j}} \\
            &= c \sqrt{\inlSum_j f(p_j)}
 \end{aligned}
 $$
@@ -409,11 +412,13 @@ An interesting use of this angle is in calculating the **correlation**
 between random variables.
 To find it, we first calculate the errors of approximating $X$ and $Y$
 by their means. Then, the correlation is defined exactly as
-the cosine of the _angle_ between these errors:
+the cosine of the _angle_ between these errors.
+That is, if we let $\theta$ equal the angle between
+$X - \E{X}$ and $Y - \E{Y}$, then
 
 $$
 \begin{aligned}
-  \mathrm{corr}[X, Y] &= \cos(X - \E{X}, Y - \E{Y}) \\
+  \mathrm{corr}[X, Y] &= \cos(\theta) \\
                       &= \frac{\inner{X - \E{X}, Y - \E{Y}}}{\Std{X}\Std{Y}}
 \end{aligned}
 $$
@@ -484,3 +489,12 @@ Can you guess what constant minimizes it?
 Try to prove that it is the _mode_[^mode-def] of $X$!
 
 [^mode-def]: The _mode_ is the value returned with greatest probability.
+
+## Acknowledgements
+
+When I stareted thinking of these ideas, I talked about them to Hugo Nobrega and João Paixão.
+This post only came to life because of how excited they got with it.
+Even so that they convinced me it could be interesting to write about it.
+
+I also want to thank Daniel Hashimoto and Ivani Ivanova for
+reading the first version of this post and helping me with their "bug reports".

@@ -26,14 +26,14 @@
      inkscape:document-units="px"
      showgrid="true"
      inkscape:zoom="0.5"
-     inkscape:cx="801"
+     inkscape:cx="800"
      inkscape:cy="187"
      inkscape:window-width="1920"
      inkscape:window-height="1080"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
-     inkscape:current-layer="labels-layer"
+     inkscape:current-layer="vec-layer"
      inkscape:snap-page="true"
      inkscape:object-paths="true"
      inkscape:object-nodes="true"
@@ -235,19 +235,6 @@
            id="path7572" />
       </symbol>
     </g>
-    <filter
-       inkscape:collect="always"
-       style="color-interpolation-filters:sRGB"
-       id="filter6225"
-       x="-0.011791514"
-       y="-0.02369186"
-       width="1.023583"
-       height="1.0473837">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="5.8557238"
-         id="feGaussianBlur6227" />
-    </filter>
   </defs>
   <g
      inkscape:label="Graph"
@@ -469,29 +456,6 @@
      id="vec-layer"
      inkscape:label="Components"
      style="display:inline;opacity:1">
-    <path
-       id="vecglow"
-       style="color:#000000;mix-blend-mode:luminosity;fill:#44aa00;stroke:none;stroke-linecap:round;-inkscape-stroke:none;filter:url(#filter6225)"
-       d="m 1667.6743,967.03308 c -0.2745,-0.005 -0.5506,2.5e-4 -0.8261,0.0156 -1.4697,0.0821 -2.9456,0.45396 -4.3458,1.14257 -4.8294,2.37516 -7.2165,7.77083 -6.0175,12.80274 L 488.37939,1555.4745 a 2.5,2.5 0 0 0 -1.14062,3.3476 2.5,2.5 0 0 0 3.34765,1.1407 L 1658.69,985.48035 c 3.2527,4.02361 8.9838,5.42652 13.8144,3.05078 5.6008,-2.75447 7.9244,-9.57115 5.1699,-15.17188 -1.9367,-3.938 -5.8815,-6.25495 -10,-6.32617 z"
-       onmouseover=""
-       onmouseout="this.style.opacity = 0.0" />
-    <g
-       id="g6152"
-       transform="matrix(0.99760435,0,0,0.99437582,134.90787,716.94491)"
-       style="stroke-width:1.00403"
-       onmouseover="document.getElementById(&quot;vecglow&quot;).style.opacity = 1.0; document.getElementById(&quot;labels-layer&quot;).style.opacity = 1.0;"
-       onmouseout="document.getElementById(&quot;vecglow&quot;).style.opacity = 0.0; document.getElementById(&quot;labels-layer&quot;).style.opacity = 0.4;"
-       inkscape:transform-center-x="-594.41561"
-       inkscape:transform-center-y="-292.00116">
-      <path
-         style="color:#000000;fill:#44aa00;stroke:#000000;stroke-width:1.00403;stroke-linecap:round;-inkscape-stroke:none"
-         d="m 1362.5176,256.27344 a 2.5,2.5 0 0 0 -1.9082,0.12304 L 182.4082,835.8418 a 2.5,2.5 0 0 0 -1.14062,3.3477 2.5,2.5 0 0 0 3.34765,1.1406 L 1362.8145,260.88281 a 2.5,2.5 0 0 0 1.1406,-3.3457 2.5,2.5 0 0 0 -1.4375,-1.26367 z"
-         id="path6010" />
-      <path
-         id="path6004"
-         style="color:#000000;fill:#44aa00;fill-rule:evenodd;stroke:#000000;stroke-width:1.00403;stroke-miterlimit:4;stroke-dasharray:none"
-         d="m 1361.7031,247.40039 c -0.2745,-0.005 -0.5506,2.2e-4 -0.8261,0.0156 -1.4697,0.0821 -2.9457,0.45396 -4.3458,1.14257 -5.6007,2.75448 -7.9224,9.57115 -5.1679,15.17188 2.7545,5.60073 9.5692,7.92244 15.1699,5.16797 5.6008,-2.75447 7.9244,-9.57115 5.1699,-15.17188 -1.9367,-3.938 -5.8815,-6.25495 -10,-6.32617 z" />
-    </g>
     <g
        id="path1174">
       <path
@@ -874,7 +838,7 @@
       </g>
     </g>
     <g
-       transform="matrix(4.66665,0,0,4.66665,140.99562,235.5971)"
+       transform="matrix(4.66665,0,0,4.66665,140.99562,561.53323)"
        ns1:version="1.6.0"
        ns1:texconverter="pdflatex"
        ns1:pdfconverter="inkscape"
@@ -926,7 +890,7 @@
       </g>
     </g>
     <g
-       transform="matrix(4.66665,0,0,4.66665,143.94521,391.74753)"
+       transform="matrix(4.66665,0,0,4.66665,143.94521,393.63976)"
        ns1:version="1.6.0"
        ns1:texconverter="pdflatex"
        ns1:pdfconverter="inkscape"
@@ -978,7 +942,7 @@
       </g>
     </g>
     <g
-       transform="matrix(4.66665,0,0,4.66665,142.59981,561.53323)"
+       transform="matrix(4.66665,0,0,4.66665,142.59981,235.5971)"
        ns1:version="1.6.0"
        ns1:texconverter="pdflatex"
        ns1:pdfconverter="inkscape"
