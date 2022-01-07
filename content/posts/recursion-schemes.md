@@ -170,7 +170,7 @@ there are `struct` types, `union` types, and array types.
 The changes also arrived to the control flow
 and an effort was made to tame the once wild `goto`.
 The programmers from that time analysed its most common use cases
-and created new statements fulfill each of these.
+and created new statements fulfilling each of these.
 You are probably acquainted to them as
 `for` loops,
 `while` loops,
@@ -207,7 +207,7 @@ _functional programming_.
 While the imperative paradigm views the code as a sequence of commands
 the programmer gives the computer to execute (hence the name, _imperative_),
 the functional paradigm views the code as a composition of functions in the mathematical sense.
-A function takes a value as input, does some processing to it, calling other functions for it,
+A function takes a value as input, does some processing to it, calling other functions for this,
 and returns another value as output.
 
 ```{.tikz
@@ -224,8 +224,8 @@ and returns another value as output.
 \end{scope}
 ```
 
-If every program consists only of applying a finite amount of previously defined functions,
-the language's expressiveness seems rather limited.
+If every program only consisted of applying a finite amount of previously defined functions,
+the language's expressiveness would be rather limited.
 To overcome this, we need some form of control flow,
 which is achieved via recursion.
 

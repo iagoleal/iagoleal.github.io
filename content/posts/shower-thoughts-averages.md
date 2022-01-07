@@ -349,7 +349,7 @@ $$
 $$
 
 By moving the scalar $c$ to the equation's left-hand side,
-we at last found a formula for the expected value.
+we finally found a formula for the expected value.
 And, of course, it meets our expectation![^pun-E]
 
 $$
@@ -379,8 +379,8 @@ $$
 
 You probably already know this formula by the name of **standard deviation**!
 Although in probability textbooks it appears as the concise but opaque formula
-$\Std{X} = \sqrt{\E{(X - \E{X})^2}}$, here it naturally appears as the least squares' error
-from approximating $X$ by a constant.
+$\Std{X} = \sqrt{\E{(X - \E{X})^2}}$, here it naturally appears as
+the size of the least squares' error from approximating $X$ by a constant.
 
 <object type="image/svg+xml"
         data="/img/shower-thoughts-averages-variance.svg"

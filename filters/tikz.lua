@@ -11,7 +11,7 @@
 ]]
 local tikz_template = [[
 \documentclass[tikz]{standalone}
-\usepackage{xcolor,lmodern,tikz}
+\usepackage{xcolor,lmodern,amsfonts,tikz}
 %% Additional packages: usepackage
 \usepackage{%s}
 %% Libraries for tikz: tikzlibrary
@@ -84,7 +84,6 @@ local function tex2image(src, filetype)
     return pandoc.system.with_working_directory(tmpdir, function()
       local file_template = "%s/tikz-image.%s"
       local tikzfile = file_template:format(tmpdir, "tex")
-      local dvifile  = file_template:format(tmpdir, "dvi")
       local outfile  = file_template:format(tmpdir, filetype)
       -- Create tex source file
       local file = io.open(tikzfile, 'w')
@@ -95,6 +94,7 @@ local function tex2image(src, filetype)
       -- Compile tex -> pdf
         pandoc.pipe("pdflatex", {"-output-directory", tmpdir}, tikzfile)
       elseif filetype == "svg" then
+        local dvifile  = file_template:format(tmpdir, "dvi")
         -- Compile tex -> dvi -> svg
         pandoc.pipe("latex", {"-output-directory", tmpdir}, tikzfile)
         os.execute("dvisvgm --scale=2 --optimize=all --font-format=woff -o " .. outfile .. " " .. dvifile)
