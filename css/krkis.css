@@ -1,5 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;1,400&display=swap');
-/* @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap'); */
+/* Load custom fonts custom fonts */
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/font/Montserrat-VF.woff2') format('woff2-variations');
+  font-weight: 125 900;
+  font-stretch: 75% 125%;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/font/Montserrat-Italic-VF.woff2') format('woff2-variations');
+  font-weight: 125 900;
+  font-stretch: 75% 125%;
+  font-style: italic;
+}
+
 html {
   scroll-behavior: smooth;
   position: relative;

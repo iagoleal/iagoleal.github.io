@@ -19,7 +19,6 @@ unposts-result = $(patsubst $(content)/unposts/%.md,$(build)/posts/%/index.html,
 pages-names  = about projects posts
 pages-result = $(addprefix $(build)/,$(addsuffix /index.html,$(pages-names)) \
                  index.html 404.html)
-
 css-src    = $(wildcard css/*.css)
 css-result = $(addprefix $(build)/,$(css-src))
 
@@ -124,22 +123,17 @@ stylesheets: $(css-result)
 
 $(build)/css/%: css/%
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
-	hasmin -c "$<" > "$@"
+	cp "$<" "$@"
+# hasmin -c "$<" > "$@"
 
 static: $(static-result)
 
+# Convert tikz images to svg
 $(build)/img/%.svg: static/img/%.tex
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
 	src/tex2svg.sh "$<" "$@"
 
-$(build)/img/%: static/img/%
-	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
-	cp "$<" "$@"
-
-$(build)/video/%: static/video/%
-	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
-	cp "$<" "$@"
-
-$(build)/data/%: static/data/%
+# For {img,video,font,data}
+$(build)/%: static/%
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
 	cp "$<" "$@"
