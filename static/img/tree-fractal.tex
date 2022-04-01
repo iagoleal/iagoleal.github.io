@@ -1,0 +1,14 @@
+\documentclass[tikz]{standalone}
+\usepackage{xcolor,lmodern,tikz}
+\usetikzlibrary{lindenmayersystems}
+\begin{document}
+\nopagecolor
+\begin{tikzpicture}
+  \draw[rotate=90]
+    lindenmayer system[l-system={
+      rule set={F -> FF-[-F+F]F+[+F-F]},
+      axiom=F, order=4,
+      step=2pt, randomize step percent=25,
+      angle=30, randomize angle percent=5}];
+\end{tikzpicture}
+\end{document}
