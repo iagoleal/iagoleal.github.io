@@ -1,7 +1,7 @@
 ---
 title: Let's Program a Calculus Student
 keywords: [haskell, functional-programming]
-date: 2022-03-31
+date: 2022-04-05
 ---
 
 Last week I did a little Haskell show-off to two friends.
@@ -40,8 +40,6 @@ Well, enough divagation. Time to do some programming!
 But it has been almost a week and I have the memory of a gold fish.
 The intention is preserved thought.
 
-$$ e^{x^2} + x \sin(x / 3) $$
-
 ## Please be rational
 
 Before delving into the depths of first-year undergraduate math,
@@ -79,9 +77,8 @@ Since we are using operator constructors,
 let's give them the same associativity and fixity as the built-in operators.
 
 ```haskell
-infixl 6 :+: -- Left associative
-infixl 7 :*: -- Left associative with higher precedence that :+:
-infixl 7 :/: -- Left associative with same precedence as :*:
+infixl 6 :+:      -- Left associative
+infixl 7 :*:, :/: -- Left associative with higher precedence than :+:
 ```
 
 For now our constructors are only formal, they just create syntax trees:
@@ -139,7 +136,7 @@ instead of the expression we evaluated above?
 Well, we first need to teach or program how to use
 the built-in numeric constants and arithmetic operations.
 We achieve this through the typeclasses `Num` and `Fractional`.
-Wish are kinda the Haskell equivalents of saying
+This is kind of Haskell's way of saying
 our type forms a [Ring](https://en.wikipedia.org/wiki/Ring_(mathematics))
 and [Field](https://en.wikipedia.org/wiki/Field_(mathematics)).
 
@@ -277,8 +274,8 @@ instance Floating a => Floating (Expr a) where
  -- We can write hyperbolic functions through exponentials
  sinh x  = (exp x - exp (-x)) / 2
  cosh x  = (exp x + exp (-x)) / 2
- asinh x = log (X + sqrt ( X^2 - 1))
- acosh x = log (X + sqrt ( X^2 + 1))
+ asinh x = log (x + sqrt (x^2 - 1))
+ acosh x = log (x + sqrt (x^2 + 1))
  atanh x = (log (1 + x) - log (1 - x)) / 2
 ```
 
@@ -412,7 +409,7 @@ If you use identities that may cancel each other,
 the simplification may never terminate.
 
 [^anedocte-trig]: Countless times I only finished a proof
-by using an identity on the non-intuitive side.
+because I used an identity on the non-intuitive side.
 For example writing something like
 $$f(x) = f(x) \cdot 1 = f(x) \cdot (\sin(x)^2 + \cos(x)^2).$$
 Those are always some great _A-ha!_ moments.
