@@ -145,7 +145,7 @@ local function mkblock(img, filetype, attrs)
   end
   -- Store the data in the media bag:
   pandoc.mediabag.insert(content, mimetype, img)
-  return pandoc.Para({pandoc.Image({}, content, "", attrs)})
+  return pandoc.Para {pandoc.Image({}, content, "" )}
 end
 
 function CodeBlock(block)

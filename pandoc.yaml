@@ -11,7 +11,7 @@ metadata:
 variables:
   github:    https://github.com/iagoleal
   site:      https://iagoleal.com
-  site-repo: https://github.com/iagoleal/site
+  site-repo: https://github.com/iagoleal/iagoleal.github.io
 
 # Log boilerplate
 verbosity: INFO

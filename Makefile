@@ -16,7 +16,7 @@ unposts-src    = $(wildcard $(content)/unposts/*.md)
 unposts-result = $(patsubst $(content)/unposts/%.md,$(build)/posts/%/index.html,$(unposts-src))
 
 # All additional pages go here
-pages-names  = about projects posts
+pages-names  = about masters posts
 pages-result = $(addprefix $(build)/,$(addsuffix /index.html,$(pages-names)) \
                  index.html 404.html)
 css-src    = $(wildcard css/*.css)
@@ -36,7 +36,6 @@ config = pandoc.yaml
 define generate_page
   $(shell [ ! -d $(@D) ] && mkdir -p $(@D))
   $(PANDOC) --defaults=pandoc.yaml \
-     --metadata title=$(4) \
     -f $(3) -t html5 -o "$(2)" "$(1)"
 endef
 
