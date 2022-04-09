@@ -28,9 +28,12 @@ static-result = $(patsubst %.tex,%.svg,$(addprefix $(build)/, $(static-src:stati
 # Dependency-only
 filters   = $(wildcard filters/*)
 templates = $(wildcard templates/*)
+scripts   = $(wildcard scripts/*)
 
 # Configuration files
 config = pandoc.yaml
+
+DEPENDENCIES = $(filters) $(templates) $(scripts) $(config)
 
 #### Functions
 define generate_page
@@ -72,7 +75,7 @@ serve:
 
 watch:
 	cd $(build) && $(PYTHON_3) -m http.server &
-	watch -n 0.5 $(MAKE)
+	watch -n 0.5 -- $(MAKE) unpublished
 
 deploy:
 	sh deploy
@@ -86,10 +89,10 @@ deploy:
 posts: $(posts-result)
 unposts: $(unposts-result)
 
-$(build)/posts/%/index.html: $(content)/posts/%.md $(filters) $(templates) $(config)
+$(build)/posts/%/index.html: $(content)/posts/%.md $(DEPENDENCIES)
 	$(call generate_post,"$<","$@")
 
-$(build)/posts/%/index.html: $(content)/unposts/%.md $(filters) $(templates) $(config)
+$(build)/posts/%/index.html: $(content)/unposts/%.md $(DEPENDENCIES)
 	$(call generate_post,"$<","$@")
 
 ###############
@@ -100,16 +103,16 @@ $(build)/posts/%/index.html: $(content)/unposts/%.md $(filters) $(templates) $(c
 
 pages: $(pages-result)
 
-$(build)/index.html: $(content)/index.html $(filters) $(templates) $(config)
+$(build)/index.html: $(content)/index.html $(DEPENDENCIES)
 	$(call generate_page,"$<","$@",html,"Home Sweet Home")
 
-$(build)/404.html: $(content)/404.html $(filters) $(templates) $(config)
+$(build)/404.html: $(content)/404.html   $(DEPENDENCIES)
 	$(call generate_page,"$<","$@",html,"Are you lost?")
 
-$(build)/%/index.html: $(content)/%.md $(filters) $(templates) $(config)
+$(build)/%/index.html: $(content)/%.md   $(DEPENDENCIES)
 	$(call generate_page,"$<","$@",markdown,'')
 
-$(build)/%/index.html: $(content)/%.html $(filters) $(templates) $(config)
+$(build)/%/index.html: $(content)/%.html $(DEPENDENCIES)
 	$(call generate_page,"$<","$@",html,'')
 
 ###################
