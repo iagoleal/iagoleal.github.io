@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+scour -i "$1" -o "$2" --enable-viewboxing --enable-id-stripping \
+  --enable-comment-stripping --shorten-ids --indent=none

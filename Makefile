@@ -132,6 +132,12 @@ $(build)/img/%.svg: static/img/%.tex
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
 	scripts/tex2svg "$<" "$@"
 
+# Minimize svg files
+$(build)/%.svg: static/%.svg
+	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
+	@echo Minifying file "$<"
+	scripts/svg-minify "$<" "$@"
+
 # For {img,video,font,data}
 $(build)/%: static/%
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))

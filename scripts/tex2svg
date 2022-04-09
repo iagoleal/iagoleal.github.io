@@ -11,10 +11,11 @@ content_sha=$(sha1sum "$INFILE" | awk '{print $1}')
 cp "$INFILE" "${TMPDIR}/${content_sha}.tex"
 latex -output-directory "$TMPDIR" "${TMPDIR}/${content_sha}.tex"
 dvisvgm --scale=2 --optimize=all --font-format=woff -o "${TMPDIR}/${content_sha}.svg" "${TMPDIR}/${content_sha}.dvi"
-cp "${TMPDIR}/${content_sha}.svg" "$OUTFILE"
+# cp "${TMPDIR}/${content_sha}.svg" "$OUTFILE"
+scripts/svg-minify "${TMPDIR}/${content_sha}.svg" "$OUTFILE"
 
 # Also save to cache
 if [ ! -d "${CACHEDIR}" ]; then
   mkdir -p "${CACHEDIR}"
 fi
-cp "${TMPDIR}/${content_sha}.svg" "${CACHEDIR}/${content_sha}.svg"
+cp "${OUTFILE}" "${CACHEDIR}/${content_sha}.svg"
