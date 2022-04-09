@@ -130,7 +130,7 @@ static: $(static-result)
 # Convert tikz images to svg
 $(build)/img/%.svg: static/img/%.tex
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
-	src/tex2svg.sh "$<" "$@"
+	scripts/tex2svg "$<" "$@"
 
 # For {img,video,font,data}
 $(build)/%: static/%

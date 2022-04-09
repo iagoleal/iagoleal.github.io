@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+INFILE="$1"
+OUTFILE="$2"
+TMPDIR=/tmp
+CACHEDIR=cache
+
+content_sha=$(sha1sum "$INFILE" | awk '{print $1}')
+
+# Generate output file
+cp "$INFILE" "${TMPDIR}/${content_sha}.tex"
+latex -output-directory "$TMPDIR" "${TMPDIR}/${content_sha}.tex"
+dvisvgm --scale=2 --optimize=all --font-format=woff -o "${TMPDIR}/${content_sha}.svg" "${TMPDIR}/${content_sha}.dvi"
+cp "${TMPDIR}/${content_sha}.svg" "$OUTFILE"
+
+# Also save to cache
+if [ ! -d "${CACHEDIR}" ]; then
+  mkdir -p "${CACHEDIR}"
+fi
+cp "${TMPDIR}/${content_sha}.svg" "${CACHEDIR}/${content_sha}.svg"
