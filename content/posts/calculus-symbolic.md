@@ -1,10 +1,10 @@
 ---
 title: Let's Program a Calculus Student
-keywords: [haskell, functional-programming]
+keywords: [haskell, computer-algebra, functional-programming]
 date: 2022-04-05
 ---
 
-Last week I did a little Haskell show-off to two friends.
+Last week I did a little Haskell show-off for two friends.
 Besides the classical infinite list of primes one-liner
 and mandatory factorial and Fibonacci functions,
 I also wanted something more complex.
@@ -12,7 +12,7 @@ Specifically, since they work with [Graphical Linear Algebra](https://graphicall
 I wanted to show them how nice it is to write DSLs in Haskell.
 It feels almost too natural.
 You write your types as if they are grammars,
-your functions as if they rewriting rules
+your functions as if they are rewriting rules
 and _bang_, by the magic of recursion everything works.
 
 I offered them what I consider the perfect exhibition for this: _Let's make a solver for a Calculus exam!_
@@ -21,23 +21,23 @@ Calculus is a subject that in their College years, everybody learns to respect (
 Thus, at first sight this may seem too monumental of a task for a mere exposition.
 But what if I told you that if we restrict ourselves to derivatives,
 it takes about a hundred lines of code?
-A lot of people are not used to think of Calculus this way,
+A lot of people are not used to thinking of Calculus this way,
 but computing derivatives is actually a pretty straightforward algorithm.
 
 One thing that one of those friends,
-who is a Professor in a Department of Computer Science,
+who is a Professor in the Department of Computer Science,
 said really resonated with me:
-"People would struggle much less with math if they learnt in school how to write syntax trees."[^joao-comment]
+"People would struggle much less with math if they learned in school how to write syntax trees."[^joao-comment]
 
 I really liked this phrase and would add even more:
 learning about syntax trees (and their siblings s-expressions) and recursion
 eased my way not only with math but with learning grammar as well.
 How I wish that math and languages classes from school
 worked with concepts that are as uniform as they could.
-Well, enough divagation. Time to do some programming!
+Well, enough rambling. Time to do some programming!
 
 [^joao-comment]: The phrase wasn't exactly that. It had a better effect.
-But it has been almost a week and I have the memory of a gold fish.
+But it has been almost a week and I have the memory of a goldfish.
 The intention is preserved thought.
 
 ## Please be rational
@@ -51,11 +51,11 @@ module Calculus.Fraction where
 
 A rational function is formed of sums, products, and divisions
 of numbers and a indeterminate symbol, traditionally denoted by $x$.
-An example is something like:
+An example is something like
 
 $$ \frac{32x^4 + \frac{5}{4}x^3 - x + 21}{\frac{5x^{87} - 1}{23x} + 41 x^{76}}.$$
 
-Let's construct the rational functions over some field of numbers `a` then.
+Let's construct the rational functions over some field of numbers `a`.
 It should have $x$, numbers (called _constants_), and arithmetic operations between them.
 
 ```haskell
@@ -69,7 +69,7 @@ data Fraction a = X
 
 I choose to give it the name `Fraction` because rational functions
 are represented by fractions of polynomials.
-We make it a parameterized typed because `a` could be any numeric field,
+We make it a parameterized type because `a` could be any numeric field,
 just like in math we use the notations $\mathbb{Q}(x)$, $\mathbb{C}(x)$, $\mathbb{Z_{17}}(x)$
 to denote the rational functions over different fields.
 
@@ -93,7 +93,7 @@ We can teach it how to simplify these equations
 but since the focus here is on derivatives,
 we will postpone this to a [further section](#Simplifier).
 Let's say that right now our student will just solve the problems
-and return the exam answers in long form without simplifying anything.
+and return the exam answers in long-form without simplifying anything.
 
 The next thing is thus teach it how to evaluate an expression at a value.
 The nice part is that in terms of implementation,
@@ -126,7 +126,7 @@ it :: Fractional a => a
 
 One nicety about languages like Haskell
 is that they are not only good for writing DSls,
-they are also good for writing _embedded DSLs_.
+but they are also good for writing _embedded DSLs_.
 That is, something like our symbolic Fractions
 can look like just another ordinary part of the language.
 
@@ -197,7 +197,7 @@ it :: Fractional a => Fraction a
 
 Alright, alright. Time to finally teach some calculus.
 Remember all the lectures, all the homework...
-Well, in the end what we need to differentiate a rational function
+Well, in the end, what we need to differentiate a rational function
 are only five simple equations: 3 tree recursive rules and 2 base cases.
 
 ```haskell
@@ -224,8 +224,8 @@ For example:
 $$ \frac{1}{23}\log\left(\sin(3x^3) + \frac{e^{45x} - 21}{x^{0.49}\mathrm{asin}(-\frac{\pi}{x})}\right) + \cos(x^2)$$
 
 
-This sort of objects is called [Elementary functions](https://en.wikipedia.org/wiki/Elementary_function)
-in the math literature but here we will call them simply _expressions_.
+This sort of object is called an [Elementary function](https://en.wikipedia.org/wiki/Elementary_function)
+in the math literature but here we will call it simply an _expression_.
 
 ```haskell
 module Calculus.Expression where
@@ -251,7 +251,7 @@ data Func = Cos | Sin | Log | Exp | Asin | Acos | Atan
 The `Func` type is a simple enumeration of the most common functions
 that one may find running wild on a Calculus textbook.
 There are also other possibilities but they are generally
-composed from those basic build blocks.
+composed from those basic building blocks.
 
 Since the new constructor plays no role in arithmetic,
 We can define instances `Num (Expr a)` and `Fractional (Expr a)`
@@ -282,7 +282,7 @@ instance Floating a => Floating (Expr a) where
 ### Time to update our methods
 
 We already have our type and its instances.
-Now its is time to also consider derivatives
+Now it is time to also consider derivatives
 of the transcendental part of the expressions.
 The evaluator is almost equal except for a new pattern:
 
@@ -322,8 +322,8 @@ with the difference that we implement the chain rule
 instead of for the `Apply` constructor.
 
 Let's start by writing a cheatsheet of derivatives.
-This is the kind of thing you're probably not allowed to carry to Calculus exam
-but our program has it in its head nevertheless (if this makes any sense).
+This is the kind of thing you're probably not allowed to carry to a Calculus exam,
+but let's say that our program has it stored in its head (provided this makes any sense).
 Our cheatsheet will get a `Func` and turn it into the expression
 of its derivative.
 
@@ -358,10 +358,10 @@ It can write any elementary function as normal Haskell code,
 evaluate them, and symbolically differentiate them.
 So what do you think?
 
-## What next?
+## What's next?
 
 Although we finished our differentiator,
-there are a couple topics that I think are worth discussing
+there are a couple of topics that I think are worth discussing
 because they are simple enough to achieve
 and will make our program a lot more polished or fun to play with.
 
@@ -387,7 +387,7 @@ simplify expr = loop expr X
 ```
 
 This is a typical tail-recursive loop.
-The only detail is that we must provide a first expression.
+The only detail is that we must provide the first expression.
 Anything works really...
 I choose to use `X` because it is a non-simplifiable expression.
 
@@ -530,5 +530,5 @@ it :: (Floating a, Eq a) => a
 
 This post only exists thanks to the great chats I had with João Paixão and Lucas Rufino.
 Besides listening to me talking endlessly about symbolic expressions and recursion,
-they also made a lot of good questions and provided the insights
+they also asked a lot of good questions and provided the insights
 that helped shape what became this post.
