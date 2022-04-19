@@ -78,7 +78,7 @@ watch:
 	watch -n 0.5 -- $(MAKE) unpublished
 
 deploy:
-	sh deploy
+	scripts/deploy
 
 #########
 # Posts #
