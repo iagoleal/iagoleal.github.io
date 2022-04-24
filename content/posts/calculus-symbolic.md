@@ -83,7 +83,7 @@ infixl 7 :*:, :/: -- Left associative with higher precedence than :+:
 
 For now our constructors are only formal, they just create syntax trees:
 
-```haskell
+```ghci
 ghci> Const 2 :+: Const 2 :+: X
 (Const 2 :+: Const 2) :+: X
 it :: Num a => Fraction a
@@ -114,7 +114,7 @@ keeping constants as themselves,
 and collapsing the nodes according to the operation they represent.
 As an example:
 
-```haskell
+```ghci
 ghci> p = X :*: X :+: (Const 2 :*: X) :+: Const 1
 p :: Num a => Fraction a
 ghci> eval p 2
@@ -168,7 +168,7 @@ instance Fractional a => Fractional (Fraction a) where
 
 Let's see how it goes
 
-```haskell
+```ghci
 ghci> (X^2 + 2*X + 1) / (X^3 - 0.6)
 (((X :*: X) :+: (Const 2.0 :*: X)) :+: Const 1.0) :/: (((X :*: X) :*: X) :+: (Const (-1.0) :*: Const 0.5))
 it :: Fractional a => Fraction a
@@ -187,7 +187,7 @@ But we just implemented a `Fractional (Fraction a)` instance!
 Thus, as long as we keep our Fractions polymorphic,
 we can evaluate an expression at another expression.
 
-```haskell
+```ghci
 ghci> eval (X^2 + 3) (X + 1)
 ((X :+: Const 1.0) :*: (X :+: Const 1.0)) :+: Const 3.0
 it :: Fractional a => Fraction a
@@ -441,15 +441,9 @@ rewrite (f :/: h)
  | f == h = Const 1
 rewrite ((f :*: g) :/: h)
  | f == h = rewrite g
-rewrite ((f :*: g) :/: h)
- | g == h = rewrite g
+ | g == h = rewrite f
 rewrite (f :+: (Const (-1) :*: g))
  | f == g = Const 1
--- Trigonometric identities
-rewrite ((Apply Sin a) :*: (Apply Sin b) :+: (Apply Cos c) :*: (Apply Cos d))
- | a == b && c == d = Const 1
-rewrite ((Apply Cos a) :*: (Apply Cos b) :+: (Apply Sin c) :*: (Apply Sin d))
- | a == b && c == d = Const 1
 -- Function inverses
 rewrite (Apply Exp  (Apply Log  f)) = rewrite f
 rewrite (Apply Log  (Apply Exp  f)) = rewrite f
@@ -512,7 +506,7 @@ approxTaylor f c n = (simplify . sum .take n) (taylor f c)
 
 At last, a test to convince ourselves that it works.
 
-```haskell
+```ghci
 ghci> g = approxTaylor (exp X) 0
 g :: (Eq a, Floating a) => Int -> Expr a
 ghci> g 10
