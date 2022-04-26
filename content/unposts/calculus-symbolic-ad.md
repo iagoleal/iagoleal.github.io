@@ -1,13 +1,9 @@
 ---
 title: Let's Program a Calculus Student II
-subtitle: Automatic Differentiation
+subtitle: From Automatic to Symbolic Differentiation
 keywords: [haskell, computer-algebra, functional-programming, automatic-differentiation]
 date: 2022-04-20
 ---
-
-https://hackage.Haskell.org/package/ad
-
-https://arxiv.org/pdf/1804.00746.pdf
 
 ```haskell
 {-# LANGUAGE RankNTypes #-}
@@ -19,7 +15,7 @@ import Calculus.Expression
 ## On polymorphism, evaluation and reflection
 
 Recall our evaluation function from the previous post.
-Its type signature was
+Its signature was
 
 ```haskell
 eval :: Floating a => Expr a -> a -> a
@@ -243,42 +239,130 @@ instance Floating a => Floating (Dual a) where
  -- Embed as a real part
  pi = Dual pi 0
  -- First order approximation of the function and its derivative
- exp   = fstOrd exp exp
- log   = fstOrd log recip
- sin   = fstOrd sin cos
- cos   = fstOrd cos (negate . sin)
- asin  = fstOrd asin (\x -> 1 / sqrt (1 - x^2))
- acos  = fstOrd acos (\x -> -1 / sqrt (1 - x^2))
- atan  = fstOrd atan (\x -> 1 / (1 + x^2))
- sinh  = fstOrd sinh cosh
- cosh  = fstOrd cosh sinh
+ exp   = fstOrd exp   exp
+ log   = fstOrd log   recip
+ sin   = fstOrd sin   cos
+ cos   = fstOrd cos   (negate . sin)
+ asin  = fstOrd asin  (\x -> 1 / sqrt (1 - x^2))
+ acos  = fstOrd acos  (\x -> -1 / sqrt (1 - x^2))
+ atan  = fstOrd atan  (\x -> 1 / (1 + x^2))
+ sinh  = fstOrd sinh  cosh
+ cosh  = fstOrd cosh  sinh
  asinh = fstOrd asinh (\x -> 1 / sqrt (x^2 + 1))
  acosh = fstOrd acosh (\x -> 1 / sqrt (x^2 - 1))
  atanh = fstOrd atanh (\x -> 1 / (1 - x^2))
 ```
 
-### Derivatives
+### Derivatives of functions
 
-```haskell
-autoDiff f c = epsPart (f (c :+@ 1))
+Now that we have setup all the dual number tooling,
+it is time to calculate some derivatives.
+From the first order expansion $f(a + b\varepsilon) = f(a) + bf'(a)\varepsilon$,
+we see that by applying a function to $a + \varepsilon$,
+that is, setting $b = 1$,
+we calculate $f$ and its derivative at $a$.
+Let's test this in ghci:
+
+```ghci
+ghci> f x = x^2 + 1
+f :: Num a => a -> a
+ghci> f (Dual 3 1)
+Dual 10 6
+it :: Num a => Dual a
 ```
 
-## Diff in terms of eval
+Just as we expected!
+We can thus write a differentiation function
+by doing this procedure and taking only the $\varepsilon$ component.
+
+```haskell
+autoDiff f c = epsPart (f (Dual c 1))
+```
+
+Some cautionary words: remember from the previous discussion
+that to have access to the structure of a function,
+we need it to be polymorphic.
+In special, our `autoDiff` has type
+`Num a => (Dual a -> Dual b) -> (a -> b)`.
+It gets a function on dual numbers and spits out a function on numbers.
+But, for our use case it is fine because we can specialize this signature to
+
+```haskell
+autoDiff :: (forall a . Floating a => a -> a) -> (forall a . Floating a => a -> a)
+```
+
+### Derivatives of expressions
+
+Recall we can use `eval` to turn an expression into a function
+and, reciprocally, we can apply a polymorphic function to the constructor `X`
+to turn it into an expression.
+But what happens if we take `eval f` and compute its derivative at the point `X`?
+We get the __symbolic derivative__ of `f` of course!
 
 ```haskell
 diff_ f = autoDiff (eval f) X
 ```
 
-polymorphic version
+Some tests in the REPL to see that it works:
 
+```ghci
+ghci> diff_ (sin (X^2))
+(Const 1.0 :*: X :+: X :*: Const 1.0) :*: Apply Cos (X :*: X)
+it :: Floating a => Expr a
+```
+
+This function has a flaw nevertheless.
+It depends too much of polymorphism.
+While our symbolic differentiator from the previous post
+worked for an expression `f :: Expr Double`, for example,
+this new function depends on being able to convert
+`f` to a polymorphic function, which it can't do in this case.
+This gets clear by looking at the type signature of `diff_`:
 
 ```haskell
--- Symbolically differentiate any expression
-diff :: Floating a => Expr a -> Expr a
-diff f = let g = fmap fromNum f
-         in autoDiff (eval g) X
- where
-  fromNum x = Const x :+@ 0
+diff_ :: Floating a => Expr (Dual (Expr a)) -> Expr a
+```
 
+But not all hope is lost!
+Our differentiator works, we only need to discover how to
+turn an `Expr a` into an `Expr (Dual (Expr a))` and we can get the proper type.
+
+Let's think... Is there a canonical way of embedding a value as an expression?
+Of course there is! The `Const` constructor does exactly that.
+Similarly, we can view a "normal" number as a dual number with zero infinitesimal part.
+Thus, if we change each coefficient in an expression by the rule
+`\ c -> Dual (Const c) 0`, we get an expression of the type we need
+without changing any meaning.
+
+To help us change the coefficients, let's give a `Functor` instance to `Expr`.
+We could write it by hand but let's use some GHC magic to automatically
+derive it for us.
+
+```haskell
 deriving instance Functor Expr
 ```
+
+Finally, our differentiation function is equal to `diff_`,
+except that it first converts all coefficients of the input to the proper type.
+
+```haskell
+-- Symbolically differentiate expressions
+diff :: Floating a => Expr a -> Expr a
+diff f = let g = fmap from f
+         in autoDiff (eval g) X
+ where
+  from x = Dual (Const x) 0
+```
+
+Let's test it with a monomorphic expression and voilà!
+
+```ghci
+ghci> diff (sin (X^2) :: Expr Double)
+(Const 1.0 :*: X :+: X :*: Const 1.0) :*: Apply Cos (X :*: X)
+it :: Expr Double
+```
+
+## References
+
+* [ad package on Hackage](https://hackage.Haskell.org/package/ad)
+* [The Simple Essence of Automatic Differentiation](https://arxiv.org/pdf/1804.00746.pdf) by Conal Elliott.
