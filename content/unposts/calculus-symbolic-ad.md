@@ -2,8 +2,24 @@
 title: Let's Program a Calculus Student II
 subtitle: From Automatic to Symbolic Differentiation
 keywords: [haskell, computer-algebra, functional-programming, automatic-differentiation]
-date: 2022-04-20
+date: 2022-04-25
 ---
+
+On the [previous post](/posts/calculus-symbolic),
+we wrote a data type representing a formula
+that could appear in a Calculus class
+and discussed how to find its derivative.
+The approach that we chose was rather algebraic,
+we took each of the formulas for a derivative
+and taught the program to recursively apply them.
+
+Today we will redefine these symbolic derivatives
+using a different approach: _automatic differentiation_.
+This new way to calculate derivatives will only depend
+on the evaluation function for expressions,
+Thus decoupling it from whatever representation
+we choose for our expressions and, of course,
+it is always good to learn different ways to build something!
 
 ```haskell
 {-# LANGUAGE RankNTypes #-}
@@ -354,7 +370,7 @@ diff f = let g = fmap from f
   from x = Dual (Const x) 0
 ```
 
-Let's test it with a monomorphic expression and voilà!
+Just apply it to a monomorphic expression and voilà!
 
 ```ghci
 ghci> diff (sin (X^2) :: Expr Double)
