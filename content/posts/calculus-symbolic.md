@@ -151,10 +151,12 @@ instance Num a => Num (Fraction a) where
  -- This one is how to do `p -> -p`.
  -- We didn't define subtraction, so let's just multiply by -1.
  negate p      = Const (-1) :*: p
- -- These ones are kinda the problem of `Num`...
- -- For this exposition, let's just pretend they don't exist.
- abs    = id
- signum = id
+ -- These ones below are kinda the problem of `Num`...
+ -- As much as I don't like runtime errors,
+ -- for this exposition I think the best is
+ -- to just throw an error if the user tries to use them.
+ abs    = error "Absolute value of a Fraction is undefined"
+ signum = error "Sign of a Fraction is undefined"
 ```
 
 This makes our type into a Ring and we can now use constants, `+` and `*` with it.
@@ -377,19 +379,16 @@ can be up to debate.
 We first write the full simplifier.
 It takes an expression and apply rewriting rules to it
 until the process converges, i.e. the rewriting does nothing.
+We use a typical tail-recursive loop for this.
 
 ```haskell
 simplify :: (Eq a, Floating a) => Expr a -> Expr a
-simplify expr = loop expr X
- where loop cur prev
-        | cur == prev = cur
-        | otherwise   = loop (rewrite cur) cur
+simplify expr = let expr' = rewrite expr
+                in if expr' == expr
+                    then expr
+                    else simplify expr'
 ```
 
-This is a typical tail-recursive loop.
-The only detail is that we must provide the first expression.
-Anything works really...
-I choose to use `X` because it is a non-simplifiable expression.
 
 From this function, we can define a new version of `diff`
 that simplifies its output after computing it.
@@ -443,7 +442,7 @@ rewrite ((f :*: g) :/: h)
  | f == h = rewrite g
  | g == h = rewrite f
 rewrite (f :+: (Const (-1) :*: g))
- | f == g = Const 1
+ | f == g = Const 0
 -- Function inverses
 rewrite (Apply Exp  (Apply Log  f)) = rewrite f
 rewrite (Apply Log  (Apply Exp  f)) = rewrite f
@@ -526,3 +525,6 @@ This post only exists thanks to the great chats I had with João Paixão and Luc
 Besides listening to me talking endlessly about symbolic expressions and recursion,
 they also asked a lot of good questions and provided the insights
 that helped shape what became this post.
+
+I also want to thank the people on [reddit](https://www.reddit.com/r/haskell/comments/ubyqwu/lets_program_a_calculus_student/)
+that noticed typos and gave suggestions for code improvement.
