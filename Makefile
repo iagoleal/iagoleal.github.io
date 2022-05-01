@@ -19,10 +19,11 @@ unposts-result = $(patsubst $(content)/unposts/%.md,$(build)/posts/%/index.html,
 pages-names  = about masters posts
 pages-result = $(addprefix $(build)/,$(addsuffix /index.html,$(pages-names)) \
                  index.html 404.html)
+
 css-src    = $(wildcard css/*.css)
 css-result = $(addprefix $(build)/,$(css-src))
 
-static-src    = $(wildcard static/**/*)
+static-src    = $(shell find static/ -type f)
 static-result = $(patsubst %.tex,%.svg,$(addprefix $(build)/, $(static-src:static/%=%)))
 
 # Dependency-only
@@ -131,7 +132,7 @@ $(build)/css/%: css/%
 static: $(static-result)
 
 # Convert tikz images to svg
-$(build)/img/%.svg: static/img/%.tex
+$(build)/%.svg: static/%.tex
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
 	scripts/tex2svg "$<" "$@"
 
