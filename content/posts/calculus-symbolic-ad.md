@@ -9,17 +9,24 @@ On the [previous post](/posts/calculus-symbolic),
 we wrote a data type representing a formula
 that could appear in a Calculus class
 and discussed how to find its derivative.
-The approach that we chose was rather algebraic,
+The approach that we chose was rather algebraic:
 we took each of the formulas for a derivative
-and taught the program to recursively apply them.
+and taught the program how to recursively apply them.
 
 Today we will redefine these symbolic derivatives
 using a different approach: _automatic differentiation_.
 This new way to calculate derivatives will only depend
-on the evaluation function for expressions,
+on the evaluation function for expressions.
 Thus decoupling it from whatever representation
 we choose for our expressions and, of course,
 it is always good to learn different ways to build something!
+
+I first heard of this idea while reading the documentation of
+the [ad](https://hackage.haskell.org/package/ad) package
+and just had my mind blown.
+In here we will follow a simpler approach by constructing a simple AD implementation
+but for any serious business, i really recommend taking a look at that package.
+It is really awesome.
 
 ```haskell
 {-# LANGUAGE RankNTypes #-}
@@ -135,7 +142,7 @@ Besides that,
 if we wanted to change our `Expr` type, for example,
 to use a more efficient operation under the hood, or adding a `:^:` constructor for power operations,
 or adding new transcendental functions,
-we would have to modify both our `eval` and `diff` functions to consider this.123
+we would have to modify both our `eval` and `diff` functions to consider this.
 
 A third option that solves all the previous issues is
 [Automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation).
@@ -145,9 +152,8 @@ Since we know how to differentiate those,
 we can augment our function evaluation to calculate at the same time
 both the function value and the exact value of the derivative at any given point.
 As we will see, we will even be able to recover symbolic differentiation
-as a subcase of automatic differentiation.[^symb-ad]
+as a subcase of automatic differentiation.
 
-[^symb-ad]: An idea I first heard of while reading the documentation of the [ad](https://hackage.haskell.org/package/ad) package.
 
 ### Dual Numbers
 
