@@ -1,6 +1,6 @@
 ---
 title: Let's Program a Calculus Student II
-subtitle: From Automatic to Symbolic Differentiation
+subtitle: Turning Symbolic Differentiation Automatic
 keywords: [haskell, computer-algebra, functional-programming, automatic-differentiation]
 date: 2022-04-25
 ---
@@ -17,9 +17,9 @@ Today we will redefine these symbolic derivatives
 using a different approach: _automatic differentiation_.
 This new way to calculate derivatives will only depend
 on the evaluation function for expressions.
-Thus decoupling it from whatever representation
-we choose for our expressions and, of course,
-it is always good to learn different ways to build something!
+This decouples differentiation from whatever representation
+we choose for our expressions and, even more important,
+it is always nice to learn different ways to build something!
 
 I first heard of this idea while reading the documentation of
 the [ad](https://hackage.haskell.org/package/ad) package
@@ -79,7 +79,7 @@ uneval :: (forall a. Floating a => a -> a) -> (forall b. Floating b => Expr b)
 These are functions without any free type parameter. That is,
 no lowercase type variable appears in the type signature.
 
-Notice the explicit `forall`: `uneval` only accepts polymorphic arguments.
+Notice the explicit `forall`: `uneval` only accepts polymorphic arguments.[^uneval]
 After finding the right type signature, the inverse to `eval` is then really simple to write.
 The arithmetic operations on a `Expr a` just build a syntax tree,
 thus we can construct an expression from a polymorphic function by substituting
@@ -88,6 +88,9 @@ its argument by the constructor `X`.
 ```haskell
 uneval f = f X
 ```
+
+[^uneval]: This is not the most general possible definition of `uneval`.
+           But it is simple and clear enough for this presentation.
 
 Let's test it on ghci to see that it works:
 
@@ -318,7 +321,10 @@ autoDiff :: (forall a . Floating a => a -> a) -> (forall a . Floating a => a -> 
 Recall we can use `eval` to turn an expression into a function
 and, reciprocally, we can apply a polymorphic function to the constructor `X`
 to turn it into an expression.
-But what happens if we take `eval f` and compute its derivative at the point `X`?
+This property, which for the mathematicians among you
+probably resembles a lot a similarity transformation,
+allows us to "lift" `autoDiff` into the world of expressions.
+So, what happens if we take `eval f` and compute its derivative at the point `X`?
 We get the __symbolic derivative__ of `f` of course!
 
 ```haskell
@@ -345,8 +351,8 @@ This gets clear by looking at the type signature of `diff_`:
 diff_ :: Floating a => Expr (Dual (Expr a)) -> Expr a
 ```
 
-But not all hope is lost!
-Our differentiator works, we only need to discover how to
+But not all hope is lost! Our differentiator works.
+All we need is to discover how to
 turn an `Expr a` into an `Expr (Dual (Expr a))` and we can get the proper type.
 
 Let's think... Is there a canonical way of embedding a value as an expression?
@@ -370,10 +376,8 @@ except that it first converts all coefficients of the input to the proper type.
 ```haskell
 -- Symbolically differentiate expressions
 diff :: Floating a => Expr a -> Expr a
-diff f = let g = fmap from f
-         in autoDiff (eval g) X
- where
-  from x = Dual (Const x) 0
+diff f = autoDiff (eval (fmap from f)) X
+ where from x = Dual (Const x) 0
 ```
 
 Just apply it to a monomorphic expression and voilà!
