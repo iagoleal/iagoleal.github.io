@@ -54,6 +54,7 @@ ul {
 }
 
 pre {
+  background-color: initial;
   border-radius: 12px;
   overflow-x: auto;
   font-family:'IBM Plex Mono',Consolas,Monaco,monospace;

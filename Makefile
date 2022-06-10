@@ -40,14 +40,14 @@ DEPENDENCIES = $(filters) $(templates) $(scripts) $(config)
 define generate_page
   $(shell [ ! -d $(@D) ] && mkdir -p $(@D))
   $(PANDOC) --defaults=pandoc.yaml \
-    -f $(3) -t html5 -o "$(2)" "$(1)"
+    -f $(3) -o "$(2)" "$(1)"
 endef
 
 define generate_post
   $(shell [ ! -d $(@D) ] && mkdir -p $(@D))
   $(PANDOC) --defaults=pandoc.yaml \
             --template=templates/post.html \
-    -f markdown -t html5 -o "$(2)" "$(1)"
+    -f markdown -o "$(2)" "$(1)"
 endef
 
 ############
@@ -87,7 +87,7 @@ deploy:
 
 .PHONY: posts unposts
 
-posts: $(posts-result)
+posts:   $(posts-result)
 unposts: $(unposts-result)
 
 $(build)/posts/%/index.html: $(content)/posts/%.md $(DEPENDENCIES)

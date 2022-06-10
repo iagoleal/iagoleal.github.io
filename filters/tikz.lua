@@ -26,6 +26,8 @@ local tikz_template = [[
 \end{document}
 ]]
 
+local fmt = string.format
+
 local function format_tikz(body, env, pkgs, libs, preamble)
   return tikz_template:format(pkgs, libs, preamble, env, body, env)
 end
@@ -44,13 +46,13 @@ local mimetype_for = {
 
 local cachedir = 'cache/'
 
-function mkdir(dirname)
+local function mkdir(dirname)
  os.execute("[ ! -d " .. dirname .. " ] && mkdir " .. dirname)
 end
 
 local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' -- You will need this for encoding/decoding
 -- encoding
-function encodeURI(data)
+local function encodeURI(data)
   return ((data:gsub('.', function(x)
     local r,b='',x:byte()
     for i=8,1,-1 do r=r..(b%2^i-b%2^(i-1)>0 and '1' or '0') end
@@ -64,7 +66,7 @@ function encodeURI(data)
 end
 
 -- decoding
-function decodeURI(data)
+local function decodeURI(data)
   data = string.gsub(data, '[^'..b..'=]', '')
   return (data:gsub('.', function(x)
     if (x == '=') then return '' end
@@ -121,7 +123,7 @@ local function cache_fetch(fname)
   return nil
 end
 
-function cache_write(img, fname)
+local function cache_write(img, fname)
   mkdir(cachedir)
   res, err, code = os.rename(cachedir, cachedir)
   if res then

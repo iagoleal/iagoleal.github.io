@@ -14,7 +14,7 @@ git worktree add "$BUILDDIR" gh-pages
   git rm -r *
 )
 echo "Starting a clean build..."
-make unpublished -B
+make -B
 (
   echo "It's git time!"
   cd "$BUILDDIR"

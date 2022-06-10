@@ -2,7 +2,7 @@
 template: templates/default.html
 standalone: true
 self-contained: false
-to: html5
+writer: html5
 
 metadata:
   author-meta: Iago Leal
@@ -14,7 +14,7 @@ variables:
   site-repo: https://github.com/iagoleal/iagoleal.github.io
 
 # Log boilerplate
-verbosity: INFO
+verbosity: WARNING
 log-file: pandoc-log.json
 
 # Styling
