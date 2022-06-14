@@ -6,6 +6,7 @@ date: 2022-05-30
 
 \def\States{\mathcal{S}}
 \def\Actions{\mathcal{A}}
+\def\R{\mathbb{R}}
 
 What if I told you that some of the most used algorithms to
 find the shortest path in a graph,
@@ -61,23 +62,81 @@ Before delving into dynamic programming, we first have to establish a few concep
 After all, it's always best to know which problems you intend to solve
 before learning a method to solve them, right?
 
+As a matter of motivation, let's begin by considering a vampire.
+It is common knowledge[^vampire]
+that vampires are always in one of four states:
+their usual human form, transformed into a bat or a wolf or walking in the shadows.
+In the human form, the vampire can choose to turn into one of the animals
+or jump into a shadow to enter it.
+As a bat, the vampire is able to keep flying or drink a person's blood,
+an act that turns him back into human form immediately.
+As a wolf he can similarly stay in the form or go back to human.
+He is unable to remain much in the shadows,
+The vampire can't remain much on the shadows and, for whatever reason,
+he is only able to leave them as a wolf.
+It seems really complicated to be a vampire, right?
+Fortunately, the folks at the Comp Sci department
+invented some nice diagrams to help our pointy-toothed friends.
 
-Let's begin by talking about _controllable state machines_
-or _automata_ if you're into Greek words.
-Consider a system that can be in one of many _states_ $s \in \States$.
-At each state, you can choose among a set of _actions_ $a \in \Actions(s)$
+```dot
+digraph "Vampire State Machine" {
+    rankdir=LR;
+    size="8,5"
+
+    qi [fillcolor = black shape = point];
+
+    node [shape     = circle
+          style     = "solid,filled"
+          width     = 0.7
+          color     = black
+          fixedsize = shape
+          fillcolor = "#B3FFB3"];
+
+    H [label = "Human" shape = doublecircle];
+    S [label = "Shadow"];
+    B [label = "Bat"];
+    W [label = "Wolf"];
+
+    qi -> H;
+
+    H -> B [label = "transform"];
+    H -> W [label = "transform"];
+
+    H -> S;
+    S -> W;
+
+    B -> B [label = "fly"];
+    B -> H [label = "drink blood"];
+
+    B -> H [label = "return"];
+    W -> H [label = "return"];
+
+    H -> H [label = "stay"];
+    W -> W [label = "stay"];
+}
+```
+
+[^vampire]: Definitely citation needed.
+
+
+Our modeling of a vampire is an stance of something called
+a _controllable state machines_ or _automata_ if you're into Greek words.
+There are 4 states in which the vampire can be and at each one
+there is an available set of actions to take that may transition him to another state.
+More abstractly,
+an automaton is system that can be in one of many _states_ $s \in \States$
+and at each state, you can choose among a set of _actions_ $a \in \Actions(s)$
 that transition the system to a new state $s' = T(s, a)$,
 where $T$ is called the system's _transition function_.
-Usually, such objects are represented by graphs such as the one below.
-
 
 An important notice: If you come from Computer Science,
-you are probably used to finite state machines.
-But in our context here, the states may be any set.
-Some algorithms that we will see only work if the state space is finite
-but others may even require a continuous space!
+you are probably most used to _finite_ state machines.
+Just know that in our context, the states may be any set.
+Some of the algorithms that we will see today
+only work for finite state spaces
+but there are others that may even require a continuous space!
 An example is SDDP, which uses linear programming duality
-and thus requires the state space to be a polyhedron in $R^n$.
+and thus requires the state space to be a convex subset of $R^n$.
 
 ### Decision Processes
 
@@ -156,12 +215,92 @@ Similarly, if we are programming a robot that gains rewards
 the discount factor amounts to impatience:
 it is better to gain the reward sooner than later.
 
+Now let's take a look on how to model some common problems using this framework.
 
 #### State over time
 
-# Dynamic Programming
+#### Example: Shortest Path in a Graph
 
-Finite, Interpolation, Computeiro
+Suppose you are at your home town
+and just received a message from friend
+telling you that there are singing llamas in Cuzco, Peru, right now.
+This makes you at the same time incredulous and curious,
+so you just pick your favorite bike and get on the road towards Cuzco.
+But unfortunately there are no direct bikeways connecting your home to Cuzco,
+meaning that you will have to find a route going through other cities.
+Also, there is a risk that the llamas will stop to sing at any time
+and just go back to their usual behaviour of eating grass throughout the mountains.
+This prompts you to decide to take the shortest path to Cuzco possible.
+
+The above description is an instance of finding the shortest path in a graph.
+In it, we represent each city by a graph node and a direct routes between two cities
+as a weighted edge where the weight is the distance.
+Going from home to Cuzco amounts to finding the path between those two nodes
+with the smallest total distance.
+
+The translation from this graph description
+to a decision process description is quite straightforward.
+
+* **States**: nodes in the graph.
+* **Actions** at state $s$: edges going from $s$ to another node.
+* **Transition**: The opposite node on the same edge.
+That is, given an edge $s \to s'$, $T(s, s \to s') = s'$.
+* **Costs**: $c(s, a)$ is the weight of edge $a$.
+
+Finding the shortest path from $s$ to node $z$
+is the same as setting the initial state to $s$ and making $z$
+a terminal state of our dynamics.
+
+#### Example: Controllable Dynamical System
+
+## Dynamic Programming
+
+Alright, its finally time to solve those decision problems.
+One first attempt could be to search the space of all actions
+trying to find the best solution.
+But notice that even for finite states and horizon, this may be prohibitively expensive
+since the possible candidates grow exponentially with the time steps.
+Any practical method will to take into account how this class of problems
+naturally breaks apart into separate stages.
+
+Our approach will involve the famous _Bellman principle of optimality_,
+which is the cornerstone of dynamic programming.
+Taking Bellman's own words on his book [Dynamic Programming](https://press.princeton.edu/books/paperback/9780691146683/dynamic-programming),
+it reads as:
+
+> An optimal policy has the property that
+whatever the initial state and initial decision are,
+the remaining decisions must constitute an optimal policy
+with regard to the state resulting from the first decision.
+
+What he calls a _policy_ is a function $\pi : (s : \States) \to \Actions(s)$.
+And, of course, a policy is _optimal_ for a decision problem
+if it produces the best overall cost possible.
+
+Remember that for a given initial state $s$,
+we want to find the sequence of actions that produces
+the lowest cumulative cost.
+Thus we can think of it not as a single decision
+but as a family of decisions parameterized on the initial state.
+
+Let's define the _value function_ $v : \States \to \R$
+as the optimal cost for a given initial state:
+
+$$
+v(s) =
+\begin{array}{rl}
+  \min\limits_{a} & \sum\limits_{t=1}^\infty \gamma^{t-1}c(s_t, a_t) \\
+  \textrm{s.t.}   & s_{t+1} = T(s_t, a_t), \\
+                  & s_1     = s, \\
+                  & a_t \in \Actions(s_t).
+\end{array}
+$$
+
+This seems only a matter of notation but trust me that it will be useful.
+Notice now that we can rewrite
+
+
+### What if the state space is infinite?
 
 ## Example: Shortest Path in a Graph
 
