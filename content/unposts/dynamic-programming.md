@@ -120,7 +120,7 @@ digraph "Vampire State Machine" {
 
 
 Our modeling of a vampire is an stance of something called
-a _controllable state machines_ or _automata_ if you're into Greek words.
+a _state machines_ or _automata_ if you're into Greek words.
 There are 4 states in which the vampire can be and at each one
 there is an available set of actions to take that may transition him to another state.
 More abstractly,
@@ -140,84 +140,131 @@ and thus requires the state space to be a convex subset of $R^n$.
 
 ### Decision Processes
 
-Unfortunately nothing in life comes for free...
-And taking an action $a$ in state $s$ has a certain cost $c(s, a)$.
-Our simplest decision problem then takes the following format:
+Iterating the transition $T$ establishes a dynamics for our system
+where we start at a initial state $s$ and by taking a sequence of actions
+$a_1, a_2, \ldots$ we walk over the state space.
 
-> What is the best action to take at state $s$?
-That is, which one produces the lowest cost?
+$$
+\begin{aligned}
+    s_1     &= s, \\
+    s_{t+1} &= T(s_t, a_t).
+\end{aligned}
+$$
 
-Or in math language:
+This new view makes our state machine somewhat equivalent
+to a controllable dynamical system,
+which is another really cool name in my opinion.
+
+As an example, think of a game of Sudoku.
+The states are the (partially numbered) boards
+and the actions consist of putting a valid number
+in a certain coordinate.
+You start with some random board and repeatedly
+place numbers until you reach a terminal state
+where there are no available actions.
+
+One can argue that since a state encapsulates
+all you must know about your system in order to choose an action,
+no matter if the previous history nor time step.
+Indeed, if those things affect your choice,
+then we can without loss of generality model our
+problem as a larger system where the state also carries those information.
+Thus controlling a dynamic system amounts to
+a function $\pi : (s : \States) \to \Actions(s)$
+which chooses a valid action for each state.
+In the literature this called a _policy_,
+in analogy to a government taking actions to run its state.
+
+Unfortunately life is not known for its free lunchs
+and in most systems, whenever we take action $a$ at state $s$,
+there is a certain cost $c(s, a)$ to pay.
+Depending on the context this can be, for example,
+a real monetary cost (for economic problems),
+some total distance (for planning)
+or even a negative cost representing a reward.
+
+Thus, by following a policy $\pi$,
+we produce a sequence of cost $c(s_t, \pi(s_t))$
+for each time step.
+We could define the total cost for $\pi$
+as the sum of those costs but there is an additional detail to notice.
+If I gave you something and asked if you want to pay me today
+or next year, which option would you prefer?
+Sometimes there are factors such as inflation or interests
+that make costs in the future not have the same actual value
+as the costs we expend right now.
+This prompts us to introduce a problem dependent _discount factor_ $\gamma \in [0, 1]$
+such that the total cost for a policy $\pi$ is
 
 $$
 \begin{array}{rl}
-  \min\limits_{a} & c(s, a) \\
-  \textrm{s.t.}  & a \in \Actions(s).
+ v^\pi(s) = & c(s_1, \pi(s_1)) + \gamma c(s_2, \pi(s_2)) + \gamma^2 c(s_3, \pi(s_3)) + \ldots \\
+  \textrm{where}  & s_1     = s, \\
+                  & s_{t+1} = T(s_t, a_t), \\
 \end{array}
 $$
 
-This is an optimization problem and can be solved by standard techniques,
-depending on the nature of the cost function and action set.
-If $\Actions(s)$ is finite, one uses combinatorial optimization.
-Are they all linear? Linear programming to the rescue.
-Convex? Just use convex programming.
-I think you get it.
+The equation above defines the _value function_ $v^\pi : \States \to \R$
+for a given policy $\pi$.
+__Spoiler__: keep an eye on the $v^\pi$,
+because later on this post we will find them to be useful tools
+that are closely related to the memoization techniques
+that people usually identify with dynamic programming.
 
-Nevertheless, there is still something missing on the description above.
-We used the initial state $s$ and the cost function $c$
-to decide which is the best action to take.
-But what about the transition function?
-I wouldn't introduce it if there was no good use...
+Besides its practical interpretation,
+the discount factor $\gamma$ also plays a significant role
+from the mathematical point of view.
+If $|\gamma| < 1$ and the costs are uniformly bounded
+(which is the case for a finite action space, for example)
+we can guarantee that the series defining $v^\pi$ converges
+for any policy and initial state.
+That is, suppose that exists $M > 0$ such that
 
-In the real world, it is not so common to just want to take an action.
-After all, what we do now affects the future.
-When we choose our action $a$,
-our system will arrive at a new state $T(s, a)$.
-Thus we can ask again the same question:
-what is the best action to take at this new state?
-What we call a _decision process_ is a sequence of actions
-whose total cost is the minimum possible over time.
-Starting at state $s$,
-our decision is a solution to the following optimization problem:
-
-$$
-\begin{array}{rl}
-  \min\limits_{a} & \sum\limits_{t=1}^\infty \gamma^{t-1}c(s_t, a_t) \\
-  \textrm{s.t.}   & s_{t+1} = T(s_t, a_t), \\
-                  & s_1     = s, \\
-                  & a_t \in \Actions(s_t).
-\end{array}
-$$
-
-The $\gamma \in [0, 1]$ is a constant called the _discount factor_.
-Its use is twofold.
-Mathematically, it is useful because
-if we have $\gamma < 1$ and the costs are bounded,
-we can guarantee that the series converge.
-That is, suppose that
-
-$$\forall s \in \States, a \in \Actions(s),\, c(s, a) \le M.$$
+$$\forall s \in \States, a \in \Actions(s),\, |c(s, a)| \le M.$$
 
 This bounds the total cost by a geometric series that cannot blow up,
 
 $$
-\sum\limits_{t=1}^\infty \gamma^{t-1}c(s_t, a_t) \le \sum\limits_{t=1}^\infty \gamma^{t-1} M \le \frac{M}{1 - \gamma},
+\sum\limits_{t=1}^\infty \gamma^{t-1}|c(s_t, \pi(s_t))| \le \sum\limits_{t=1}^\infty \gamma^{t-1} M \le \frac{M}{1 - \gamma},
 $$
 
-thus guaranteeing that the decision problem is well-posed.
+thus guaranteeing that that the value function is well-defined.
 
-Besides that, there is also a more applied interpretation of $γ$
-that is also interesting:
-It says that spending in the future in cheaper than expending right now.
-So, in an economic context, the discount $γ$ is the same as inflation.
-Similarly, if we are programming a robot that gains rewards
-(equivalent to negative costs) at each time step,
-the discount factor amounts to impatience:
-it is better to gain the reward sooner than later.
+### Optimal Decisions
 
-Now let's take a look on how to model some common problems using this framework.
+Having multiple courses of action possible
+prompts us to ask which is the best one possible.
+When programming a robot to escape a labyrinth,
+you want it to take the least amount of time.
+When controlling a spaceship towards the moon,
+it is important to guarantee that it will use the least amount of fuel.
+When brawling at a bar, you want to knock out your foe
+with the least injuries possible.
+Thus, our problem can be naturally formulated as searching for _optimal policies_:
 
-#### State over time
+> Starting at state $s$, find a policy $\pi$ producing
+the lowest total cost over time.
+
+Or equivalently in math language:
+
+$$
+\begin{array}{rl}
+\min\limits_\pi v^\pi(s) =
+  \min\limits_{a_t} & \sum\limits_{t=1}^\infty \gamma^{t-1}c(s_t, a_t) \\
+  \textrm{s.t.}     & s_1     = s, \\
+                    & s_{t+1} = T(s_t, a_t), \\
+                    & a_t \in \Actions(s_t).
+\end{array}
+$$
+
+Right now, this may seem like a big and scary optimization problem
+but in fact there is a lot of structure that we can exploit in order to solve it.
+This will be the subject of the next section.
+But before we continue,
+let's go over a little tangent on how to formulate some classical problems
+in this decision making framework.
+
+#### Example: State over time
 
 #### Example: Shortest Path in a Graph
 
@@ -251,7 +298,7 @@ Finding the shortest path from $s$ to node $z$
 is the same as setting the initial state to $s$ and making $z$
 a terminal state of our dynamics.
 
-#### Example: Controllable Dynamical System
+#### Example: Guiding a Rocket
 
 ## Dynamic Programming
 
@@ -273,31 +320,11 @@ whatever the initial state and initial decision are,
 the remaining decisions must constitute an optimal policy
 with regard to the state resulting from the first decision.
 
-What he calls a _policy_ is a function $\pi : (s : \States) \to \Actions(s)$.
-And, of course, a policy is _optimal_ for a decision problem
-if it produces the best overall cost possible.
-
 Remember that for a given initial state $s$,
-we want to find the sequence of actions that produces
-the lowest cumulative cost.
+we want to find an optimal policy:
+the sequence of actions that produces the lowest total cost.
 Thus we can think of it not as a single decision
 but as a family of decisions parameterized on the initial state.
-
-Let's define the _value function_ $v : \States \to \R$
-as the optimal cost for a given initial state:
-
-$$
-v(s) =
-\begin{array}{rl}
-  \min\limits_{a} & \sum\limits_{t=1}^\infty \gamma^{t-1}c(s_t, a_t) \\
-  \textrm{s.t.}   & s_{t+1} = T(s_t, a_t), \\
-                  & s_1     = s, \\
-                  & a_t \in \Actions(s_t).
-\end{array}
-$$
-
-This seems only a matter of notation but trust me that it will be useful.
-Notice now that we can rewrite
 
 
 ### What if the state space is infinite?
@@ -320,3 +347,5 @@ Notice now that we can rewrite
 https://arxiv.org/pdf/2202.13252.pdf
 
 https://www.mit.edu/~dimitrib/allerton_api_final.pdf
+
+https://martin-thoma.com/how-to-draw-a-finite-state-machine/
