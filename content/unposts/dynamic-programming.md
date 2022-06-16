@@ -20,7 +20,7 @@ in many different contexts but it took me a while
 to finally get "click" that it they were actually the same thing.
 When learning algorithms and data structures,
 it was a memoization-based technique were you speed up your algorithm
-by first solving the easy parts and saving them for later use.
+by first solving the easier parts and saving them for later use.
 At work, I mostly deal with solving a lot of linear programs
 for long-term scheduling problems.[^sddp]
 The main algorithm we use, called _Stochastic Dual Dynamic Programming_,
@@ -80,39 +80,39 @@ invented some nice diagrams to help our pointy-toothed friends.
 
 ```dot
 digraph "Vampire State Machine" {
-    rankdir=LR;
-    size="8,5"
+  rankdir=LR;
+  size="8,5"
 
-    qi [fillcolor = black shape = point];
+  qi [fillcolor = black shape = point];
 
-    node [shape     = circle
-          style     = "solid,filled"
-          width     = 0.7
-          color     = black
-          fixedsize = shape
-          fillcolor = "#B3FFB3"];
+  node [shape     = circle
+        style     = "solid,filled"
+        width     = 0.7
+        color     = black
+        fixedsize = shape
+        fillcolor = "#B3FFB3"];
 
-    H [label = "Human" shape = doublecircle];
-    S [label = "Shadow"];
-    B [label = "Bat"];
-    W [label = "Wolf"];
+  H [label = "Human" shape = doublecircle];
+  S [label = "Shadow"];
+  B [label = "Bat"];
+  W [label = "Wolf"];
 
-    qi -> H;
+  qi -> H;
 
-    H -> B [label = "transform"];
-    H -> W [label = "transform"];
+  H -> B [label = "transform"];
+  H -> W [label = "transform"];
 
-    H -> S;
-    S -> W;
+  H -> S;
+  S -> W;
 
-    B -> B [label = "fly"];
-    B -> H [label = "drink blood"];
+  B -> B [label = "fly"];
+  B -> H [label = "drink blood"];
 
-    B -> H [label = "return"];
-    W -> H [label = "return"];
+  B -> H [label = "return"];
+  W -> H [label = "return"];
 
-    H -> H [label = "stay"];
-    W -> W [label = "stay"];
+  H -> H [label = "stay"];
+  W -> W [label = "stay"];
 }
 ```
 
@@ -260,11 +260,47 @@ $$
 Right now, this may seem like a big and scary optimization problem
 but in fact there is a lot of structure that we can exploit in order to solve it.
 This will be the subject of the next section.
-But before we continue,
+Before we continue,
 let's go over a little tangent on how to formulate some classical problems
 in this decision making framework.
 
 #### Example: State over time
+
+```dot
+digraph "State over Time" {
+  rankdir=LR;
+  size="8,5"
+
+  T [label = "" width=0.2 style=filled, color = black, fillcolor = black, shape = square];
+
+  node [shape     = circle
+        style     = "solid,filled"
+        width     = 0.7
+        color     = black
+        fixedsize = shape
+        fillcolor = "#B3FFB3"];
+
+  subgraph cluster_2 {
+    rank = same;
+    label="t = 2";
+    a2; b2;
+  }
+
+  subgraph cluster_3 {
+    rank = same;
+    label="t = 3";
+    a3; b3;
+  }
+
+  subgraph cluster_4 {
+    rank = same;
+    label="t = 4";
+    a4; b4;
+  }
+
+  s -> {a2 b2} -> {a3 b3} -> {a4 b4} ->  T;
+}
+```
 
 #### Example: Shortest Path in a Graph
 
@@ -273,7 +309,7 @@ and just received a message from friend
 telling you that there are singing llamas in Cuzco, Peru, right now.
 This makes you at the same time incredulous and curious,
 so you just pick your favorite bike and get on the road towards Cuzco.
-But unfortunately there are no direct bikeways connecting your home to Cuzco,
+Unfortunately there are no direct bikeways connecting your home to Cuzco,
 meaning that you will have to find a route going through other cities.
 Also, there is a risk that the llamas will stop to sing at any time
 and just go back to their usual behaviour of eating grass throughout the mountains.
@@ -303,9 +339,9 @@ a terminal state of our dynamics.
 ## Dynamic Programming
 
 Alright, its finally time to solve those decision problems.
-One first attempt could be to search the space of all actions
+The simplest idea could be to exhaustively search the space of all actions
 trying to find the best solution.
-But notice that even for finite states and horizon, this may be prohibitively expensive
+Notice that even for finite states and horizon, this may be prohibitively expensive
 since the possible candidates grow exponentially with the time steps.
 Any practical method will to take into account how this class of problems
 naturally breaks apart into separate stages.
@@ -320,12 +356,119 @@ whatever the initial state and initial decision are,
 the remaining decisions must constitute an optimal policy
 with regard to the state resulting from the first decision.
 
-Remember that for a given initial state $s$,
-we want to find an optimal policy:
-the sequence of actions that produces the lowest total cost.
-Thus we can think of it not as a single decision
-but as a family of decisions parameterized on the initial state.
 
+Alright, what does this mean?
+What the principle of optimality is telling us
+is that in order to calculate an optimal policy,
+we should turn this iterative process of making actions and calculating costs
+into a recursive procedure.
+That is, taking an action puts us into a new state $s_2 = T(s_1, a_1)$
+where we are again faced with the exact same problem of finding an optimal policy
+but this time starting at $s_2$.
+Let's see how we can exploit this idea.
+
+Remember that we defined the value function $v^\pi$
+as the total cost of following a policy $\pi$
+when starting at a given state.
+Let's define the _optimal value function_ $v^\star$
+as the total cost of choosing the best course of action
+while starting at a certain state $s$.
+
+$$
+\begin{array}{rl}
+ v^\star(s) =
+  \min\limits_{a_t} & \sum\limits_{t=1}^\infty \gamma^{t-1}c(s_t, a_t) \\
+  \textrm{s.t.}     & s_1     = s, \\
+                    & s_{t+1} = T(s_t, a_t), \\
+                    & a_t \in \Actions(s_t).
+\end{array}
+$$
+
+Notice in the optimization problem above
+that the initial state is only ever used to choose the first action.
+Later actions do not depend directly on it but only on its consequences.
+This means that we can break the problem into two parts:
+calculating a _immediate cost_ dependent on the initial state
+and calculating a future cost dependent on all next states.
+
+$$
+\begin{array}{rl}
+ v^\star(s) =
+  \min\limits_{a,a_t} & c(s, a) + \left(
+    \begin{array}{rl}
+      \min\limits_{a_t} & \sum\limits_{t=2}^\infty \gamma^{t-1}c(s_t, a_t) \\
+      \textrm{s.t.}     & s_2 = s', \\
+                        & s_{t+1} = T(s_t, a_t), \\
+                        & a_t \in \Actions(s_t)
+    \end{array}
+  \right) \\
+  \textrm{s.t.} & s' = T(s, a), \\
+                 & a \in \Actions(s).
+\end{array}
+$$
+
+There's already some recursive structure unfolding in here!
+What is still missing consists of noticing that since the sum in the future cost
+starts at $t =2$, we can factor out $\gamma$.
+By renaming $l = t-1$ we get
+
+$$
+\sum\limits_{t=2}^\infty \gamma^{t-1}c(s_t, a_t)
+= \gamma \sum\limits_{t=2}^\infty \gamma^{t-2}c(s_t, a_t)
+= \gamma \sum\limits_{l=1}^\infty \gamma^{l-1}c(s_l, a_l)
+$$
+
+By applying this in the expression for $v^\star$,
+
+$$
+\begin{array}{rl}
+ v^\star(s) =
+  \min\limits_{a} & c(s, a) + \gamma\left(
+    \begin{array}{rl}
+      \min\limits_{a_l} & \sum\limits_{l=1}^\infty \gamma^{l-1}c(s_l, a_l) \\
+      \textrm{s.t.}     & s_1 = s', \\
+                        & s_{l+1} = T(s_l, a_l), \\
+                        & a_l \in \Actions(s_l)
+    \end{array}
+  \right) \\
+  \textrm{s.t.}  & s' = T(s, a), \\
+                 & a \in \Actions(s).
+\end{array}
+$$
+
+Although this is a really big expression,
+it should be straightforward to see that the expression
+for the future cost is _exactly_ the optimal value $v\star(s')$
+of starting the dynamics at $s' = T(s, a)$.
+This way, the principle of optimality express itself mathematically
+as a recursive equation that the value for an optimal policy must satisfy.
+
+
+$$
+\begin{array}{rl}
+ v^\star(s) =
+  \min\limits_{a} & c(s, a) + \gamma v^\star(s') \\
+  \textrm{s.t.}  & s' = T(s, a), \\
+                 & a \in \Actions(s).
+\end{array}
+$$
+
+This is called the _Bellman equation_ and all of dynamic programming
+consists of method for solving it.
+
+### Solving the Bellman Equation
+
+For this section, let's assume that both
+the state $\States$ and action $\Actions(s)$ spaces are finite.
+I know that this is not the most general setting
+but it encompasses a lot of interesting problems
+and is a simpler place to start.
+Later I will comment a bit on how one can extend the results in this section
+to continuous spaces.
+
+#### Value Iteration
+
+#### Policy Iteration
 
 ### What if the state space is infinite?
 
