@@ -7,13 +7,14 @@ date: 2022-05-30
 \def\States{\mathcal{S}}
 \def\Actions{\mathcal{A}}
 \def\R{\mathbb{R}}
+\def\E{\mathbb{E}}
 
 What if I told you that some of the most used algorithms to
 find the shortest path in a graph,
 calculate gradients while training a neural network,
 and parse context-free grammars
 are essentially implementations of the same idea?
-Namely: _dynamic programming_.
+Namely, _dynamic programming_.
 
 I gotta say that I was taught dynamic programming
 in many different contexts but it took me a while
@@ -36,17 +37,12 @@ Well, in fact there are some principles that apply to all of those instances,
 from planning a rocket's trajectory to TeX's word-wrapping.
 And the [list goes on and on](https://en.wikipedia.org/wiki/Dynamic_programming#Algorithms_that_use_dynamic_programming).
 
+I want to invite you to a journey through many realms of mathematics.
+We will range from automata to optimal control,
+passing through Markov chains, dynamical systems, linear programming
+and even metric spaces.
+Take your seat and enjoy the ride!
 
-In this post,
-I intend to write about the framework
-that encompasses all those problems and how DP fits into it.
-The motivation for this came some weeks ago after teaching a colleague
-about how can we start with the programming technique and arrive at SDDP.
-This post is in fact a more organized/legible version of my notes and diagrams from that day.
-By the way, I also recommend reading
-Richard Sutton's [The Quest for a Common Model of the Intelligent Decision Maker](https://arxiv.org/pdf/2202.13252.pdf).
-It is a great paper about unifying decision frameworks across different fields,
-and certainly also inspired this post.
 
 [^sddp]: To be more precise, we work with hydrothermal dispatch problems,
 where one must decide between many sources of energy (hydro, thermal, renewable)
@@ -264,7 +260,63 @@ Before we continue,
 let's go over a little tangent on how to formulate some classical problems
 in this decision making framework.
 
-#### Example: State over time
+#### Sir, I don't have all that time available...
+
+It is a nice formalism but to be realistic, not all decisions go on forever.
+I would even risk saying that most of them end after some time.
+Regardless, the formalism we have developed is powerful enough
+to also encompass finite-horizon decisions,
+provided that we make some adjustments to our models.
+
+Consider a process that may end at a certain point but we don't really know when.
+An example would be trying to escape a labyrinth full of monsters.
+If a monster catches you its game over and there are no more decisions to make.
+We can model this by introducing in our model a dummy _terminal state_
+(that we denote as $\blacksquare$)
+where there is a single possible action: to do nothing with zero cost.
+
+```dot
+digraph "Episodic Horizon" {
+  rankdir=LR;
+  size="8,5"
+
+  T [label = "" width=0.2 style=filled, color = black, fillcolor = black, shape = square];
+
+  node [shape     = circle
+        style     = "solid,filled"
+        width     = 0.7
+        color     = black
+        fixedsize = shape
+        fillcolor = "#B3FFB3"
+        label     = ""];
+
+  A -> B -> C -> T;
+  A -> C -> A -> D -> T;
+  A -> E -> F -> G -> T;
+  F -> D;
+  E -> {A F} [shape=curved];
+
+  T:e -> T:e [constraint=false];
+}
+```
+
+Another possibility are problems with a _fixed horizon_,
+that is, problems taking a fixed amount $N$ of steps to end.
+Since we must know in which stage we are in order to end the process,
+we must consider the time step $t$ as part of the state.
+Then, any state from the stage N will point towards the terminal state.
+Thus, given a transition $T$ for the rest of the state,
+our dynamics follows a transition defined as
+
+$$
+  \bar{T}((t, s), a) = \begin{cases}
+    (t + 1, T(s, a)), & t < N \\
+    \blacksquare, & t = N.
+  \end{cases}
+$$
+
+When drawing diagrams for fixed horizon problems,
+it is common practice to cluster the states by their stage.
 
 ```dot
 digraph "State over Time" {
@@ -278,7 +330,14 @@ digraph "State over Time" {
         width     = 0.7
         color     = black
         fixedsize = shape
-        fillcolor = "#B3FFB3"];
+        fillcolor = "#B3FFB3"
+        label     = ""];
+
+  subgraph cluster_1 {
+    rank = same;
+    label="t = 1";
+    s;
+  }
 
   subgraph cluster_2 {
     rank = same;
@@ -292,13 +351,19 @@ digraph "State over Time" {
     a3; b3;
   }
 
-  subgraph cluster_4 {
+  subgraph cluster_N {
     rank = same;
-    label="t = 4";
+    label="t = N";
     a4; b4;
   }
 
-  s -> {a2 b2} -> {a3 b3} -> {a4 b4} ->  T;
+  subgraph cluster_ldots {
+    rank = same;
+    style = invis;
+    k [fontsize=20 color = "#00000000" fillcolor= "#00000000" label = ". . ."];
+  }
+
+  s -> {a2 b2} -> {a3 b3} -> k -> {a4 b4} -> T;
 }
 ```
 
@@ -333,8 +398,6 @@ That is, given an edge $s \to s'$, $T(s, s \to s') = s'$.
 Finding the shortest path from $s$ to node $z$
 is the same as setting the initial state to $s$ and making $z$
 a terminal state of our dynamics.
-
-#### Example: Guiding a Rocket
 
 ## Dynamic Programming
 
@@ -456,6 +519,8 @@ $$
 This is called the _Bellman equation_ and all of dynamic programming
 consists of method for solving it.
 
+### Existence, Uniqueness and Convergence
+
 ### Solving the Bellman Equation
 
 For this section, let's assume that both
@@ -468,6 +533,82 @@ to continuous spaces.
 
 #### Value Iteration
 
+I don't know about you but whenever I see a recursion such as Bellman's equation,
+I immediately think of fixed point iteration.
+By considering an operator
+
+$$
+\begin{array}{rl}
+ (B v)(s) =
+  \min\limits_{a} & c(s, a) + \gamma v(s') \\
+  \textrm{s.t.}  & s' = T(s, a), \\
+                 & a \in \Actions(s),
+\end{array}
+$$
+
+we can turn the Bellman equation into an update rule.
+All we have to do is to choose an arbitrary initial value function $v$
+and iteratively evaluate
+
+$$ v \gets Bv. $$
+
+By the magic of the Banach Fixed Point theorem,
+this will converge towards the optimal value function
+no matter what the initial value function is.
+Thus, we arrive at our first algorithm: _value iteration_.
+It consists of setting a tolerance $\varepsilon$ and initial value function $v$
+and iterating $v \gets Bv$ until the error is uniformly below $\varepsilon$.
+Below we see a Julia implementation of value iteration.
+
+```julia
+function value_iteration(v ; tol)
+  π  = Dict{States, Actions}()
+  maxerr = Inf
+  while maxerr > tol
+    maxerr = 0
+    for s in States
+      v0 = v[s]
+      v[s], π[s] = findmax(a -> c(s, a) + v[T(s,a)], Actions(s))
+      maxerr = max(maxerr, abs(v[s] - v0))
+    end
+  end
+  return v, π
+end
+```
+
+The algorithm above is in fact just one variation of value iteration.
+There are still many choices we can make to improve it that are problem-dependent.
+We have chosen to update $v$ in-place,
+already propagating the new value function while traversing the states.
+We could have kept the old value function and only updated $v$ after
+traversing all states.
+Our approach has the advantage of using the improved information
+as soon as it is available but updating in batch may be interesting
+because we can broadcast the optimization across many processes in parallel.
+
+Other important choice we have is the initial value function.
+Choosing a good warm start can greatly improve the convergence.
+As an example, it is a good idea to already fill $v(\blacksquare)$
+with zero for a terminal state.
+Finally, the order that we traverse the states matter.
+There is a reason why dynamic programming is famous for solving problems backwards.
+Whenever we know that a given state is easier to solve,
+we should start traverse by it.
+
+If we are writing a solver for a maze,
+it makes a lot of sense to start at the exit (where the cost is zero)
+and then recursively traverse its neighbours breadth-first.
+Similarly, in a fixed horizon, the best approach
+is to start in the states for the last stage
+and keep going back in time.
+When we have such structure in the state space,
+traversing this way may even converge to the optimal policy
+in a single iteration!
+
+Well, we have a lot of options...
+however as long as we keep visiting all states, any of those approaches
+converges towards the optimal value function.
+
 #### Policy Iteration
 
 ### What if the state space is infinite?
@@ -476,16 +617,126 @@ to continuous spaces.
 
 ## Example: Backpropagation
 
-# Stochastic Dynamic Programming
+https://coeieor.wpengine.com/wp-content/uploads/2019/03/ijcnn2k.pdf
 
-## Markov Decision Processes
+## Stochastic Dynamic Programming
 
-# SDDP
+Until now, we've only dealt with deterministic processes.
+Life, on the other side, is full of uncertainty and, as a good applied field,
+dynamic programming was created from its inception to deal with stochastic settings.
 
-## Approximations by cuts
+We call a state machine where the transitions $T(s, a)$ and costs $c(s, a)$
+are stochastic a _Markov Decision Process_.
+This name comes from the fact that the new state only depends on the current state
+and action, being independent of the process' history just like a Markov chain.
+A usual intuition for this kind of processes is as the interaction between
+an actor and an environment.
+At each time step, the environment is at an state $s$
+and the actor may choose among different actions $a \in \Actions(s)$
+to interact with the environment.
+This action affects the environment in some way that is out of reach to the actor
+(this stochastic / non-deterministic),
+changing its state to $s' = T(s, a)$ and incurring a cost of $c(s, a)$
+to the actor, as illustrated in the diagram below.
 
-## Stagewise independence
+```dot
+digraph {
+  rankdir=LR;
+  compound=true;
 
+  {rank = source; A [label = "Actor"]};
+
+  subgraph cluster_env{
+    rank = same;
+    label="Environment";
+    node [shape     = circle
+          style     = "solid,filled"
+          color     = black
+          fixedsize = shape
+          fillcolor = "#B3FFB3"];
+    s2 [label = "s'"];
+    s -> s2 [label = "T(s,a)"];
+  }
+
+  A -> s:nw [label = "a"       lhead=cluster_env];
+  s:s -> A [label = "c(s, a)" ltail=cluster_env];
+}
+```
+
+Allowing non-determinism opens the way for modeling
+a whole lot more of cool situations.
+For example, robots that play video games!
+The states may be the internal state of the game or some partial observation of them
+that is available to the player
+and the actions are the buttons on the controller.
+The transitions are internal to the game and the costs are related to some winning/losing factor.
+Have you ever heard of Deep Mind's
+[Playing Atari with Deep Reinforcement Learning](https://arxiv.org/pdf/1312.5602v1.pdf) paper?
+In it, they use reinforcement learning to train a robot capable of playing Atari 2600 games
+and all modeling is done via Markov decision processes in a way that is really similar
+to the discussion in this paragraph. I really recommend checking it out.
+
+With a stochastic environment, we can't necessarily predict the costs and transitions,
+only estimate them. To accommodate that, we will have to change a few things
+in our definition of policies and value functions.
+Those will specialize to our old definitions whenever
+the MDP is stochastic.
+
+A deterministic policy was a choice of action for each state.
+We define a _stochastic policy_ to be a probability distribution
+of choosing an action given an state.
+Since the state will usually be random,
+we will get inspired by conditional probabilities and denote it by $\pi(a | s)$.
+
+For the value function, we still want to assign a total cost to each state.
+A solution is to consider all possible costs and take their average.
+The value of a stochastic policy is thus
+
+$$
+ v^\pi(s) = \E^\pi\left[c(s, a) + \gamma v^\pi(T(s, a))\right | a = \pi(s)]
+$$
+
+where we consider the action $a$ to be randomly sampled with probability $\pi(a | s)$
+and write $\E^\pi$ for the average value considering that we follow this probability.
+
+Similarly, the Bellman equation for the optimal value function also considers
+the mean cost:
+
+$$
+\begin{array}{rl}
+ v^\star(s) =
+  \min\limits_{a} & \E\left[c(s, a) + \gamma v^\star(s')\right] \\
+  \textrm{s.t.}  & s' = T(s, a), \\
+                 & a \in \Actions(s).
+\end{array}
+$$
+
+In this post we will only work the expected value
+but know that if you were feeling particularly risk-averse,
+you could exchange it for any [coherent risk measure](https://en.wikipedia.org/wiki/Coherent_risk_measure)
+and all results would still hold.
+
+### Solving MDPs
+
+If the (possibly random) states, actions and costs are finite,
+the methods of _value iteration_ and _policy iteration_ also hold with minor adjustments.
+One can prove the existence and convergence of the stochastic Bellman equation
+with the same assumptions as before.
+
+
+
+## References
+
+In this post,
+I intend to write about the framework
+that encompasses all those problems and how DP fits into it.
+The motivation for this came some weeks ago after teaching a colleague
+about how can we start with the programming technique and arrive at SDDP.
+This post is in fact a more organized/legible version of my notes and diagrams from that day.
+By the way, I also recommend reading
+Richard Sutton's [The Quest for a Common Model of the Intelligent Decision Maker](https://arxiv.org/pdf/2202.13252.pdf).
+It is a great paper about unifying decision frameworks across different fields,
+and certainly also inspired this post.
 
 https://arxiv.org/pdf/2202.13252.pdf
 
