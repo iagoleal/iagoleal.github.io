@@ -8,6 +8,7 @@ date: 2022-05-30
 \def\Actions{\mathcal{A}}
 \def\R{\mathbb{R}}
 \def\E{\mathbb{E}}
+\def\Bellman{\mathcal{B}}
 
 What if I told you that some of the most used algorithms to
 find the shortest path in a graph,
@@ -367,6 +368,9 @@ digraph "State over Time" {
 }
 ```
 
+In finite-horizon problems, we may also set the discount factor $gamma$ to $1$.
+Since all sums eventually end, there are no convergence issues.
+
 #### Example: Shortest Path in a Graph
 
 Suppose you are at your home town
@@ -506,7 +510,6 @@ of starting the dynamics at $s' = T(s, a)$.
 This way, the principle of optimality express itself mathematically
 as a recursive equation that the value for an optimal policy must satisfy.
 
-
 $$
 \begin{array}{rl}
  v^\star(s) =
@@ -520,6 +523,172 @@ This is called the _Bellman equation_ and all of dynamic programming
 consists of method for solving it.
 
 ### Existence, Uniqueness and Convergence
+
+It is time to get deeper into analysis.
+Whenever a mathematician sees a recursive relation as the Bellman equation,
+she immediately starts asking such things:
+what guarantees we have about $v\star$?
+Can I trust that it is unique? Does it even exist?
+Surely we mathematicians may seem a bit too anxious with all these questions
+but they are for good reasons.
+Besides the guarantee that everything works,
+proving the existence a solution in many cases
+also teach us how to construct this solution.
+In fact, this will happen to us in this case!
+In the next section we are going to adapt these proofs
+into algorithms that converge towards the solution to the Bellman equation.
+
+Recursion has a deep relationship with fixed points.
+For example, we can adapt the Bellman equation as the fixed point of an operator $\Bellman$
+called, you may guess, the _Bellman Operator_.
+It takes value functions to value functions and is defined as
+
+$$
+\begin{array}{rl}
+ (\Bellman v)(v) =
+  \min\limits_{a} & c(s, a) + \gamma v(s') \\
+  \textrm{s.t.}  & s' = T(s, a), \\
+                 & a \in \Actions(s).
+\end{array}
+$$
+
+If we interpret $v$ as an estimate for the total future cost at each state,
+we can interpret $\Bellman v$ as the value function following the policy
+that chooses the best action according to this estimate.
+
+Saying that an optimal value function must follow the Bellman equation
+is the same as saying that it is a fixed point of the Bellman operator:
+
+$$ \Bellman v^\star = v^\star. $$
+
+We thus reduce the question of existence and uniqueness of solutions
+for the Bellman equation to finding fixed points of $\Bellman$.
+Fortunately there is a theorem that does just that!
+It is called the _Banach Fixed Point_ theorem.
+
+:::Theorem
+Let $(M,\mathrm{d})$ be a complete metric space and $f : M \to M$
+a function such there is a $\gamma \in (0,1)$ satisfying
+
+$$ \mathrm{d}(f(x), f(y)) \le \gamma \mathrm{d}(x, y)$$
+
+for any $x, y \in M$.
+Then $f$ has a unique fixed point $x^\star$ and for any initial value $x_0$,
+iteratint $f$ will eventually converge towards $x^\star$,
+
+$$ \lim_{n \to \infty} f^n(x_0) = x^\star.$$
+:::
+
+Proving this theorem is out of scope for this post[^banach].
+However we can think of it as saying that if a mapping contracts distances between points,
+it will have to take everything towards a single point.
+
+[^banach]: It is out of scope more because it is a tangent to the topic
+than because of any difficulty in the proof.
+If you are interested in analysis, I really recommend you to try proving it.
+The proof consists of using the contraction property
+to show that the distance between the iterations of $f$ must converge towards zero.
+
+To use it for the Bellman operator, we need to find a suitable metric space
+and prove that $\Bellman$ is a contraction.
+The space we will consider are the bounded continuous functions over the states,
+$C^0_b(\States, \R)$, imbued with the uniform norm
+
+$$\|f\|_\infty = \sup_{s \in \States} |f(s)|.$$
+
+This is a complete metric space and represents and is general
+enough for any practical problem we may think of.
+Furthermore, recall that if the state space is discrete,
+then _any function is continuous and bounded_,
+meaning that this encompasses the most important spaces
+from a computational perspective.
+
+To prove that $\Bellman$ is a contraction,
+we will start with another of its properties: _monotonicity_.
+Besides this proof, it will also be useful in the future when we talk about policy improvement.
+
+:::Theorem
+Suppose that we have two value function $v$ and $w$ such that $v$ estimates costs
+uniformly lower than $w$:
+
+$$ v(s) \le w(s),\; \forall s \in \States.$$
+
+Then the Bellman operator preserves this relationship:
+$$ (Bv)(s) \le (Bw)(s), \; \forall s \in \States.$$
+:::
+
+:::Proof
+Given an state $s$, we get from $v \le w$
+that the following inequality holds for any action $a \in \Actions(s)$:
+
+$$ c(s, a) + \gamma v(T(s,a)) \le c(s, a) + \gamma w(T(s,a)). $$
+
+Since this is valid for any $a$,
+taking the minimum on both sides preserves the inequality.
+Thus
+
+$$
+\min_{a \in \Actions(s)} c(s, a) + v(T(s,a)) \le \min_{a \in \Actions(s)} c(s, a) + w(T(s,a)) \\
+(Bv)(s) \le (Bw)(s).
+$$
+:::
+
+Finally, let's prove that the Bellman operator
+contracts the space of bounded continuous functions by the discount factor.
+What we need to show is that for any value function $v, w$:
+
+$$ \|Bv - Vw\|_\infty \le \gamma \|v - w\|_\infty.$$
+
+From the definition of the uniform norm, we get that for any state $s$,
+
+$$
+v(s) - w(s) \le \|v - w\|_\infty \\
+v(s) \le w(s) + \|v - w\|_\infty.
+$$
+
+From the monotonicity we just proved,
+applying $\Bellman$ to both sides preserves this inequality:
+
+$$
+(\Bellman v)(s) \le \Bellman(w + \|v - w\|_\infty)(s).
+$$
+
+Let's show that the constant factor $\|v - w\|_\infty$
+only shifts the new function $\Bellman w$ by uniformly by another constant.
+Calling it $k$ to declutter the notation,
+
+$$
+\begin{array}{rl}
+(\Bellman(w) + k)(s) =
+\min\limits_{a} & c(s, a) + \gamma (w(s') + k) \\
+\textrm{s.t.}  & s' = T(s, a), \\
+               & a \in \Actions(s) \\
+\end{array} \\
+\begin{array}{rl}
+= \gamma k + \min\limits_{a} & c(s, a) + \gamma (w(s')) \\
+\textrm{s.t.}  & s' = T(s, a), \\
+               & a \in \Actions(s).
+\end{array}
+$$
+
+This proves that
+
+$$
+\begin{aligned}
+(\Bellman v)(s) &\le (\Bellman w)(s) + \gamma \|v - w\|_\infty \\
+(\Bellman v)(s) - (\Bellman w)(s) &\le \gamma \|v - w\|_\infty.
+\end{aligned}
+$$
+
+By doing the same derivation for $w - v$ we get an inequality for the absolute value.
+Applying the supremum, we get the result we want.
+
+$$
+|(\Bellman v)(s) - (\Bellman w)(s)| &\le \gamma \|v - w\|_\infty.
+\sup_{s\in\States} |(\Bellman v)(s) - (\Bellman w)(s)| &\le \gamma \|v - w\|_\infty.
+\|\Bellman v - \Bellman w\|_\infty &\le \gamma \|v - w\|_\infty.
+$$
+
 
 ### Solving the Bellman Equation
 
