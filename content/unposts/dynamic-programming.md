@@ -382,7 +382,7 @@ Unfortunately there are no direct bikeways connecting your home to Cuzco,
 meaning that you will have to find a route going through other cities.
 Also, there is a risk that the llamas will stop to sing at any time
 and just go back to their usual behaviour of eating grass throughout the mountains.
-This prompts you to decide to take the shortest path to Cuzco possible.
+This prompts you to decide to take the shortest possible path to Cuzco.
 
 The above description is an instance of finding the shortest path in a graph.
 In it, we represent each city by a graph node and a direct routes between two cities
@@ -614,7 +614,7 @@ uniformly lower than $w$:
 $$ v(s) \le w(s),\; \forall s \in \States.$$
 
 Then the Bellman operator preserves this relationship:
-$$ (Bv)(s) \le (Bw)(s), \; \forall s \in \States.$$
+$$ (\Bellman v)(s) \le (\Bellman w)(s), \; \forall s \in \States.$$
 :::
 
 :::Proof
@@ -658,16 +658,13 @@ only shifts the new function $\Bellman w$ by uniformly by another constant.
 Calling it $k$ to declutter the notation,
 
 $$
-\begin{array}{rl}
-(\Bellman(w) + k)(s) =
-\min\limits_{a} & c(s, a) + \gamma (w(s') + k) \\
-\textrm{s.t.}  & s' = T(s, a), \\
-               & a \in \Actions(s) \\
-\end{array} \\
-\begin{array}{rl}
-= \gamma k + \min\limits_{a} & c(s, a) + \gamma (w(s')) \\
-\textrm{s.t.}  & s' = T(s, a), \\
-               & a \in \Actions(s).
+\begin{array}{rlll}
+(\Bellman(w) + \|v - w\|_\infty)(s) &= &\min\limits_{a} & c(s, a) + \gamma (w(s') + \|v - w\|_\infty) \\
+&&\textrm{s.t.}  & s' = T(s, a), \\
+&&               & a \in \Actions(s) \\
+&= &\min\limits_{a} & c(s, a) + \gamma (w(s')) +  \gamma \|v - w\|_\infty \\
+&&\textrm{s.t.}  & s' = T(s, a), \\
+&&               & a \in \Actions(s).
 \end{array}
 $$
 
@@ -680,15 +677,26 @@ $$
 \end{aligned}
 $$
 
-By doing the same derivation for $w - v$ we get an inequality for the absolute value.
-Applying the supremum, we get the result we want.
+By doing the same derivation in the opposite direction (for $w - v$)
+we get an inequality for the absolute value.
+Applying the supremum, we finally get the result we want.
 
 $$
-|(\Bellman v)(s) - (\Bellman w)(s)| &\le \gamma \|v - w\|_\infty.
-\sup_{s\in\States} |(\Bellman v)(s) - (\Bellman w)(s)| &\le \gamma \|v - w\|_\infty.
-\|\Bellman v - \Bellman w\|_\infty &\le \gamma \|v - w\|_\infty.
+\begin{aligned}
+  |(\Bellman v)(s) - (\Bellman w)(s)| &\le \gamma \|v - w\|_\infty \\
+  \sup_{s\in\States} |(\Bellman v)(s) - (\Bellman w)(s)| &\le \gamma \|v - w\|_\infty \\
+  \|\Bellman v - \Bellman w\|_\infty &\le \gamma \|v - w\|_\infty.
+\end{aligned}
 $$
 
+
+Since $\Bellman$ is a contraction, the Banach fixed point theorem
+guarantees to us that there exists a unique value function $v^\star$
+satisfying the Bellman equation.
+Furthermore,
+the theorem also points us towards a way to solve this kind of procedure
+with polynomial complexity on the size of the state and action spaces.
+This is the topic we're going to investigate next.
 
 ### Solving the Bellman Equation
 
@@ -702,67 +710,60 @@ to continuous spaces.
 
 #### Value Iteration
 
-I don't know about you but whenever I see a recursion such as Bellman's equation,
-I immediately think of fixed point iteration.
-By considering an operator
-
-$$
-\begin{array}{rl}
- (B v)(s) =
-  \min\limits_{a} & c(s, a) + \gamma v(s') \\
-  \textrm{s.t.}  & s' = T(s, a), \\
-                 & a \in \Actions(s),
-\end{array}
-$$
-
-we can turn the Bellman equation into an update rule.
-All we have to do is to choose an arbitrary initial value function $v$
-and iteratively evaluate
+From the discussion about the existence of an optimal value function,
+we learnt that iterating the Bellman operator convergences towards the optimal.
+Thus, we arrive at our first algorithm: _value iteration_.
+Its main idea is to convert the Bellman equation into an update rule:
 
 $$ v \gets Bv. $$
 
+We can thus start with an initial value function $v_0$ and iterate the update rule above.
 By the magic of the Banach Fixed Point theorem,
 this will converge towards the optimal value function
 no matter what the initial value function is.
-Thus, we arrive at our first algorithm: _value iteration_.
-It consists of setting a tolerance $\varepsilon$ and initial value function $v$
-and iterating $v \gets Bv$ until the error is uniformly below $\varepsilon$.
+This procedure repeats until the uniform error $\| v - Bv \|_\infty$
+becomes less than a previously set tolerance.
+We can obtain an optimal policy from this value function
+by solving the decision problem associated with it
+or by keeping track of the solution each time we solve an optimization problem
+during value iteration.
 Below we see a Julia implementation of value iteration.
 
 ```julia
-function value_iteration(v ; tol)
+function value_iteration(v0 ; tol)
+  v  = copy(v0)
   π  = Dict{States, Actions}()
   maxerr = Inf
   while maxerr > tol
     maxerr = 0
     for s in States
-      v0 = v[s]
+      prev = v[s]
       v[s], π[s] = findmax(a -> c(s, a) + v[T(s,a)], Actions(s))
-      maxerr = max(maxerr, abs(v[s] - v0))
+      maxerr = max(maxerr, abs(v[s] - prev))
     end
   end
-  return v, π
+  return π, v
 end
 ```
 
 The algorithm above is in fact just one variation of value iteration.
 There are still many choices we can make to improve it that are problem-dependent.
-We have chosen to update $v$ in-place,
-already propagating the new value function while traversing the states.
-We could have kept the old value function and only updated $v$ after
-traversing all states.
+For example, we choose to update $v$ in-place,
+already propagating the new value function while traversing the states,
+but we could instead have kept the old value function
+and only updated $v$ after traversing all states.
 Our approach has the advantage of using the improved information
 as soon as it is available but updating in batch may be interesting
-because we can broadcast the optimization across many processes in parallel.
+if we are able to broadcast the optimization across many processes in parallel.
 
 Other important choice we have is the initial value function.
 Choosing a good warm start can greatly improve the convergence.
-As an example, it is a good idea to already fill $v(\blacksquare)$
-with zero for a terminal state.
+As an example, whenever there is a terminal state $\blacksquare$,
+it is a good idea to already fill $v(\blacksquare) = 0$.
 Finally, the order that we traverse the states matter.
 There is a reason why dynamic programming is famous for solving problems backwards.
-Whenever we know that a given state is easier to solve,
-we should start traverse by it.
+If we know that a given state is easier to solve,
+we should start the traverse by it.
 
 If we are writing a solver for a maze,
 it makes a lot of sense to start at the exit (where the cost is zero)
@@ -776,9 +777,120 @@ in a single iteration!
 
 Well, we have a lot of options...
 however as long as we keep visiting all states, any of those approaches
-converges towards the optimal value function.
+will converge towards the optimal value function.
 
 #### Policy Iteration
+
+One issue with value iteration is that all policy calculations are implicit,
+since we just work with value functions.
+It is then possible that we reach an optimal policy and keep iterating
+the algorithm to improve the estimate for the value function.
+In this section, let's see how we can directly calculate an optimal policy
+in a finite number of steps.
+
+##### Policy Evaluation
+
+Our next question is then how to calculate the cost associated with a policy.
+Let's say somebody gave you a policy $\pi$ and told you nothing more about it.
+How can you find its value function $v^\pi$?
+One way is to notice that it satisfies a recursion
+similar to the Bellman equation, but without the minimization step.
+
+$$ v^\pi(s) = c(s, \pi(s)) + \gamma v^\pi(T(s, \pi(s)). $$
+
+If you follow the same steps we did before transforming this equation
+into a fixed point problem,
+you will see that under the same assumptions of continuity
+(always valid for finite state and action spaces)
+it also has a unique solution.
+Moreover, turning it into an update procedure
+converges towards $v^\pi$ for any initial value function.
+Thus we arrive at an algorithm for evaluating the cost of a policy,
+unimaginatively called _policy evaluation_.
+
+```julia
+function policy_evaluation(π, v0=zeros(States); tol)
+  v  = copy(v0)
+  maxerr = Inf
+  while maxerr > tol
+    maxerr = 0
+    for s in States
+      prev = v[s]
+      a    = π[s]
+      v[s] = c(s, a) + v[T(s,a)]
+      maxerr = max(maxerr, abs(v[s] - prev))
+    end
+  end
+  return v
+end
+```
+
+Notice the similarity with value iteration.
+The only difference is that we are iterating a single evaluation,
+not an entire optimization problem.
+
+##### Policy Improvement
+
+After we know a policy and its value function,
+our next question is how to improve it.
+That is, how can we use this information to get nearer
+to an optimal policy.
+
+The secret lies in locally improving our policy for each state.
+Consider an state $s$. The value $v^\pi(s)$ is the total cost
+of starting at $s$ and following $\pi$ thereafter.
+What if there is an $a \in \Actions(s)$ such that
+choosing $a$ at the first step and following $\pi$ thereafter
+is _cheaper_ than just following $\pi$?
+
+$$ c(s, a) + v^\pi(T(s, a)) < v^\pi(s).$$
+
+Since we have this improvement at the first step
+and our processes are assumed to not depend on anything
+besides what is represented on the state $s$,
+than it must be better to choose $a$ than $\pi(s)$
+whenever we are at state $s$.
+That is, if we define a new policy
+
+$$
+\lambda(x) = \begin{cases}
+  a,      & x = s \\
+  \lambda(x), & \text{otherwise}
+\end{cases}
+$$
+
+then it is always better to follow $\lambda$ then $\pi$,
+because $v^\lambda \le v^\pi$.
+
+We thus arrive at our next algorithm: _policy iteration_.
+It step of it consists of taking a policy $\pi$,
+finding its value function $v^\pi$ through policy evaluation
+and finally using policy improvement to arrive at a better policy.
+Since there are only finitely many policies
+and we always obtain a strictly better policy,
+this algorithm is guaranteed to converge to an optimal policy
+in a finite amount of steps.
+
+```julia
+function policy_improvement!(π0, v)
+  π = copy(π0)
+  for s in States
+    π[s] = argmax(a -> c(s, a) + v[T(s,a)], Actions(s))
+  end
+  return π
+end
+
+function policy_iteration(π, v=zeros(States); tol)
+  while true
+    π0 = π
+    v  = policy_evaluation(π, v)
+    π  = policy_improvement(π, v)
+    if π == π0 break end
+  end
+  return π, v
+end
+
+```
 
 ### What if the state space is infinite?
 
