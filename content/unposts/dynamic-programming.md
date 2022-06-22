@@ -14,14 +14,23 @@ What if I told you that some of the most used algorithms to
 find the shortest path in a graph,
 calculate gradients while training a neural network,
 and parse context-free grammars
-are essentially implementations of the same idea?
-Namely, _dynamic programming_.
+are essentially implementations of the same principle?
+It is called _dynamic programming_ and is one of those instances
+in mathematics where a simple principle unfolds
+into profound conclusions ranging over many fields.
+In fact, we can, already in this first paragraph,
+summarize the idea using Richard Bellman's (Dynamic Programming creator) own words:
+
+> An optimal policy has the property that
+whatever the initial state and initial decision are,
+the remaining decisions must constitute an optimal policy
+with regard to the state resulting from the first decision.
 
 I gotta say that I was taught dynamic programming
-in many different contexts but it took me a while
-to finally get "click" that it they were actually the same thing.
+in different contexts, but it took me a while
+to finally get the "click" that they were actually the same thing.
 When learning algorithms and data structures,
-it was a memoization-based technique were you speed up your algorithm
+it was a memoization-based technique where you speed up your algorithm
 by first solving the easier parts and saving them for later use.
 At work, I mostly deal with solving a lot of linear programs
 for long-term scheduling problems.[^sddp]
@@ -31,9 +40,9 @@ Finally, one of the main methods for model-based reinforcement learning
 is again called dynamic programming,
 and at first it also didn't seem so much like the others instances.
 
-So, what is happening here?
+So, what's happening here?
 Did everybody choose to call their algorithms dynamic programming
-just because it is a cool name?[^dp-name]
+just because it's a cool name?[^dp-name]
 Well, in fact there are some principles that apply to all of those instances,
 from planning a rocket's trajectory to TeX's word-wrapping.
 And the [list goes on and on](https://en.wikipedia.org/wiki/Dynamic_programming#Algorithms_that_use_dynamic_programming).
@@ -48,14 +57,15 @@ Take your seat and enjoy the ride!
 [^sddp]: To be more precise, we work with hydrothermal dispatch problems,
 where one must decide between many sources of energy (hydro, thermal, renewable)
 to supply a certain power demand taking into account the uncertainties of the future.
-For example: hydro is cheap and clean but you risk running out of water
+For example: hydro is cheap and clean, but you risk running out of water
 if you use all of it and next month turns out particularly dry.
 Finding the best energy dispatch is once again solved via dynamic programming.
 
 [^dp-name]: Even Richard Bellman admittedly [chose because of that](https://en.wikipedia.org/wiki/Dynamic_programming#History).
 
 ## On Decision Making and State Machines
-Before delving into dynamic programming, we first have to establish a few concepts.
+
+Before delving into dynamic programming per se, we first have to establish a few concepts.
 After all, it's always best to know which problems you intend to solve
 before learning a method to solve them, right?
 
@@ -116,7 +126,7 @@ digraph "Vampire State Machine" {
 [^vampire]: Definitely citation needed.
 
 
-Our modeling of a vampire is an stance of something called
+Our modeling of a vampire is a stance of something called
 a _state machines_ or _automata_ if you're into Greek words.
 There are 4 states in which the vampire can be and at each one
 there is an available set of actions to take that may transition him to another state.
@@ -130,15 +140,15 @@ An important notice: If you come from Computer Science,
 you are probably most used to _finite_ state machines.
 Just know that in our context, the states may be any set.
 Some of the algorithms that we will see today
-only work for finite state spaces
+only work for finite state spaces,
 but there are others that may even require a continuous space!
 An example is SDDP, which uses linear programming duality
 and thus requires the state space to be a convex subset of $R^n$.
 
-### Decision Processes
+### The Dynamics of Making Decisions
 
 Iterating the transition $T$ establishes a dynamics for our system
-where we start at a initial state $s$ and by taking a sequence of actions
+where we start at an initial state $s$ and by taking a sequence of actions
 $a_1, a_2, \ldots$ we walk over the state space.
 
 $$
@@ -160,19 +170,19 @@ You start with some random board and repeatedly
 place numbers until you reach a terminal state
 where there are no available actions.
 
-One can argue that since a state encapsulates
+One can argue that a state encapsulates
 all you must know about your system in order to choose an action,
-no matter if the previous history nor time step.
+no matter the previous history nor time step.
 Indeed, if those things affect your choice,
-then we can without loss of generality model our
-problem as a larger system where the state also carries those information.
+then you can without loss of generality model
+the problem as a larger system where the state also carries this information.
 Thus controlling a dynamic system amounts to
 a function $\pi : (s : \States) \to \Actions(s)$
 which chooses a valid action for each state.
 In the literature this called a _policy_,
 in analogy to a government taking actions to run its state.
 
-Unfortunately life is not known for its free lunchs
+Unfortunately life is not known for its free lunches
 and in most systems, whenever we take action $a$ at state $s$,
 there is a certain cost $c(s, a)$ to pay.
 Depending on the context this can be, for example,
@@ -181,12 +191,11 @@ some total distance (for planning)
 or even a negative cost representing a reward.
 
 Thus, by following a policy $\pi$,
-we produce a sequence of cost $c(s_t, \pi(s_t))$
-for each time step.
-We could define the total cost for $\pi$
-as the sum of those costs but there is an additional detail to notice.
-If I gave you something and asked if you want to pay me today
-or next year, which option would you prefer?
+we produce a sequence of cost $c(s_t, \pi(s_t))$ for each time step.
+We could define the total cost for $\pi$ as the sum of those costs,
+but there is an additional detail to notice.
+If I gave you something and asked whether you want to pay me today or next year,
+which option would you prefer?
 Sometimes there are factors such as inflation or interests
 that make costs in the future not have the same actual value
 as the costs we expend right now.
@@ -205,7 +214,7 @@ The equation above defines the _value function_ $v^\pi : \States \to \R$
 for a given policy $\pi$.
 __Spoiler__: keep an eye on the $v^\pi$,
 because later on this post we will find them to be useful tools
-that are closely related to the memoization techniques
+closely related to the memoization techniques
 that people usually identify with dynamic programming.
 
 Besides its practical interpretation,
@@ -225,7 +234,7 @@ $$
 \sum\limits_{t=1}^\infty \gamma^{t-1}|c(s_t, \pi(s_t))| \le \sum\limits_{t=1}^\infty \gamma^{t-1} M \le \frac{M}{1 - \gamma},
 $$
 
-thus guaranteeing that that the value function is well-defined.
+thus guaranteeing that the value function is well-defined.
 
 ### Optimal Decisions
 
@@ -237,10 +246,14 @@ When controlling a spaceship towards the moon,
 it is important to guarantee that it will use the least amount of fuel.
 When brawling at a bar, you want to knock out your foe
 with the least injuries possible.
+Must of all, the important is that the best policy
+must have the least considering _all time_,
+that is, both the present and its future consequences.
+For example, sometimes a policy that has a higher cost for the first state
+is overall better because it puts transitions us into a more favorable state.
 Thus, our problem can be naturally formulated as searching for _optimal policies_:
 
-> Starting at state $s$, find a policy $\pi$ producing
-the lowest total cost over time.
+> Starting at state $s$, find a policy $\pi$ producing the least total cost over time.
 
 Or equivalently in math language:
 
@@ -261,7 +274,7 @@ Before we continue,
 let's go over a little tangent on how to formulate some classical problems
 in this decision making framework.
 
-#### Sir, I don't have all that time available...
+#### Sir, I don't have all that time available... {#finite-horizon}
 
 It is a nice formalism but to be realistic, not all decisions go on forever.
 I would even risk saying that most of them end after some time.
@@ -291,11 +304,13 @@ digraph "Episodic Horizon" {
         fillcolor = "#B3FFB3"
         label     = ""];
 
-  A -> B -> C -> T;
-  A -> C -> A -> D -> T;
+  {A C} -> B -> T;
+  C -> B;
+  C -> A -> D -> T;
   A -> E -> F -> G -> T;
-  F -> D;
-  E -> {A F} [shape=curved];
+  {F B} -> D;
+  E -> F [shape=curved];
+  H -> {A C E};
 
   T:e -> T:e [constraint=false];
 }
@@ -309,8 +324,7 @@ Then, any state from the stage N will point towards the terminal state.
 Thus, given a transition $T$ for the rest of the state,
 our dynamics follows a transition defined as
 
-$$
-  \bar{T}((t, s), a) = \begin{cases}
+$$ \bar{T}((t, s), a) = \begin{cases}
     (t + 1, T(s, a)), & t < N \\
     \blacksquare, & t = N.
   \end{cases}
@@ -373,7 +387,7 @@ Since all sums eventually end, there are no convergence issues.
 
 #### Example: Shortest Path in a Graph
 
-Suppose you are at your home town
+Suppose you are at your hometown
 and just received a message from friend
 telling you that there are singing llamas in Cuzco, Peru, right now.
 This makes you at the same time incredulous and curious,
@@ -381,11 +395,11 @@ so you just pick your favorite bike and get on the road towards Cuzco.
 Unfortunately there are no direct bikeways connecting your home to Cuzco,
 meaning that you will have to find a route going through other cities.
 Also, there is a risk that the llamas will stop to sing at any time
-and just go back to their usual behaviour of eating grass throughout the mountains.
+and just go back to their usual behavior of eating grass throughout the mountains.
 This prompts you to decide to take the shortest possible path to Cuzco.
 
 The above description is an instance of finding the shortest path in a graph.
-In it, we represent each city by a graph node and a direct routes between two cities
+In it, we represent each city by a graph node and direct routes between two cities
 as a weighted edge where the weight is the distance.
 Going from home to Cuzco amounts to finding the path between those two nodes
 with the smallest total distance.
@@ -405,7 +419,7 @@ a terminal state of our dynamics.
 
 ## Dynamic Programming
 
-Alright, its finally time to solve those decision problems.
+Alright, it's finally time to solve those decision problems.
 The simplest idea could be to exhaustively search the space of all actions
 trying to find the best solution.
 Notice that even for finite states and horizon, this may be prohibitively expensive
@@ -422,7 +436,6 @@ it reads as:
 whatever the initial state and initial decision are,
 the remaining decisions must constitute an optimal policy
 with regard to the state resulting from the first decision.
-
 
 Alright, what does this mean?
 What the principle of optimality is telling us
@@ -455,7 +468,7 @@ Notice in the optimization problem above
 that the initial state is only ever used to choose the first action.
 Later actions do not depend directly on it but only on its consequences.
 This means that we can break the problem into two parts:
-calculating a _immediate cost_ dependent on the initial state
+calculating an _immediate cost_ dependent on the initial state
 and calculating a future cost dependent on all next states.
 
 $$
@@ -503,9 +516,9 @@ $$
 \end{array}
 $$
 
-Although this is a really big expression,
+Although this is a huge expression,
 it should be straightforward to see that the expression
-for the future cost is _exactly_ the optimal value $v\star(s')$
+for the future cost is _exactly_ the optimal value $v^\star(s')$
 of starting the dynamics at $s' = T(s, a)$.
 This way, the principle of optimality express itself mathematically
 as a recursive equation that the value for an optimal policy must satisfy.
@@ -519,15 +532,18 @@ $$
 \end{array}
 $$
 
-This is called the _Bellman equation_ and all of dynamic programming
-consists of method for solving it.
+This is called the _Bellman equation_ and all dynamic programming
+consists of methods for solving it.
+Even more: we can think of the Bellman equation as a recursive specification
+for the decision problems and of dynamic programming
+as any problem-specific implementation that solves it.
 
 ### Existence, Uniqueness and Convergence
 
 It is time to get deeper into analysis.
 Whenever a mathematician sees a recursive relation as the Bellman equation,
 she immediately starts asking such things:
-what guarantees we have about $v\star$?
+what guarantees do we have about $v^\star$?
 Can I trust that it is unique? Does it even exist?
 Surely we mathematicians may seem a bit too anxious with all these questions
 but they are for good reasons.
@@ -574,13 +590,13 @@ $$ \mathrm{d}(f(x), f(y)) \le \gamma \mathrm{d}(x, y)$$
 
 for any $x, y \in M$.
 Then $f$ has a unique fixed point $x^\star$ and for any initial value $x_0$,
-iteratint $f$ will eventually converge towards $x^\star$,
+iterating $f$ will eventually converge towards $x^\star$,
 
 $$ \lim_{n \to \infty} f^n(x_0) = x^\star.$$
 :::
 
 Proving this theorem is out of scope for this post[^banach].
-However we can think of it as saying that if a mapping contracts distances between points,
+However, we can think of it as saying that if a mapping contracts distances between points,
 it will have to take everything towards a single point.
 
 [^banach]: It is out of scope more because it is a tangent to the topic
@@ -618,7 +634,7 @@ $$ (\Bellman v)(s) \le (\Bellman w)(s), \; \forall s \in \States.$$
 :::
 
 :::Proof
-Given an state $s$, we get from $v \le w$
+Given a state $s$, we get from $v \le w$
 that the following inequality holds for any action $a \in \Actions(s)$:
 
 $$ c(s, a) + \gamma v(T(s,a)) \le c(s, a) + \gamma w(T(s,a)). $$
@@ -629,7 +645,7 @@ Thus
 
 $$
 \min_{a \in \Actions(s)} c(s, a) + v(T(s,a)) \le \min_{a \in \Actions(s)} c(s, a) + w(T(s,a)) \\
-(Bv)(s) \le (Bw)(s).
+(\Bellman v)(s) \le (\Bellman w)(s).
 $$
 :::
 
@@ -637,7 +653,7 @@ Finally, let's prove that the Bellman operator
 contracts the space of bounded continuous functions by the discount factor.
 What we need to show is that for any value function $v, w$:
 
-$$ \|Bv - Vw\|_\infty \le \gamma \|v - w\|_\infty.$$
+$$ \|\Bellman v - Vw\|_\infty \le \gamma \|v - w\|_\infty.$$
 
 From the definition of the uniform norm, we get that for any state $s$,
 
@@ -702,7 +718,7 @@ This is the topic we're going to investigate next.
 
 For this section, let's assume that both
 the state $\States$ and action $\Actions(s)$ spaces are finite.
-I know that this is not the most general setting
+I know that this is not the most general setting,
 but it encompasses a lot of interesting problems
 and is a simpler place to start.
 Later I will comment a bit on how one can extend the results in this section
@@ -711,17 +727,17 @@ to continuous spaces.
 #### Value Iteration
 
 From the discussion about the existence of an optimal value function,
-we learnt that iterating the Bellman operator convergences towards the optimal.
+we learned that iterating the Bellman operator convergences towards the optimal.
 Thus, we arrive at our first algorithm: _value iteration_.
 Its main idea is to convert the Bellman equation into an update rule:
 
-$$ v \gets Bv. $$
+$$ v \gets \Bellman v. $$
 
 We can thus start with an initial value function $v_0$ and iterate the update rule above.
 By the magic of the Banach Fixed Point theorem,
 this will converge towards the optimal value function
 no matter what the initial value function is.
-This procedure repeats until the uniform error $\| v - Bv \|_\infty$
+This procedure repeats until the uniform error $\| v - \Bellman v \|_\infty$
 becomes less than a previously set tolerance.
 We can obtain an optimal policy from this value function
 by solving the decision problem associated with it
@@ -769,8 +785,7 @@ If we are writing a solver for a maze,
 it makes a lot of sense to start at the exit (where the cost is zero)
 and then recursively traverse its neighbours breadth-first.
 Similarly, in a fixed horizon, the best approach
-is to start in the states for the last stage
-and keep going back in time.
+is to start in the states for the last stage and keep going back in time.
 When we have such structure in the state space,
 traversing this way may even converge to the optimal policy
 in a single iteration!
@@ -778,6 +793,94 @@ in a single iteration!
 Well, we have a lot of options...
 however as long as we keep visiting all states, any of those approaches
 will converge towards the optimal value function.
+
+##### Backward Induction over a Finite Horizon
+
+Recall the finite horizon problem that we discussed [before](#finite-horizon).
+In there, the state had a special structure where
+it also carried the stage information and eventually transitioned
+to a terminal state when $t$ became greater than a certain fixed $N$.
+As we noticed earlier, the best way to traverse the states is backwards in time.
+Let's investigate a bit what this means.
+
+The state space $\States$ is clustered into smaller spaces for each $t$:
+$\States_1, \States_2, \ldots, \States_N, \States_{N+1} = \{\blacksquare\}$ where we denote the terminal state by $\blacksquare$.
+Also, we can only transition from $\States_t$ to $\States_{t+1}$.
+Let's thus denote by $v_t$ the value function restricted to $\States_t$.
+In the terminal it equals zero by definition,
+implying that in the last stage, any action has _no future cost_
+since we can only transition to the terminal.
+Finding the value function $v_N$ restricted to the last stage
+is therefore as simple as finding the best action for each state in $S_N$.
+
+```dot
+digraph "Backward Induction" {
+  size    = "8,5";
+  center  = true;
+  nodesep = 0.5;
+
+  { rank=sink;
+    node [label = "", width=0.2 style=filled, color = black, fillcolor = black, shape = square, margin=1.5];
+    T [group = infty];
+  };
+  { rank=source;
+    node [fontsize=20 color = "#00000000" fillcolor= "#00000000" label = ". . ."]
+    k [group = infty];
+  };
+
+  node [shape     = circle
+        style     = "solid,filled"
+        width     = 0.7
+        color     = black
+        fixedsize = shape
+        fillcolor = "#B3FFB3"
+        label     = ""];
+
+  subgraph last_stage {
+    rank =  same;
+    node [group = me];
+    A; B; Z [width = 0.1,group = infty, style=invis]; C; D;
+  }
+
+  // Alignment edges
+  A -> B -> Z -> C -> D [style=invis];
+  T -> Z -> k [style=invis];
+
+  // Real edges
+  k -> {A B C D};
+  edge[minlen=2];
+
+  {D} -> T;
+  {A B C D} -> T;
+  {D B A C} -> T [color = red style = bold];
+  {B} -> T;
+
+}
+```
+
+This way, after one iteration $v_N$ already converged.
+Now that we know it, finding $v_{N-1}$ is reduced to the exact same problem
+and we can thus iterate backwards until we solve for the first stage.
+At this point, we know by construction that we already converged
+to the optimal value function, with no need for further iterations.
+This procedure, which is a smart variation of value iteration,
+is also called _backward induction_ for its nature
+of propagating information from the last time step towards the first.
+In Julia, we write it as value iteration with a different loop
+and without the need of an initial value function.
+
+```julia
+function backward_induction()
+  v  = Dict(s => 0 for s in States)
+  π  = Dict{States, Actions}()
+  for t in 1:N
+    for s in States(t)
+      v[s], π[s] = findmax(a -> c(s, a) + v[T(s,a)], Actions(s))
+    end
+  end
+  return π, v
+end
+```
 
 #### Policy Iteration
 
@@ -805,7 +908,7 @@ you will see that under the same assumptions of continuity
 it also has a unique solution.
 Moreover, turning it into an update procedure
 converges towards $v^\pi$ for any initial value function.
-Thus we arrive at an algorithm for evaluating the cost of a policy,
+Thus, we arrive at an algorithm for evaluating the cost of a policy,
 unimaginatively called _policy evaluation_.
 
 ```julia
@@ -837,7 +940,7 @@ That is, how can we use this information to get nearer
 to an optimal policy.
 
 The secret lies in locally improving our policy for each state.
-Consider an state $s$. The value $v^\pi(s)$ is the total cost
+Consider a state $s$. The value $v^\pi(s)$ is the total cost
 of starting at $s$ and following $\pi$ thereafter.
 What if there is an $a \in \Actions(s)$ such that
 choosing $a$ at the first step and following $\pi$ thereafter
@@ -848,31 +951,31 @@ $$ c(s, a) + v^\pi(T(s, a)) < v^\pi(s).$$
 Since we have this improvement at the first step
 and our processes are assumed to not depend on anything
 besides what is represented on the state $s$,
-than it must be better to choose $a$ than $\pi(s)$
+then it must be better to choose $a$ than $\pi(s)$
 whenever we are at state $s$.
 That is, if we define a new policy
 
 $$
 \lambda(x) = \begin{cases}
   a,      & x = s \\
-  \lambda(x), & \text{otherwise}
+  \pi(x), & \text{otherwise}
 \end{cases}
 $$
 
-then it is always better to follow $\lambda$ then $\pi$,
+it is always better to follow $\lambda$ then $\pi$,
 because $v^\lambda \le v^\pi$.
 
 We thus arrive at our next algorithm: _policy iteration_.
-It step of it consists of taking a policy $\pi$,
+It consists of taking a policy $\pi$,
 finding its value function $v^\pi$ through policy evaluation
 and finally using policy improvement to arrive at a better policy.
-Since there are only finitely many policies
+Since there are only finitely many policies,
 and we always obtain a strictly better policy,
 this algorithm is guaranteed to converge to an optimal policy
 in a finite amount of steps.
 
 ```julia
-function policy_improvement!(π0, v)
+function policy_improvement(π0, v)
   π = copy(π0)
   for s in States
     π[s] = argmax(a -> c(s, a) + v[T(s,a)], Actions(s))
@@ -889,8 +992,21 @@ function policy_iteration(π, v=zeros(States); tol)
   end
   return π, v
 end
-
 ```
+
+Did you notice that we iteratively alternate
+between two kinds of passes over the states?
+This is the mother of all backwards-forwards algorithms
+people generally associate with dynamic programming.
+
+Just like with value iteration,
+there's also a lot of freedom in how we traverse the states.
+Again it is useful to think of policy iteration more as a principle
+than as an algorithm in itself and adapt the steps to consider
+any problem specific information that may be available.
+
+
+### Generalized Policy Iteration
 
 ### What if the state space is infinite?
 
@@ -912,7 +1028,7 @@ This name comes from the fact that the new state only depends on the current sta
 and action, being independent of the process' history just like a Markov chain.
 A usual intuition for this kind of processes is as the interaction between
 an actor and an environment.
-At each time step, the environment is at an state $s$
+At each time step, the environment is at a state $s$
 and the actor may choose among different actions $a \in \Actions(s)$
 to interact with the environment.
 This action affects the environment in some way that is out of reach to the actor
@@ -944,8 +1060,7 @@ digraph {
 }
 ```
 
-Allowing non-determinism opens the way for modeling
-a whole lot more of cool situations.
+Allowing non-determinism opens the way for modeling a lot more of cool situations.
 For example, robots that play video games!
 The states may be the internal state of the game or some partial observation of them
 that is available to the player
@@ -965,7 +1080,7 @@ the MDP is stochastic.
 
 A deterministic policy was a choice of action for each state.
 We define a _stochastic policy_ to be a probability distribution
-of choosing an action given an state.
+of choosing an action given a state.
 Since the state will usually be random,
 we will get inspired by conditional probabilities and denote it by $\pi(a | s)$.
 
@@ -1004,7 +1119,35 @@ the methods of _value iteration_ and _policy iteration_ also hold with minor adj
 One can prove the existence and convergence of the stochastic Bellman equation
 with the same assumptions as before.
 
+The main difference from the deterministic case is that we need
+to evaluate the expectation during the process.
+Let's call $p(s', c | s, a)$ the probability
+of getting a transition $s' = T(s, a)$ and a cost $c(s, a)$
+given that we choose action $a$ at state $s$.
+With this, the expectation becomes a weighted sum
+and we can do _value iteration_ exactly as before,
+with the only difference that our update rule becomes
 
+$$
+ v(s) \gets \min\limits_{a} \sum_{s',\,c} p(s', c | s, a)\left(c + \gamma v(s')\right).
+$$
+
+Similarly, the update rules for policy evaluation is
+
+$$
+ v(s) \gets \sum_{s',\,c} p(s', c | s, \pi(s))\left(c + \gamma v(s')\right)
+$$
+
+and the one for policy improvement is
+
+$$
+ \pi(s) \gets \argmin\limits_{a} \sum_{s',\,c} p(s', c | s, a)\left(c + \gamma v(s')\right).
+$$
+
+The algorithm for policy iteration is also exactly the same as the deterministic one
+except for these two lines of code.
+
+## Approximate Dynamic Programming
 
 ## References
 
