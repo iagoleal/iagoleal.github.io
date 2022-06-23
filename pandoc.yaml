@@ -7,11 +7,15 @@ writer: html5
 metadata:
   author-meta: Iago Leal
   lang: en
+  bibliography: refs.bib
+  csl: chicago-fullnote-bibliography-with-ibid.csl
 
 variables:
   github:    https://github.com/iagoleal
   site:      https://iagoleal.com
   site-repo: https://github.com/iagoleal/iagoleal.github.io
+
+citeproc: true
 
 # Log boilerplate
 verbosity: WARNING
