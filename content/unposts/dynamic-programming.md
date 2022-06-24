@@ -2,6 +2,7 @@
 title: A Tale of Dynamic Programming
 keywords: [dynamic-programming, markov-decision-processes, reinforcement-learning]
 date: 2022-05-30
+suppress-bibliography: true
 ---
 
 \def\States{\mathcal{S}}
@@ -143,7 +144,7 @@ Some of the algorithms that we will see today
 only work for finite state spaces,
 but there are others that may even require a continuous space!
 An example is SDDP, which uses linear programming duality
-and thus requires the state space to be a convex subset of $R^n$.
+and thus requires the state space to be a convex subset of $\R^n$.
 
 ### The Dynamics of Making Decisions
 
@@ -429,8 +430,7 @@ naturally breaks apart into separate stages.
 
 Our approach will involve the famous _Bellman principle of optimality_,
 which is the cornerstone of dynamic programming.
-Taking Bellman's own words on his book [Dynamic Programming](https://press.princeton.edu/books/paperback/9780691146683/dynamic-programming),
-it reads as:
+Taking @{bellmanDPBook} [ch 3, p. 83]'s own words, it reads as:
 
 > An optimal policy has the property that
 whatever the initial state and initial decision are,
@@ -543,7 +543,7 @@ as any problem-specific implementation that solves it.
 It is time to get deeper into analysis.
 Whenever a mathematician sees a recursive relation as the Bellman equation,
 she immediately starts asking such things:
-what guarantees do we have about $v^\star$?
+what guarantees we have about $v^\star$?
 Can I trust that it is unique? Does it even exist?
 Surely we mathematicians may seem a bit too anxious with all these questions
 but they are for good reasons.
@@ -695,7 +695,7 @@ $$
 
 By doing the same derivation in the opposite direction (for $w - v$)
 we get an inequality for the absolute value.
-Applying the supremum, we finally get the result we want.
+Applying the supremum, it becomes the result we want.
 
 $$
 \begin{aligned}
@@ -718,11 +718,13 @@ This is the topic we're going to investigate next.
 
 For this section, let's assume that both
 the state $\States$ and action $\Actions(s)$ spaces are finite.
-I know that this is not the most general setting,
-but it encompasses a lot of interesting problems
-and is a simpler place to start.
-Later I will comment a bit on how one can extend the results in this section
-to continuous spaces.
+This will allow us to focus on exhaustive methods
+exploring the entire state space.
+Keep calm however,
+I am planning to write other posts in the future
+to explain how these ideas generalize to continuous spaces,
+or even to finite spaces that are too huge to explore entirely,
+via something called Approximate Dynamic Programming or Reinforcement Learning.
 
 #### Value Iteration
 
@@ -1005,17 +1007,6 @@ Again it is useful to think of policy iteration more as a principle
 than as an algorithm in itself and adapt the steps to consider
 any problem specific information that may be available.
 
-
-### Generalized Policy Iteration
-
-### What if the state space is infinite?
-
-## Example: Shortest Path in a Graph
-
-## Example: Backpropagation
-
-https://coeieor.wpengine.com/wp-content/uploads/2019/03/ijcnn2k.pdf
-
 ## Stochastic Dynamic Programming
 
 Until now, we've only dealt with deterministic processes.
@@ -1023,7 +1014,7 @@ Life, on the other side, is full of uncertainty and, as a good applied field,
 dynamic programming was created from its inception to deal with stochastic settings.
 
 We call a state machine where the transitions $T(s, a)$ and costs $c(s, a)$
-are stochastic a _Markov Decision Process_.
+are stochastic a _Markov Decision Process_ (MDP for short).
 This name comes from the fact that the new state only depends on the current state
 and action, being independent of the process' history just like a Markov chain.
 A usual intuition for this kind of processes is as the interaction between
@@ -1147,23 +1138,154 @@ $$
 The algorithm for policy iteration is also exactly the same as the deterministic one
 except for these two lines of code.
 
-## Approximate Dynamic Programming
+## End of our Journey
 
-## References
+Well, we finally reached the end of our overview of dynamic programming.
+I hope it was as fun to read as it was for me to write.
+And that DP gets the honor place it deserves in your problem solving.[^fp-rec]
+Of course, a single blog post is too tinny to encompass a subject as vast as DP.
+So let's give a little appetizer of what is out there.
 
-In this post,
-I intend to write about the framework
-that encompasses all those problems and how DP fits into it.
-The motivation for this came some weeks ago after teaching a colleague
-about how can we start with the programming technique and arrive at SDDP.
-This post is in fact a more organized/legible version of my notes and diagrams from that day.
-By the way, I also recommend reading
-Richard Sutton's [The Quest for a Common Model of the Intelligent Decision Maker](https://arxiv.org/pdf/2202.13252.pdf).
-It is a great paper about unifying decision frameworks across different fields,
-and certainly also inspired this post.
+[^fp-rec]: In fact, fixed points and recursion deserve the spot.
+They're everywhere!
 
-https://arxiv.org/pdf/2202.13252.pdf
+One thing that we barely scraped the surface was continuous state problems,
+even though their importance.
+And I say this last part seriously as someone who works daily with them.
+In our theoretical discussions we didn't really used the finitude of the states,
+only when we we built the algorithms with vectors and loops.
+This means that at a mathematical level, both value and policy iteration
+work for infinite states if you keep in mind the continuity assumptions.
 
-https://www.mit.edu/~dimitrib/allerton_api_final.pdf
+Therefore,
+if one has a way to traverse the entire state space $\States$,
+the algorithms will converge and we may even get an analytic solution
+to the Bellman Equation.
+In practice this is hard and we have to resort to some kind of
+_Approximate Dynamic Programming_.
+The idea is to approximate the value function $v$
+with some representation requiring only a finite amount of information
+and sample the state space in order to fit it with the data.
 
-https://martin-thoma.com/how-to-draw-a-finite-state-machine/
+The best way to do that is problem-dependent, of course.
+For example, if the optimization in the Bellman equation is a linear program,
+
+$$
+\begin{array}{rl}
+ v(s) =
+  \min\limits_{a} & c^ta + \gamma v(s') \\
+  \textrm{s.t.}  & s' = Ms + Na, \\
+                 & a \ge 0,
+\end{array}
+$$
+
+one can guarantee that $v$ must be convex and piecewise-linear.
+Thus, at each iteration of our algorithm we can solve for state $s^{(i)}$
+and use linear programming duality
+to get an affine subapproximation to $v$ (called a cutting plane),
+
+$$ v(s) \ge v^{(i)} + \left\langleλ^{(i)}, s - s^{(i)}\right\rangle, \forall s \in \States.$$
+
+Hence instead of solving the recursive equation,
+we sample the state space and use this cut approximation of $v$:
+
+$$
+\begin{array}{rl}
+ v(s) =
+  \min\limits_{a} & c^ta + \gamma z \\
+  \textrm{s.t.}  & s' = Ms + Na, \\
+                 & a \ge 0, \\
+                 & z \ge 0, \\
+                 & z \ge v_i + λ(s - s_i), \forall i.
+\end{array}
+$$
+
+This procedure yields piecewise-linear approximations
+that eventually converge to the real optimal value function.
+The idea we just discussed forms the basis of _Dual Dynamic Programming_,
+a method largely employed by people in Stochastic Programming and Operations Research.
+
+Another thing we can do when the problem's structure is not as nice as a linear program
+is to use some kind of universal approximator for $v$, such as a neural network.
+This is called _Neural Dynamic Programming_
+and the work of [Dmitri Bertsekas](https://www.mit.edu/~dimitrib/dpbook.html)
+is a great place to start learning about this.
+
+Besides the algorithms,
+there are other classes of problems that admit a Bellman equation
+but didn't fit our narrative despite their importance.
+One such example are Game problems where
+we do not have total control over the actions taken.
+Differently from MDPs where we know the transition probabilities for all states,
+in this case there are also other players
+who are supposedly trying to _maximize_ your cost.
+As an example, think of a game of Poker
+where the other players want to maximize your losses (thus minimize their own).
+In this case, besides your actions $a$, there are also actions $\alpha$
+from the other players who affect the state transition $s' = T(s, a, \alpha)$
+providing a Bellman equation
+
+$$
+\begin{array}{rl}
+ v(s) =
+  \min\limits_{a} \max\limits_{\alpha} &\E[c(s, a) + \gamma v(s')] \\
+  \textrm{s.t.}  & s' = T(s, a, \alpha), \\
+                 & a \in \Actions_\mathrm{you}(s) \\
+                 & \alpha \in \Actions_\mathrm{enemy}(s).
+\end{array}
+$$
+
+Another important instance that I didn't mention before
+are control problems with continuous time.
+This is a huge area of engineering and applied math
+and much of Bellman's original work
+was focused on solving this kind of problem.
+As an example, think of an airplane flying.
+It's dynamics are given by a differential equation taking account
+both its current state $s$ and how the pilot controls the pane $a$,
+
+$$
+\frac{ds}{dt} = T(s, a).
+$$
+
+Think of $s_t$ as the plane's position and direction,
+while $a_t$ represents how much the pilot chooses to accelerate
+or turn the plane's yoke at time $t$.
+The cost may be the fuel consumption.
+As any good physics problem this has continuous time
+and the sum over states becomes an integral
+
+$$
+\begin{array}{rl}
+ v(s) =
+  \min\limits_{a} & \int_{0}^{\infty} c(s(t), a(t))dt \\
+  \textrm{s.t.}  & \frac{ds}{dt} = T(s(t), a(t)), \\
+                 & s(0) = s, \\
+                 & a \in \Actions(s). \\
+\end{array}
+$$
+
+By following similar steps to our deduction of the discrete time Bellman equation
+plus a lot of hard analysis[^hjb-taylor],
+one arrives at a non-linear partial differential equation
+called the _Hamilton-Jacobi-Bellman equation_:
+
+$$
+v(s) = \min_{a} c(s, a) + \left\langle \nabla v(s), T(s, a) \right\rangle.
+$$
+
+This equation analogously describes the optimal value of a state recursively
+but now it is much harder to solve.
+The methods employed generally involve discretization
+allied with, our by now old friends, value or policy iteration.
+
+[^hjb-taylor]: The derivation mostly consists of Taylor expansions to be sincere.
+The tricky part is justifying your steps.
+
+After this final overview, it's indeed time to end our journey,
+nevertheless knowing that there is much more to explore out there.
+I will try to post more about dynamic programming
+and specially its connections to Stochastic Optimization and Reinforcement Learning
+but I don't really know when I will have the time.
+
+Farewell and see you next time!
