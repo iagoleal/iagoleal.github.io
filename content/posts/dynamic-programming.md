@@ -1,7 +1,7 @@
 ---
 title: A Tale of Dynamic Programming
 keywords: [dynamic-programming, markov-decision-processes, reinforcement-learning]
-date: 2022-05-30
+date: 2022-06-25
 suppress-bibliography: true
 ---
 
@@ -78,10 +78,10 @@ In the human form, the vampire can choose to turn into one of the animals
 or jump into a shadow to enter it.
 As a bat, the vampire is able to keep flying or drink a person's blood,
 an act that turns him back into human form immediately.
-As a wolf he can similarly stay in the form or go back to human.
-He is unable to remain much in the shadows,
-The vampire can't remain much on the shadows and, for whatever reason,
-he is only able to leave them as a wolf.
+As a wolf he can similarly stay in the form or go back to human form.
+Unfortunately for him, the vampire is unable to remain much time in the shadow,
+and, for the sake of our example,
+he is only able to leave the shadows in wolf form.
 It seems really complicated to be a vampire, right?
 Fortunately, the folks at the Comp Sci department
 invented some nice diagrams to help our pointy-toothed friends.
@@ -756,7 +756,7 @@ function value_iteration(v0 ; tol)
     maxerr = 0
     for s in States
       prev = v[s]
-      v[s], π[s] = findmax(a -> c(s, a) + v[T(s,a)], Actions(s))
+      v[s], π[s] = findmin(a -> c(s, a) + γ*v[T(s,a)], Actions(s))
       maxerr = max(maxerr, abs(v[s] - prev))
     end
   end
@@ -764,15 +764,26 @@ function value_iteration(v0 ; tol)
 end
 ```
 
+In the animation below,
+we can see value iteration in action for a maze solving problem.
+In this problem, each state is a cell in the grid
+and the actions are the directions one can take at that cell (neighbours without a wall).
+Our objective is to reach the right-bottom edge in the minimum amount of steps possible.
+We do so by starting with a uniformly zero value and a random policy.
+In the left we see the value function at each iteration
+and in the right the associated policy.
+
+![](/video/dynamic-programming-labyrinth-value-iteration.webm)
+
 The algorithm above is in fact just one variation of value iteration.
-There are still many choices we can make to improve it that are problem-dependent.
+There are still many problem-dependent improvements.
 For example, we choose to update $v$ in-place,
 already propagating the new value function while traversing the states,
 but we could instead have kept the old value function
 and only updated $v$ after traversing all states.
 Our approach has the advantage of using the improved information
 as soon as it is available but updating in batch may be interesting
-if we are able to broadcast the optimization across many processes in parallel.
+when we're able to broadcast the optimization across many processes in parallel.
 
 Other important choice we have is the initial value function.
 Choosing a good warm start can greatly improve the convergence.
@@ -783,18 +794,21 @@ There is a reason why dynamic programming is famous for solving problems backwar
 If we know that a given state is easier to solve,
 we should start the traverse by it.
 
-If we are writing a solver for a maze,
-it makes a lot of sense to start at the exit (where the cost is zero)
-and then recursively traverse its neighbours breadth-first.
+For example, our maze solver above could see a lot of improvement
+by traversing the cells breadth-first from the terminal node.
 Similarly, in a fixed horizon, the best approach
-is to start in the states for the last stage and keep going back in time.
+is to start in the states for the last stage and keep going back in time,
+something we will discuss in the next section.
 When we have such structure in the state space,
 traversing this way may even converge to the optimal policy
 in a single iteration!
 
 Well, we have a lot of options...
-however as long as we keep visiting all states, any of those approaches
-will converge towards the optimal value function.
+Nevertheless, as long as we keep visiting all states,
+any of those approaches is guaranteed to converge towards the optimal value function.
+Which one is faster being generally problem-dependent.
+This is why I think it is best to think of DP not as an algorithm
+but as a principle that encompasses many similar algorithms.
 
 ##### Backward Induction over a Finite Horizon
 
@@ -877,7 +891,7 @@ function backward_induction()
   π  = Dict{States, Actions}()
   for t in 1:N
     for s in States(t)
-      v[s], π[s] = findmax(a -> c(s, a) + v[T(s,a)], Actions(s))
+      v[s], π[s] = findmin(a -> c(s, a) + γ*v[T(s,a)], Actions(s))
     end
   end
   return π, v
@@ -921,8 +935,7 @@ function policy_evaluation(π, v0=zeros(States); tol)
     maxerr = 0
     for s in States
       prev = v[s]
-      a    = π[s]
-      v[s] = c(s, a) + v[T(s,a)]
+      v[s] = c(s, π[s]) + γ*v[T(s, π[s])]
       maxerr = max(maxerr, abs(v[s] - prev))
     end
   end
@@ -980,7 +993,7 @@ in a finite amount of steps.
 function policy_improvement(π0, v)
   π = copy(π0)
   for s in States
-    π[s] = argmax(a -> c(s, a) + v[T(s,a)], Actions(s))
+    π[s] = argmin(a -> c(s, a) + γ*v[T(s,a)], Actions(s))
   end
   return π
 end
@@ -988,7 +1001,7 @@ end
 function policy_iteration(π, v=zeros(States); tol)
   while true
     π0 = π
-    v  = policy_evaluation(π, v)
+    v  = policy_evaluation(π, v; tol=tol)
     π  = policy_improvement(π, v)
     if π == π0 break end
   end
@@ -1070,11 +1083,7 @@ Those will specialize to our old definitions whenever
 the MDP is stochastic.
 
 A deterministic policy was a choice of action for each state.
-We define a _stochastic policy_ to be a probability distribution
-of choosing an action given a state.
-Since the state will usually be random,
-we will get inspired by conditional probabilities and denote it by $\pi(a | s)$.
-
+We define a _stochastic policy_ as a random function choosing an action given a state.
 For the value function, we still want to assign a total cost to each state.
 A solution is to consider all possible costs and take their average.
 The value of a stochastic policy is thus
@@ -1083,9 +1092,8 @@ $$
  v^\pi(s) = \E^\pi\left[c(s, a) + \gamma v^\pi(T(s, a))\right | a = \pi(s)]
 $$
 
-where we consider the action $a$ to be randomly sampled with probability $\pi(a | s)$
-and write $\E^\pi$ for the average value considering that we follow this probability.
-
+where we consider the action $a$ to be randomly sampled with according to the policy
+and write $\E^\pi$ for the average value considering that we follow it.
 Similarly, the Bellman equation for the optimal value function also considers
 the mean cost:
 
