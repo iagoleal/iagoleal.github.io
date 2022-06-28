@@ -55,7 +55,7 @@ Of course, there are some things lacking on the theorem above.
 How do you measure the distance between random variables?
 Moreover, constants are numbers and random variables are functions.
 They have different types!
-Then, what does it mean for them to be close together?
+Then, what does it mean to them to be close together?
 The usual probabilistic view doesn't emphasize this but we can
 interpret random variables geometrically as points in the space
 and, then, measuring their distance is as simple as taking
@@ -70,7 +70,7 @@ Let's begin by laying the groundwork.
 Suppose that we're considering an event with a finite amount (let's say $N$)
 of possible outcomes $\Omega = \{\omega_1,\ldots,\omega_N\}$,
 each occurring with a probability $p_i$.
-You can think of it as throwing a dice, pulling a slot machine's lever
+You can think of it as throwing a die, pulling a slot machine's lever
 or any other situation where uncertain stuff may happen.
 
 In this framework, we can think of a _random variable_
@@ -201,7 +201,7 @@ Our solution will use the _probabilities_ of the outcomes
 to define an _inner product_ on the space of random variables.
 
 Now it's time for modeling! But how can we embed the probabilistic structure
-into a inner product?
+into an inner product?
 To have an inner product that somehow reflects the probabilities,
 we will ask that it satisfies some coherence conditions.
 
@@ -311,7 +311,7 @@ For us "closest" means "vector that minimizing the distance".
 Remembering that all constant random variables lie on the same line,
 we get from Geometry/Linear Algebra that $\E{X}$ is
 the result of the _orthogonal projection_ of $X$ on $\sum_j \Id_j$.
-(which is an unitary vector)
+(which is a unitary vector)
 What we really want to calculate can be summarized as a picture:
 
 <object type="image/svg+xml"
@@ -391,16 +391,16 @@ In real world probability, one of the most widely used kinds of random variables
 are certainly the _Gaussian Random Variables_.
 Among their fundamental properties is that their distribution is uniquely
 defined by its mean and standard deviation[^std-sigma].
-This part is only my opinion and no mathematics
+This part is only my opinion and no mathematics,
 but I like to think that what makes them so special
-is that they can be recovered solely  by knowing their approximation
+is that they can be recovered solely by knowing their approximation
 by a constant and how far off this approximation is.
 
 [^std-sigma]: Or variance if you prefer it squared.
 
 
-Until now we have only been looking for distances and orthogonal projections
-but the inner product also tells us about the angle between two vectors!
+Until now, we have only been looking for distances and orthogonal projections.
+Nevertheless, the inner product also tells us about the angle between two vectors!
 From Euclidean Geometry, we know that the angle $\theta$ between two vectors
 satisfies
 
@@ -488,11 +488,11 @@ because when $Y = 0$, it measures the sparsity of $X$ as a vector.
 Can you guess what constant minimizes it?
 Try to prove that it is the _mode_[^mode-def] of $X$!
 
-[^mode-def]: The _mode_ is the value returned with greatest probability.
+[^mode-def]: The _mode_ is the value returned with the greatest probability.
 
 ## Acknowledgements
 
-When I stareted thinking of these ideas, I talked about them to Hugo Nobrega and João Paixão.
+When I started thinking of these ideas, I talked about them to Hugo Nobrega and João Paixão.
 This post only came to life because of how excited they got with it.
 Even so that they convinced me it could be interesting to write about it.
 

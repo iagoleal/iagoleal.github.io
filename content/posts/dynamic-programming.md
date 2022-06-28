@@ -70,28 +70,28 @@ Before delving into dynamic programming per se, we first have to establish a few
 After all, it's always best to know which problems you intend to solve
 before learning a method to solve them, right?
 
-As a matter of motivation, let's begin by considering a vampire.
-It is common knowledge[^vampire]
-that vampires are always in one of four states:
-their usual human form, transformed into a bat or a wolf or walking in the shadows.
-In the human form, the vampire can choose to turn into one of the animals
-or jump into a shadow to enter it.
-As a bat, the vampire is able to keep flying or drink a person's blood,
-an act that turns him back into human form immediately.
-As a wolf he can similarly stay in the form or go back to human form.
-Unfortunately for him, the vampire is unable to remain much time in the shadow,
-and, for the sake of our example,
-he is only able to leave the shadows in wolf form.
-It seems really complicated to be a vampire, right?
-Fortunately, the folks at the Comp Sci department
-invented some nice diagrams to help our pointy-toothed friends.
+
+As a matter of motivation, let's start with something I am really fond of:
+old school platformer games.
+In our hypothetical game which is definitely not about some Italian plumber,
+the character does stands idle doing nothing by default.
+But with the press of a button in the controller,
+the player may command the character to do a few things:
+shoot, jump or walk.
+And, of course, each of these actions activate the respective animation on the screen.
+In the best Resident Evil style,
+this game only allows a character to shoot while idle
+and also forces you to first be idle after a jump before doing any other action.
+Think of that as the time it takes to restore one's balance after falling.
+This description may seem overly complicated on text,
+but fortunately the nice folks in the Comp Sci department
+already invented diagrams that show these transitions nicely.
+
 
 ```dot
-digraph "Vampire State Machine" {
+digraph "Plataformer State Machine" {
   rankdir=LR;
   size="8,5"
-
-  qi [fillcolor = black shape = point];
 
   node [shape     = circle
         style     = "solid,filled"
@@ -100,34 +100,29 @@ digraph "Vampire State Machine" {
         fixedsize = shape
         fillcolor = "#B3FFB3"];
 
-  H [label = "Human" shape = doublecircle];
-  S [label = "Shadow"];
-  B [label = "Bat"];
-  W [label = "Wolf"];
+  A [label = "shooting"];
+  J [label = "jumping"];
+  W [label = "walking"];
+  I [label = "idle"];
 
-  qi -> H;
+  I -> I [label = "do nothing"];
+  W -> W [label = "keep walking"];
 
-  H -> B [label = "transform"];
-  H -> W [label = "transform"];
+  I -> A [label = "attack"];
+  A -> I [label = "finish attack"];
 
-  H -> S;
-  S -> W;
+  I -> W [label = "walk"];
 
-  B -> B [label = "fly"];
-  B -> H [label = "drink blood"];
+  J -> I [label = "hit ground"];
 
-  B -> H [label = "return"];
-  W -> H [label = "return"];
+  W -> I [label = "stop"];
 
-  H -> H [label = "stay"];
-  W -> W [label = "stay"];
+  W -> J [label = "jump"];
+  I -> J [label = "jump"];
 }
 ```
 
-[^vampire]: Definitely citation needed.
-
-
-Our modeling of a vampire is a stance of something called
+Our modeling above is an instance of something called
 a _state machines_ or _automata_ if you're into Greek words.
 There are 4 states in which the vampire can be and at each one
 there is an available set of actions to take that may transition him to another state.

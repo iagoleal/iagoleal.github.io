@@ -299,8 +299,7 @@ $$ \mathtt{Notes} \coloneqq
     \mathtt{sol}\mid
     \mathtt{la} \mid
     \mathtt{si}.$$
-Nevertheless, in practice we also want to deal with types that are more complex than simply
-finite collections.
+Nevertheless, in practice we also want to deal with types that are more complex than finite collections.
 The solution to this is assuming that the programming language comes with some built-in types
 such as integers, characters, and floating-point numbers,
 together with structures that allow us to compose these types.
