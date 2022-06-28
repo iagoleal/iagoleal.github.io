@@ -1297,3 +1297,11 @@ and specially its connections to Stochastic Optimization and Reinforcement Learn
 but I don't really know when I will have the time.
 
 Farewell and see you next time!
+
+## Acknowledgements
+
+This post come to life after a series of conversations I had
+with [Pedro Xavier](https://pedromxavier.github.io).
+The good thing of explaining something to a smart person
+is that you end up learning a lot in the process.
+Sometimes you even learn enough to write a blog post about it.
