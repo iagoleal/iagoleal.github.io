@@ -1,0 +1,200 @@
+---
+title: The Lazy Way to Solve Differential Equations
+keywords: [haskell, functional-programming]
+date: 2022-07-12
+---
+
+Back at college I took some classes on solving differential equation.
+My favorite were certainly those from the Physics department,
+because they taught us all kinds of formulas, methods and series
+to actually compute the solutions instead obsessing over regularity and convergence issues[^mathematicians].
+
+[^mathematicians]: I hope my fellow mathematicians don't excommunicate me for such a comment. D:
+
+A lot of the techniques, specially those for equations with analytic coefficients,
+sometimes felt a bit mechanical.
+In fact, it almost always goes like this:
+Get your equation, Taylor expand everything, collect terms by indices
+and then solve the recurrence relations to find Taylor series for the solution.
+
+Well, some days ago [João Paixão](https://www.joaopaixao.com/)
+sent me a link to a paper from @calcStreams1998 called "Calculus in Coinductive Form".
+In it the authors show that if we treat Taylor series as streams of real numbers,
+then solving these differential equations become _as easy as writing them_!
+
+Of course, I got really excited with the idea and had to turn it into code.
+After all, that is the epitome of declarative programming!
+The paper is really readable, and I urge you to take a look at it.
+There are many mathematical details that I will not touch
+and even a whole discussion on how these same techniques apply to Laplace transforms.
+As an appetizer of what we are going to do,
+consider the initial value problem
+
+$$
+  y'' = -x^2 y + 2 y' + 4 \\
+  y(0) = 0,\; y'(0) = 1.
+$$
+
+By the end of this post we gonna be able to solve this differential equation
+simply by writing the equivalent Haskell definition:
+
+    y = 0 :> 1 :> (-x^2) * y + 2 * diff y + 4
+
+
+
+Calculus with Infinite Lists
+----------------------------
+
+> {-# LANGUAGE DeriveFunctor, DeriveFoldable, NoMonomorphismRestriction #-}
+> import Data.Foldable (toList)
+> import Control.Applicative
+
+First of all, a disclaimer:
+I will not deal with convergence issues in this post.
+For us everything will be beautiful and perfect and analytic,
+just as if we were doing physics not math.
+But since ignoring these things makes a chill run down my spine,
+let's just agree that everytime I say "smooth" I actually mean
+"analytic in a neighbourhood around zero".
+Nice, now it's calculus time.
+
+Our basic tool is the all too famous Fundamental Theorem of Calculus.
+Consider a smooth function $f$;
+An application of the FTC tells us that $f$ is uniquely determined
+by its value at zero and its derivative:
+
+$$ f(x) = f(0) + \int_0^x f'(t) dt.$$
+
+Ignoring all meaning behind the integral, derivative, evaluation etc.
+we can view this as a recipe: smooth functions are equivalent
+to pairs containing a number and another smooth function.
+I don't know about you but this sounds a lot like a recursive datatype to me!
+
+> data Stream a = a :> Stream a
+>   deriving (Functor, Foldable)
+>
+> infixr 2 :>
+
+The `Stream a` datatype represents a list with an infinite amount of elements.
+To see this all you have to do is unfold the definition.
+In our context this means that a smooth function may be represent by
+the infinite list of its derivatives at zero:
+
+    f = f 0 :> f'
+      = f 0 :> f' 0 :> f''
+      = f 0 :> f' 0 :> f'' 0 :> f'''
+      = ...
+
+Since the constructor `(:>)` is our way to represent the TFC,
+the above amounts to saying that we can represent a (sufficiently regular) function
+by its Taylor series.
+That is, by applying the TFC recursively to the derivatives of $f$, we get
+
+$$ f(x) = \sum_{k=0}^\infty f^{(k)}(0) \frac{x^n}{n!}. $$
+
+As expected, the info that actually depends on $f$ are only its derivatives at zero.
+In math we represent this as a power series but, by linear independence,
+this is completely equivalent to the stream of its coefficients in the basis $\{x^n/n!\}$.
+
+With this we're done.
+Well... we're not actually done,
+there is still a lot of cool stuff I want to show you.
+Nevertheless the definition above is already enough
+to replicate the power series method of solving ODEs.
+Don't believe me? Let's solve some familiar equations then.
+
+The exponential function is the unique solution to
+$y' = y$, $y(0) = 1$,
+which becomes the following recursion in Haskell:
+
+> ex = 1 :> ex
+
+Let's check the starting coefficients of `ex` on ghci
+to confirm that they match the derivative of $\exp$ at zero:
+are exactly the derivatives of the $\exp$:
+
+```ghci
+ghci> take 10 (toList ex)
+[1,1,1,1,1,1,1,1,1,1]
+```
+
+The way to define sine and cosine as the solutions to a system of ODEs
+in Haskell becomes a mutually recursive definition:
+
+> sine   = 0 :> cosine
+> cosine = 1 :> fmap negate sine
+
+As expected, these streams follow the same alternating
+pattern of $0, 1, 0, -1,\ldots$ as the Taylor coefficients.
+
+```ghci
+ghci> take 10 (toList sine)
+[0,1,0,-1,0,1,0,-1,0,1]
+ghci> take 10 (toList cosine)
+[1,0,-1,0,1,0,-1,0,1,0]
+```
+
+Even though we know how to calculate the Taylor coefficients
+they're only means to an end.
+The main reason one wants to solve differential equations
+is to calculate _functions_, not series.
+Let's then hack a poor man's function approximation
+for these Taylor expansions.
+For simplicity, I will use a fixed amount of 100 coefficients.
+This works for this demonstration but in any real program,
+it is better to call upon some analysis to find out the right amount
+of terms for your desired error estimate.
+Let's then create a higher order function that converts streams of real numbers
+into real valued functions.
+
+> -- | Turn a Stream into a functional approximation of its Taylor series.
+> eval :: Fractional a => Stream a -> a -> a
+> eval f x = foldr1 (\ f0 f' -> f0 + x * f') (take 100 taylor)
+>  where
+>   taylor      = zipWith (/) (toList f) factorials
+>   factorials  = let fats = 1 : zipWith (*) fats [1..]
+>                 in fmap fromIntegral fats
+
+With our evaluator in hand, it's time to test
+our previous streams into some points:
+
+```ghci
+ghci> eval ex 0
+1.0
+ghci> eval ex 1
+2.718281828459045
+ghci> fmap (eval sine)   [0, pi/2, pi, 2*pi]
+[0.0,1.0,0.0,0.0]
+ghci> fmap (eval cosine) [0, pi/2, pi, 2*pi]
+[1.0,0.0,-1.0,1.0]
+```
+
+Quite nice, huh?
+Just a few lines of code and we already have the power to solve and approximate
+some classical differential equations!
+All thanks to Haskell's lazyness and the TFC.
+
+> instance Applicative Stream where
+>  pure s = s :> pure s
+>  liftA2 op (x :> xs) (y :> ys) = op x y :> liftA2 op xs ys
+>
+> diff (_ :> as) = as
+>
+> zero :: Num a => Stream a
+> zero = 0 :> zero
+>
+> x :: Num a => Stream a
+> x = 0 :> 1 :> zero
+>
+> instance Num a => Num (Stream a) where
+>  (+)    = liftA2 (+)
+>  (-)    = liftA2 (-)
+>  negate = fmap negate
+>  (*) f@(x :> x') g@(y :> y') = x * y :> (x' * g + f * y')
+>  fromInteger n = fromInteger n :> zero
+>  abs    = error "No absolute value defined"
+>  signum = error "No sign function defined"
+>
+> instance (Eq a, Num a, Show a) => Show (Stream a) where
+>  show xs = let top = take 10 (toList xs)
+>            in "Stream " ++ show top ++ "..."
