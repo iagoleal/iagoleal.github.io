@@ -8,18 +8,17 @@ Back at college I took some classes on solving differential equation.
 My favorite were certainly those from the Physics department,
 because they taught us all kinds of formulas, methods and series
 to actually compute the solutions instead obsessing over regularity and convergence issues[^mathematicians].
-
-[^mathematicians]: I hope my fellow mathematicians don't excommunicate me for such a comment. D:
-
 A lot of the techniques, specially those for equations with analytic coefficients,
 sometimes felt a bit mechanical.
 In fact, it almost always goes like this:
 Get your equation, Taylor expand everything, collect terms by indices
 and then solve the recurrence relations to find Taylor series for the solution.
 
+[^mathematicians]: I hope my fellow mathematicians don't excommunicate me for such a comment. D:
+
 Well, some days ago [João Paixão](https://www.joaopaixao.com/)
 sent me a link to a paper from @calcStreams1998 called "Calculus in Coinductive Form".
-In it the authors show that if we treat Taylor series as streams of real numbers,
+In it the authors show that if we look at Taylor series as streams of real numbers,
 then solving these differential equations become _as easy as writing them_!
 
 Of course, I got really excited with the idea and had to turn it into code.
@@ -39,7 +38,6 @@ By the end of this post we gonna be able to solve this differential equation
 simply by writing the equivalent Haskell definition:
 
     y = 0 :> 1 :> (-x^2) * y + 2 * diff y + 4
-
 
 
 Calculus with Infinite Lists
@@ -149,14 +147,14 @@ into real valued functions.
 
 > -- | Turn a Stream into a functional approximation of its Taylor series.
 > eval :: Fractional a => Stream a -> a -> a
-> eval f x = foldr1 (\ f0 f' -> f0 + x * f') (take 100 taylor)
+> eval f x = foldr1 (\ f0 f' -> f0 + x * f') (take 20 taylor)
 >  where
 >   taylor      = zipWith (/) (toList f) factorials
 >   factorials  = let fats = 1 : zipWith (*) fats [1..]
 >                 in fmap fromIntegral fats
 
 With our evaluator in hand, it's time to test
-our previous streams into some points:
+our previous streams into some well-known values:
 
 ```ghci
 ghci> eval ex 0
@@ -173,28 +171,147 @@ Quite nice, huh?
 Just a few lines of code and we already have the power to solve and approximate
 some classical differential equations!
 All thanks to Haskell's lazyness and the TFC.
+Our solve is done but the code still lacks a cleaner interface
+to manipulate streams and represent differential equations.
+Let's define some functions to mitigate that.
 
-> instance Applicative Stream where
->  pure s = s :> pure s
->  liftA2 op (x :> xs) (y :> ys) = op x y :> liftA2 op xs ys
->
-> diff (_ :> as) = as
->
+From the previous discussion,
+we can get the derivative of a stream simply by
+dropping the first term.
+
+> -- | Taylor series representation of the derivative.
+> diff :: Stream a -> Stream a
+> diff (_ :> f') = f'
+
+It is possible to embed any constant as a stream with derivative zero.
+Also, let's define a stream `x` representing the identity function[^x-name]
+in order to make our equations look a bit nicer.
+
+> -- | Taylor series for the constant zero.
 > zero :: Num a => Stream a
 > zero = 0 :> zero
 >
+> -- | Taylor series for the idenity function `f x = x`.
 > x :: Num a => Stream a
 > x = 0 :> 1 :> zero
->
+
+[^x-name]: This is a terrible name to use in an actual top-level definition.
+
+Finally, our fellow mathematicians and physicists that may perhaps
+use this code certainly will want to do arithmetical manipulations
+on the series.
+We can achieve that with the traditional `Num`, `Fractional` and `Floating` instances.
+As usual with these Calculus posts,
+these instances correspond to the well-known formulas for derivatives.
+Let's start with the arithmetic classes.
+
 > instance Num a => Num (Stream a) where
->  (+)    = liftA2 (+)
->  (-)    = liftA2 (-)
+>  -- Good ol' linearity
+>  (+)  (f0 :> f')  (g0 :> g') = f0 + g0 :> f' + g'
+>  (-)  (f0 :> f')  (g0 :> g') = f0 - g0 :> f' - g'
 >  negate = fmap negate
->  (*) f@(x :> x') g@(y :> y') = x * y :> (x' * g + f * y')
+>  -- Leibniz rule applied to streams
+>  (*) f@(f0 :> f') g@(g0 :> g') = f0 * g0 :> f' * g + f * g'
 >  fromInteger n = fromInteger n :> zero
->  abs    = error "No absolute value defined"
->  signum = error "No sign function defined"
+>  abs    = error "Absolute value is not a smooth function"
+>  signum = error "No well-defined sign for a series"
 >
+> instance Fractional a => Fractional (Stream a) where
+>  -- The division rule from Calculus. We assume g(0) ≠ 0
+>  (/) f@(f0 :> f') g@(g0 :> g') = f0 / g0 :> (f' * g - f * g') / g^2
+>  fromRational n = fromRational n :> zero
+
+
+For the `Floating` instance,
+we will use the chain rule and the fact that we know the derivatives
+for all methods in the class.
+I recommend taking a look at the implementation
+we did in a [previous post for Dual numbers](/posts/calculus-symbolic-ad).
+They are strikingly similar, which is no coincidence of course.
+The main idea is that applying an analytic $g$ to the stream of $f$
+if the same as calculating the derivates for $g \circ f$.
+Thus all our `Floating` methods will look like this:
+
+    g f = g (f 0) :> g' f * f'
+
+This is Haskell so we can turn this idea into a higher order function
+taking both `g` and its derivative:
+
+> analytic g g' f@(f0 :> f') = g f0 :> g' f * f'
+
+> instance Floating a => Floating (Stream a) where
+>  pi = pi :> zero
+>  exp   = analytic exp   exp
+>  log   = analytic log   recip
+>  sin   = analytic sin   cos
+>  cos   = analytic cos   (negate . sin)
+>  asin  = analytic asin  (\x -> 1 / sqrt (1 - x^2))
+>  acos  = analytic acos  (\x -> -1 / sqrt (1 - x^2))
+>  atan  = analytic atan  (\x -> 1 / (1 + x^2))
+>  sinh  = analytic sinh  cosh
+>  cosh  = analytic cosh  sinh
+>  asinh = analytic asinh (\x -> 1 / sqrt (x^2 + 1))
+>  acosh = analytic acosh (\x -> 1 / sqrt (x^2 - 1))
+>  atanh = analytic atanh (\x -> 1 / (1 - x^2))
+
+With all those instances,
+we can give power series the same first-class numeric treatment
+that they receive in mathematics.
+Specially, it is notworthy that `g x` is equivalent to Taylor expanding `g`
+around zero.
+Well, do you want to approximate some complicated integral?
+Just use this fact:
+
+```ghci
+ghci> erf = 0 :> exp (x^2)
+ghci> take 10 $ toList erf
+[0.0,1.0,0.0,2.0,0.0,12.0,0.0,120.0,0.0,1680.0]
+```
+
+Also we've only dealt with linear equations until now
+but as long as everything is analytic,
+these methods readily extend to non-linear equations.
+
+```ghci
+ghci> y = 0 :> 1 :> exp (diff y) - sin y
+ghci> take 10 $ toList y
+[0.0,1.0,2.718281828459045,6.3890560989306495,34.73451018945723,28
+5.2545636052814,3034.8584483825503,40101.98460649736,634559.983572
+3854,1.1709111462487163e7]
+```
+
+At last, we have to discuss a bit about performance.
+Solving an ODE through a Taylor series can be slow...
+That is why, in practice, this would only be used
+for the most well-behaved equations.
+There is also the issue of convergence that we decided to ignore during this post.
+Nevertheless, this "automatic" solution is pretty much equivalent to what one
+would do to solve this kind of equation by hand,
+including these same issues.
+In fact, I would even risk saying that the Haskell internals
+are much more optimized than one could hope to be when solving by hand.
+
+
+This is indeed an automatic method
+----------------------------------
+
+To sum everything up, I want to note a cool fact
+that I've only realized after writing the entire post:
+there is a direct relationship between this method of solving ODEs
+and forward-mode automatic differentiation.
+
+
+What's up with all this Abstract Nonsense??
+-------------------------------------------
+
 > instance (Eq a, Num a, Show a) => Show (Stream a) where
 >  show xs = let top = take 10 (toList xs)
 >            in "Stream " ++ show top ++ "..."
+
+Acknowledgements
+----------------
+
+This post gained life thanks to the enthusiasm of João Paixão and Lucas Rufino.
+João sent me this paper and we three had some fun chats about its significance,
+including becoming perplexed together about how little code we actually needed to implement this.
+
