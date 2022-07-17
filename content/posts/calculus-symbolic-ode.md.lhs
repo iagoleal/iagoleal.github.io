@@ -272,8 +272,7 @@ these methods readily extend to non-linear equations.
 ```ghci
 ghci> y = 0 :> 1 :> x^2 * cos (diff y) - x * sin y
 ghci> take 10 (toList y)
-[0.0,1.0,0.0,0.0,-0.9193953882637205,0.0,4.0,20.069867797120825,-6
-.0,-265.9036412154172]
+[0.0,1.0,0.0,0.0,-0.9193953882637205,0.0,4.0,20.069867797120825,-6.0,-265.9036412154172]
 ```
 
 Finally, we should discuss a couple caveats of this method.

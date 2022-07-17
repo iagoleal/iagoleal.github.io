@@ -4,17 +4,20 @@ local function trimspaces(s)
   return string.gsub(s, '^%s*(.-)%s*$', '%1')
 end
 
-local function getfilename(s)
-  return string.match(s, "^.+/(.+)%..+$")
-end
-
 local function split(s, delimiter)
     result = {}
-    for match in (s..delimiter):gmatch("(.-)"..delimiter) do
-        table.insert(result, match)
+    for m in (s..delimiter):gmatch("(.-)"..delimiter) do
+        table.insert(result, m)
     end
     return result
 end
+
+local function getfilename(s)
+    local parts = split(s, "/")
+    return string.match(parts[#parts], "^[^.]+")
+end
+
+
 -- Lua implementation of PHP scandir function
 local function scandir(directory)
     local t = {}
@@ -86,7 +89,7 @@ local function make_postlist(path, n)
   local data = {}
   local headlines = {}
   n = n and math.min(n, #posts) or #posts
-  print(fmt("Making post list with %d of %d posts", n, #posts))
+  print(fmt("Making post list with %d out of %d posts", n, #posts))
   for _, post in ipairs(posts) do
     print("\tPost list: reading post " .. post)
     local info = readyaml(post, {"title", "subtitle", "date"})
