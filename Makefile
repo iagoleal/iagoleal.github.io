@@ -8,12 +8,14 @@ cache   = cache
 build   = build
 
 # The important files
-posts-src    = $(wildcard $(content)/posts/*.md)
-posts-result = $(patsubst $(content)/posts/%.md,$(build)/posts/%/index.html,$(posts-src))
+posts-src    := $(wildcard $(content)/posts/*)
+posts-result := $(patsubst $(content)/posts/%.md.lhs,$(build)/posts/%/index.html,$(posts-src))
+posts-result := $(patsubst $(content)/posts/%.md,$(build)/posts/%/index.html,$(posts-result))
 
 # For yet unpublished posts
-unposts-src    = $(wildcard $(content)/unposts/*.md)
-unposts-result = $(patsubst $(content)/unposts/%.md,$(build)/posts/%/index.html,$(unposts-src))
+unposts-src    := $(wildcard $(content)/unposts/*)
+unposts-result := $(patsubst $(content)/unposts/%.md.lhs,$(build)/posts/%/index.html,$(unposts-src))
+unposts-result := $(patsubst $(content)/unposts/%.md,$(build)/posts/%/index.html,$(unposts-result))
 
 # All additional pages go here
 pages-names  = about masters posts
@@ -47,7 +49,7 @@ define generate_post
   $(shell [ ! -d $(@D) ] && mkdir -p $(@D))
   $(PANDOC) --defaults=pandoc.yaml \
             --template=templates/post.html \
-    -f markdown -o "$(2)" "$(1)"
+    -f $(3) -o "$(2)" "$(1)"
 endef
 
 ############
@@ -91,10 +93,17 @@ posts:   $(posts-result)
 unposts: $(unposts-result)
 
 $(build)/posts/%/index.html: $(content)/posts/%.md $(DEPENDENCIES)
-	$(call generate_post,"$<","$@")
+	$(call generate_post,"$<","$@",markdown)
+
+$(build)/posts/%/index.html: $(content)/posts/%.md.lhs $(DEPENDENCIES)
+	$(call generate_post,"$<","$@",markdown+lhs)
+
 
 $(build)/posts/%/index.html: $(content)/unposts/%.md $(DEPENDENCIES)
-	$(call generate_post,"$<","$@")
+	$(call generate_post,"$<","$@",markdown)
+
+$(build)/posts/%/index.html: $(content)/unposts/%.md.lhs $(DEPENDENCIES)
+	$(call generate_post,"$<","$@",markdown+lhs)
 
 ###############
 # Other Pages #
@@ -105,10 +114,16 @@ $(build)/posts/%/index.html: $(content)/unposts/%.md $(DEPENDENCIES)
 pages: $(pages-result)
 
 $(build)/index.html: $(content)/index.html $(DEPENDENCIES)
-	$(call generate_page,"$<","$@",html,"Home Sweet Home")
+	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
+	$(PANDOC) --defaults=pandoc.yaml \
+	   -f html -o "$@" "$<" \
+	   -M title:'Home Sweet Home'
 
 $(build)/404.html: $(content)/404.html   $(DEPENDENCIES)
-	$(call generate_page,"$<","$@",html,"Are you lost?")
+	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
+	$(PANDOC) --defaults=pandoc.yaml \
+	   -f html -o "$@" "$<" \
+	   -M title:'Are you lost?'
 
 $(build)/%/index.html: $(content)/%.md   $(DEPENDENCIES)
 	$(call generate_page,"$<","$@",markdown,'')
