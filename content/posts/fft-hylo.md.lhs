@@ -33,7 +33,8 @@ Therefore, we will represent vectors using Haskell's standard type for linked li
 But if you want to adapt it to some other type such as `Vector` or `Array`,
 I think the conversion should be pretty straightforward.
 
-## The Discrete Fourier Transform
+The Discrete Fourier Transform
+------------------------------
 
 One way to look at the discrete Fourier transform
 is as a exchange between orthonormal bases on $\C^N$.
@@ -56,10 +57,8 @@ $$ y_k = \sum_{t=0}^{N-1} x_t \cdot e^{-{2\pi i \over N}t k}.$$
 We have our first formula, time to implement it in Haskell!
 Let's begin by importing the libraries we will need.
 
-```haskell
-import Data.Complex
-import Data.List (foldr, unfoldr)
-```
+> import Data.Complex
+> import Data.List (foldr, unfoldr)
 
 The functions `foldr` and `unfoldr` are, respectively,
 Haskell's built-in catamorphism and anamorphism for lists.
@@ -67,25 +66,21 @@ Haskell's built-in catamorphism and anamorphism for lists.
 The formula for the $y$'s receives as list of coefficients
 and returns another list of coefficients
 
-```haskell
-dft :: [Complex Double] -> [Complex Double]
-```
+> dft :: [Complex Double] -> [Complex Double]
 
 The view we will take in here is that the input represents a parameter
 and we will build a new list in terms of it.
 This lends us to the following anamorphism:
 
-```haskell
-dft xs = unfoldr coalg 0
- where
-  dim = fromIntegral $ length xs
-  chi k t = cis (-2 * pi * k * t / dim)
-  coalg k = if k < dim
-             then let cfs = fmap (chi k) [0 .. dim - 1]
-                      yk  = sum (zipWith (*) cfs xs)
-                  in  Just (yk, k + 1)
-             else Nothing
-```
+> dft xs = unfoldr coalg 0
+>  where
+>   dim = fromIntegral $ length xs
+>   chi k t = cis (-2 * pi * k * t / dim)
+>   coalg k = if k < dim
+>              then let cfs = fmap (chi k) [0 .. dim - 1]
+>                       yk  = sum (zipWith (*) cfs xs)
+>                   in  Just (yk, k + 1)
+>              else Nothing
 
 If you've never seem the function `cis` before,
 it is Haskell's imaginary exponential $a \mapsto e^{i a}$.
@@ -95,7 +90,8 @@ thus the complexity is $O(N^2)$.
 Although this is not monstrous, it can be a bottleneck for real-time computations.
 Fortunately we can do better than this.
 
-## The Fast Fourier Transform
+The Fast Fourier Transform
+--------------------------
 
 The function `dft` implements the Fourier transform exactly as it is defined.
 However, if you take a look at the coefficients used,
@@ -128,18 +124,14 @@ Let's model this as a hylomorphism.
 For simplicity (and to avoid the boilerplate of fixed points)
 we will use the direct definition of a hylo.
 
-```haskell
-hylo f g = f . fmap (hylo f g) . g
-```
+> hylo f g = f . fmap (hylo f g) . g
 
 The FFT will take an input list,
 properly divide it into even and odds indices and then
 conquer the solution by merging the subproblems into the output list.
 
-```haskell
-fft :: [Complex Double] -> [Complex Double]
-fft = hylo conquer divide
-```
+> fft :: [Complex Double] -> [Complex Double]
+> fft = hylo conquer divide
 
 Alright, time to implement the actual algorithm.
 Let's begin with the `divide` step.
@@ -148,21 +140,17 @@ rewrite it as a binary tree whose leafs are sublists of odd dimension
 and nodes represent splitting an even-dimensional list.
 The data structure that represents this call tree is
 
-```haskell
-data CallTree a x = Leaf [a] | Branch x x
-
-instance Functor (CallTree a) where
-  fmap _ (Leaf xs     ) = Leaf xs
-  fmap f (Branch xs ys) = Branch (f xs) (f ys)
-```
+> data CallTree a x = Leaf [a] | Branch x x
+>
+> instance Functor (CallTree a) where
+>   fmap _ (Leaf xs     ) = Leaf xs
+>   fmap f (Branch xs ys) = Branch (f xs) (f ys)
 
 The bunk of the `divide` method consists of splitting a list into even and odd components.
 We can do this in $O(n)$ steps using a fold from a list to a pair of lists.
 
-```haskell
-split :: [a] -> ([a], [a])
-split = foldr f ([], []) where f a (v, w) = (a : w, v)
-```
+> split :: [a] -> ([a], [a])
+> split = foldr f ([], []) where f a (v, w) = (a : w, v)
 
 Finally, `divide` represents one step of constructing the call tree.
 If the list's length is even,
@@ -172,11 +160,9 @@ In case it is odd,
 there are no optimizations we can do,
 thus we just store the list's DFT in a `Leaf`.
 
-```haskell
-divide v = if even (length v)
-            then uncurry Branch (split v)
-            else Leaf (dft v)
-```
+> divide v = if even (length v)
+>             then uncurry Branch (split v)
+>             else Leaf (dft v)
 
 This constructs the call tree.
 Now it's time to deal with the `conquer` step.
@@ -192,17 +178,16 @@ y_{k+{N \over 2}} &= y^{(e)}_k - e^{-{2\pi i \over N} k} \cdot y^{(o)}_k.
 In Haskell,
 we can apply both the reconstruction formulas and then concatenate the results.
 
-```haskell
-conquer (Leaf v)       = v
-conquer (Branch ye yo) = zipWith3 f [0..] ye yo
-                         ++ zipWith3 g [0..] ye yo
- where
-  dim = fromIntegral (2 * length ye)
-  f k e o = e + cis (-2 * pi * k / dim) * o
-  g k e o = e - cis (-2 * pi * k / dim) * o
-```
+> conquer (Leaf v)       = v
+> conquer (Branch ye yo) = zipWith3 f [0..] ye yo
+>                          ++ zipWith3 g [0..] ye yo
+>  where
+>   dim = fromIntegral (2 * length ye)
+>   f k e o = e + cis (-2 * pi * k / dim) * o
+>   g k e o = e - cis (-2 * pi * k / dim) * o
 
-## Conclusion
+Conclusion
+----------
 
 The main advantage of writing code like this is that it is extremely modularized.
 We have many small almost-independent snippets of code
@@ -212,10 +197,8 @@ if you want to test this code by yourself,
 you can also invert the fft to recover the original coefficients in $O(N \log N)$
 through
 
-```haskell
-ifft x = fmap ((/dim) . conjugate) . fft . fmap conjugate $ x
-      where dim = fromIntegral (length x)
-```
+> ifft x = fmap ((/dim) . conjugate) . fft . fmap conjugate $ x
+>       where dim = fromIntegral (length x)
 
 Another interesting fact I've noticed is that,
 when working with `Double`s,
