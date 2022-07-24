@@ -59,7 +59,7 @@ Consider a smooth function $f$;
 An application of the FTC tells us that any smooth $f$
 is uniquely determined by its value at a point $a$ and its derivative:
 
-$$ f(a + x) = f(a) + \int_a^x f'(t) dt.$$
+$$ f(a + x) = f(a) + \int_a^{a+x} f'(t) dt.$$
 
 Ignoring all meaning behind the integral, derivative, evaluation etc.
 we can view this as a recipe: smooth functions are equivalent

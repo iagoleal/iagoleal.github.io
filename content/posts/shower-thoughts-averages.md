@@ -24,12 +24,12 @@ In fact, I always thought that its importance was purely operational:
 the average is easy to calculate, has plenty of applications
 and there are a lot of powerful theorems related to it.
 
-Nevertheless this all changed earlier this year.
+Nevertheless, this all changed earlier this year.
 I was taking a shower[^shower-why], not even thinking about math
 when I was suddenly struck by a bliss of clarity:
 _the average minimizes the squared error_---I said to myself.
 This seemly simple statement is present (normally as an exercise)
-in practically any introductory probability book
+in practically any introductory probability book,
 but I had never realized that it implies so much!
 From this, we can construct the average not by a smart formula
 but geometrically using a variational principle.
@@ -39,11 +39,11 @@ always seem to come while I'm sleeping or in the shower.
 
 Let's look at it from an information point of view:
 suppose you are working with a random variable $X$
-but you don't have where to store all its information.
+and you don't have where to store all its information.
 In fact, for the sake of this example, you can only store
 _a single number_ to represent it.
-What number should you choose?
-You probably already know it is $\E{X}$! But why?
+Which number should you choose?
+You probably already know it is $\E{X}$... But why?
 Well... Because it is in fact the best possible approximation.
 This post will be a digression on this theme:
 
@@ -56,11 +56,11 @@ How do you measure the distance between random variables?
 Moreover, constants are numbers and random variables are functions.
 They have different types!
 Then, what does it mean to them to be close together?
-The usual probabilistic view doesn't emphasize this but we can
-interpret random variables geometrically as points in the space
-and, then, measuring their distance is as simple as taking
+The usual probabilistic view doesn't emphasize this,
+but we can interpret random variables geometrically as points in space
+and, then, measuring their distance becomes as simple as taking
 the length of the line segment connecting them.
-And, indeed, if we know the random variables,
+Indeed, if we know the random variables,
 we can even measure this length through
 nothing more, nothing less than the Pythagorean Theorem!
 
@@ -188,8 +188,8 @@ So, let's proceed by considering how to project vectors into subspaces.
 ### Where are all the probabilities?
 
 Possibly you noticed that until now, we never used the probabilities.
-The random variables represent values attached to some non-determinism outcome
-but we haven't used any notion of which outcomes are more probable
+The random variables represent values attached to some non-deterministic outcome
+however we haven't used any notion of which outcomes are more probable
 nor how they relate to each other.
 
 Another thing you may have noticed is that the previous section
@@ -200,8 +200,8 @@ by killing two birds with one stone.
 Our solution will use the _probabilities_ of the outcomes
 to define an _inner product_ on the space of random variables.
 
-Now it's time for modeling! But how can we embed the probabilistic structure
-into an inner product?
+Now it's modeling time!
+How can we embed the probabilistic structure into an inner product?
 To have an inner product that somehow reflects the probabilities,
 we will ask that it satisfies some coherence conditions.
 
@@ -215,15 +215,14 @@ Some high-level consequences of this restriction are:
 (That is, every time one of them is zero, the other is non-zero)
 are **orthogonal**.
 
-- The norm of a random variable **only depends
-  on the outcomes for whom it is non-zero**.
+- The norm of a random variable only depends on the outcomes for whom it is **non-zero**.
 
 
 Now more concretely:
 how does this shape the inner product?
 It is completely determined by how it acts on a basis,
 so let's check these properties for the _indicators_.
-First, the norm of $\Id_j$ can only on the probability $p_j$.
+First, the norm of $\Id_j$ can only depend on the probability $p_j$.
 Also, since they are supported on different outcomes,
 this definition forces the $\Id_j$ to form an orthogonal basis!
 
@@ -241,7 +240,7 @@ Since the only way for a random variable to be deterministic is being constant,
 this translates to: _if $C$ is a constant random variable,
 then its norm $\norm{C}_2$ doesn't depend on any $p_i$._
 Moreover, for the sake of consistency, let's also require
- norm of a constant random variable to be precisely the value that it always returns.
+the norm of a constant random variable to be precisely the value that it always returns.
 In math symbols: If for all $\omega$, $C(\omega) = c$ then $\norm{C}_2 = c$.
 Now let's use this new property to determine the inner product values.
 
