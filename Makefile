@@ -60,7 +60,7 @@ endef
 
 .PHONY: all clean serve watch clean-cache clean-build deploy
 
-all: pages posts stylesheets static
+all: pages posts stylesheets static feed
 
 unpublished: all unposts
 
@@ -135,7 +135,12 @@ $(build)/%/index.html: $(content)/%.html $(DEPENDENCIES)
 # Other processes #
 ###################
 
-.PHONY: stylesheets static
+.PHONY: stylesheets static feed
+
+feed: $(build)/rss.xml
+
+$(build)/rss.xml:
+	scripts/make-rss "$@"
 
 stylesheets: $(css-result)
 

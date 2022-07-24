@@ -1,6 +1,7 @@
 # Personal site's source code
 
-My own personal website.
+My own [personal website](https://iagoleal.com/).
+There is also a [RSS feed](https://iagoleal.com/rss.xml) for the posts in case you're interested.
 
 The site theme is built upon oxalorg's
 [sakura-earthly](https://github.com/oxalorg/sakura) theme.
