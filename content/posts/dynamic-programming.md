@@ -20,7 +20,7 @@ It is called _dynamic programming_ and is one of those instances
 in mathematics where a simple principle unfolds
 into profound conclusions ranging over many fields.
 In fact, we can, already in this first paragraph,
-summarize the idea using Richard Bellman's (Dynamic Programming creator) own words:
+summarize the idea using Richard Bellman's (Dynamic Programming's creator) own words:
 
 > An optimal policy has the property that
 whatever the initial state and initial decision are,
@@ -39,7 +39,7 @@ The main algorithm we use, called _Stochastic Dual Dynamic Programming_,
 at first didn't seem so much like the programming technique algorithms class.
 Finally, one of the main methods for model-based reinforcement learning
 is again called dynamic programming,
-and at first it also didn't seem so much like the others instances.
+and it also didn't seem so much like the other instances.
 
 So, what's happening here?
 Did everybody choose to call their algorithms dynamic programming
@@ -127,7 +127,7 @@ a _state machines_ or _automata_ if you're into Greek words.
 There are 4 states in which the vampire can be and at each one
 there is an available set of actions to take that may transition him to another state.
 More abstractly,
-an automaton is system that can be in one of many _states_ $s \in \States$
+an automaton is a system that can be in one of many _states_ $s \in \States$
 and at each state, you can choose among a set of _actions_ $a \in \Actions(s)$
 that transition the system to a new state $s' = T(s, a)$,
 where $T$ is called the system's _transition function_.
@@ -141,7 +141,7 @@ but there are others that may even require a continuous space!
 An example is SDDP, which uses linear programming duality
 and thus requires the state space to be a convex subset of $\R^n$.
 
-### The Dynamics of Making Decisions
+### The Dynamics of Decision-Making
 
 Iterating the transition $T$ establishes a dynamics for our system
 where we start at an initial state $s$ and by taking a sequence of actions
@@ -202,14 +202,14 @@ $$
 \begin{array}{rl}
  v^\pi(s) = & c(s_1, \pi(s_1)) + \gamma c(s_2, \pi(s_2)) + \gamma^2 c(s_3, \pi(s_3)) + \ldots \\
   \textrm{where}  & s_1     = s, \\
-                  & s_{t+1} = T(s_t, a_t), \\
+                  & s_{t+1} = T(s_t, \pi(s_t)), \\
 \end{array}
 $$
 
 The equation above defines the _value function_ $v^\pi : \States \to \R$
 for a given policy $\pi$.
 __Spoiler__: keep an eye on the $v^\pi$,
-because later on this post we will find them to be useful tools
+because later in this post we will find them to be useful tools
 closely related to the memoization techniques
 that people usually identify with dynamic programming.
 
@@ -242,11 +242,11 @@ When controlling a spaceship towards the moon,
 it is important to guarantee that it will use the least amount of fuel.
 When brawling at a bar, you want to knock out your foe
 with the least injuries possible.
-Must of all, the important is that the best policy
-must have the least considering _all time_,
-that is, both the present and its future consequences.
+Must of all, the best policy is the one with
+the least cost taking _all time_ into account;
+both the present and its future consequences.
 For example, sometimes a policy that has a higher cost for the first state
-is overall better because it puts transitions us into a more favorable state.
+is overall better because it puts us into a more favorable state.
 Thus, our problem can be naturally formulated as searching for _optimal policies_:
 
 > Starting at state $s$, find a policy $\pi$ producing the least total cost over time.
@@ -264,7 +264,7 @@ $$
 $$
 
 Right now, this may seem like a big and scary optimization problem
-but in fact there is a lot of structure that we can exploit in order to solve it.
+but in fact it contains a lot of structure that we can exploit in order to solve it.
 This will be the subject of the next section.
 Before we continue,
 let's go over a little tangent on how to formulate some classical problems
@@ -317,7 +317,7 @@ that is, problems taking a fixed amount $N$ of steps to end.
 Since we must know in which stage we are in order to end the process,
 we must consider the time step $t$ as part of the state.
 Then, any state from the stage N will point towards the terminal state.
-Thus, given a transition $T$ for the rest of the state,
+Thus, given a transition $T$ for the rest of the states,
 our dynamics follows a transition defined as
 
 $$ \bar{T}((t, s), a) = \begin{cases}
@@ -420,7 +420,7 @@ The simplest idea could be to exhaustively search the space of all actions
 trying to find the best solution.
 Notice that even for finite states and horizon, this may be prohibitively expensive
 since the possible candidates grow exponentially with the time steps.
-Any practical method will to take into account how this class of problems
+Any practical method will take into account how this class of problems
 naturally breaks apart into separate stages.
 
 Our approach will involve the famous _Bellman principle of optimality_,
@@ -536,16 +536,16 @@ as any problem-specific implementation that solves it.
 ### Existence, Uniqueness and Convergence
 
 It is time to get deeper into analysis.
-Whenever a mathematician sees a recursive relation as the Bellman equation,
-she immediately starts asking such things:
-what guarantees we have about $v^\star$?
+Whenever mathematicians see a recursive relation such as the Bellman equation,
+they immediately start asking such things:
+what guarantees do we have about $v^\star$?
 Can I trust that it is unique? Does it even exist?
-Surely we mathematicians may seem a bit too anxious with all these questions
+Surely we mathematicians may seem a bit too anxious with all these questions,
 but they are for good reasons.
 Besides the guarantee that everything works,
-proving the existence a solution in many cases
-also teach us how to construct this solution.
-In fact, this will happen to us in this case!
+proving the existence of a solution in many cases
+also teaches us how to construct this solution.
+In fact, this will happen in this case!
 In the next section we are going to adapt these proofs
 into algorithms that converge towards the solution to the Bellman equation.
 
@@ -607,7 +607,7 @@ $C^0_b(\States, \R)$, imbued with the uniform norm
 
 $$\|f\|_\infty = \sup_{s \in \States} |f(s)|.$$
 
-This is a complete metric space and represents and is general
+This is a complete metric space and is general
 enough for any practical problem we may think of.
 Furthermore, recall that if the state space is discrete,
 then _any function is continuous and bounded_,
@@ -648,7 +648,7 @@ Finally, let's prove that the Bellman operator
 contracts the space of bounded continuous functions by the discount factor.
 What we need to show is that for any value function $v, w$:
 
-$$ \|\Bellman v - Vw\|_\infty \le \gamma \|v - w\|_\infty.$$
+$$ \|\Bellman v - \Bellman w\|_\infty \le \gamma \|v - w\|_\infty.$$
 
 From the definition of the uniform norm, we get that for any state $s$,
 
@@ -1018,7 +1018,7 @@ any problem specific information that may be available.
 ## Stochastic Dynamic Programming
 
 Until now, we've only dealt with deterministic processes.
-Life, on the other side, is full of uncertainty and, as a good applied field,
+Life, on the other hand, is full of uncertainty and, as a good applied field,
 dynamic programming was created from its inception to deal with stochastic settings.
 
 We call a state machine where the transitions $T(s, a)$ and costs $c(s, a)$
@@ -1059,7 +1059,7 @@ digraph {
 }
 ```
 
-Allowing non-determinism opens the way for modeling a lot more of cool situations.
+Allowing non-determinism opens the way for modeling a lot more cool situations.
 For example, robots that play video games!
 The states may be the internal state of the game or some partial observation of them
 that is available to the player
@@ -1153,9 +1153,9 @@ So let's give a little appetizer of what is out there.
 They're everywhere!
 
 One thing that we barely scraped the surface was continuous state problems,
-even though their importance.
+although they being quite important.
 And I say this last part seriously as someone who works daily with them.
-In our theoretical discussions we didn't really used the finitude of the states,
+In our theoretical discussions, we didn't really use the finitude of the states,
 only when we we built the algorithms with vectors and loops.
 This means that at a mathematical level, both value and policy iteration
 work for infinite states if you keep in mind the continuity assumptions.
@@ -1300,3 +1300,6 @@ with [Pedro Xavier](https://pedromxavier.github.io).
 The good thing of explaining something to a smart person
 is that you end up learning a lot in the process.
 Sometimes you even learn enough to write a blog post about it.
+
+I'm also in debt with Ivani Ivanova for being such a great typo hunter.
+If there is any typo left, it is because I'm lazy... She did a marvelous job.
