@@ -12,10 +12,10 @@ we had to move everything to be online.
 In this spirit, lately I have been meeting (remotely) with a friend every now and then
 to talk about life and work on a game as a side project[^game-side-project].
 
-I began by teaching my friend some [Lua](https://lua.org)
+I began by teaching my friend some [Lua](https://lua.org),
 and then we started building our game with [love2d](https://love2d.org).
-At first, the setup was basically I sharing my screen
-in Google Meet or Jitsi and he accompanying and asking questions.
+At first, the setup was basically me sharing my screen
+in Google Meet or Jitsi and him accompanying and asking questions.
 Since the lectures are pretty one-sided, this worked well
 but became too cumbersome when we started to make the game itself.
 All the "Now edit line 32" or "Go to the definition of f and change that"
@@ -55,10 +55,10 @@ to stay connected via ssh while the tmux session exists?
 
 I tested this with my machine running Arch Linux as host
 and my friend's machine running Ubuntu 20.04 or Ubuntu WSL.
-Therefore the commands below will always assume `pacman`
+Therefore, the commands below will always assume `pacman`
 is the system's package manager
 and that `systemd` is installed and in charge of the services.
-But it should be easy adapt it to any other Linux host[^adapt-host].
+But it should be easy to adapt it to any other Linux host[^adapt-host].
 For the guest, any system with a ssh client should do.
 
 :::Note
@@ -167,7 +167,7 @@ Now that you have the key at hand,
 you must let ssh know of it.
 The ssh server looks for authorized keys for a given user on the file
 `$HOME/.ssh/authorized_keys`.
-Thus we must create this file and add the key to it on frienduser's home folder.
+Thus, we must create this file and add the key to it on frienduser's home folder.
 
 ```sh
 sudo -u frienduser mkdir -p /home/frienduser/.ssh
@@ -196,7 +196,8 @@ Just open it with your favorite editor and add the following line to the end:
     AuthenticationMethods "publickey,password"
 
 Now the server will ask for both a key and a password before allowing login.
-There are also other options for authentication methods besides there two.
+Keep in mind that there are other options for authentication methods besides these two,
+but we're not covering this today.
 For a full list, take a look at the
 [man page for `sshd_config(5)`](https://man.openbsd.org/sshd_config#AuthenticationMethods).
 
@@ -271,7 +272,7 @@ and storing the socket in `/tmp/sharedtmux`
 but, again, you can give them whatever name you want.
 I also decided to use a temporary file because I prefer these
 sockets to be disposable.
-However you may prefer to store it to have some kind of persistence on
+However, you may prefer to store it to have some kind of persistence on
 your session's layout and open programs.
 The only important thing in here is that the folder should be visible
 for all user in the `tmux` group.
@@ -323,8 +324,7 @@ tmux -u -S /tmp/sharedtmux attach -t gamemaking
 ## Start Pair Programming (friend)
 
 Provided your friend's key is already setup,
-all you have to do is copy the ngrok port and hostname
-and send it.
+all you have to do is copy the ngrok port and hostname and send it.
 Then, connecting should be as simple as running something like
 
 ```sh
@@ -342,8 +342,8 @@ you have to manually look at ngrok's TUI and copy the hostname and port form it.
 C'mon, we're in a Linux shell, the land of automation!
 Of course there is some better way to do that.
 
-I read and reread ngrok's help pages but the binary there doesn't seem to
-directly ask the binary for this information in any way.
+I read and reread ngrok's help pages,there doesn't seem
+to be possible to directly ask the binary for this information in any way.
 Luckily, I stumbled on
 [this gist](https://gist.github.com/rjz/af40158c529d7c407420fc0de490758b)
 and [this blog post](https://queenofdowntime.com/blog/remote-pair-programming)
@@ -351,7 +351,7 @@ while trying to circumvent it and good news: there is a way!
 
 Apparently ngrok exposes its tunneling information
 on `localhost:4040` in JSON format.
-Thus we can query it with a bit of `sed` magic:
+Thus, we can query it with a bit of `sed` magic:
 
 ```sh
 curl -s http://localhost:4040/api/tunnels \
