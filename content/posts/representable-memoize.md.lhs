@@ -1,7 +1,7 @@
 ---
-title: Memoization and Representables
+title: Memoization via Representables
 keywords: [haskell, functional-programming]
-date: 2022-09-16
+date: 2022-09-18
 ---
 
 What is the most basic container type a language can have?
@@ -13,13 +13,19 @@ we will see that most containers are in fact a way to represent a function
 with a given storage layout.
 To illustrate this "functions are containers" idea,
 let's take a look at an application
-that tightly couples both concepts: memoization.
+that tightly couples both concepts: _memoization_.
 
-_Memoization_ is a programming technique
+By the way, in case this is the first time you hear about it:
+memoization is a programming technique
 where instead of letting a function calculate
 the same value whenever it is called,
 we instead store the already calculated value somewhere
 and just do a lookup instead of redoing the entire calculation.
+
+
+What I like the most in this post's code is that
+we're going to delve deeply into the realm of abstraction
+to then emerge with a concept with clear and practical applications!
 
 
 > {-# LANGUAGE DeriveFunctor,       TypeFamilies        #-}
@@ -38,7 +44,8 @@ digraph "Sequences are functions" {
   newrank  = true;
   ranksep  = 0.7;
   nodesep  = 0.9;
-  size     = "8,5"
+  size     = "8,5";
+  concentrate = true;
 
   node [shape     = circle
         style     = "solid,filled"
@@ -67,7 +74,7 @@ digraph "Sequences are functions" {
     0 -> 1 -> 2 -> 3 -> ldots;
   }
 
-  edge [dir=both,arrowhead=odiamond, arrowtail=odiamond, color=gray];
+  edge [dir=both,arrowhead=odot, arrowtail=odot, color="#00000055"];
 
   f -> {0,1,2,3, ldots};
 
@@ -388,7 +395,6 @@ digraph "Tree indexes" {
         color     = black
         fixedsize = shape
         fillcolor = invis];
-
 
   subgraph cluster_ldots {
     rank = same;
