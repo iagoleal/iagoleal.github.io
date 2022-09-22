@@ -13,7 +13,7 @@
     $if(keywords)$
         <meta name="keywords" content="$for(keywords)$$keywords$$sep$, $endfor$" />
     $endif$
-        <title>$author-meta$$if(pagetitle)$ | $if(title-prefix)$$title-prefix$ – $endif$$pagetitle$$if(subtitle)$: $subtitle$$endif$$endif$</title>
+        <title>$if(pagetitle)$$if(title-prefix)$$title-prefix$ – $endif$$pagetitle$ | $endif$$author-meta$</title>
         <style>
             $styles.html()$
         </style>

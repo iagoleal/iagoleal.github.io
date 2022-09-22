@@ -39,3 +39,4 @@ filters:
 - filters/wc.lua
 - filters/date.lua
 - filters/post-list.lua
+- filters/url.lua

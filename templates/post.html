@@ -13,7 +13,14 @@
     $if(keywords)$
         <meta name="keywords" content="$for(keywords)$$keywords$$sep$, $endfor$" />
     $endif$
-        <title>$author-meta$ | $if(title-prefix)$$title-prefix$ – $endif$$pagetitle$$if(subtitle)$: $subtitle$$endif$</title>
+        <title>$if(pagetitle)$$if(title-prefix)$$title-prefix$ – $endif$$pagetitle$ | $endif$$author-meta$</title>
+    <!--Open Graph protocol-->
+    $if(pagetitle)$
+        <meta property="og:title" content="$pagetitle$" />
+    $endif$
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content="$url$" />
+
         <style>
             $styles.html()$
         </style>
