@@ -378,13 +378,13 @@ digraph "State over Time" {
 }
 ```
 
-In finite-horizon problems, we may also set the discount factor $gamma$ to $1$.
+In finite-horizon problems, we may also set the discount factor $\gamma$ to $1$.
 Since all sums eventually end, there are no convergence issues.
 
 #### Example: Shortest Path in a Graph
 
 Suppose you are at your hometown
-and just received a message from friend
+and just received a message from a friend
 telling you that there are singing llamas in Cuzco, Peru, right now.
 This makes you at the same time incredulous and curious,
 so you just pick your favorite bike and get on the road towards Cuzco.
@@ -490,10 +490,10 @@ By renaming $l = t-1$ we get
 $$
 \sum\limits_{t=2}^\infty \gamma^{t-1}c(s_t, a_t)
 = \gamma \sum\limits_{t=2}^\infty \gamma^{t-2}c(s_t, a_t)
-= \gamma \sum\limits_{l=1}^\infty \gamma^{l-1}c(s_l, a_l)
+= \gamma \sum\limits_{l=1}^\infty \gamma^{l-1}c(s_l, a_l),
 $$
 
-By applying this in the expression for $v^\star$,
+and applying this in the expression for $v^\star$,
 
 $$
 \begin{array}{rl}
@@ -533,7 +533,7 @@ Even more: we can think of the Bellman equation as a recursive specification
 for the decision problems and of dynamic programming
 as any problem-specific implementation that solves it.
 
-### Existence, Uniqueness and Convergence
+### Existence, Uniqueness and Convergence {#fixed-point}
 
 It is time to get deeper into analysis.
 Whenever mathematicians see a recursive relation such as the Bellman equation,

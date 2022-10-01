@@ -1,6 +1,5 @@
 ---
 title: FFT as a Hylomorphism
-subtitle: A Haskell Example
 keywords: [fft, haskell, recursion-schemes, functional-programming]
 date: 2020-09-20
 ---
