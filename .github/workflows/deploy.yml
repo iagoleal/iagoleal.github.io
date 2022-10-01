@@ -1,0 +1,59 @@
+name: "Make and deploy to gh-pages"
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+
+# GITHUB_TOKEN Permissions to allow deployment to gh-pages
+permissions:
+  contents: read
+  pages:    write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install nix
+      uses: cachix/install-nix-action@v16
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+
+    - name: Cache assets
+      id: cache-assets
+      uses: actions/cache@v3
+      with:
+        path: |
+          './cache'
+          '/nix/store'
+        key: ${{ runner.os }}-assets
+
+    - name: Build Site
+      run: nix-shell --pure --run "make"
+
+    # Deployment step
+    - name: Setup Pages
+      uses: actions/configure-pages@v2
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v1
+      with:
+        path: 'build/'
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v1
