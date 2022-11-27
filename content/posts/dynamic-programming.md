@@ -62,7 +62,7 @@ For example: hydro is cheap and clean, but you risk running out of water
 if you use all of it and next month turns out particularly dry.
 Finding the best energy dispatch is once again solved via dynamic programming.
 
-[^dp-name]: Even Richard Bellman admittedly [chose because of that](https://en.wikipedia.org/wiki/Dynamic_programming#History).
+[^dp-name]: Even Richard Bellman admittedly named it based [on how cool it sounds](https://en.wikipedia.org/wiki/Dynamic_programming#History).
 
 ## On Decision Making and State Machines
 
@@ -270,117 +270,6 @@ Before we continue,
 let's go over a little tangent on how to formulate some classical problems
 in this decision making framework.
 
-#### Sir, I don't have all that time available... {#finite-horizon}
-
-It is a nice formalism but to be realistic, not all decisions go on forever.
-I would even risk saying that most of them end after some time.
-Regardless, the formalism we have developed is powerful enough
-to also encompass finite-horizon decisions,
-provided that we make some adjustments to our models.
-
-Consider a process that may end at a certain point but we don't really know when.
-An example would be trying to escape a labyrinth full of monsters.
-If a monster catches you its game over and there are no more decisions to make.
-We can model this by introducing in our model a dummy _terminal state_
-(that we denote as $\blacksquare$)
-where there is a single possible action: to do nothing with zero cost.
-
-```dot
-digraph "Episodic Horizon" {
-  rankdir=LR;
-  size="8,5"
-
-  T [label = "" width=0.2 style=filled, color = black, fillcolor = black, shape = square];
-
-  node [shape     = circle
-        style     = "solid,filled"
-        width     = 0.7
-        color     = black
-        fixedsize = shape
-        fillcolor = "#B3FFB3"
-        label     = ""];
-
-  {A C} -> B -> T;
-  C -> B;
-  C -> A -> D -> T;
-  A -> E -> F -> G -> T;
-  {F B} -> D;
-  E -> F [shape=curved];
-  H -> {A C E};
-
-  T:e -> T:e [constraint=false];
-}
-```
-
-Another possibility are problems with a _fixed horizon_,
-that is, problems taking a fixed amount $N$ of steps to end.
-Since we must know in which stage we are in order to end the process,
-we must consider the time step $t$ as part of the state.
-Then, any state from the stage N will point towards the terminal state.
-Thus, given a transition $T$ for the rest of the states,
-our dynamics follows a transition defined as
-
-$$ \bar{T}((t, s), a) = \begin{cases}
-    (t + 1, T(s, a)), & t < N \\
-    \blacksquare, & t = N.
-  \end{cases}
-$$
-
-When drawing diagrams for fixed horizon problems,
-it is common practice to cluster the states by their stage.
-
-```dot
-digraph "State over Time" {
-  rankdir=LR;
-  size="8,5"
-
-  T [label = "" width=0.2 style=filled, color = black, fillcolor = black, shape = square];
-
-  node [shape     = circle
-        style     = "solid,filled"
-        width     = 0.7
-        color     = black
-        fixedsize = shape
-        fillcolor = "#B3FFB3"
-        label     = ""];
-
-  subgraph cluster_1 {
-    rank = same;
-    label="t = 1";
-    s;
-  }
-
-  subgraph cluster_2 {
-    rank = same;
-    label="t = 2";
-    a2; b2;
-  }
-
-  subgraph cluster_3 {
-    rank = same;
-    label="t = 3";
-    a3; b3;
-  }
-
-  subgraph cluster_N {
-    rank = same;
-    label="t = N";
-    a4; b4;
-  }
-
-  subgraph cluster_ldots {
-    rank = same;
-    style = invis;
-    k [fontsize=20 color = "#00000000" fillcolor= "#00000000" label = ". . ."];
-  }
-
-  s -> {a2 b2} -> {a3 b3} -> k -> {a4 b4} -> T;
-}
-```
-
-In finite-horizon problems, we may also set the discount factor $\gamma$ to $1$.
-Since all sums eventually end, there are no convergence issues.
-
 #### Example: Shortest Path in a Graph
 
 Suppose you are at your hometown
@@ -533,7 +422,7 @@ Even more: we can think of the Bellman equation as a recursive specification
 for the decision problems and of dynamic programming
 as any problem-specific implementation that solves it.
 
-### Existence, Uniqueness and Convergence {#fixed-point}
+### Existence, Uniqueness and Fixed Points {#fixed-point}
 
 It is time to get deeper into analysis.
 Whenever mathematicians see a recursive relation such as the Bellman equation,
@@ -545,41 +434,68 @@ but they are for good reasons.
 Besides the guarantee that everything works,
 proving the existence of a solution in many cases
 also teaches us how to construct this solution.
-In fact, this will happen in this case!
-In the next section we are going to adapt these proofs
-into algorithms that converge towards the solution to the Bellman equation.
+In fact, this will be just the case!
+In the next section we are going to adapt the theorems in here
+into algorithms to solve the Bellman equation.
 
 Recursion has a deep relationship with fixed points.
-For example, we can adapt the Bellman equation as the fixed point of an operator $\Bellman$
-called, you may guess, the _Bellman Operator_.
+For example, we can adapt the Bellman equation as the fixed point of an operator
+$\Bellman : (\States \to \R) \to (\States \to \R)$
+called, you can guess, the _Bellman Operator_.
 It takes value functions to value functions and is defined as
 
 $$
 \begin{array}{rl}
- (\Bellman v)(v) =
+ (\Bellman v)(s) =
   \min\limits_{a} & c(s, a) + \gamma v(s') \\
   \textrm{s.t.}  & s' = T(s, a), \\
                  & a \in \Actions(s).
 \end{array}
 $$
 
-If we interpret $v$ as an estimate for the total future cost at each state,
-we can interpret $\Bellman v$ as the value function following the policy
-that chooses the best action according to this estimate.
+If you are not accustomed with fixed points,
+the transition above from the Bellman equation to operator may seem strange.
+Hence, let's think about a little story in order to develop some intuition.
 
-Saying that an optimal value function must follow the Bellman equation
-is the same as saying that it is a fixed point of the Bellman operator:
+Imagine that you are the king/queen of fantastical kingdom.
+You are an absolute monarch and whatever action you decide to take,
+your subjects will follow.
+Lately, the kingdom's reserves are running dry
+and your counselors advised you to define a clear governing policy
+in order to minimize the kingdom's spendings.
+Since besides a ruthless ruler you're also a great mathematician
+and a fan of my blog,
+at this point you already know what most be done to save your kingdom from bankruptcy:
+solve the Bellman equation in order to find its optimal policy.
+
+Because at this point of the post you already don't know how to solve it,
+you decide to take advantage of your fantastical world and hire a wizard
+to look into his crystal ball and act as an oracle telling you
+how much each possible state will cost to the kingdom in the future.
+Beware though, that it is not wise to blindly follow advices from a crystal ball.
+The right thing to do in this situation is to use this oracle
+to decide on what to do at each state.
+Now, instead of solving the Bellman equation,
+all you have to do to get a policy is to solve the optimization problem
+with future cost given by the wizard's predictions.
+The processes of going from prediction to decision is precisely the Bellman operator.
+The function $\Bellman v% is the value function of the policy
+that chooses the best action according to the prediction.
+
+The optimal value function, furthermore,
+is the one with the correct prediction, and thus is kept unchanged
+by applying the Bellman operator:
 
 $$ \Bellman v^\star = v^\star. $$
 
 We thus reduce the question of existence and uniqueness of solutions
 for the Bellman equation to finding fixed points of $\Bellman$.
-Fortunately there is a theorem that does just that!
-It is called the _Banach Fixed Point_ theorem.
+Fortunately there is a theorem that does just that,
+called the _Banach Fixed Point_ theorem!
 
 :::Theorem
 Let $(M,\mathrm{d})$ be a complete metric space and $f : M \to M$
-a function such there is a $\gamma \in (0,1)$ satisfying
+a continuous function such there is a $\gamma \in (0,1)$ satisfying
 
 $$ \mathrm{d}(f(x), f(y)) \le \gamma \mathrm{d}(x, y)$$
 
@@ -591,8 +507,8 @@ $$ \lim_{n \to \infty} f^n(x_0) = x^\star.$$
 :::
 
 Proving this theorem is out of scope for this post[^banach].
-However, we can think of it as saying that if a mapping contracts distances between points,
-it will have to take everything towards a single point.
+However, we can think of it as saying that if a mapping shrinks all distances,
+then eventually the image of all points will be squeezed into a single point.
 
 [^banach]: It is out of scope more because it is a tangent to the topic
 than because of any difficulty in the proof.
@@ -600,9 +516,9 @@ If you are interested in analysis, I really recommend you to try proving it.
 The proof consists of using the contraction property
 to show that the distance between the iterations of $f$ must converge towards zero.
 
-To use it for the Bellman operator, we need to find a suitable metric space
-and prove that $\Bellman$ is a contraction.
-The space we will consider are the bounded continuous functions over the states,
+To apply the Banach fixed point theorem on the Bellman operator,
+we need to find a metric space where $\Bellman$ is a contraction.
+The suitable space are the bounded continuous functions over the states,
 $C^0_b(\States, \R)$, imbued with the uniform norm
 
 $$\|f\|_\infty = \sup_{s \in \States} |f(s)|.$$
@@ -611,103 +527,34 @@ This is a complete metric space and is general
 enough for any practical problem we may think of.
 Furthermore, recall that if the state space is discrete,
 then _any function is continuous and bounded_,
-meaning that this encompasses the most important spaces
+hint that this encompasses the most important spaces
 from a computational perspective.
 
-To prove that $\Bellman$ is a contraction,
-we will start with another of its properties: _monotonicity_.
-Besides this proof, it will also be useful in the future when we talk about policy improvement.
+Since I don't want to depart too much from this post's main topic
+nor dive into mathematical minutiae,,
+this section only enunciates the important theorem.
+In case you are interested,
+the necessary proofs are in an [appendix](#appendix) for completeness.
 
 :::Theorem
-Suppose that we have two value function $v$ and $w$ such that $v$ estimates costs
-uniformly lower than $w$:
+  The Bellman operator is a continuous contraction
+  whenever the discount factor is $γ < 1$.
+  Thus it has a unique fixed point and for any value function v_0,
 
-$$ v(s) \le w(s),\; \forall s \in \States.$$
+  $$ \Bellman^{(n)} v_0 \to v^\star.$$
 
-Then the Bellman operator preserves this relationship:
-$$ (\Bellman v)(s) \le (\Bellman w)(s), \; \forall s \in \States.$$
+  Moreover, if $v_n$ is the $n$-th iterate,
+  we can estimate its distance to the optimum by
+
+  $$ \mathrm{d}(v_n, v^*) \le \frac{γ^n}{1 - γ} \mathrm{d}(v_0, \Bellman v_0).$$
 :::
 
-:::Proof
-Given a state $s$, we get from $v \le w$
-that the following inequality holds for any action $a \in \Actions(s)$:
-
-$$ c(s, a) + \gamma v(T(s,a)) \le c(s, a) + \gamma w(T(s,a)). $$
-
-Since this is valid for any $a$,
-taking the minimum on both sides preserves the inequality.
-Thus
-
-$$
-\min_{a \in \Actions(s)} c(s, a) + v(T(s,a)) \le \min_{a \in \Actions(s)} c(s, a) + w(T(s,a)) \\
-(\Bellman v)(s) \le (\Bellman w)(s).
-$$
-:::
-
-Finally, let's prove that the Bellman operator
-contracts the space of bounded continuous functions by the discount factor.
-What we need to show is that for any value function $v, w$:
-
-$$ \|\Bellman v - \Bellman w\|_\infty \le \gamma \|v - w\|_\infty.$$
-
-From the definition of the uniform norm, we get that for any state $s$,
-
-$$
-v(s) - w(s) \le \|v - w\|_\infty \\
-v(s) \le w(s) + \|v - w\|_\infty.
-$$
-
-From the monotonicity we just proved,
-applying $\Bellman$ to both sides preserves this inequality:
-
-$$
-(\Bellman v)(s) \le \Bellman(w + \|v - w\|_\infty)(s).
-$$
-
-Let's show that the constant factor $\|v - w\|_\infty$
-only shifts the new function $\Bellman w$ by uniformly by another constant.
-Calling it $k$ to declutter the notation,
-
-$$
-\begin{array}{rlll}
-(\Bellman(w) + \|v - w\|_\infty)(s) &= &\min\limits_{a} & c(s, a) + \gamma (w(s') + \|v - w\|_\infty) \\
-&&\textrm{s.t.}  & s' = T(s, a), \\
-&&               & a \in \Actions(s) \\
-&= &\min\limits_{a} & c(s, a) + \gamma (w(s')) +  \gamma \|v - w\|_\infty \\
-&&\textrm{s.t.}  & s' = T(s, a), \\
-&&               & a \in \Actions(s).
-\end{array}
-$$
-
-This proves that
-
-$$
-\begin{aligned}
-(\Bellman v)(s) &\le (\Bellman w)(s) + \gamma \|v - w\|_\infty \\
-(\Bellman v)(s) - (\Bellman w)(s) &\le \gamma \|v - w\|_\infty.
-\end{aligned}
-$$
-
-By doing the same derivation in the opposite direction (for $w - v$)
-we get an inequality for the absolute value.
-Applying the supremum, it becomes the result we want.
-
-$$
-\begin{aligned}
-  |(\Bellman v)(s) - (\Bellman w)(s)| &\le \gamma \|v - w\|_\infty \\
-  \sup_{s\in\States} |(\Bellman v)(s) - (\Bellman w)(s)| &\le \gamma \|v - w\|_\infty \\
-  \|\Bellman v - \Bellman w\|_\infty &\le \gamma \|v - w\|_\infty.
-\end{aligned}
-$$
-
-
-Since $\Bellman$ is a contraction, the Banach fixed point theorem
-guarantees to us that there exists a unique value function $v^\star$
-satisfying the Bellman equation.
-Furthermore,
-the theorem also points us towards a way to solve this kind of procedure
-with polynomial complexity on the size of the state and action spaces.
-This is the topic we're going to investigate next.
+Besides the existence and uniqueness guarantees,
+this theorem also spells something with a more practical character.
+No matter with which cost estimative we start,
+we can use the Bellman operator to update our value function
+until it converges towards the optimal.
+This is the next section's topic.
 
 ### Solving the Bellman Equation
 
@@ -720,13 +567,16 @@ I am planning to write other posts in the future
 to explain how these ideas generalize to continuous spaces,
 or even to finite spaces that are too huge to explore entirely,
 via something called Approximate Dynamic Programming or Reinforcement Learning.
+But this is a story for another night...
 
 #### Value Iteration
 
-From the discussion about the existence of an optimal value function,
-we learned that iterating the Bellman operator convergences towards the optimal.
+From the previous discussion,
+we learned that iterating the Bellman operator
+convergences towards the optimal the optimal value function.
 Thus, we arrive at our first algorithm: _value iteration_.
-Its main idea is to convert the Bellman equation into an update rule:
+Its main idea is actually quite simple:
+to convert the Bellman equation into an update rule.
 
 $$ v \gets \Bellman v. $$
 
@@ -735,17 +585,29 @@ By the magic of the Banach Fixed Point theorem,
 this will converge towards the optimal value function
 no matter what the initial value function is.
 This procedure repeats until the uniform error $\| v - \Bellman v \|_\infty$
-becomes less than a previously set tolerance.
-We can obtain an optimal policy from this value function
-by solving the decision problem associated with it
-or by keeping track of the solution each time we solve an optimization problem
-during value iteration.
+becomes less than a previously set tolerance (for which we have an estimate of necessary iterations).
+
+By efficiency reasons,
+it is customary to represent the value function not as a function
+but using some data structure (usually a vector).
+The memoization that people associate with dynamic programming
+lies entirely in this "trick".
+However, it is good to keep in mind that this is only a matter
+of computational representation of functions
+and is totally orthogonal to any algorithm's design.
+In a language with first-class functions,
+it is possible to do dynamic programming using only function composition.
+It is just possible that it will not be as fast as one would like.
+
+In value iteration,
+we obtain an optimal policy from the value function
+by keeping track of the $\argmin$ whenever we solve an optimization problem.
 Below we see a Julia implementation of value iteration.
 
 ```julia
 function value_iteration(v0 ; tol)
   v  = copy(v0)
-  π  = Dict{States, Actions}()
+  π  = Policy{States, Actions}()
   maxerr = Inf
   while maxerr > tol
     maxerr = 0
@@ -760,10 +622,10 @@ end
 ```
 
 In the animation below,
-we can see value iteration in action for a maze solving problem.
-In this problem, each state is a cell in the grid
+we can see value iteration in action for the problem of escaping from a maze.
+In this model, each state is a cell in the grid
 and the actions are the directions one can take at that cell (neighbours without a wall).
-Our objective is to reach the right-bottom edge in the minimum amount of steps possible.
+The objective is to reach the right-bottom edge in the minimum amount of steps possible.
 We do so by starting with a uniformly zero value and a random policy.
 In the left we see the value function at each iteration
 and in the right the associated policy.
@@ -771,8 +633,8 @@ and in the right the associated policy.
 ![](/video/dynamic-programming-labyrinth-value-iteration.webm)
 
 The algorithm above is in fact just one variation of value iteration.
-There are still many problem-dependent improvements.
-For example, we choose to update $v$ in-place,
+There are still many problem-dependent improvements one can make.
+For example, we chose to update $v$ in-place,
 already propagating the new value function while traversing the states,
 but we could instead have kept the old value function
 and only updated $v$ after traversing all states.
@@ -788,41 +650,108 @@ Finally, the order that we traverse the states matter.
 There is a reason why dynamic programming is famous for solving problems backwards.
 If we know that a given state is easier to solve,
 we should start the traverse by it.
-
-For example, our maze solver above could see a lot of improvement
-by traversing the cells breadth-first from the terminal node.
-Similarly, in a fixed horizon, the best approach
-is to start in the states for the last stage and keep going back in time,
-something we will discuss in the next section.
-When we have such structure in the state space,
-traversing this way may even converge to the optimal policy
-in a single iteration!
+A specialization that we will further explore in a bit.
 
 Well, we have a lot of options...
 Nevertheless, as long as we keep visiting all states,
-any of those approaches is guaranteed to converge towards the optimal value function.
-Which one is faster being generally problem-dependent.
+any of those approaches is guaranteed to converge towards the optimal value function,
+which one is faster being generally problem-dependent.
 This is why I think it is best to think of DP not as an algorithm
 but as a principle that encompasses many similar algorithms.
 
 ##### Backward Induction over a Finite Horizon
 
-Recall the finite horizon problem that we discussed [before](#finite-horizon).
-In there, the state had a special structure where
-it also carried the stage information and eventually transitioned
-to a terminal state when $t$ became greater than a certain fixed $N$.
-As we noticed earlier, the best way to traverse the states is backwards in time.
-Let's investigate a bit what this means.
+Let's take look at a typical scenario where we can exploit
+the state space structure to make value iteration much faster:
+problems with a _fixed finite horizon_.
 
-The state space $\States$ is clustered into smaller spaces for each $t$:
-$\States_1, \States_2, \ldots, \States_N, \States_{N+1} = \{\blacksquare\}$ where we denote the terminal state by $\blacksquare$.
-Also, we can only transition from $\States_t$ to $\States_{t+1}$.
-Let's thus denote by $v_t$ the value function restricted to $\States_t$.
-In the terminal it equals zero by definition,
-implying that in the last stage, any action has _no future cost_
-since we can only transition to the terminal.
-Finding the value function $v_N$ restricted to the last stage
-is therefore as simple as finding the best action for each state in $S_N$.
+When the dynamics ends at a certain number $N$ of time steps,
+we say that the problem has a finite horizon.
+In this case, the stage $t$ is part of the state variable,
+(Because how else would we know when to stop?)
+and there is a _terminal state_ $\blacksquare$
+with zero cost and representing anything that happens after the dynamics end.
+Essentially, we work for $N$ stages and then reach $\blacksquare$,
+where we can just relax and do nothing for the rest of eternity.
+
+```dot
+digraph "State over Time" {
+  rankdir=LR;
+  size="8,5"
+
+  T [label = "" width=0.2 style=filled, color = black, fillcolor = black, shape = square];
+
+  node [shape     = circle
+        style     = "solid,filled"
+        width     = 0.7
+        color     = black
+        fixedsize = shape
+        fillcolor = "#B3FFB3"
+        label     = ""];
+
+  subgraph cluster_1 {
+    rank = same;
+    label="t = 1";
+    s;
+  }
+
+  subgraph cluster_2 {
+    rank = same;
+    label="t = 2";
+    a2; b2;
+  }
+
+  subgraph cluster_3 {
+    rank = same;
+    label="t = 3";
+    a3; b3;
+  }
+
+  subgraph cluster_N {
+    rank = same;
+    label="t = N";
+    a4; b4;
+  }
+
+  subgraph cluster_ldots {
+    rank = same;
+    style = invis;
+    k [fontsize=20 color = "#00000000" fillcolor= "#00000000" label = ". . ."];
+  }
+
+  s -> {a2 b2} -> {a3 b3} -> k -> {a4 b4} -> T;
+
+  T:e -> T:e [constraint=false];
+}
+```
+
+If you prefer equations over figures,
+a finite horizon state machine is one where
+the transition function looks like this:
+
+$$ \bar{T}((t, s), a) = \begin{cases}
+    (t + 1, T(s, a)), & t < N \\
+    \blacksquare, & t = N.
+  \end{cases}
+$$
+
+But what is so special about finite horizons?
+After all, the equation above seems much more confuse than what we had before.
+Well... what we gain is that the state space $\States$
+is clustered into smaller spaces that are visited in sequence:
+$\States_1, \States_2, \ldots, \States_N, \States_{N+1} = \{\blacksquare\}$.
+
+The _backward induction_ algorithm consists of value iteration
+but exploiting the structure we just discussed.
+At the terminal state, the cost is always zero, so we can set $v(\blacksquare) = 0$.
+But this, means that the _future cost_ for all states in $\States_N$ is fixed,
+and the optimal policy for them is just to choose the cheapest action.
+Now that we know which action to choose in $\States_N$,
+the future is fixed for all states in $\States_{N-1}$,
+reducing the problem in them to the routine we just did.
+We repeat this procedure until we reach the first stage.
+This calculates an optimal policy by induction,
+but moving "backwards" in time.
 
 ```dot
 digraph "Backward Induction" {
@@ -869,22 +798,13 @@ digraph "Backward Induction" {
 }
 ```
 
-This way, after one iteration $v_N$ already converged.
-Now that we know it, finding $v_{N-1}$ is reduced to the exact same problem
-and we can thus iterate backwards until we solve for the first stage.
-At this point, we know by construction that we already converged
-to the optimal value function, with no need for further iterations.
-This procedure, which is a smart variation of value iteration,
-is also called _backward induction_ for its nature
-of propagating information from the last time step towards the first.
-In Julia, we write it as value iteration with a different loop
-and without the need of an initial value function.
+In Julia code, the algorithm looks like this:
 
 ```julia
 function backward_induction()
   v  = Dict(s => 0 for s in States)
   π  = Dict{States, Actions}()
-  for t in 1:N
+  for t in N:1
     for s in States(t)
       v[s], π[s] = findmin(a -> c(s, a) + γ*v[T(s,a)], Actions(s))
     end
@@ -892,6 +812,24 @@ function backward_induction()
   return π, v
 end
 ```
+
+I recommend you to compare this with the generic value iteration
+in order to see what we gain.
+One thing should be clear:
+backward induction does the exact same operation as value iteration for each state,
+but only requires a single pass over the state space.
+This makes it much more efficient.
+Another more subtle detail is that since we have more structure to exploit
+in the dynamics, the algorithm doesn't have to assume so much about the Bellman operator.
+For example, although hand-wavy, we just gave a proof of convergence above
+that has no dependence on the Banach fixed-point theorem.
+Thus, as a bonus, backward induction works for any discount factor $γ$.[^real-bi]
+
+[^real-bi]: In contrast with value iteration, it also has no dependence
+on the costs being real numbers. In this case any ordered ring
+(such as $\mathbb{N}$ or $\mathbb{Z}$) would do.
+But I digress... This is out of scope for this post.
+
 
 #### Policy Iteration
 
@@ -1292,6 +1230,119 @@ and specially its connections to Stochastic Optimization and Reinforcement Learn
 but I don't really know when I will have the time.
 
 Farewell and see you next time!
+
+## Appendix (Proofs of Convergence)
+
+In this appendix we show that the Bellman Operator
+
+$$
+\begin{array}{rl}
+ (\Bellman v)(s) =
+  \min\limits_{a} & c(s, a) + \gamma v(s') \\
+  \textrm{s.t.}  & s' = T(s, a), \\
+                 & a \in \Actions(s)
+\end{array}
+$$
+
+satisfies all the requisites to be a contraction
+over the space of bounded continuous functions.
+
+To prove that $\Bellman$ is a contraction,
+we will start with another of its properties: _monotonicity_.
+Besides this proof, it will also be useful in the future when we talk about policy improvement.
+
+:::Theorem
+Suppose that we have two value function $v$ and $w$ such that $v$ estimates costs
+uniformly lower than $w$:
+
+$$ v(s) \le w(s),\; \forall s \in \States.$$
+
+Then the Bellman operator preserves this relationship:
+$$ (\Bellman v)(s) \le (\Bellman w)(s), \; \forall s \in \States.$$
+:::
+
+:::Proof
+Given a state $s$, we get from $v \le w$
+that the following inequality holds for any action $a \in \Actions(s)$:
+
+$$ c(s, a) + \gamma v(T(s,a)) \le c(s, a) + \gamma w(T(s,a)). $$
+
+Since this is valid for any $a$,
+taking the minimum on both sides preserves the inequality.
+Thus
+
+$$
+\min_{a \in \Actions(s)} c(s, a) + v(T(s,a)) \le \min_{a \in \Actions(s)} c(s, a) + w(T(s,a)) \\
+(\Bellman v)(s) \le (\Bellman w)(s).
+$$
+:::
+
+Finally, let's prove that the Bellman operator
+contracts the space of bounded continuous functions by the discount factor.
+What we need to show is that for any value function $v, w$:
+
+$$ \|\Bellman v - \Bellman w\|_\infty \le \gamma \|v - w\|_\infty.$$
+
+From the definition of the uniform norm, we get that for any state $s$,
+
+$$
+v(s) - w(s) \le \|v - w\|_\infty \\
+v(s) \le w(s) + \|v - w\|_\infty.
+$$
+
+From the monotonicity we just proved,
+applying $\Bellman$ to both sides preserves this inequality:
+
+$$
+(\Bellman v)(s) \le \Bellman(w + \|v - w\|_\infty)(s).
+$$
+
+Let's show that the constant factor $\|v - w\|_\infty$
+only shifts the new function $\Bellman w$ by uniformly by another constant.
+Calling it $k$ to declutter the notation,
+
+$$
+\begin{array}{rlll}
+(\Bellman(w) + \|v - w\|_\infty)(s) &= &\min\limits_{a} & c(s, a) + \gamma (w(s') + \|v - w\|_\infty) \\
+&&\textrm{s.t.}  & s' = T(s, a), \\
+&&               & a \in \Actions(s) \\
+&= &\min\limits_{a} & c(s, a) + \gamma (w(s')) +  \gamma \|v - w\|_\infty \\
+&&\textrm{s.t.}  & s' = T(s, a), \\
+&&               & a \in \Actions(s).
+\end{array}
+$$
+
+This proves that
+
+$$
+\begin{aligned}
+(\Bellman v)(s) &\le (\Bellman w)(s) + \gamma \|v - w\|_\infty \\
+(\Bellman v)(s) - (\Bellman w)(s) &\le \gamma \|v - w\|_\infty.
+\end{aligned}
+$$
+
+By doing the same derivation in the opposite direction (for $w - v$)
+we get an inequality for the absolute value.
+Applying the supremum, it becomes the result we want.
+
+$$
+\begin{aligned}
+  |(\Bellman v)(s) - (\Bellman w)(s)| &\le \gamma \|v - w\|_\infty \\
+  \sup_{s\in\States} |(\Bellman v)(s) - (\Bellman w)(s)| &\le \gamma \|v - w\|_\infty \\
+  \|\Bellman v - \Bellman w\|_\infty &\le \gamma \|v - w\|_\infty.
+\end{aligned}
+$$
+
+
+Since $\Bellman$ is a contraction, the Banach fixed point theorem
+guarantees to us that there exists a unique value function $v^\star$
+satisfying the Bellman equation.
+Furthermore,
+the theorem also points us towards a way to solve this kind of procedure
+with polynomial complexity on the size of the state and action spaces.
+This is the topic we're going to investigate next.
+
+
 
 ## Acknowledgements
 
