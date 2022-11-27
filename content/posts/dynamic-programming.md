@@ -802,8 +802,8 @@ In Julia code, the algorithm looks like this:
 
 ```julia
 function backward_induction()
-  v  = Dict(s => 0 for s in States)
-  π  = Dict{States, Actions}()
+  v  = Values{States}()
+  π  = Policy{States, Actions}()
   for t in N:1
     for s in States(t)
       v[s], π[s] = findmin(a -> c(s, a) + γ*v[T(s,a)], Actions(s))
