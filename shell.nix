@@ -7,18 +7,17 @@ let
   });
 in
 pkgs.stdenv.mkDerivation {
-  name = "my-env";
+  name = "site";
 
-  buildInputs =
-    [
+  buildInputs = with pkgs; [
       # Workhorse
-      pkgs.gnumake
-      pkgs.pandoc
-      pkgs.lua5_4
+      gnumake
+      pandoc   # 2.18
+      lua5_4
 
       # Figures
-      pkgs.graphviz
-      pkgs.scour
+      graphviz # 4.0.0
+      scour    # 0.38.2
       tex
     ];
 }

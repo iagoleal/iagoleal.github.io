@@ -25,7 +25,7 @@ I first heard of this idea while reading the documentation of
 the [ad](https://hackage.haskell.org/package/ad) package
 and just had my mind blown.
 In here we will follow a simpler approach by constructing a simple AD implementation
-but for any serious business, i really recommend taking a look at that package.
+but for any serious business, I really recommend taking a look at that package.
 It is really awesome.
 
 ```haskell
@@ -50,9 +50,9 @@ it would collapse the expression substituting all instances of the variable `X`
 by `c` and return the resulting value.
 But thanks to currying we may also view `eval` as taking an expression `e`
 and returning a Haskell function `eval e :: a -> a`.
-Thus our code is capable of transforming expressions into functions.
+Thus, our code is capable of transforming expressions into functions.
 
-At this point, one may ask if if we can do the opposite.
+At this point, one may ask if we also could do the opposite.
 So, can we take an ordinary Haskell function and find
 the symbolic expression that it represents?
 The answer, quite surprisingly to me, is: _yes, provided that it is polymorphic_.
@@ -340,7 +340,7 @@ it :: Floating a => Expr a
 ```
 
 This function has a flaw nevertheless.
-It depends too much of polymorphism.
+It depends too much on polymorphism.
 While our symbolic differentiator from the previous post
 worked for an expression `f :: Expr Double`, for example,
 this new function depends on being able to convert

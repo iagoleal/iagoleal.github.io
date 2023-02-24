@@ -37,7 +37,7 @@ end
 
 local items = {}
 for _, s in ipairs(scandir("content/posts")) do
-  local aa =fmt("pandoc --template=%s %s", item_template, s)
+  local aa   = fmt("pandoc --template=%s %s", item_template, s)
   local file = io.popen(aa)
   items[#items + 1] = file:read("*a")
   file:close()
