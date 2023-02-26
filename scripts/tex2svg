@@ -20,12 +20,13 @@ TMPDIR="$(mktemp --directory --tmpdir tex2svg.XXXXXXXXXX)"
 FILE="$TMPDIR/lalala"
 
 cp "$INFILE" "${FILE}.tex"
-# tex -> pdf
-latex -halt-on-error -interaction nonstopmode -output-directory "$TMPDIR" "${FILE}.tex"
-# pdf -> svg
-dvisvgm --scale=2 --optimize=all --font-format=woff -o "${FILE}.svg" "${FILE}.dvi"
+# tex -> dvi
+latex --output-format=dvi --halt-on-error --interaction nonstopmode --output-directory "$TMPDIR" "${FILE}.tex"
+# dvi -> svg
+dvisvgm --scale=2 --optimize=all --font-format=woff2 --exact -o "${FILE}.svg" "${FILE}.dvi"
 # Generate output file
-$DIR/svg-minify "${FILE}.svg" "$OUTFILE"
+cp "${FILE}.svg" "$OUTFILE"
+# $DIR/svg-minify "${FILE}.svg" "$OUTFILE"
 
 ## Currently unused
 # pdftocairo -svg "${FILE}.pdf" "${FILE}.svg"

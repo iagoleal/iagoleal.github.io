@@ -41,14 +41,21 @@ end
 -------------------
 
 local tikz_template = [[
-\documentclass[tikz]{standalone}
+\documentclass{standalone}
+
+\def\pgfsysdriver{pgfsys-dvisvgm.def}
+
 \usepackage{xcolor,lmodern,amsfonts,tikz}
+
 %% Additional packages: usepackage
 \usepackage{%s}
+
 %% Libraries for tikz: tikzlibrary
 \usetikzlibrary{%s}
+
 %% Additional preamble; loaded after tikz
 %s
+
 \begin{document}
 \nopagecolor
 \begin{%s}

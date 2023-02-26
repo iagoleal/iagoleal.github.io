@@ -538,7 +538,7 @@ the necessary proofs are in an [appendix](#appendix) for completeness.
 
 :::Theorem
   The Bellman operator is a continuous contraction
-  whenever the discount factor is $γ < 1$.
+  whenever the discount factor is $\gamma < 1$.
   Thus it has a unique fixed point and for any value function v_0,
 
   $$ \Bellman^{(n)} v_0 \to v^\star.$$
@@ -546,7 +546,7 @@ the necessary proofs are in an [appendix](#appendix) for completeness.
   Moreover, if $v_n$ is the $n$-th iterate,
   we can estimate its distance to the optimum by
 
-  $$ \mathrm{d}(v_n, v^*) \le \frac{γ^n}{1 - γ} \mathrm{d}(v_0, \Bellman v_0).$$
+  $$ \mathrm{d}(v_n, v^*) \le \frac{\gamma^n}{1 - \gamma} \mathrm{d}(v_0, \Bellman v_0).$$
 :::
 
 Besides the existence and uniqueness guarantees,
@@ -613,7 +613,7 @@ function value_iteration(v0 ; tol)
     maxerr = 0
     for s in States
       prev = v[s]
-      v[s], π[s] = findmin(a -> c(s, a) + γ*v[T(s,a)], Actions(s))
+      v[s], π[s] = findmin(a -> c(s, a) + \gamma*v[T(s,a)], Actions(s))
       maxerr = max(maxerr, abs(v[s] - prev))
     end
   end
@@ -674,62 +674,16 @@ with zero cost and representing anything that happens after the dynamics end.
 Essentially, we work for $N$ stages and then reach $\blacksquare$,
 where we can just relax and do nothing for the rest of eternity.
 
-```dot
-digraph "State over Time" {
-  rankdir=LR;
-  size="8,5"
 
-  T [label = "" width=0.2 style=filled, color = black, fillcolor = black, shape = square];
+<object data="/img/finite-horizon.svg" type="image/svg+xml" width=100%>
+</object>
 
-  node [shape     = circle
-        style     = "solid,filled"
-        width     = 0.7
-        color     = black
-        fixedsize = shape
-        fillcolor = "#B3FFB3"
-        label     = ""];
-
-  subgraph cluster_1 {
-    rank = same;
-    label="t = 1";
-    s;
-  }
-
-  subgraph cluster_2 {
-    rank = same;
-    label="t = 2";
-    a2; b2;
-  }
-
-  subgraph cluster_3 {
-    rank = same;
-    label="t = 3";
-    a3; b3;
-  }
-
-  subgraph cluster_N {
-    rank = same;
-    label="t = N";
-    a4; b4;
-  }
-
-  subgraph cluster_ldots {
-    rank = same;
-    style = invis;
-    k [fontsize=20 color = "#00000000" fillcolor= "#00000000" label = ". . ."];
-  }
-
-  s -> {a2 b2} -> {a3 b3} -> k -> {a4 b4} -> T;
-
-  T:e -> T:e [constraint=false];
-}
-```
 
 If you prefer equations over figures,
 a finite horizon state machine is one where
 the transition function looks like this:
 
-$$ \bar{T}((t, s), a) = \begin{cases}
+$$ \bar{T}((t, s),\, a) = \begin{cases}
     (t + 1, T(s, a)), & t < N \\
     \blacksquare, & t = N.
   \end{cases}
@@ -753,50 +707,12 @@ We repeat this procedure until we reach the first stage.
 This calculates an optimal policy by induction,
 but moving "backwards" in time.
 
-```dot
-digraph "Backward Induction" {
-  size    = "8,5";
-  center  = true;
-  nodesep = 0.5;
 
-  { rank=sink;
-    node [label = "", width=0.2 style=filled, color = black, fillcolor = black, shape = square, margin=1.5];
-    T [group = infty];
-  };
-  { rank=source;
-    node [fontsize=20 color = "#00000000" fillcolor= "#00000000" label = ". . ."]
-    k [group = infty];
-  };
+<img src="/img/backward-induction.svg"
+     alt=""
+     title="Backward induction algorithm"
+     width="95%"/>
 
-  node [shape     = circle
-        style     = "solid,filled"
-        width     = 0.7
-        color     = black
-        fixedsize = shape
-        fillcolor = "#B3FFB3"
-        label     = ""];
-
-  subgraph last_stage {
-    rank =  same;
-    node [group = me];
-    A; B; Z [width = 0.1,group = infty, style=invis]; C; D;
-  }
-
-  // Alignment edges
-  A -> B -> Z -> C -> D [style=invis];
-  T -> Z -> k [style=invis];
-
-  // Real edges
-  k -> {A B C D};
-  edge[minlen=2];
-
-  {D} -> T;
-  {A B C D} -> T;
-  {D B A C} -> T [color = red style = bold];
-  {B} -> T;
-
-}
-```
 
 In Julia code, the algorithm looks like this:
 
@@ -806,7 +722,7 @@ function backward_induction()
   π  = Policy{States, Actions}()
   for t in N:1
     for s in States(t)
-      v[s], π[s] = findmin(a -> c(s, a) + γ*v[T(s,a)], Actions(s))
+      v[s], π[s] = findmin(a -> c(s, a) + \gamma*v[T(s,a)], Actions(s))
     end
   end
   return π, v
@@ -823,7 +739,7 @@ Another more subtle detail is that since we have more structure to exploit
 in the dynamics, the algorithm doesn't have to assume so much about the Bellman operator.
 For example, although hand-wavy, we just gave a proof of convergence above
 that has no dependence on the Banach fixed-point theorem.
-Thus, as a bonus, backward induction works for any discount factor $γ$.[^real-bi]
+Thus, as a bonus, backward induction works for any discount factor $\gamma$.[^real-bi]
 
 [^real-bi]: In contrast with value iteration, it also has no dependence
 on the costs being real numbers. In this case any ordered ring
@@ -1125,7 +1041,7 @@ Thus, at each iteration of our algorithm we can solve for state $s^{(i)}$
 and use linear programming duality
 to get an affine subapproximation to $v$ (called a cutting plane),
 
-$$ v(s) \ge v^{(i)} + \left\langleλ^{(i)}, s - s^{(i)}\right\rangle, \forall s \in \States.$$
+$$ v(s) \ge v^{(i)} + \left\langle\lambda^{(i)}, s - s^{(i)}\right\rangle, \forall s \in \States.$$
 
 Hence instead of solving the recursive equation,
 we sample the state space and use this cut approximation of $v$:
@@ -1137,7 +1053,7 @@ $$
   \textrm{s.t.}  & s' = Ms + Na, \\
                  & a \ge 0, \\
                  & z \ge 0, \\
-                 & z \ge v_i + λ(s - s_i), \forall i.
+                 & z \ge v_i + \lambda(s - s_i), \forall i.
 \end{array}
 $$
 
@@ -1341,7 +1257,6 @@ Furthermore,
 the theorem also points us towards a way to solve this kind of procedure
 with polynomial complexity on the size of the state and action spaces.
 This is the topic we're going to investigate next.
-
 
 
 ## Acknowledgements
