@@ -630,7 +630,7 @@ We do so by starting with a uniformly zero value and a random policy.
 In the left we see the value function at each iteration
 and in the right the associated policy.
 
-![](/video/dynamic-programming-labyrinth-value-iteration.webm)
+![](labyrinth-value-iteration.webm)
 
 The algorithm above is in fact just one variation of value iteration.
 There are still many problem-dependent improvements one can make.
@@ -675,7 +675,7 @@ Essentially, we work for $N$ stages and then reach $\blacksquare$,
 where we can just relax and do nothing for the rest of eternity.
 
 
-<object data="/img/finite-horizon.svg" type="image/svg+xml" width=100%>
+<object data="finite-horizon.svg" type="image/svg+xml" width=100%>
 </object>
 
 
@@ -708,7 +708,7 @@ This calculates an optimal policy by induction,
 but moving "backwards" in time.
 
 
-<img src="/img/backward-induction.svg"
+<img src="backward-induction.svg"
      alt=""
      title="Backward induction algorithm"
      width="95%"/>

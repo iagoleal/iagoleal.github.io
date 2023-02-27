@@ -32,7 +32,7 @@ to make life easier for anyone trying to reproduce it
 The video below in an example of this workflow
 using two terminals on the same machine (but still connecting via ssh).
 
-![](/video/demo-pair-programming.webm)
+![](demo-pair-programming.webm)
 
 [^game-side-project]: More on this on another post (someday, I hope).
 

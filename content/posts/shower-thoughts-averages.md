@@ -128,7 +128,7 @@ $$
 In two dimensions, we can also visualize this as a figure:
 
 <object type="image/svg+xml"
-        data="/img/shower-thoughts-averages-basis-decomposition.svg"
+        data="basis-decomposition.svg"
         width="100%">
 </object>
 
@@ -173,7 +173,7 @@ $$
 Or, as a figure:
 
 <object type="image/svg+xml"
-        data="/img/shower-thoughts-averages-constants.svg"
+        data="constants.svg"
         width="100%">
 </object>
 
@@ -314,7 +314,7 @@ the result of the _orthogonal projection_ of $X$ on $\sum_j \Id_j$.
 What we really want to calculate can be summarized as a picture:
 
 <object type="image/svg+xml"
-        data="/img/shower-thoughts-averages-projection.svg"
+        data="projection.svg"
         width="100%">
 </object>
 
@@ -382,7 +382,7 @@ $\Std{X} = \sqrt{\E{(X - \E{X})^2}}$, here it naturally appears as
 the size of the least squares' error from approximating $X$ by a constant.
 
 <object type="image/svg+xml"
-        data="/img/shower-thoughts-averages-variance.svg"
+        data="variance.svg"
         width="100%">
 </object>
 
