@@ -74,7 +74,7 @@ before learning a method to solve them, right?
 As a matter of motivation, let's start with something I am really fond of:
 old school platformer games.
 In our hypothetical game which is definitely not about some Italian plumber,
-the character does stands idle doing nothing by default.
+the character does stand idle doing nothing by default.
 But with the press of a button in the controller,
 the player may command the character to do a few things:
 shoot, jump or walk.
@@ -123,9 +123,9 @@ digraph "Plataformer State Machine" {
 ```
 
 Our modeling above is an instance of something called
-a _state machines_ or _automata_ if you're into Greek words.
-There are 4 states in which the vampire can be and at each one
-there is an available set of actions to take that may transition him to another state.
+a _state machine_ or _automata_ if you're into Greek words.
+There are 4 states in which the character might be and at each one
+there is an available set of actions to take that transitions that state.
 More abstractly,
 an automaton is a system that can be in one of many _states_ $s \in \States$
 and at each state, you can choose among a set of _actions_ $a \in \Actions(s)$
@@ -133,12 +133,13 @@ that transition the system to a new state $s' = T(s, a)$,
 where $T$ is called the system's _transition function_.
 
 An important notice: If you come from Computer Science,
-you are probably most used to _finite_ state machines.
+you are probably used to _finite_ state machines.
 Just know that in our context, the states may be any set.
 Some of the algorithms that we will see today
 only work for finite state spaces,
 but there are others that may even require a continuous space!
-An example is SDDP, which uses linear programming duality
+An example is Stochastic Dual Dynamic Programming,
+which is based upon linear programming duality
 and thus requires the state space to be a convex subset of $\R^n$.
 
 ### The Dynamics of Decision-Making
@@ -155,7 +156,7 @@ $$
 $$
 
 This new view makes our state machine somewhat equivalent
-to a controllable dynamical system,
+  to a _controllable dynamical system_,
 which is another really cool name in my opinion.
 
 As an example, think of a game of Sudoku.
@@ -465,10 +466,10 @@ and your counselors advised you to define a clear governing policy
 in order to minimize the kingdom's spendings.
 Since besides a ruthless ruler you're also a great mathematician
 and a fan of my blog,
-at this point you already know what most be done to save your kingdom from bankruptcy:
+at this point you already know what must be done to save your kingdom from bankruptcy:
 solve the Bellman equation in order to find its optimal policy.
 
-Because at this point of the post you already don't know how to solve it,
+Because at this point of the post you still don't know how to solve it,
 you decide to take advantage of your fantastical world and hire a wizard
 to look into his crystal ball and act as an oracle telling you
 how much each possible state will cost to the kingdom in the future.
@@ -479,12 +480,11 @@ Now, instead of solving the Bellman equation,
 all you have to do to get a policy is to solve the optimization problem
 with future cost given by the wizard's predictions.
 The processes of going from prediction to decision is precisely the Bellman operator.
-The function $\Bellman v% is the value function of the policy
-that chooses the best action according to the prediction.
+The function $\Bellman v$ is the cost of choosing the best action
+according to the prediction.
 
-The optimal value function, furthermore,
-is the one with the correct prediction, and thus is kept unchanged
-by applying the Bellman operator:
+The optimal value function, furthermore, is the one with the correct prediction,
+and is, thus, kept unchanged by the Bellman operator:
 
 $$ \Bellman v^\star = v^\star. $$
 
@@ -539,14 +539,17 @@ the necessary proofs are in an [appendix](#appendix) for completeness.
 :::Theorem
   The Bellman operator is a continuous contraction
   whenever the discount factor is $\gamma < 1$.
-  Thus it has a unique fixed point and for any value function v_0,
+  Thus, it has a unique fixed point $v^\star$
+  and no matter the initial choice for the value function $v_0$,
 
-  $$ \Bellman^{(n)} v_0 \to v^\star.$$
+  $$ \Bellman^{(n)} v_0 \xrightarrow{n \to \infty} v^\star.$$
 
-  Moreover, if $v_n$ is the $n$-th iterate,
-  we can estimate its distance to the optimum by
+  Moreover, we can estimate the distance between the nth iterate $v_n$
+  and the optimum through:
 
-  $$ \mathrm{d}(v_n, v^*) \le \frac{\gamma^n}{1 - \gamma} \mathrm{d}(v_0, \Bellman v_0).$$
+  $$
+    \mathrm{d}(v_n, v^*) \le \frac{\gamma^n}{1 - \gamma} \mathrm{d}(v_0, \Bellman v_0).
+  $$
 :::
 
 Besides the existence and uniqueness guarantees,
@@ -605,6 +608,11 @@ by keeping track of the $\argmin$ whenever we solve an optimization problem.
 Below we see a Julia implementation of value iteration.
 
 ```julia
+
+function bellman(v, s, a)
+  cost(s, a) + γ*v[next(s, a)]
+end
+
 function value_iteration(v0 ; tol)
   v  = copy(v0)
   π  = Policy{States, Actions}()
@@ -613,7 +621,7 @@ function value_iteration(v0 ; tol)
     maxerr = 0
     for s in States
       prev = v[s]
-      v[s], π[s] = findmin(a -> c(s, a) + \gamma*v[T(s,a)], Actions(s))
+      v[s], π[s] = findmin(a -> bellman(v, s, a), Actions(s))
       maxerr = max(maxerr, abs(v[s] - prev))
     end
   end
@@ -711,7 +719,7 @@ but moving "backwards" in time.
 <img src="backward-induction.svg"
      alt=""
      title="Backward induction algorithm"
-     width="95%"/>
+     width="100%"/>
 
 
 In Julia code, the algorithm looks like this:
@@ -773,7 +781,7 @@ you will see that under the same assumptions of continuity
 it also has a unique solution.
 Moreover, turning it into an update procedure
 converges towards $v^\pi$ for any initial value function.
-Thus, we arrive at an algorithm for evaluating the cost of a policy,
+This way, we arrive at an algorithm for evaluating the cost of a policy,
 unimaginatively called _policy evaluation_.
 
 ```julia
@@ -784,7 +792,7 @@ function policy_evaluation(π, v0=zeros(States); tol)
     maxerr = 0
     for s in States
       prev = v[s]
-      v[s] = c(s, π[s]) + γ*v[T(s, π[s])]
+      v[s] = bellman(v, s, π(s))  # same bellman as defined for vale iteration
       maxerr = max(maxerr, abs(v[s] - prev))
     end
   end
@@ -793,8 +801,8 @@ end
 ```
 
 Notice the similarity with value iteration.
-The only difference is that we are iterating a single evaluation,
-not an entire optimization problem.
+The only difference is on the update rule:
+instead of choosing an optimal action, we just follow along with the policy.
 
 ##### Policy Improvement
 
@@ -842,7 +850,7 @@ in a finite amount of steps.
 function policy_improvement(π0, v)
   π = copy(π0)
   for s in States
-    π[s] = argmin(a -> c(s, a) + γ*v[T(s,a)], Actions(s))
+    π[s] = argmin(a -> bellman(v, s, a), Actions(s))
   end
   return π
 end
@@ -869,25 +877,60 @@ Again it is useful to think of policy iteration more as a principle
 than as an algorithm in itself and adapt the steps to consider
 any problem specific information that may be available.
 
-## Stochastic Dynamic Programming
+## What Can Dynamic Programming solve?
+
+Ok, it's time to recapitulate a bit.
+We started our journey looking at automata and controllable dynamics,
+showing how we can represent the best set of actions
+as those who fulfill a certain recursive relation on their value functions,
+called the Bellman equation.
+Then, we explored a couple ways of solving this equation
+through methods for finding fixed points.
+Now, a question for the reader:
+how much do you think those methods actually depended on the Bellman equation itself?
+
+If you go back to our algorithms for
+_value iteration_, _backwards induction_, or _policy iteration_,
+you will notice that the Bellman operator itself only appears in a single line.
+Furthermore, this apparition is completely encapsulated.
+The algorithms do not depend on the Bellman operator per se;
+they work because it satisfies a couple reasonable properties!
+
+Very well, the mathematician inside me sees something like that and starts
+thinking about generalizing.
+Let's see where a bit more abstraction leads us.
+
+Value iteration is simply Banach's fixed point in disguise.
+Hence, it is a tool capable of solving any problem
+described by a recursive equation where the operator is a monotone contraction.
+Similarly, we can use policy iteration whenever
+the operator associated with following a policy shows a monotone contraction behavior.
+
+Alright, this post is becoming too abstract for my taste.
+Let's dive into a couple examples to see why this generalization is cool.
+
+### Stochastic Dynamic Programming
 
 Until now, we've only dealt with deterministic processes.
-Life, on the other hand, is full of uncertainty and, as a good applied field,
-dynamic programming was created from its inception to deal with stochastic settings.
+Life, on the other hand, is full of uncertainty and, being a nice applied field,
+dynamic programming was created from its inception keeping in mind stochasticity.
 
-We call a state machine where the transitions $T(s, a)$ and costs $c(s, a)$
+We call a state machine where the transitions $T(s, a)$
 are stochastic a _Markov Decision Process_ (MDP for short).
 This name comes from the fact that the new state only depends on the current state
-and action, being independent of the process' history just like a Markov chain.
+and action, being independent of the process' history;
+Just like a Markov chain.
 A usual intuition for this kind of processes is as the interaction between
 an actor and an environment.
-At each time step, the environment is at a state $s$
-and the actor may choose among different actions $a \in \Actions(s)$
-to interact with the environment.
+At each time step, the environment is at a state $s$ (which is known to the actor),
+and the actor may choose among different actions $a \in \Actions(s)$,
+each one incurring a certain cost[^sto-cost], to interact with it.
 This action affects the environment in some way that is out of reach to the actor
-(this stochastic / non-deterministic),
-changing its state to $s' = T(s, a)$ and incurring a cost of $c(s, a)$
-to the actor, as illustrated in the diagram below.
+(thus stochastic / non-deterministic), changing its state to $s' = T(s, a)$.
+This is illustrated in the diagram below.
+
+[^sto-cost]: It is also possible to define MDPs where the cost is stochastic.
+The formulations are equivalent, and one may choose which one best models the problem at hand.
 
 ```dot
 digraph {
@@ -905,14 +948,13 @@ digraph {
           fixedsize = shape
           fillcolor = "#B3FFB3"];
     s2 [label = "s'"];
-    s -> s2 [label = "T(s,a)"];
+    s -> s2 [color = blue, label = "T(s,a)"];
   }
 
   A -> s:nw [label = "a"       lhead=cluster_env];
-  s:s -> A [label = "c(s, a)" ltail=cluster_env];
+  s:s -> A  [label = "c(s, a)" ltail=cluster_env];
 }
 ```
-
 Allowing non-determinism opens the way for modeling a lot more cool situations.
 For example, robots that play video games!
 The states may be the internal state of the game or some partial observation of them
@@ -925,227 +967,144 @@ In it, they use reinforcement learning to train a robot capable of playing Atari
 and all modeling is done via Markov decision processes in a way that is really similar
 to the discussion in this paragraph. I really recommend checking it out.
 
-With a stochastic environment, we can't necessarily predict the costs and transitions,
-only estimate them. To accommodate that, we will have to change a few things
+With a stochastic environment,
+we can't necessarily predict the total costs and transitions, only estimate them.
+To accommodate that, we will have to change a few things
 in our definition of policies and value functions.
-Those will specialize to our old definitions whenever
-the MDP is stochastic.
 
-A deterministic policy was a choice of action for each state.
-We define a _stochastic policy_ as a random function choosing an action given a state.
-For the value function, we still want to assign a total cost to each state.
-A solution is to consider all possible costs and take their average.
-The value of a stochastic policy is thus
+Even if fix a policy $\pi$,
+we cannot be certain of what is going to happen,
+because the costs and transitions are stochastic.
+We are, however, able to calculate the average cost
+by taking the expected value among all possible outcomes,
+conditioned to following the policy $\pi$.
 
 $$
- v^\pi(s) = \E^\pi\left[c(s, a) + \gamma v^\pi(T(s, a))\right | a = \pi(s)]
+  v^\pi(s) = \E \left[ \sum\limits_{t=1}^\infty \gamma^{t-1}c(s_t, a_t) \middle| s_1 = s,\, s_{t+1} = T(s_t, a_t),\,  a_t = \pi(s_t) \right]
 $$
 
-where we consider the action $a$ to be randomly sampled with according to the policy
-and write $\E^\pi$ for the average value considering that we follow it.
-Similarly, the Bellman equation for the optimal value function also considers
-the mean cost:
+Using that the expected value is linear,
+one can redo the reasoning from the deterministic case
+to arrive at a _stochastic Bellman equation_:
 
 $$
 \begin{array}{rl}
  v^\star(s) =
-  \min\limits_{a} & \E\left[c(s, a) + \gamma v^\star(s')\right] \\
+  \min\limits_{a} & c(s, a) + \gamma \E \left[v^\star(s') \right] \\
   \textrm{s.t.}  & s' = T(s, a), \\
                  & a \in \Actions(s).
 \end{array}
 $$
 
-In this post we will only work the expected value
-but know that if you were feeling particularly risk-averse,
-you could exchange it for any [coherent risk measure](https://en.wikipedia.org/wiki/Coherent_risk_measure)
-and all results would still hold.
+For finite state spaces,
+this equation has the same contraction properties as the deterministic one.
+Hence, the tools of value and policy iteration are also readily available to solve MDPs.
+The optimization problems are harder, because of the expected value,
+but conceptually it is the same.
 
-### Solving MDPs
+### Solving Recurrence Relations
 
-If the (possibly random) states, actions and costs are finite,
-the methods of _value iteration_ and _policy iteration_ also hold with minor adjustments.
-One can prove the existence and convergence of the stochastic Bellman equation
-with the same assumptions as before.
+This last example is actually pretty simple
+and using the full power we've developed is a real overkill.
+Nevertheless, as it is a rather common first example to encounter
+when learning Dynamic Programming in Computer Science classes,
+it is worth it to view this kind of problem in the light of the formalism we've developed.
 
-The main difference from the deterministic case is that we need
-to evaluate the expectation during the process.
-Let's call $p(s', c | s, a)$ the probability
-of getting a transition $s' = T(s, a)$ and a cost $c(s, a)$
-given that we choose action $a$ at state $s$.
-With this, the expectation becomes a weighted sum
-and we can do _value iteration_ exactly as before,
-with the only difference that our update rule becomes
+A recurrence relation is any function $\N \to \R$,
+where the nth term is recursively defined through the previous terms.
 
 $$
- v(s) \gets \min\limits_{a} \sum_{s',\,c} p(s', c | s, a)\left(c + \gamma v(s')\right).
+f(n) = \begin{cases}
+  c_n,                          & n < k \\
+  g(n, f(n-1), \ldots, f(n-k)), & n \ge k.
+\end{cases}
 $$
 
-Similarly, the update rules for policy evaluation is
+The $c_n$ are constants which correspond to the base case of the recursion
+the value of $f(n)$ depends directly on the previous $k$ terms.
+
+Famous examples with this structure are the factorial and Fibonacci functions:
+
+\def\fib{\mathrm{fib}}
+
+\begin{align*}
+  \mathrm{fat}(n) &= \begin{cases}
+    1,                         & n = 0 \\
+    n \cdot \mathrm{fat}(n-1), & n \ge 1.
+  \end{cases} \\
+
+
+  \fib(n) &= \begin{cases}
+    0,                     & n = 0 \\
+    1,                     & n = 1 \\
+    \fib(n-1) + \fib(n-2), & n \ge 2.
+  \end{cases} \\
+\end{align*}
+
+In general, evaluating $f(n)$ directly via the definition may be exponentially slow.
+But, in fact, it is always possible to calculate it in linear time using dynamic programming.
+
+To calculate $f(n)$, we consider a state machine where the states
+are the numbers from $0$ to $n$ and where there is only a dummy action $\star$.
+Then, we recast the recursion as an operator
 
 $$
- v(s) \gets \sum_{s',\,c} p(s', c | s, \pi(s))\left(c + \gamma v(s')\right)
+(\Bellman v)(n) = \min_{a \in \{\star\}} \begin{cases}
+  c_n,                          & n < k \\
+  g(n, v(n-1), \ldots, v(n-k)), & n \ge k.
+\end{cases}
 $$
 
-and the one for policy improvement is
+Since, there is only a single action, the minimization is redundant
+and the optimal value function satisfies the desired recursive equation.
+Thus, under very mild conditions our assumptions hold,
+and we can solve this equation by finding the fixed point of $\Bellman$.
+As an example, the following video shows the first 15 Fibonacci numbers
+being calculated via value iteration.
 
-$$
- \pi(s) \gets \argmin\limits_{a} \sum_{s',\,c} p(s', c | s, a)\left(c + \gamma v(s')\right).
-$$
+![](fibonacci-value-iteration.webm)
 
-The algorithm for policy iteration is also exactly the same as the deterministic one
-except for these two lines of code.
+We can improve this method even more by using Backwards Induction!
+To evaluate $f(n)$, we constructed a finite horizon problem
+where there is only a single state per stage.
+Thus, considering that our initial state is $n$,
+we just have to fill the value function starting from $0$
+(which means going backwards, in this case)
+and we evaluate the recursion in $n$ steps.
+Below there is an example solving the Fibonacci equation,
+but taking into account the order of states.
+
+![](fibonacci-backward-induction.webm)
 
 ## End of our Journey
 
 Well, we finally reached the end of our overview of dynamic programming.
-I hope it was as fun to read as it was for me to write.
-And that DP gets the honor place it deserves in your problem solving.[^fp-rec]
+I sincerely hope it was as fun for you to read as it was for me to write.
+And that DP gets the honor place it deserves in your problem solving toolkit![^fp-rec]
+
 Of course, a single blog post is too tinny to encompass a subject as vast as DP.
-So let's give a little appetizer of what is out there.
-
-[^fp-rec]: In fact, fixed points and recursion deserve the spot.
-They're everywhere!
-
-One thing that we barely scraped the surface was continuous state problems,
-although they being quite important.
-And I say this last part seriously as someone who works daily with them.
-In our theoretical discussions, we didn't really use the finitude of the states,
-only when we we built the algorithms with vectors and loops.
-This means that at a mathematical level, both value and policy iteration
-work for infinite states if you keep in mind the continuity assumptions.
-
-Therefore,
-if one has a way to traverse the entire state space $\States$,
-the algorithms will converge and we may even get an analytic solution
-to the Bellman Equation.
-In practice this is hard and we have to resort to some kind of
-_Approximate Dynamic Programming_.
-The idea is to approximate the value function $v$
-with some representation requiring only a finite amount of information
-and sample the state space in order to fit it with the data.
-
-The best way to do that is problem-dependent, of course.
-For example, if the optimization in the Bellman equation is a linear program,
-
-$$
-\begin{array}{rl}
- v(s) =
-  \min\limits_{a} & c^ta + \gamma v(s') \\
-  \textrm{s.t.}  & s' = Ms + Na, \\
-                 & a \ge 0,
-\end{array}
-$$
-
-one can guarantee that $v$ must be convex and piecewise-linear.
-Thus, at each iteration of our algorithm we can solve for state $s^{(i)}$
-and use linear programming duality
-to get an affine subapproximation to $v$ (called a cutting plane),
-
-$$ v(s) \ge v^{(i)} + \left\langle\lambda^{(i)}, s - s^{(i)}\right\rangle, \forall s \in \States.$$
-
-Hence instead of solving the recursive equation,
-we sample the state space and use this cut approximation of $v$:
-
-$$
-\begin{array}{rl}
- v(s) =
-  \min\limits_{a} & c^ta + \gamma z \\
-  \textrm{s.t.}  & s' = Ms + Na, \\
-                 & a \ge 0, \\
-                 & z \ge 0, \\
-                 & z \ge v_i + \lambda(s - s_i), \forall i.
-\end{array}
-$$
-
-This procedure yields piecewise-linear approximations
-that eventually converge to the real optimal value function.
-The idea we just discussed forms the basis of _Dual Dynamic Programming_,
-a method largely employed by people in Stochastic Programming and Operations Research.
-
-Another thing we can do when the problem's structure is not as nice as a linear program
-is to use some kind of universal approximator for $v$, such as a neural network.
-This is called _Neural Dynamic Programming_
-and the work of [Dmitri Bertsekas](https://www.mit.edu/~dimitrib/dpbook.html)
-is a great place to start learning about this.
-
-Besides the algorithms,
-there are other classes of problems that admit a Bellman equation
-but didn't fit our narrative despite their importance.
-One such example are Game problems where
-we do not have total control over the actions taken.
-Differently from MDPs where we know the transition probabilities for all states,
-in this case there are also other players
-who are supposedly trying to _maximize_ your cost.
-As an example, think of a game of Poker
-where the other players want to maximize your losses (thus minimize their own).
-In this case, besides your actions $a$, there are also actions $\alpha$
-from the other players who affect the state transition $s' = T(s, a, \alpha)$
-providing a Bellman equation
-
-$$
-\begin{array}{rl}
- v(s) =
-  \min\limits_{a} \max\limits_{\alpha} &\E[c(s, a) + \gamma v(s')] \\
-  \textrm{s.t.}  & s' = T(s, a, \alpha), \\
-                 & a \in \Actions_\mathrm{you}(s) \\
-                 & \alpha \in \Actions_\mathrm{enemy}(s).
-\end{array}
-$$
-
-Another important instance that I didn't mention before
-are control problems with continuous time.
-This is a huge area of engineering and applied math
-and much of Bellman's original work
-was focused on solving this kind of problem.
-As an example, think of an airplane flying.
-It's dynamics are given by a differential equation taking account
-both its current state $s$ and how the pilot controls the pane $a$,
-
-$$
-\frac{ds}{dt} = T(s, a).
-$$
-
-Think of $s_t$ as the plane's position and direction,
-while $a_t$ represents how much the pilot chooses to accelerate
-or turn the plane's yoke at time $t$.
-The cost may be the fuel consumption.
-As any good physics problem this has continuous time
-and the sum over states becomes an integral
-
-$$
-\begin{array}{rl}
- v(s) =
-  \min\limits_{a} & \int_{0}^{\infty} c(s(t), a(t))dt \\
-  \textrm{s.t.}  & \frac{ds}{dt} = T(s(t), a(t)), \\
-                 & s(0) = s, \\
-                 & a \in \Actions(s). \\
-\end{array}
-$$
-
-By following similar steps to our deduction of the discrete time Bellman equation
-plus a lot of hard analysis[^hjb-taylor],
-one arrives at a non-linear partial differential equation
-called the _Hamilton-Jacobi-Bellman equation_:
-
-$$
-v(s) = \min_{a} c(s, a) + \left\langle \nabla v(s), T(s, a) \right\rangle.
-$$
-
-This equation analogously describes the optimal value of a state recursively
-but now it is much harder to solve.
-The methods employed generally involve discretization
-allied with, our by now old friends, value or policy iteration.
-
-[^hjb-taylor]: The derivation mostly consists of Taylor expansions to be sincere.
-The tricky part is justifying your steps.
-
-After this final overview, it's indeed time to end our journey,
-nevertheless knowing that there is much more to explore out there.
-I will try to post more about dynamic programming
-and specially its connections to Stochastic Optimization and Reinforcement Learning
-but I don't really know when I will have the time.
+There are matters about estimating the value function instead of simply calculating it,
+infinite state spaces, continuous time and a plethora of cool stuff we can do.
+There are also a lot of connections with reinforcement learning,
+for which we only scraped the surface in this post.
+Unfortunately, these will remain as stories for another night.
 
 Farewell and see you next time!
+
+[^fp-rec]: In fact, fixed points and recursion as a whole deserve the spot.
+They're everywhere!
+
+
+## Acknowledgements
+
+This post come to life after a series of conversations I had
+with [Pedro Xavier](https://pedromxavier.github.io).
+The good thing of explaining something to a smart person
+is that you end up learning a lot in the process.
+Sometimes you even learn enough to write a blog post about it.
+
+I'm also in debt with Ivani Ivanova for being such a great typo hunter.
+If there is any typo left, it is because I'm lazy... She did a marvelous job.
 
 ## Appendix (Proofs of Convergence)
 
@@ -1188,7 +1147,7 @@ taking the minimum on both sides preserves the inequality.
 Thus
 
 $$
-\min_{a \in \Actions(s)} c(s, a) + v(T(s,a)) \le \min_{a \in \Actions(s)} c(s, a) + w(T(s,a)) \\
+\min_{a \in \Actions(s)} c(s, a) + v(T(s,a)) \le \min_{a \in \Actions(s)} c(s, a) + w(T(s, a)) \\
 (\Bellman v)(s) \le (\Bellman w)(s).
 $$
 :::
@@ -1257,15 +1216,3 @@ Furthermore,
 the theorem also points us towards a way to solve this kind of procedure
 with polynomial complexity on the size of the state and action spaces.
 This is the topic we're going to investigate next.
-
-
-## Acknowledgements
-
-This post come to life after a series of conversations I had
-with [Pedro Xavier](https://pedromxavier.github.io).
-The good thing of explaining something to a smart person
-is that you end up learning a lot in the process.
-Sometimes you even learn enough to write a blog post about it.
-
-I'm also in debt with Ivani Ivanova for being such a great typo hunter.
-If there is any typo left, it is because I'm lazy... She did a marvelous job.
