@@ -1,8 +1,13 @@
-\documentclass[tikz]{standalone}
+\documentclass{standalone}
+
+\def\pgfsysdriver{pgfsys-dvisvgm.def}
+
 \usepackage{xcolor,lmodern,tikz}
 \usetikzlibrary{lindenmayersystems}
+
 \begin{document}
 \nopagecolor
+
 \begin{tikzpicture}
   \draw[rotate=90]
     lindenmayer system[l-system={
@@ -11,4 +16,5 @@
       step=2pt, randomize step percent=25,
       angle=30, randomize angle percent=5}];
 \end{tikzpicture}
+
 \end{document}

@@ -58,18 +58,16 @@ the symbolic expression that it represents?
 The answer, quite surprisingly to me, is: _yes, provided that it is polymorphic_.
 
 If you take a function such as `g :: Double -> Double`
-that only works for a single type[^monomorphic],
-all hope is lost.
+that only works for a single type[^monomorphic], all hope is lost.
 Any information regarding "the shape" of the operation
 performed by the function will have already disappeared at runtime
 and perhaps even been optimized away by the compiler (as it should be).
 Nevertheless, polymorphic functions that work for any Floating type,
 such as `f :: Floating a => a -> a`,
-are flexible enough to still carry information about its syntax tree
-even at runtime.
+are flexible enough to still carry information about its syntax tree even at runtime.
 One reason for this is that we defined a `Floating` instance for `Expr a`,
 allowing the function `f` to be specialized to the type `Expr a -> Expr a`.
-Thus we can convert between polymorphic functions and expressions.
+Thus, we can convert between polymorphic functions and expressions.
 
 ```haskell
 uneval :: (forall a. Floating a => a -> a) -> (forall b. Floating b => Expr b)
@@ -197,14 +195,14 @@ Later, it will also be useful to have functions extracting the real and infinite
 of a dual number.
 
 ```haskell
-realpart (Dual a _) = a
+realPart (Dual a _) = a
 epsPart  (Dual _ b) = b
 ```
 
 Alright, just like with expressions we will want to make `Dual a` into a number.
 The sum and product of two dual numbers are respectively linear and bilinear
-because, well... Because we wouldn't be calling it "sum" and "product" it they weren't.
-In math it reads as
+because, well... Because we wouldn't be calling it "sum" and "product" if they weren't.
+In math, it reads as
 
 $$ \begin{aligned}
   (a + b\varepsilon) +     (c + d\varepsilon) &= (a + c) + (b + d)\varepsilon, \\

@@ -64,7 +64,8 @@ Finding the best energy dispatch is once again solved via dynamic programming.
 
 [^dp-name]: Even Richard Bellman admittedly named it based [on how cool it sounds](https://en.wikipedia.org/wiki/Dynamic_programming#History).
 
-## On Decision Making and State Machines
+On Decision-Making and State Machines
+-------------------------------------
 
 Before delving into dynamic programming per se, we first have to establish a few concepts.
 After all, it's always best to know which problems you intend to solve
@@ -106,7 +107,7 @@ digraph "Plataformer State Machine" {
   I [label = "idle"];
 
   I -> I [label = "do nothing"];
-  W -> W [label = "keep walking"];
+  W -> W [label = "walk"];
 
   I -> A [label = "attack"];
   A -> I [label = "finish attack"];
@@ -730,7 +731,7 @@ function backward_induction()
   π  = Policy{States, Actions}()
   for t in N:1
     for s in States(t)
-      v[s], π[s] = findmin(a -> c(s, a) + \gamma*v[T(s,a)], Actions(s))
+      v[s], π[s] = findmin(a -> c(s, a) + γ*v[T(s, a)], Actions(s))
     end
   end
   return π, v
@@ -905,6 +906,11 @@ Hence, it is a tool capable of solving any problem
 described by a recursive equation where the operator is a monotone contraction.
 Similarly, we can use policy iteration whenever
 the operator associated with following a policy shows a monotone contraction behavior.
+To be fair, one could go _even further_ and substitute the hypothesis from Banach's theorem
+for any other theorem guaranteeing an attractor among the value functions.
+As this can get rather technical,
+We will not explore this in here, but if you are curious (and a big fan of abstract books),
+a great place to start is @{bertsekasADP}'s book.
 
 Alright, this post is becoming too abstract for my taste.
 Let's dive into a couple examples to see why this generalization is cool.
@@ -1168,44 +1174,39 @@ $$
 From the monotonicity we just proved,
 applying $\Bellman$ to both sides preserves this inequality:
 
-$$
-(\Bellman v)(s) \le \Bellman(w + \|v - w\|_\infty)(s).
-$$
+$$ (\Bellman v)(s) \le \Bellman(w + \|v - w\|_\infty)(s). $$
 
 Let's show that the constant factor $\|v - w\|_\infty$
 only shifts the new function $\Bellman w$ by uniformly by another constant.
 Calling it $k$ to declutter the notation,
 
-$$
-\begin{array}{rlll}
-(\Bellman(w) + \|v - w\|_\infty)(s) &= &\min\limits_{a} & c(s, a) + \gamma (w(s') + \|v - w\|_\infty) \\
-&&\textrm{s.t.}  & s' = T(s, a), \\
-&&               & a \in \Actions(s) \\
-&= &\min\limits_{a} & c(s, a) + \gamma (w(s')) +  \gamma \|v - w\|_\infty \\
-&&\textrm{s.t.}  & s' = T(s, a), \\
-&&               & a \in \Actions(s).
-\end{array}
+$$ \begin{array}{rlll}
+      (\Bellman(w) + \|v - w\|_\infty)(s) &= &\min\limits_{a} & c(s, a) + \gamma (w(s') + \|v - w\|_\infty) \\
+      &&\textrm{s.t.}  & s' = T(s, a), \\
+      &&               & a \in \Actions(s) \\
+      &= &\min\limits_{a} & c(s, a) + \gamma (w(s')) +  \gamma \|v - w\|_\infty \\
+      &&\textrm{s.t.}  & s' = T(s, a), \\
+      &&               & a \in \Actions(s).
+    \end{array}
 $$
 
 This proves that
 
-$$
-\begin{aligned}
-(\Bellman v)(s) &\le (\Bellman w)(s) + \gamma \|v - w\|_\infty \\
-(\Bellman v)(s) - (\Bellman w)(s) &\le \gamma \|v - w\|_\infty.
-\end{aligned}
+$$ \begin{aligned}
+      (\Bellman v)(s) &\le (\Bellman w)(s) + \gamma \|v - w\|_\infty \\
+      (\Bellman v)(s) - (\Bellman w)(s) &\le \gamma \|v - w\|_\infty.
+    \end{aligned}
 $$
 
 By doing the same derivation in the opposite direction (for $w - v$)
 we get an inequality for the absolute value.
 Applying the supremum, it becomes the result we want.
 
-$$
-\begin{aligned}
-  |(\Bellman v)(s) - (\Bellman w)(s)| &\le \gamma \|v - w\|_\infty \\
-  \sup_{s\in\States} |(\Bellman v)(s) - (\Bellman w)(s)| &\le \gamma \|v - w\|_\infty \\
-  \|\Bellman v - \Bellman w\|_\infty &\le \gamma \|v - w\|_\infty.
-\end{aligned}
+$$ \begin{aligned}
+      |(\Bellman v)(s) - (\Bellman w)(s)| &\le \gamma \|v - w\|_\infty \\
+      \sup_{s\in\States} |(\Bellman v)(s) - (\Bellman w)(s)| &\le \gamma \|v - w\|_\infty \\
+      \|\Bellman v - \Bellman w\|_\infty &\le \gamma \|v - w\|_\infty.
+  \end{aligned}
 $$
 
 
