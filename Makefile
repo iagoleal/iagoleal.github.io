@@ -139,9 +139,6 @@ $(build)/%/index.html: $(content)/%.html $(DEPENDENCIES)
 
 feed: $(build)/rss.xml
 
-$(build)/rss.xml: $(feed) $(posts)
-	scripts/make-rss "$@"
-
 stylesheets: $(css-result)
 
 $(build)/css/%: css/%

@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Iago Leal's blog</title>
+    <link><![CDATA[https://iagoleal.com]]></link>
+    <copyright>© Iago Leal de Freitas, 2020-2023</copyright>
+    <description>Iago Leal's blog about math, programming and everything more.</description>
+    <language>en</language>
+    <image>
+      <url>https://iagoleal/static/img/me.jpg</url>
+      <link><![CDATA[https://iagoleal.com]]></link>
+      <title>Iago Leal's blog</title>
+    </image>
+    <pubDate>24 Feb 2023 14:41:41 +0000</pubDate>
+    <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
+
+    <item>
+      <guid isPermaLink="false">1176588860</guid>
+      <title>Memoization via Representables | Iago Leal</title>
+      <link>https://iagoleal.com/posts/representable-memoize/</link>
+      <dc:creator>Administrator</dc:creator>
+      <category>Blog</category>
+      <pubDate>18 Sep 2022 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <guid isPermaLink="false">1628193303</guid>
+      <title>The Lazy Way to Solve Differential Equations | Iago Leal</title>
+      <link>https://iagoleal.com/posts/calculus-symbolic-ode/</link>
+      <dc:creator>Administrator</dc:creator>
+      <category>Blog</category>
+      <pubDate>17 Jul 2022 02:57:11 GMT</pubDate>
+    </item>
+    <item>
+      <guid isPermaLink="false">1900179361</guid>
+      <title>A Tale of Dynamic Programming | Iago Leal</title>
+      <link>https://iagoleal.com/posts/dynamic-programming/</link>
+      <dc:creator>Administrator</dc:creator>
+      <category>Blog</category>
+      <pubDate>25 Jun 2022 02:57:13 GMT</pubDate>
+    </item>
+    <item>
+      <guid isPermaLink="false">2133384390</guid>
+      <title>Let’s Program a Calculus Student II | Iago Leal</title>
+      <link>https://iagoleal.com/posts/calculus-symbolic-ad/</link>
+      <dc:creator>Administrator</dc:creator>
+      <category>Blog</category>
+      <pubDate>25 Apr 2022 02:57:10 GMT</pubDate>
+    </item>
+    <item>
+      <guid isPermaLink="false">3635962829</guid>
+      <title>Let’s Program a Calculus Student | Iago Leal</title>
+      <link>https://iagoleal.com/posts/calculus-symbolic/</link>
+      <dc:creator>Administrator</dc:creator>
+      <category>Blog</category>
+      <pubDate>05 Apr 2022 02:57:11 GMT</pubDate>
+    </item>
+    <item>
+      <guid isPermaLink="false">1344145698</guid>
+      <title>Shower Thoughts about Averages | Iago Leal</title>
+      <link>https://iagoleal.com/posts/shower-thoughts-averages/</link>
+      <dc:creator>Administrator</dc:creator>
+      <category>Blog</category>
+      <pubDate>29 Dec 2021 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <guid isPermaLink="false">1159088511</guid>
+      <title>Pair Programming in the Pandemic | Iago Leal</title>
+      <link>https://iagoleal.com/posts/tmux-pair-programming/</link>
+      <dc:creator>Administrator</dc:creator>
+      <category>Blog</category>
+      <pubDate>03 Aug 2021 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <guid isPermaLink="false">1687460667</guid>
+      <title>FFT as a Hylomorphism | Iago Leal</title>
+      <link>https://iagoleal.com/posts/fft-hylo/</link>
+      <dc:creator>Administrator</dc:creator>
+      <category>Blog</category>
+      <pubDate>20 Sep 2020 02:57:13 GMT</pubDate>
+    </item>
+    <item>
+      <guid isPermaLink="false">1124005007</guid>
+      <title>Recursion Schemes | Iago Leal</title>
+      <link>https://iagoleal.com/posts/recursion-schemes/</link>
+      <dc:creator>Administrator</dc:creator>
+      <category>Blog</category>
+      <pubDate>10 Sep 2020 02:57:22 GMT</pubDate>
+    </item>
+  </channel>
+</rss>
