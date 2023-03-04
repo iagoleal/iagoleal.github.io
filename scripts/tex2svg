@@ -16,17 +16,18 @@ fi
 
 TMPDIR="$(mktemp --directory --tmpdir tex2svg.XXXXXXXXXX)"
 
-# FILE="${TMPDIR}/$(sha1sum "$INFILE" | awk '{print $1}')"
-FILE="$TMPDIR/lalala"
+# TMPFILE="${TMPDIR}/$(sha1sum "$INFILE" | awk '{print $1}')"
+TMPFILE="$TMPDIR/$(basename "$INFILE")"
 
-cp "$INFILE" "${FILE}.tex"
+
+cp "$INFILE" "${TMPFILE}.tex"
 # tex -> dvi
-latex --output-format=dvi --halt-on-error --interaction nonstopmode --output-directory "$TMPDIR" "${FILE}.tex"
+lualatex --output-format=dvi --halt-on-error --interaction nonstopmode --output-directory "$TMPDIR" "${TMPFILE}.tex"
 # dvi -> svg
-dvisvgm --scale=2 --optimize=all --font-format=woff2 --exact -o "${FILE}.svg" "${FILE}.dvi"
+dvisvgm --scale=2 --optimize=all --font-format=woff2 --exact -o "${TMPFILE}.svg" "${TMPFILE}.dvi"
 # Generate output file
-cp "${FILE}.svg" "$OUTFILE"
-# $DIR/svg-minify "${FILE}.svg" "$OUTFILE"
+cp "${TMPFILE}.svg" "$OUTFILE"
+# $DIR/svg-minify "${TMPFILE}.svg" "$OUTFILE"
 
 ## Currently unused
-# pdftocairo -svg "${FILE}.pdf" "${FILE}.svg"
+# pdftocairo -svg "${TMPFILE}.pdf" "${TMPFILE}.svg"

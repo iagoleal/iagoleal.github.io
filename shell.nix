@@ -20,4 +20,6 @@ pkgs.stdenv.mkDerivation {
       scour    # 0.38.2
       tex
     ];
+
+  LOCALE_ARCHIVE = /usr/lib/locale/locale-archive;
 }
