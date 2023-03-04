@@ -11,12 +11,13 @@
 
 \begin{tikzpicture}[
   node distance = 3cm,
-  state/.style    = { circle, minimum width = 0.7cm, fill = gray!20, very thick },
-  terminal/.style = {rectangle, fill = black, scale = 2},
+  state/.style    = { circle, minimum width = 0.7cm, fill = gray!20, draw = gray!40, very thick, outer sep = 2 },
+  terminal/.style = {rectangle, fill = black, scale = 1},
   action/.style   = {
     opacity = 0.8,
     thin,
     smoothgray,
+    ->,
     -{Kite[length=4pt,width=2.5pt,inset=1.5pt]},
   },
   animate/pulse/.style = {
@@ -61,8 +62,13 @@
 ]
 
   % Useful constants
-  \def\nStages{4}
-  \def\nStates{3}
+  % How many states per stage
+  \def\states{{1,3,2,3}}
+  % Total number of stages
+  \pgfmathsetmacro{\nStages}{dim(\states)}
+  % Maximum number of states among stages
+  \expandafter\pgfmathmax\states{}\edef\maxStates{\pgfmathresult}
+
   \pgfmathsetseed{5671243}
 
   \node :fill = { 0s         = "current value",
@@ -71,28 +77,32 @@
                   begin = 0.5s,
                   begin on = {end, of next = "apocalypse", delay = 1s},
                   }
-        [terminal] (T) at (3*\nStages-1.5, 1.5) {};
+        [terminal] (T) at (3*\nStages-1.5, 0) {} edge [in = 340, out=20, loop, action] ();
+        % [terminal] (T) at (3*\nStages-1.5, 1.5) {};
 
   \foreach \t in {\nStages,...,1} {
+    \pgfmathsetmacro{\nStates}{\states[\t-1]}
+
     \foreach \s in {\nStates,...,1} {
       % Grid of states
       \node :fill = { 0s = { exit control = {1}{0}, "gray!20" },
                       0.2s     = "orange",
                       0.8s     = "orange",
-                      1s = { entry control = {0}{1}, "gray!20" },
+                      1s = { entry control = {0}{1}, "gray!20!orange" },
                       begin on = {end, of = "state", delay = -0.2s},
                       name = "state",
-                      }
-        [state, draw = gray!40, outer sep = 2] (q\t\s) at (3*\t-3, 1.5*\s-1.5) {};
+                    }
+            [state, outer sep = 2] (q\t\s) at ({3cm*(\t-1)}, {1.5cm*(\s - (\nStates+1)/2)}) {};
 
       % Arraws going out of each state
       \ifthenelse{\t < \nStages}{
         \pgfmathtruncatemacro{\next}{\t + 1}
-        \pgfmathrandominteger{\bestaction}{1}{\nStates}
+        \pgfmathsetmacro{\nStatesNext}{\states[\t]}
+        \pgfmathrandominteger{\bestaction}{1}{\nStatesNext}
 
-        \foreach \ny in {1,...,\nStates} {
+        \foreach \ny in {1,...,\nStatesNext} {
             \ifnum \ny=\bestaction
-              \draw [action, animate ={pulse={\ny*100ms}}] (q\t\s) -- (q\next\ny);
+              \draw [action, animate ={pulse={\ny*100/\nStatesNext ms}}] (q\t\s) -- (q\next\ny);
             \else
               \draw :color = {
                       \ny*100ms = {exit control = {1}{0}, "orange"},

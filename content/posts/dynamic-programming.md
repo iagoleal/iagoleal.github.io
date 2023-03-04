@@ -731,7 +731,7 @@ function backward_induction()
   π  = Policy{States, Actions}()
   for t in N:1
     for s in States(t)
-      v[s], π[s] = findmin(a -> c(s, a) + γ*v[T(s, a)], Actions(s))
+      v[s], π[s] = findmin(a -> bellman(v, s, a), Actions(s))
     end
   end
   return π, v
@@ -793,7 +793,7 @@ function policy_evaluation(π, v0=zeros(States); tol)
     maxerr = 0
     for s in States
       prev = v[s]
-      v[s] = bellman(v, s, π(s))  # same bellman as defined for vale iteration
+      v[s] = bellman(v, s, π(s))  # same bellman as defined for value iteration
       maxerr = max(maxerr, abs(v[s] - prev))
     end
   end
