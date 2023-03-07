@@ -88,40 +88,8 @@ This description may seem overly complicated on text,
 but fortunately the nice folks in the Comp Sci department
 already invented diagrams that show these transitions nicely.
 
-
-```dot
-digraph "Plataformer State Machine" {
-  rankdir=LR;
-  size="8,5"
-
-  node [shape     = circle
-        style     = "solid,filled"
-        width     = 0.7
-        color     = black
-        fixedsize = shape
-        fillcolor = "#B3FFB3"];
-
-  A [label = "shooting"];
-  J [label = "jumping"];
-  W [label = "walking"];
-  I [label = "idle"];
-
-  I -> I [label = "do nothing"];
-  W -> W [label = "walk"];
-
-  I -> A [label = "attack"];
-  A -> I [label = "finish attack"];
-
-  I -> W [label = "walk"];
-
-  J -> I [label = "hit ground"];
-
-  W -> I [label = "stop"];
-
-  W -> J [label = "jump"];
-  I -> J [label = "jump"];
-}
-```
+<object data="state-machine.svg" type="image/svg+xml" width="100%">
+</object>
 
 Our modeling above is an instance of something called
 a _state machine_ or _automata_ if you're into Greek words.
@@ -609,8 +577,9 @@ by keeping track of the $\argmin$ whenever we solve an optimization problem.
 Below we see a Julia implementation of value iteration.
 
 ```julia
-
-function bellman(v, s, a)
+# The dynamics total cost of choosing action a at stage s,
+# given a future cost estimate v.
+function total_cost(v, s, a)
   cost(s, a) + γ*v[next(s, a)]
 end
 
@@ -622,7 +591,7 @@ function value_iteration(v0 ; tol)
     maxerr = 0
     for s in States
       prev = v[s]
-      v[s], π[s] = findmin(a -> bellman(v, s, a), Actions(s))
+      v[s], π[s] = findmin(a -> total_cost(v, s, a), Actions(s))
       maxerr = max(maxerr, abs(v[s] - prev))
     end
   end
@@ -716,11 +685,13 @@ We repeat this procedure until we reach the first stage.
 This calculates an optimal policy by induction,
 but moving "backwards" in time.
 
+<object data="backward-induction.svg" type="image/svg+xml">
+  <img src="backward-induction.svg"
+       alt=""
+       title="Backward induction algorithm"
+       width="100%"/>
+</object>
 
-<img src="backward-induction.svg"
-     alt=""
-     title="Backward induction algorithm"
-     width="100%"/>
 
 
 In Julia code, the algorithm looks like this:
@@ -731,7 +702,7 @@ function backward_induction()
   π  = Policy{States, Actions}()
   for t in N:1
     for s in States(t)
-      v[s], π[s] = findmin(a -> bellman(v, s, a), Actions(s))
+      v[s], π[s] = findmin(a -> total_cost(v, s, a), Actions(s))
     end
   end
   return π, v
@@ -793,7 +764,7 @@ function policy_evaluation(π, v0=zeros(States); tol)
     maxerr = 0
     for s in States
       prev = v[s]
-      v[s] = bellman(v, s, π(s))  # same bellman as defined for value iteration
+      v[s] = total_cost(v, s, π(s))  # same total cost function as defined for value iteration
       maxerr = max(maxerr, abs(v[s] - prev))
     end
   end
@@ -851,7 +822,7 @@ in a finite amount of steps.
 function policy_improvement(π0, v)
   π = copy(π0)
   for s in States
-    π[s] = argmin(a -> bellman(v, s, a), Actions(s))
+    π[s] = argmin(a -> total_cost(v, s, a), Actions(s))
   end
   return π
 end
@@ -933,42 +904,25 @@ and the actor may choose among different actions $a \in \Actions(s)$,
 each one incurring a certain cost[^sto-cost], to interact with it.
 This action affects the environment in some way that is out of reach to the actor
 (thus stochastic / non-deterministic), changing its state to $s' = T(s, a)$.
-This is illustrated in the diagram below.
+This is illustrated in the diagram below.[^ref-diagram-mdp]
 
 [^sto-cost]: It is also possible to define MDPs where the cost is stochastic.
 The formulations are equivalent, and one may choose which one best models the problem at hand.
 
-```dot
-digraph {
-  rankdir=LR;
-  compound=true;
+[^ref-diagram-mdp]: Loosely based on the diagram found in @{rl2018}.
 
-  {rank = source; A [label = "Actor"]};
+<object data="mdp.svg" type="image/svg+xml">
+  <img src="mdp.svg" alt="" title="Markov Decision Processes" />
+</object>
 
-  subgraph cluster_env{
-    rank = same;
-    label="Environment";
-    node [shape     = circle
-          style     = "solid,filled"
-          color     = black
-          fixedsize = shape
-          fillcolor = "#B3FFB3"];
-    s2 [label = "s'"];
-    s -> s2 [color = blue, label = "T(s,a)"];
-  }
-
-  A -> s:nw [label = "a"       lhead=cluster_env];
-  s:s -> A  [label = "c(s, a)" ltail=cluster_env];
-}
-```
 Allowing non-determinism opens the way for modeling a lot more cool situations.
 For example, robots that play video games!
 The states may be the internal state of the game or some partial observation of them
 that is available to the player
 and the actions are the buttons on the controller.
 The transitions are internal to the game and the costs are related to some winning/losing factor.
-Have you ever heard of Deep Mind's
-[Playing Atari with Deep Reinforcement Learning](https://arxiv.org/pdf/1312.5602v1.pdf) paper?
+Have you ever heard of @{atariDRL2013}'s
+_Playing Atari with Deep Reinforcement Learning_ paper?
 In it, they use reinforcement learning to train a robot capable of playing Atari 2600 games
 and all modeling is done via Markov decision processes in a way that is really similar
 to the discussion in this paragraph. I really recommend checking it out.

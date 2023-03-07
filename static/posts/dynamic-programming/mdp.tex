@@ -1,0 +1,60 @@
+\documentclass{standalone}
+
+\def\pgfsysdriver{pgfsys-dvisvgm.def}
+\usepackage{tikz,pgffor,ifthen}
+
+\usetikzlibrary{animations,positioning, arrows, arrows.meta, shapes.geometric, backgrounds, fit}
+\usetikzlibrary {decorations.pathmorphing} 
+
+\begin{document}
+
+\colorlet{smoothgray}{gray!80}
+\colorlet{smoothorange}{orange!70}
+
+\begin{tikzpicture}[
+  node distance = 2.5cm,
+  state/.style = {
+    circle,
+    minimum width = 0.7cm,
+    fill = gray!20,
+    draw = gray!40,
+    very thick,
+  },
+  terminal/.style = {rectangle, fill = black, scale = 1},
+  action/.style   = {
+    opacity = 0.8,
+    thin,
+    smoothgray,
+    text = black,
+    ->,
+    >={Kite[length=4pt,width=2.5pt,inset=1.5pt]},
+  },
+  animate/glow/.style = {
+    myself:fill = {0s="gray!20" base, 0.3s="smoothorange", freeze, begin on = mouse over},
+    myself:fill = {id = 2, 0s="current value", 0.3s="gray!20", freeze, begin on = mouse out },
+  },
+]
+
+  \node [shape=ellipse,draw = black, thick] (Actor) {Actor};
+  \node [state] (prev) [right = of Actor] {$s$};
+  \node [state] (next) [right = of prev]  {$s'$};
+
+  \begin{scope}[on background layer]
+    \node [rectangle, rounded corners, inner ysep=0.5cm,
+           fill = orange, fill opacity = 0.3, draw opacity = 0.5, draw = orange, ultra thick,
+           label = above:{Environment},
+           fit = (next) (prev)] (Env) {};
+  \end{scope}
+
+  \draw [action, decorate, thick, decoration={snake,amplitude=.4mm,segment length=2mm,post length=1mm}]
+    (prev) -- (next)
+      node [above,align=center,midway] {$T$};
+
+  \path [action, color=black]
+      (Actor) edge [out=15, in=170]  node [above]      {$a$}      (Env)
+      (Env)   edge [out=270,in=315]  node [below left] {$c(s,a)$} (Actor);
+\end{tikzpicture}
+
+\end{document}
+
+
