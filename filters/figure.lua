@@ -1,46 +1,83 @@
 local system = require "pandoc.system"
+local path   = require "pandoc.path"
 
 local fmt = string.format
 
--------------------
--- Caching
--------------------
+-----------------------------
+-- Shell-like functionality
+-----------------------------
 
-local function mkdir(dirname)
- os.execute("[ ! -d " .. dirname .. " ] && mkdir " .. dirname)
-end
-
-local cachedir = 'cache/'
-
-local function cache_fetch(fname)
-  local f = io.open(fname, 'rb')
-  if f then
-    local img = f:read("*all")
-    f:close()
-    return img
-  end
-end
-
-local function cache_write(fname, img)
-  mkdir(cachedir)
-  res, err, code = os.rename(cachedir, cachedir)
-  if res then
-    local f = io.open(fname, 'w')
-    if f then
-      f:write(img)
-      f:close()
-      return true
+local function memoize(f)
+  local memory = {}
+  return function(x)
+    local fx = memory[x]
+    if fx then
+      return fx
+    else
+      memory[x] = f(x)
+      return memory[x]
     end
   end
-  error(fmt("cache directory '%s' not found.", cachedir))
-  return false
+end
+
+local sha1 = memoize(pandoc.sha1)
+
+local function mkparent(fname)
+  return pandoc.system.make_directory(path.directory(fname), true)
+end
+
+local function file_exists(fname)
+  local f = io.open(fname, "r")
+  if f ~= nil then
+    io.close(f)
+    return true
+  else
+    return false
+  end
+end
+
+local function copy(source, target)
+  mkparent(target)
+  os.execute(fmt("cp --update --no-target-directory %s %s", source , target))
+end
+
+local function write(fname, img)
+  mkparent(fname)
+  local f = io.open(fname, 'w')
+  if f then
+    f:write(img)
+    f:close()
+    return true
+  else
+    error(fmt("Cannot write to file '%s'.", fname))
+  end
+end
+
+local function read(fname)
+  file = io.open(fname, 'rb')
+  if file then
+    local content = file:read("*all")
+    file:close()
+    return content
+  else
+    error(fmt("Cannot read from file '%s'.", fname))
+  end
 end
 
 -------------------
 -- Block types
 -------------------
+local template_tag = [[
+<object data="%s" type="image/svg+xml">
+  <img src="%s">
+</object>
+]]
 
-local tikz_template = [[
+local function format_tag(fname)
+  return template_tag:format(fname, fname)
+end
+
+local template_tikz = [[
 \documentclass{standalone}
 
 \def\pgfsysdriver{pgfsys-dvisvgm.def}
@@ -64,8 +101,20 @@ local tikz_template = [[
 \end{document}
 ]]
 
-local function format_tikz(body, env, pkgs, libs, preamble)
-  return tikz_template:format(pkgs, libs, preamble, env, body, env)
+local function format_tikz(block)
+    local pkgs     = block.attributes["usepackage"]  or ""
+    local libs     = block.attributes["tikzlibrary"] or ""
+    local preamble = block.attributes["preamble"]    or ""
+
+    local env
+    if     block.classes[1] == "tikz" then
+      env = "tikzpicture"
+    elseif block.classes[1] == "tikzcd" then
+      pkgs = pkgs .. ",tikz-cd"
+      env = "tikzcd"
+    end
+
+    return template_tikz:format(pkgs, libs, preamble, env, block.text, env)
 end
 
 local function islatex(s)
@@ -73,97 +122,52 @@ local function islatex(s)
 end
 
 -- Turn a latex string into an svg string.
-local function latex_to_svg(code)
+local function latex_to_svg(target, code)
   local tex2svg = system.get_working_directory() .. "/scripts/tex2svg"
-  return system.with_temporary_directory("tikz2image", function(tmpdir)
+  local svg = system.with_temporary_directory("tikz2image", function(tmpdir)
     return system.with_working_directory(tmpdir, function()
-      local file_template = "%s/tikz-image.%s"
-      local texfname = file_template:format(tmpdir, "tex")
-      local svgfname = file_template:format(tmpdir, "svg")
-      local file = io.open(texfname, 'w')
-      if file then
-        file:write(code)
-        file:close()
-      else
-        error "Cannot open output svg file"
-      end
+      local file_template = "%s/%s.%s"
+      local texfname = file_template:format(tmpdir, sha1(code), "tex")
+      local svgfname = file_template:format(tmpdir, sha1(code), "svg")
+
+      write(texfname, code)
       os.execute(fmt("%s %s %s", tex2svg, texfname, svgfname))
+
       -- Try to open and read the image:
-      local img_data
-      file = io.open(svgfname, 'rb')
-      if file then
-        img_data = file:read("*all")
-        file:close()
-      else
-        error "Cannot open output svg file"
-      end
-      return img_data
+      return read(svgfname)
     end)
   end)
+
+  write(target, svg)
 end
 
 -- Turn a string in Graphviz DOT language int on svg image.
-local function dot_to_svg(code)
-  local svgmin = system.get_working_directory() .. "/scripts/svg-minify"
-  return pandoc.pipe(svgmin, {}, pandoc.pipe("dot", {"-Tsvg"}, code))
+local function dot_to_svg(target, code)
+  mkparent(target)
+  return pandoc.pipe("dot", {"-Tsvg", "-o", target}, code)
 end
 
-local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' -- You will need this for encoding/decoding
--- encoding
-local function encodeURI(data)
-  return ((data:gsub('.', function(x)
-    local r,b='',x:byte()
-    for i=8,1,-1 do r=r..(b%2^i-b%2^(i-1)>0 and '1' or '0') end
-    return r;
-  end)..'0000'):gsub('%d%d%d?%d?%d?%d?', function(x)
-    if (#x < 6) then return '' end
-    local c=0
-    for i=1,6 do c=c+(x:sub(i,i)=='1' and 2^(6-i) or 0) end
-    return b:sub(c+1,c+1)
-  end)..({ '', '==', '=' })[#data%3+1])
-end
 
-local function mkblock(img)
-  local mimetype = 'image/svg+xml'
-  local content = "data:image/svg+xml;base64," .. encodeURI(img)
-  -- Store the data in the media bag:
-  pandoc.mediabag.insert(content, mimetype, img)
-  return pandoc.Para {pandoc.Image({}, content, "")}
+local function make_figure(svg_maker, content)
+  local page_path = path.make_relative(path.directory(PANDOC_STATE.output_file), "build")
+  local svgname   = sha1(content) .. ".svg"
+  local cachefile = path.join {"cache", page_path, svgname }
+  local buildfile = path.join {"build", page_path, svgname }
+
+  if not file_exists(cachefile) then
+    svg_maker(cachefile, content)
+  end
+
+  copy(cachefile, buildfile)
+  return pandoc.RawBlock("html", format_tag(svgname))
 end
 
 function CodeBlock(block)
-  local success, svg
-  -- Check for cached data
-  local cachefile = fmt("%s/%s.svg", cachedir, pandoc.sha1(block.text))
-  svg = cache_fetch(cachefile)
-  if svg then
-    return mkblock(svg)
-  end
-  -- Try code blocks
   if block.classes[1] == "dot" then
-    success, svg = pcall(dot_to_svg, block.text)
+    return make_figure(dot_to_svg, block.text)
   elseif islatex(block.classes[1]) then
-    local additionalpkgs = block.attributes["usepackage"]  or ""
-    local tikzlibs       = block.attributes["tikzlibrary"] or ""
-    local preamble       = block.attributes["preamble"]    or ""
-    local latexenv
-    if     block.classes[1] == "tikz" then
-      latexenv = "tikzpicture"
-    elseif block.classes[1] == "tikzcd" then
-      additionalpkgs = additionalpkgs .. ",tikz-cd"
-      latexenv = "tikzcd"
-    end
-    local fullsrc  = format_tikz(block.text, latexenv, additionalpkgs, tikzlibs, preamble)
-    success, svg = pcall(latex_to_svg, fullsrc)
+    return make_figure(latex_to_svg, format_tikz(block))
   else
     return
-  end
-  if success then
-    cache_write(cachefile, svg)
-    return mkblock(svg)
-  else
-    io.stderr:write(tostring(svg))
-    io.stderr:write('\n')
-    error "Image conversion failed"
   end
 end

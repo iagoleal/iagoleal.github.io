@@ -43,7 +43,7 @@ p {
   }
 }
 
-img,video {
+img,video,object {
   margin: auto;
   display: block;
   max-width: 100%;
