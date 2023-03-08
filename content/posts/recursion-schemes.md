@@ -1330,12 +1330,27 @@ If you're not impressed, take a look at the call tree generated for $n=100$
 and see how it requires much less than 100 computations!
 Better yet, to compute $e^{200}$, this tree would have to be augmented by only one node.
 
-```forest
-for tree={grow''=east,draw},
-[square, for tree={draw}
-    [square [mult [e]
-                  [square [square [square [mult [e]
-                                                [square [e]]]]]]]]]
+```tikz
+\begin{scope}[every node/.style = {rectangle, rounded corners, draw=black}]
+  \node {square} [grow=right]
+    child {node {square}
+      child {node {mult}
+        child {node {e}}
+        child {node {square}
+          child {node {square}
+            child {node {square}
+              child {node {mult}
+                child {node {e}}
+                child {node {square}
+                  child {node {e}}
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+\end{scope}
 ```
 
 Hylomorphisms really shine when an algorithm

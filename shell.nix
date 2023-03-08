@@ -2,14 +2,13 @@ let
   pkgs = import <nixpkgs> {};
   tex = (pkgs.texlive.combine {
     inherit (pkgs.texlive) scheme-medium
-      dvisvgm amsmath
-      standalone forest tikz-cd;
+      dvisvgm amsmath standalone tikz-cd;
   });
 in
-pkgs.stdenv.mkDerivation {
+pkgs.mkShell {
   name = "site";
 
-  buildInputs = with pkgs; [
+  packages = with pkgs; [
       # Workhorse
       gnumake
       pandoc   # 2.18

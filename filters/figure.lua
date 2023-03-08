@@ -69,7 +69,7 @@ local function format_tikz(body, env, pkgs, libs, preamble)
 end
 
 local function islatex(s)
-  return s == "tikz" or s == "tikzcd" or s == "forest"
+  return s == "tikz" or s == "tikzcd"
 end
 
 -- Turn a latex string into an svg string.
@@ -152,9 +152,6 @@ function CodeBlock(block)
     elseif block.classes[1] == "tikzcd" then
       additionalpkgs = additionalpkgs .. ",tikz-cd"
       latexenv = "tikzcd"
-    elseif block.classes[1] == "forest" then
-      additionalpkgs = additionalpkgs .. ",forest"
-      latexenv = "forest"
     end
     local fullsrc  = format_tikz(block.text, latexenv, additionalpkgs, tikzlibs, preamble)
     success, svg = pcall(latex_to_svg, fullsrc)
