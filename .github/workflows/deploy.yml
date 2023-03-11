@@ -43,7 +43,7 @@ jobs:
         key: ${{ runner.os }}-assets
 
     - name: Build Site
-      run: nix-shell --pure --run "make"
+      run: nix-shell --pure --run "make -j"
 
     # Deployment step
     - name: Setup Pages
