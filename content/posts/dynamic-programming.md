@@ -685,7 +685,7 @@ We repeat this procedure until we reach the first stage.
 This calculates an optimal policy by induction,
 but moving "backwards" in time.
 
-<object data="backward-induction.svg" type="image/svg+xml">
+<object data="backward-induction.svg" type="image/svg+xml" width="100%">
   <img src="backward-induction.svg"
        alt=""
        title="Backward induction algorithm"

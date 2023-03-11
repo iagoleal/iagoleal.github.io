@@ -445,7 +445,10 @@ may be "factorized" into its first element and another list with the remaining $
 ``` {.tikz
       tikzlibrary="calc,shapes.multipart,chains,arrows, arrows.meta,scopes"}
 \begin{scope}[list/.style={rectangle split, rectangle split parts=2,
-                           draw, rectangle split horizontal}, >=stealth, start chain]
+                           rounded corners, draw, rectangle split horizontal},
+              >=stealth,
+              start chain,
+             ]
   \node[list,on chain] (A) {$10$};
   \node[list,on chain] (B) {$150$};
   \node[list,on chain] (C) {$87$};

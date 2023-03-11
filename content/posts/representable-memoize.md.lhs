@@ -54,7 +54,9 @@ digraph "Sequences are functions" {
         fillcolor = invis];
 
   f [shape = square
-     fillcolor = red];
+     style = "rounded,filled"
+     fillcolor = "#CAB3E8"
+    ];
 
   subgraph cluster_s {
     rank = same;
@@ -74,7 +76,7 @@ digraph "Sequences are functions" {
     0 -> 1 -> 2 -> 3 -> ldots;
   }
 
-  edge [dir=both,arrowhead=odot, arrowtail=odot, color="#00000055"];
+  edge [dir=both,arrowhead=odiamond, arrowtail=none, color="#b8b8b8"];
 
   f -> {0,1,2,3, ldots};
 
