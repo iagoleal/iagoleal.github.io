@@ -35,7 +35,7 @@ to then emerge with a concept with clear and practical applications!
 > import Data.Kind (Type)
 
 Sequences are functions that do not forget
-------------------------------------------
+==========================================
 
 ```dot
 digraph "Sequences are functions" {
@@ -162,7 +162,7 @@ I don't know about you, but I find this very cool indeed.
 
 
 Memoizing with recursion
-------------------------
+========================
 
 A large inspiration to this post comes from the great introduction to memoization in the
 [Haskell wiki](https://wiki.haskell.org/Memoization).
@@ -247,7 +247,7 @@ As Orwell would put it: in terms of execution, some equals are more equal than o
 
 
 A Call for Representation
--------------------------
+=========================
 
 Very well, What is a function `k -> a` after all?
 The textbook definition says it is a rule
@@ -330,7 +330,7 @@ Well, this is equivalent to our naive approach from before.
 
 
 Speeding up the Fibonacci even more
------------------------------------
+===================================
 
 With our Representable machinery all set,
 it would be a shame to end this post with just one
@@ -453,7 +453,7 @@ and branch accordingly until we're looking for the zeroth index.
 
 
 Farewell
---------
+========
 
 With this we finish our stroll through memoization-land.
 By the way, this post is a [literate haskell file](https://github.com/iagoleal/iagoleal.github.io/blob/master/content/posts/representable-memoize.md).
@@ -465,10 +465,8 @@ so I might need a better benchmark in there.
 
 
 References
-----------
+==========
 
 - Much of the Fibonacci example is adapted from [the Haskell wiki page on memoization](https://wiki.haskell.org/Memoization).
 - [Chapter 14](https://hackage.haskell.org/package/adjunctions) of Bartosz Milewski's great book _Category Theory for Programmers_.
 - The [adjunctions](https://hackage.haskell.org/package/adjunctions) package on Hackage.
-
-

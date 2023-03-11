@@ -80,7 +80,8 @@ instead of confining this post only to people that know a certain programming la
 Of course, in doing that I'm risking that no one besides me will actually understand this post.
 But, very well, I will do my best.
 
-## A not so historical introduction {#sec:intro}
+A not so historical introduction {#sec:intro}
+=============================================
 
 We begin our journey in the prehistory of programming;
 that time when computers where still mostly made of coconuts and mammoth fur.
@@ -281,7 +282,8 @@ Similarly, it is natural to deal with `union` types using `switch` statements
 Recursion schemes will arise as an analogous to this idea in the functional programming setting.
 So far so good for motivation, let's dive into some math.
 
-##  Algebraic Data Types {#sec:ADT}
+Algebraic Data Types {#sec:ADT}
+===============================
 
 The simplest form to write a type is by enumerating its elements
 such as
@@ -422,7 +424,8 @@ $$\N = \op{zero} \mid \op{succ} \N.$$
 If we alter the tag names,
 this tells us that $\N$ is a fixed point of $\maybe$ as expected.
 
-### An example with lists {#sec:lists}
+An example with lists {#sec:lists}
+----------------------------------
 
 The natural numbers are surely the most famous example of an inductive type.
 Nevertheless,
@@ -583,7 +586,8 @@ I hope you liked these examples because the next step in our journey
 is generalizing $\op{reduce}$ to any inductive data type!
 To achieve this, we must pass through the land of category theory.
 
-## A walk through the land of categories {#sec:categories}
+A walk through the land of categories {#sec:categories}
+=======================================================
 
 While the previous sections dealt more with programming,
 this one leans more to the mathematical side.
@@ -745,7 +749,8 @@ and pass $f$ to each of its arguments according to one of the following rules:
 3. If the term is of type $F X$ for some functor $F$, apply $F\,f$ to it.
 4. Otherwise, just return the term itself.
 
-### Functors and their fixed points {#sec:f-algebras}
+Functors and their fixed points {#sec:f-algebras}
+-------------------------------------------------
 
 Now we know that both the natural numbers and lists aren't just the fixed points
 of ordinary type operators but of functors from $\Types$ to itself.
@@ -821,7 +826,8 @@ $$ \in \circ g = (Fg) \circ (F\in) = F(g \circ \in) = F(\id) = \id.$$
 Therefore, $g$ is an inverse to $\in$, concluding the proof.
 :::
 
-## Using catastrophes in your favor {#sec:cata}
+Using catastrophes in your favor {#sec:cata}
+============================================
 
 We finally have the necessary tools to define our first
 recursion scheme in all its glory and generality.
@@ -1029,7 +1035,8 @@ then $\cata f$ is also guaranteed to eventually stop;
 As a lot of applications use finite data,
 this facilitates a lot the act of debugging a program.
 
-## Taking your functions to the gym {#sec:ana}
+Taking your functions to the gym {#sec:ana}
+===========================================
 
 Collapsing a data structure into a value
 has many use cases but is not the end of the story.
@@ -1216,7 +1223,8 @@ Imagine if any OS terminated after a finite amount of steps...
 No, what we want is for the OS to run indefinitely
 producing some well-defined actions in finite time.
 
-## Building up to a collapse {#sec:hylo}
+Building up to a collapse {#sec:hylo}
+=====================================
 
 By now, we've seem two kinds of recursion schemes.
 Anamorphisms start with a seed value and end with a data structure constructed from it,
@@ -1429,7 +1437,8 @@ For short, when thinking about hylomorphisms,
 use the definition as an anamorphism followed by a catamorphism
 but when actually implementing one, use this formula instead.
 
-## Summary {#sec:conclusion}
+Summary {#sec:conclusion}
+=========================
 
 This was a long journey but we finally got to the end.
 Throughout it we met with our three heroes:

@@ -33,7 +33,7 @@ But if you want to adapt it to some other type such as `Vector` or `Array`,
 I think the conversion should be pretty straightforward.
 
 The Discrete Fourier Transform
-------------------------------
+==============================
 
 One way to look at the discrete Fourier transform
 is as a exchange between orthonormal bases on $\C^N$.
@@ -90,7 +90,7 @@ Although this is not monstrous, it can be a bottleneck for real-time computation
 Fortunately we can do better than this.
 
 The Fast Fourier Transform
---------------------------
+==========================
 
 The function `dft` implements the Fourier transform exactly as it is defined.
 However, if you take a look at the coefficients used,
@@ -186,7 +186,7 @@ we can apply both the reconstruction formulas and then concatenate the results.
 >   g k e o = e - cis (-2 * pi * k / dim) * o
 
 Conclusion
-----------
+==========
 
 The main advantage of writing code like this is that it is extremely modularized.
 We have many small almost-independent snippets of code

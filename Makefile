@@ -49,6 +49,7 @@ define generate_post
   $(shell [ ! -d $(@D) ] && mkdir -p $(@D))
   $(PANDOC) --defaults=pandoc.yaml \
             --template=templates/post.html \
+            --shift-heading-level-by=1 \
     -f $(3) -o "$(2)" "$(1)"
 endef
 

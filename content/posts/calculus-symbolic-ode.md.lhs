@@ -41,7 +41,7 @@ simply by writing the equivalent Haskell definition:
 
 
 Calculus with Infinite Lists
-----------------------------
+============================
 
 > {-# LANGUAGE DeriveFunctor, DeriveFoldable, NoMonomorphismRestriction #-}
 > import Data.Foldable (toList)
@@ -291,7 +291,7 @@ are much more optimized than one could hope to be when solving by hand.
 
 
 This is indeed an automatic method
-----------------------------------
+==================================
 
 To sum everything up, I want to note a cool fact
 that I've only realized after writing the entire post:
@@ -324,14 +324,14 @@ by applying $f$ to a suitable Stream.
 
 
 Acknowledgements
-----------------
+================
 
 This post gained life thanks to the enthusiasm of João Paixão and Lucas Rufino.
 João sent me the paper and we three had some fun chats about its significance,
 including becoming perplexed together about how little code we actually needed to implement this.
 
 References {#refs}
-------------------
+==================
 
 The [Numeric.AD.Mode.Tower](https://hackage.haskell.org/package/ad-4.5.2/docs/Numeric-AD-Mode-Tower.html)
 module of the [ad package](https://hackage.haskell.org/package/ad).

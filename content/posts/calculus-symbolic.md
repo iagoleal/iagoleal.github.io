@@ -40,7 +40,8 @@ Well, enough rambling. Time to do some programming!
 But it has been almost a week and I have the memory of a goldfish.
 The intention is preserved thought.
 
-## Please be rational
+Please be rational
+==================
 
 Before delving into the depths of first-year undergraduate math,
 let's take a step back and start with something simpler: _rational functions_.
@@ -122,7 +123,8 @@ ghci> eval p 2
 it :: Fractional a => a
 ```
 
-### What is a number after all?
+What is a number after all?
+---------------------------
 
 One nicety about languages like Haskell
 is that they are not only good for writing DSls,
@@ -195,7 +197,8 @@ ghci> eval (X^2 + 3) (X + 1)
 it :: Fractional a => Fraction a
 ```
 
-### Enough arithmetic, it's Calculus time
+Enough arithmetic, it's Calculus time
+-------------------------------------
 
 Alright, alright. Time to finally teach some calculus.
 Remember all the lectures, all the homework...
@@ -215,7 +218,8 @@ Well, that's it.
 Now that we've tackled the rational functions,
 let's meet some old friends from Calculus again.
 
-## Elementary Functions
+Elementary Functions
+====================
 
 In calculus, besides rational functions,
 we also have sines, cosines, exponentials, logs
@@ -281,7 +285,8 @@ instance Floating a => Floating (Expr a) where
  atanh x = (log (1 + x) - log (1 - x)) / 2
 ```
 
-### Time to update our methods
+Time to update our methods
+--------------------------
 
 We already have our type and its instances.
 Now it is time to also consider derivatives
@@ -360,14 +365,16 @@ It can write any elementary function as normal Haskell code,
 evaluate them, and symbolically differentiate them.
 So what do you think?
 
-## What's next?
+What's next?
+============
 
 Although we finished our differentiator,
 there are a couple of topics that I think are worth discussing
 because they are simple enough to achieve
 and will make our program a lot more polished or fun to play with.
 
-### Simplifier
+Simplifier
+----------
 
 Definitely the least elegant part of our program is the expression simplifier.
 It is as straightforward as the rest,
@@ -466,7 +473,8 @@ and think of the representation choices we made along this post.
 There are many equivalent ways to write the same thing,
 forcing us to keep track of all those equivalence relations.
 
-### Taylor series
+Taylor series
+-------------
 
 One of the niceties of working with a lazy language
 is how easy it is to work with infinite data structures.
@@ -519,7 +527,8 @@ ghci> eval (g 10) 1
 it :: (Floating a, Eq a) => a
 ```
 
-## Acknowledgements
+Acknowledgements
+================
 
 This post only exists thanks to the great chats I had with João Paixão and Lucas Rufino.
 Besides listening to me talking endlessly about symbolic expressions and recursion,

@@ -65,7 +65,7 @@ Finding the best energy dispatch is once again solved via dynamic programming.
 [^dp-name]: Even Richard Bellman admittedly named it based [on how cool it sounds](https://en.wikipedia.org/wiki/Dynamic_programming#History).
 
 On Decision-Making and State Machines
--------------------------------------
+=====================================
 
 Before delving into dynamic programming per se, we first have to establish a few concepts.
 After all, it's always best to know which problems you intend to solve
@@ -111,7 +111,8 @@ An example is Stochastic Dual Dynamic Programming,
 which is based upon linear programming duality
 and thus requires the state space to be a convex subset of $\R^n$.
 
-### The Dynamics of Decision-Making
+The Dynamics of Decision-Making
+-------------------------------
 
 Iterating the transition $T$ establishes a dynamics for our system
 where we start at an initial state $s$ and by taking a sequence of actions
@@ -202,7 +203,8 @@ $$
 
 thus guaranteeing that the value function is well-defined.
 
-### Optimal Decisions
+Optimal Decisions
+-----------------
 
 Having multiple courses of action possible
 prompts us to ask which is the best one possible.
@@ -240,7 +242,7 @@ Before we continue,
 let's go over a little tangent on how to formulate some classical problems
 in this decision making framework.
 
-#### Example: Shortest Path in a Graph
+### Example: Shortest Path in a Graph
 
 Suppose you are at your hometown
 and just received a message from a friend
@@ -272,7 +274,8 @@ Finding the shortest path from $s$ to node $z$
 is the same as setting the initial state to $s$ and making $z$
 a terminal state of our dynamics.
 
-## Dynamic Programming
+Dynamic Programming
+===================
 
 Alright, it's finally time to solve those decision problems.
 The simplest idea could be to exhaustively search the space of all actions
@@ -392,7 +395,8 @@ Even more: we can think of the Bellman equation as a recursive specification
 for the decision problems and of dynamic programming
 as any problem-specific implementation that solves it.
 
-### Existence, Uniqueness and Fixed Points {#fixed-point}
+Existence, Uniqueness and Fixed Points {#fixed-point}
+-----------------------------------------------------
 
 It is time to get deeper into analysis.
 Whenever mathematicians see a recursive relation such as the Bellman equation,
@@ -528,7 +532,8 @@ we can use the Bellman operator to update our value function
 until it converges towards the optimal.
 This is the next section's topic.
 
-### Solving the Bellman Equation
+Solving the Bellman Equation
+----------------------------
 
 For this section, let's assume that both
 the state $\States$ and action $\Actions(s)$ spaces are finite.
@@ -541,7 +546,7 @@ or even to finite spaces that are too huge to explore entirely,
 via something called Approximate Dynamic Programming or Reinforcement Learning.
 But this is a story for another night...
 
-#### Value Iteration
+### Value Iteration
 
 From the previous discussion,
 we learned that iterating the Bellman operator
@@ -637,7 +642,7 @@ which one is faster being generally problem-dependent.
 This is why I think it is best to think of DP not as an algorithm
 but as a principle that encompasses many similar algorithms.
 
-##### Backward Induction over a Finite Horizon
+#### Backward Induction over a Finite Horizon
 
 Let's take look at a typical scenario where we can exploit
 the state space structure to make value iteration much faster:
@@ -727,7 +732,7 @@ on the costs being real numbers. In this case any ordered ring
 But I digress... This is out of scope for this post.
 
 
-#### Policy Iteration
+### Policy Iteration
 
 One issue with value iteration is that all policy calculations are implicit,
 since we just work with value functions.
@@ -736,7 +741,7 @@ the algorithm to improve the estimate for the value function.
 In this section, let's see how we can directly calculate an optimal policy
 in a finite number of steps.
 
-##### Policy Evaluation
+#### Policy Evaluation
 
 Our next question is then how to calculate the cost associated with a policy.
 Let's say somebody gave you a policy $\pi$ and told you nothing more about it.
@@ -776,7 +781,7 @@ Notice the similarity with value iteration.
 The only difference is on the update rule:
 instead of choosing an optimal action, we just follow along with the policy.
 
-##### Policy Improvement
+#### Policy Improvement
 
 After we know a policy and its value function,
 our next question is how to improve it.
@@ -849,7 +854,8 @@ Again it is useful to think of policy iteration more as a principle
 than as an algorithm in itself and adapt the steps to consider
 any problem specific information that may be available.
 
-## What Can Dynamic Programming solve?
+What Can Dynamic Programming solve?
+===================================
 
 Ok, it's time to recapitulate a bit.
 We started our journey looking at automata and controllable dynamics,
@@ -886,7 +892,8 @@ a great place to start is @{bertsekasADP}'s book.
 Alright, this post is becoming too abstract for my taste.
 Let's dive into a couple examples to see why this generalization is cool.
 
-### Stochastic Dynamic Programming
+Stochastic Dynamic Programming
+------------------------------
 
 Until now, we've only dealt with deterministic processes.
 Life, on the other hand, is full of uncertainty and, being a nice applied field,
@@ -962,7 +969,8 @@ Hence, the tools of value and policy iteration are also readily available to sol
 The optimization problems are harder, because of the expected value,
 but conceptually it is the same.
 
-### Solving Recurrence Relations
+Solving Recurrence Relations
+----------------------------
 
 This last example is actually pretty simple
 and using the full power we've developed is a real overkill.
@@ -1036,7 +1044,8 @@ but taking into account the order of states.
 
 ![](fibonacci-backward-induction.webm)
 
-## End of our Journey
+End of our Journey
+==================
 
 Well, we finally reached the end of our overview of dynamic programming.
 I sincerely hope it was as fun for you to read as it was for me to write.
@@ -1055,7 +1064,8 @@ Farewell and see you next time!
 They're everywhere!
 
 
-## Acknowledgements
+Acknowledgements
+================
 
 This post come to life after a series of conversations I had
 with [Pedro Xavier](https://pedromxavier.github.io).
@@ -1066,7 +1076,8 @@ Sometimes you even learn enough to write a blog post about it.
 I'm also in debt with Ivani Ivanova for being such a great typo hunter.
 If there is any typo left, it is because I'm lazy... She did a marvelous job.
 
-## Appendix (Proofs of Convergence)
+Appendix (Proofs of Convergence)
+================================
 
 In this appendix we show that the Bellman Operator
 

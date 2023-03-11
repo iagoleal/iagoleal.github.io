@@ -64,7 +64,8 @@ Indeed, if we know the random variables,
 we can even measure this length through
 nothing more, nothing less than the Pythagorean Theorem!
 
-## The Geometry of Random Variables
+The Geometry of Random Variables
+================================
 
 Let's begin by laying the groundwork.
 Suppose that we're considering an event with a finite amount (let's say $N$)
@@ -185,7 +186,8 @@ the random variable into the line of constants.
 So, let's proceed by considering how to project vectors into subspaces.
 
 
-### Where are all the probabilities?
+Where are all the probabilities?
+--------------------------------
 
 Possibly you noticed that until now, we never used the probabilities.
 The random variables represent values attached to some non-deterministic outcome
@@ -282,7 +284,8 @@ $$
 $$
 
 
-## What about the mean?
+What about the mean?
+====================
 
 Recall that what an inner product essentially
 defines are notions of distances and angles between vectors.
@@ -358,7 +361,8 @@ $$
 [^pun-E]: ba dum tss.
 
 
-### Let's gather more old friends
+Let's gather more old friends
+-----------------------------
 
 We just defined the average of $X$ through the closest constant to it.
 A question that naturally arises is how well this represents $X$.
@@ -427,7 +431,8 @@ Well, in usual statistical parlance,
 the farther the correlation is from zero, the closer the random variables are
 from being linear functions from one another, i.e. $Y = aX + b$.
 
-## Do we really need those squares?
+Do we really need those squares?
+================================
 
 Up until this point,
 we only considered distances the "classical" or Euclidean sense.
@@ -489,7 +494,8 @@ Try to prove that it is the _mode_[^mode-def] of $X$!
 
 [^mode-def]: The _mode_ is the value returned with the greatest probability.
 
-## Acknowledgements
+Acknowledgements
+================
 
 When I started thinking of these ideas, I talked about them to Hugo Nobrega and João Paixão.
 This post only came to life because of how excited they got with it.

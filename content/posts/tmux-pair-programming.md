@@ -36,7 +36,8 @@ using two terminals on the same machine (but still connecting via ssh).
 
 [^game-side-project]: More on this on another post (someday, I hope).
 
-## The Setup
+The Setup
+=========
 
 Since both my friend and I are already Linux and (neo)vim users,
 it seemed reasonable to look for a terminal based setup.
@@ -50,7 +51,7 @@ After that, we just have to navigate to the project's folder
 and play with it as we wish.
 
 Of course most of the steps above will be automatic.
-And did I already mention that it is only possible 
+And did I already mention that it is only possible
 to stay connected via ssh while the tmux session exists?
 
 I tested this with my machine running Arch Linux as host
@@ -70,9 +71,12 @@ change `pacman` for your system's package manager (`apt`, `yum`, `xbps` etc.),
 maybe change the location of a couple configuration folders
 and substitute `systemctl` by whatever service manager you may use.
 
-## Configuration steps (on host)
+Configuration steps (on host)
+=============================
 
-### Install everything
+Install everything
+------------------
+
 
 We begin by ensuring everything we need is installed.
 On the host system we need a ssh server
@@ -100,7 +104,8 @@ so some kind of port forwarding or reverse tunneling is more than needed.
 
 Also ensure that you have a terminal based text editor: neovim, vim, emacs, nano, ed etc.
 
-### Setup an user for the remote client
+Setup an user for the remote client
+-----------------------------------
 
 I must admit that I don't really like giving ssh permissions for my personal user.
 Even though I trust my friends[^robbery],
@@ -119,7 +124,8 @@ sudo passwd frienduser
 
 [^robbery]: I don't trust someone who may steal their machine and ssh into mine though.
 
-### Setup a group with both your user and the new user
+Setup a group with both your user and the new user
+--------------------------------------------------
 
 Now we create a group for both our users.
 I will call it `tmux`, perhaps unimaginatively,
@@ -132,7 +138,8 @@ sudo usermod -a -G tmux youruser
 sudo usermod -a -G tmux frienduser
 ```
 
-### Time to call your friend
+Time to call your friend
+------------------------
 
 This is the only step on the setup that you will need to call your friend.
 Send him a message asking for his public key.
@@ -161,7 +168,8 @@ a private key (`id_rsa`) and a public key (`id_rsa.pub`).
 One should **never** send the private key.
 :::
 
-### Authorize your friend's key
+Authorize your friend's key
+---------------------------
 
 Now that you have the key at hand,
 you must let ssh know of it.
@@ -183,7 +191,8 @@ This is discussed more when
 As a positive side effect,
 the connection will only be accepted if the session exists.
 
-### Extra step: configure the SSH Server
+Extra step: configure the SSH Server
+------------------------------------
 
 This section is totally optional and is here just to added security.
 On some distros, the OpenSSH server defaults to only accept
@@ -207,7 +216,8 @@ Also know that these changes only apply after you
 [^user-cfg]: Beware to not mix this up with `/etc/ssh/ssh_config`,
 the file where OpenSSH stores the _client_ configuration.
 
-### Extra step: configure tmux for multiple clients
+Extra step: configure tmux for multiple clients
+-----------------------------------------------
 
 When multiple clients connect to the same tmux session,
 it will by default resize the screen on each command
@@ -223,9 +233,11 @@ Now tmux will always use the smallest size among all clients,
 so it is a good idea to tell everybody working on this setup
 to use their terminals on fullscreen.
 
-## Start Pair Programming (you)
+Start Pair Programming (you)
+============================
 
-### Start the SSH Server
+Start the SSH Server
+--------------------
 
 You should start by guaranteeing that the ssh server daemon
 is running.
@@ -257,7 +269,8 @@ sudo service ssh start
 
 [^wsl]: I know what you're thinking... But I really need Windows for ~~gaming~~ work.
 
-### Create the shared tmux session
+Create the shared tmux session
+------------------------------
 
 We will store the shared session in a temporary file
 that can be accessed both by your and your friend's user.
@@ -286,7 +299,8 @@ chmod g+rw /tmp/sharedtmux
 
 This way, both of them will have total control of the tmux process.
 
-### Start ngrok tunnel
+Start ngrok tunnel
+------------------
 
 If you followed the steps on ngrok's manual,
 it should suffice to run a tcp connection on port 22
@@ -312,7 +326,8 @@ If you exit it, the process will be killed and the tunnel closed.
 :::
 
 
-### Attach to the shared session
+Attach to the shared session
+----------------------------
 
 Now, in a new terminal you can attach to the tmux session
 and wait for your friend to connect.
@@ -321,7 +336,8 @@ and wait for your friend to connect.
 tmux -u -S /tmp/sharedtmux attach -t gamemaking
 ```
 
-## Start Pair Programming (friend)
+Start Pair Programming (friend)
+===============================
 
 Provided your friend's key is already setup,
 all you have to do is copy the ngrok port and hostname and send it.
@@ -334,7 +350,8 @@ ssh -t -p PORT frienduser@HOST
 Now you're ready to go!
 Have fun programming together!
 
-## Extra Step: Query ngrok info from command line
+Extra Step: Query ngrok info from command line
+==============================================
 
 Although the setup above works,
 there is something in it that really bothers me:
@@ -358,7 +375,8 @@ curl -s http://localhost:4040/api/tunnels \
   | sed -nE 's|.*"public_url":"tcp://([^:]*):([0-9]*)".*|\1 \2|p'
 ```
 
-## Extra Step: Turn all that into a script
+Extra Step: Turn all that into a script
+=======================================
 
 Now that we solved the last bit of manual work,
 we can put everything together in a script
@@ -419,7 +437,8 @@ fi
 tmux -u -S "$tmux_file" attach -t "$tmux_session"
 ```
 
-## References
+References
+==========
 
 1. [Using SSH and Tmux for screen sharing](https://www.redhat.com/sysadmin/ssh-tmux-screen-sharing)
 2. [How to pair-program remotely and not lose the will to live](https://queenofdowntime.com/blog/remote-pair-programming)

@@ -35,7 +35,8 @@ module Calculus.AutoDiff where
 import Calculus.Expression
 ```
 
-## On polymorphism, evaluation and reflection
+On polymorphism, evaluation and reflection
+==========================================
 
 Recall our evaluation function from the previous post.
 Its signature was
@@ -109,7 +110,8 @@ Or, if we know how to do some interesting operation with functions,
 we can do the opposite process and apply it to our expression!
 This will be our focus on the next section.
 
-## Automatic Differentiation
+Automatic Differentiation
+=========================
 
 In math, derivatives are concisely defined via a limiting process:
 $$ f'(x) = \lim_{\varepsilon \to 0}\frac{f(x + \varepsilon) - f(x)}{\varepsilon}. $$
@@ -156,7 +158,8 @@ As we will see, we will even be able to recover symbolic differentiation
 as a subcase of automatic differentiation.
 
 
-### Dual Numbers
+Dual Numbers
+------------
 
 Here we will do the simplest case of automatic differentiation,
 namely _forward-mode AD_ using [dual numbers](https://en.wikipedia.org/wiki/Dual_number).
@@ -276,7 +279,9 @@ instance Floating a => Floating (Dual a) where
  atanh = fstOrd atanh (\x -> 1 / (1 - x^2))
 ```
 
-### Derivatives of functions
+Derivatives of functions
+------------------------
+
 
 Now that we have setup all the dual number tooling,
 it is time to calculate some derivatives.
@@ -314,7 +319,8 @@ But, for our use case it is fine because we can specialize this signature to
 autoDiff :: (forall a . Floating a => a -> a) -> (forall a . Floating a => a -> a)
 ```
 
-### Derivatives of expressions
+Derivatives of expressions
+--------------------------
 
 Recall we can use `eval` to turn an expression into a function
 and, reciprocally, we can apply a polymorphic function to the constructor `X`
@@ -386,7 +392,8 @@ ghci> diff (sin (X^2) :: Expr Double)
 it :: Expr Double
 ```
 
-## References
+References
+==========
 
 * [ad package on Hackage](https://hackage.Haskell.org/package/ad)
 * [The Simple Essence of Automatic Differentiation](https://arxiv.org/pdf/1804.00746.pdf) by Conal Elliott.
