@@ -285,7 +285,7 @@ instance Floating a => Floating (Expr a) where
  atanh x = (log (1 + x) - log (1 - x)) / 2
 ```
 
-Time to update our methods
+Time to update our methods {#sec:floating-calculus}
 --------------------------
 
 We already have our type and its instances.
