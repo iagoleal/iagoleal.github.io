@@ -10,13 +10,17 @@ date: 2023-03-11
 \def\E{\mathbb{E}}
 \def\Bellman{\mathcal{B}}
 
-> {-# LANGUAGE PackageImports #-}
-> {-# LANGUAGE AllowAmbiguousTypes #-}
+> {-# LANGUAGE PackageImports                           #-}
+> {-# LANGUAGE TypeApplications,    AllowAmbiguousTypes #-}
+> {-# LANGUAGE ScopedTypeVariables, RankNTypes          #-}
+> {-# LANGUAGE KindSignatures,      GADTs               #-}
 > import "array" Data.Array
 > import         Data.Proxy ( Proxy(Proxy) )
 > import         GHC.TypeNats ( KnownNat, Natural, Nat, natVal )
 > import         Data.Kind (Type)
 > import         Data.List (foldl')
+> import         Control.Applicative
+
 
 Classical Shortest Paths
 ========================
@@ -189,27 +193,27 @@ by defining a `Semiring` class.
 
 > class Semiring r where
 >  zero,  one   :: r
->  (.+.), (.*.) :: r -> r -> r
+>  (|+|), (|*|) :: r -> r -> r
 >  closure      :: r -> r
 >
-> infixl 6 .+.
-> infixl 7 .*.
-> infixl 8 .^.
+> infixl 6 |+|
+> infixl 7 |*|
+> infixl 8 |^|
 
 For simplicity, let's also define an exponentiation operator
 using the classic divide-and-conquer formula.
 
-> (.^.) :: (Semiring r, Integral n) => r -> n -> r
-> x .^. 0 = one
-> x .^. n | even n    = x .^. div n 2 .*. x .^. div n 2
->         | otherwise = x .*. x .^. (n-1)
+> (|^|) :: (Semiring r, Integral n) => r -> n -> r
+> x |^| 0 = one
+> x |^| n | even n    = x |^| div n 2 |*| x |^| div n 2
+>         | otherwise = x |*| x |^| (n-1)
 
 There are also a bunch of laws that an element of this class must obey.
 Since those are all pretty standard, I will just direct you to the
 [Wikipedia article on the topic](https://en.wikipedia.org/wiki/Semiring).
 
 The Tropical Semiring and Shortest Paths
-----------------------------------------
+========================================
 
 Since the min-plus semiring was our choice for intuition,
 let's start the implementation with it.
@@ -229,17 +233,17 @@ there is a Tropical structure given by what we discussed earlier.
 For addition, recall that any number is smaller than infinity,
 so it acts as the identity.
 
->  x        .+. Infinity = x
->  Infinity .+. y        = y
->  Finite x .+. Finite y = Finite (min x y)
+>  x        |+| Infinity = x
+>  Infinity |+| y        = y
+>  Finite x |+| Finite y = Finite (min x y)
 
 On the other hand, infinity is absorving for the product,
 because adding an infinite quantity to any number, no matter how small,
 produces an infinite result.
 
->  x        .*. Infinity = Infinity
->  Infinity .*. y        = Infinity
->  Finite x .*. Finite y = Finite (x + y)
+>  x        |*| Infinity = Infinity
+>  Infinity |*| y        = Infinity
+>  Finite x |*| Finite y = Finite (x + y)
 
 Now, this next one is interesting.
 The closure of `x` is equivalent to the shortest distance
@@ -264,8 +268,10 @@ but nothing that makes our code too complicated.
 > -- | n x n square matrix with components in r
 > newtype Matrix :: Natural -> Type -> Type where
 >  Matrix :: (Array (Natural, Natural) a) -> Matrix n a
+>     deriving (Functor, Foldable, Traversable)
 
-To aid our life, let's also define a smart constructor
+To ease our life, let's also define some methods to get a cleaner interface.
+First of all, a smart constructor
 that transforms a function on pairs of indices into a `Matrix`.
 
 > -- | Extract a type-level natural to the term level
@@ -276,26 +282,46 @@ that transforms a function on pairs of indices into a `Matrix`.
 > matrix f = Matrix $ array ends [(x, f x) | x <- range ends]
 >   where ends = ((1, 1), (nat @n, nat @n))
 
-With these tools, we can properly define the `Semiring` instance for a matrix.
+And another smart constructor that turns a list of edges
+into the respective adjacency matrix.
+
+> adjacency :: forall n r. (KnownNat n, Semiring r)
+>           => [((Nat, Nat), r)] -> Matrix n r
+> adjacency es = let Matrix o = one :: Matrix n r
+>                in Matrix (o // es)
+
+It is also nice to have an `Applicative` instance, in order to aide us during future lifts.
+Notice that since our matrices are a type with fixed size,
+we can lift operations by simply matching the components.
+
+> instance KnownNat n => Applicative (Matrix n) where
+>  pure x       = matrix (const x)
+>  liftA2 f (Matrix x) (Matrix y) =
+>     matrix $ \(s, t) -> f (x ! (s, t)) (y ! (s, t))
+
+
+With these tools, we can keep away from the Array low-level API,
+with the exception of indexing.
+Now we can properly define the `Semiring` instance for a matrix.
+
 Addition and zero are simply defined pointwisely.
 
 > instance (KnownNat n, Semiring r) => Semiring (Matrix n r) where
->  -- All components equal to zero
->  zero = matrix (const zero)
->  -- Pointwise sum
->  Matrix x .+. Matrix y = matrix $ \ (s, t) -> x ! (s, t) .+. y ! (s, t)
+>  -- These are the pointwise lifts of their scalar versions
+>  zero  = pure zero
+>  (|+|) = liftA2 (|+|)
 
 For multiplication, we define `one` as the identity matrix with `one`s
 on the diagonal and zero elsewhere (the same as in the introduction),
 and use the traditional definition to build the product.
 
 >  -- Identity matrix
->  one  = matrix $ \ (i, j) -> if i == j then one else zero
+>  one  = matrix $ \(i, j) -> if i == j then one else zero
 >  -- Matrix multiplication using Semiring operators
->  Matrix x .*. Matrix y = matrix contract
+>  Matrix x |*| Matrix y = matrix contract
 >   where
->    contract (s, t) = add [x ! (s, q) .*. y ! (q, t) | q <- [1..nat @n]]
->    add             = foldl' (.+.) zero
+>    contract (s, t) = add [x ! (s, q) |*| y ! (q, t) | q <- [1..nat @n]]
+>    add             = foldl' (|+|) zero
 
 Finally, it is time for our main algorithm: how to calculate the closure of a matrix.
 Let's take another look at the equation that $A^\star$ must obey in order to gather some intuition.
@@ -338,13 +364,10 @@ A way to calculate the closure is with a variation the
 or the [Gauss-Jordan](https://en.wikipedia.org/wiki/Gaussian_elimination) algorithm
 that is adapted to work on any closed semiring.[^idempotent-algo]
 
-
->  closure x = one .+. foldr step x [1..nat @n]
->   where
->    step k (Matrix m) = matrix relax
->     where
->      relax (i, j) = let c = closure (m ! (k, k))
->                     in m ! (i, j) .+. m ! (i, k) .*. c .*. m ! (k, j)
+>  closure x = one |+| foldl' step x [1..nat @n]
+>   where step (Matrix m) k = matrix relax
+>          where relax (i, j) = let c = closure (m ! (k, k))
+>                  in m ! (i, j) |+| m ! (i, k) |*| c |*| m ! (k, j)
 
 [^idempotent-algo]: There is also a pretty elegant alternative that,
   unfortunately, only works for idempotent semirings.
@@ -353,7 +376,7 @@ that is adapted to work on any closed semiring.[^idempotent-algo]
   $$ (I \oplus A)^n = \bigoplus_{k=0}^n = A^\star. $$
   From this equation follows a pretty sleek one-liner:
 
-        closure a = (one .+. a) .^. nat @n
+        closure a = (one |+| a) |^| nat @n
   Sadly, it requires idempotence...
 
 
@@ -382,7 +405,13 @@ digraph "Linear Graph" {
 }
 ```
 
-=== From distances to paths
+From distances to paths
+-----------------------
+
+> shortestDistances :: (KnownNat n, Num r, Ord r)
+>                   => [((Nat, Nat), r)] -> Matrix n (Tropical r)
+> shortestDistances = closure . adjacency . tropicalize
+>  where tropicalize = (fmap . fmap) Finite
 
 Great, we now have a procedure capable of converting any
 weight matrix into a matrix of shortest distances!
@@ -399,7 +428,7 @@ As you may guess, there is a semiring capable of just that.
 > data Path a = Path a [(Nat, Nat)] | Unreacheable
 
 Transitive Closures of Relations
---------------------------------
+================================
 
 Now, suppose that your graph is unweighted
 and you don't care about shortest paths,
@@ -413,8 +442,8 @@ All we have to do is to use the Boolean semiring.
 > instance Semiring Bool where
 >  one  = True
 >  zero = False
->  (.+.) = (||)
->  (.*.) = (&&)
+>  (|+|) = (||)
+>  (|*|) = (&&)
 >  -- A vertex is always reachable from itself
 >  closure _ = one
 
@@ -425,7 +454,7 @@ the reflexive-transitive closure is exactly the semiring closure.
 > reflexiveTransitive = closure
 
 Freedom to the Regular Expressions
-----------------------------------
+==================================
 
 When we study some kind of algebraic structure,
 we tend to find out some kind of datastructure that is intimately related to it.
@@ -480,19 +509,19 @@ in order to not get expressions with redundants parts.
 >  zero    = Nope
 >  one     = Empty
 >  -- Union with some eliminations for empty elements
->  Nope .+. e    = e
->  e    .+. Nope = e
+>  Nope |+| e    = e
+>  e    |+| Nope = e
 >  -- Remove empties when possible
->  Empty    .+. (Many e) = Many e  -- Star contains the empty string
->  (Many e) .+. Empty    = Many e
->  Empty    .+. Empty    = Empty
->  x        .+. y        = Union x y
+>  Empty    |+| (Many e) = Many e  -- Star contains the empty string
+>  (Many e) |+| Empty    = Many e
+>  Empty    |+| Empty    = Empty
+>  x        |+| y        = Union x y
 > -- Concatenation and some simplifications
->  Nope  .*. x     = Nope          -- Annihilation
->  x     .*. Nope  = Nope
->  Empty .*. x     = x             -- Identity
->  x     .*. Empty = x
->  x     .*. y     = Join x y
+>  Nope  |*| x     = Nope          -- Annihilation
+>  x     |*| Nope  = Nope
+>  Empty |*| x     = x             -- Identity
+>  x     |*| Empty = x
+>  x     |*| y     = Join x y
 >  -- Kleene star
 >  closure Nope     = Empty        -- the closure is at least empty
 >  closure Empty    = Empty        -- many instances of something empty
@@ -522,14 +551,70 @@ We achieve this with an interpreter function.
 > interpret :: Semiring r => (a -> r) -> (Regex a -> r)
 > interpret f Nope        = zero
 > interpret f Empty       = one
-> interpret f (Union x y) = interpret f x .+. interpret f y
-> interpret f (Join x y)  = interpret f x .*. interpret f y
+> interpret f (Union x y) = interpret f x |+| interpret f y
+> interpret f (Join x y)  = interpret f x |*| interpret f y
 > interpret f (Many e)    = closure (interpret f e)
 
 This is similar to how Haskell's [`foldMap`](https://hackage.haskell.org/package/base-4.18.0.0/docs/Prelude.html#v:foldMap)
 works for monoids or the `eval` function that we
 [defined for calculus expressions on another post](/posts/calculus-symbolic#sec:floating-calculus).
 All of them are some kind of "realizations of typeclass".
+
+Classical Matrix Inversion
+--------------------------
+
+To wrap up this post,
+let's take a look into a semiring that is not idempotent:
+the classical field structure on the real/complex numbers.
+Or, to be technicality accurate, one of these fields complete with an extra point
+to amout for the non-invertibility of zero.
+
+> data Classical a = Field a | Extra
+>   deriving Eq
+
+> instance (Eq a, Fractional a) => Semiring (Classical a) where
+>  zero = Field 0
+>  one  = Field 1
+>  Extra   |+| _       = Extra
+>  _       |+| Extra   = Extra
+>  Field x |+| Field y = Field (x + y)
+>  Extra   |*| _       = Extra
+>  _       |*| Extra   = Extra
+>  Field x |*| Field y = Field (x * y)
+
+For a field, the closure operation has, in general, a closed form solution:
+
+$$
+  x^\star = 1 + x\cdot x^* \implies x^* = (1 - x)^{-1}.
+$$
+
+Great, I must admit that I had already started missing
+being able to subtract and divide our numbers...
+Unfortunately, not everything is flowers
+and the number $1$ is non-invertible.
+That's why we had to add an extra point to the structure.
+
+>  closure Extra     = Extra
+>  closure (Field 1) = Extra
+>  closure (Field x) = Field $ recip (1 - x)
+
+Since matrices have themselves a notion of inverse,
+their closure also satisfies the equation $B^* = (I - B)^{-1}$
+whenever the inverse on the right makes sense.
+With a change of variables $I - B \to A$,
+we arrive at a formula for matrix inversion:
+
+$$ A^{-1} = (I - A)^*.$$
+
+Furthermore, this works whenever the right-hand side has no `Extra` terms in it.
+We arrive at a safe inversion formula for a matrix.
+
+> inv :: (Fractional a, Eq a, KnownNat n) => Matrix n a -> Maybe (Matrix n a)
+> inv = traverse toMaybe . closure . fmap Field
+>  where
+>   toMaybe Extra      = Nothing
+>   toMaybe (Field a)  = Just a
+
 
 References
 ==========
