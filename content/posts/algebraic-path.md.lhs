@@ -10,47 +10,42 @@ date: 2023-03-11
 \def\E{\mathbb{E}}
 \def\Bellman{\mathcal{B}}
 
-> {-# LANGUAGE PackageImports                           #-}
+> {-# LANGUAGE PackageImports,      DataKinds           #-}
+> {-# LANGUAGE DeriveTraversable,   KindSignatures      #-}
 > {-# LANGUAGE TypeApplications,    AllowAmbiguousTypes #-}
 > {-# LANGUAGE ScopedTypeVariables, RankNTypes          #-}
-> {-# LANGUAGE KindSignatures,      GADTs               #-}
-> import "array" Data.Array
-> import         Data.Proxy ( Proxy(Proxy) )
-> import         GHC.TypeNats ( KnownNat, Natural, Nat, natVal )
-> import         Data.Kind (Type)
-> import         Data.List (foldl')
 > import         Control.Applicative
-
+> import         Data.List (foldl')
+> import         Data.Proxy ( Proxy(Proxy) )
+> import         GHC.TypeNats ( KnownNat, Nat, natVal )
+> import "array" Data.Array
 
 Classical Shortest Paths
 ========================
 
-```dot
-digraph "A graph" {
-  fontname = "monospace";
-  rankdir  = LR;
-  newrank  = true;
-  ranksep  = 0.7;
-  nodesep  = 0.9;
-  size     = "8,5";
-  concentrate = true;
+```{.tikz tikzlibrary="positioning,quotes,arrows,arrows.meta"}
+\begin{scope}[every node/.style = {circle, fill=black, outer sep=1mm, minimum size=2mm}]
+  \node [] (A) []                       {};
+  \node [] (B) [above right = of A]     {};
+  \node [] (C) [below right = 2cm of A] {};
+  \node [] (D) [right       = 4cm of A] {};
+  \node [] (E) [left        = 2cm of A] {};
+\end{scope}
 
-  node [shape     = circle
-        style     = "solid,filled"
-        color     = black
-        fixedsize = shape
-        fillcolor = invis];
-
-  edge [dir=both,arrowhead=odiamond, arrowtail=none, color="#b8b8b8"];
-
-  E -> {C, A};
-  A -> B -> C;
-  D -> B;
-  A -> C -> A;
-}
+\begin{scope}[every edge/.style = {-Latex, draw}
+            ,every edge quotes/.style = {anchor = center, pos=0.5, fill = white, inner sep = 2pt, font = \tiny}
+            ]
+\path[->] (A) edge["10",   bend left]  (B)
+          (A) edge["5",    bend right] (C)
+          (B) edge["21",   bend left]  (C)
+          (C) edge["-3",   bend right] (A)
+          (D) edge["19.5", bend right] (B)
+          (E) edge["2",    bend right] (A)
+          (E) edge["-2",   bend right] (C);
+\end{scope}
 ```
 
-Consider a graph with weights in its edges.
+Consider a graph with weights on its edges.
 Like the one in the figure, for example.
 One way to represent this graph is via an adjacency matrix $A$
 whose component $A(s, t)$ is the weight of the edge between nodes $s$ and $t$.
@@ -84,7 +79,7 @@ satisfies a Bellman equation:
 $$
 \begin{aligned}
  V(s, s) &= 0 \\
- V(s, t) &= \min_{q \in \States} A(s, q) + V(q, t), \; \forall s \ne t.
+ V(s, t) &= \min_{q \in \States}\, A(s, q) + V(q, t), \; \forall s \ne t.
 \end{aligned}
 $$
 
@@ -106,7 +101,7 @@ $$
 We can use $I$ to write the recurrence more compactly:
 
 $$
-  V(s, t) = \min \left\{ I(s, t),\, \min_{q \in \States} A(s, q) + V(q, t) \right\}.
+  V(s, t) = \min \left\{ I(s, t),\, \min_{q \in \States}\, A(s, q) + V(q, t) \right\}.
 $$
 
 What the above equation means is that the minimal distance between two vertices
@@ -117,11 +112,11 @@ Every problem is linear if you squint hard enough {#sec:algebraic-paths}
 =================================================
 
 The equation above is rather ugly indeed.
-However, by looking at it with care, we can see some structure unveiling.
+However, by looking at it with care, one can the structure unveiling.
 First of all, the term
 
 $$
-  \min_{q \in \States} A(s, q) + V(q, t)
+  \min_{q \in \States}\, A(s, q) + V(q, t)
 $$
 
 looks a lot like some kind of composition where we aggregate over the middle index $q$.
@@ -186,8 +181,8 @@ That is, an algorithm capable of solving the Bellman equation
 in a way that is polymorphic on the semiring.
 
 
-Alright, that was pretty mathematical introduction.
-It's far from time to turn this post more computational.
+Alright, that was a pretty mathematical introduction.
+It's far from time for this post to become more computational.
 Let's take the above discussion to Haskell land
 by defining a `Semiring` class.
 
@@ -200,7 +195,7 @@ by defining a `Semiring` class.
 > infixl 7 |*|
 > infixl 8 |^|
 
-For simplicity, let's also define an exponentiation operator
+For later use, let's also define an exponentiation operator
 using the classic divide-and-conquer formula.
 
 > (|^|) :: (Semiring r, Integral n) => r -> n -> r
@@ -208,18 +203,20 @@ using the classic divide-and-conquer formula.
 > x |^| n | even n    = x |^| div n 2 |*| x |^| div n 2
 >         | otherwise = x |*| x |^| (n-1)
 
-There are also a bunch of laws that an element of this class must obey.
+As usual, there are also a bunch of laws that an element of this class must obey.
 Since those are all pretty standard, I will just direct you to the
 [Wikipedia article on the topic](https://en.wikipedia.org/wiki/Semiring).
 
 The Tropical Semiring and Shortest Paths
 ========================================
 
+One can think of a semiring as a structure
+with an operation for combining two values ($\otimes$)
+and another for aggregating values ($\oplus$).
 Since the min-plus semiring was our choice for intuition,
 let's start the implementation with it.
 For the sake of polymorphism, we allow a Tropical version of any type.
 
-> -- a is supposed non-negative
 > data Tropical a = Finite a | Infinity
 >   deriving (Eq, Ord)
 
@@ -230,16 +227,15 @@ there is a Tropical structure given by what we discussed earlier.
 >  zero = Infinity
 >  one  = Finite 0
 
-For addition, recall that any number is smaller than infinity,
-so it acts as the identity.
+For addition, the derived `Ord` instance
+already puts `Infinity` as the largest element.
 
->  x        |+| Infinity = x
->  Infinity |+| y        = y
->  Finite x |+| Finite y = Finite (min x y)
+>  (|+|) = min
 
-On the other hand, infinity is absorving for the product,
-because adding an infinite quantity to any number, no matter how small,
-produces an infinite result.
+The product equals the usual sum for numbers
+with the extension that `Infinity` is absorbing:
+adding an infinite quantity to any number, no matter how small,
+always produces an infinite result.
 
 >  x        |*| Infinity = Infinity
 >  Infinity |*| y        = Infinity
@@ -252,7 +248,7 @@ If there are no negative cycles, this equals to $0$,
 the length of the empty path.
 Therefore,
 
->  closure _ = Finite 0 -- how much you walk just standing still
+>  closure _ = Finite 0 -- the distance taken by not moving
 
 Of course, we are not interested only in single node graphs.
 Let's take a look at weighted adjacency matrices.
@@ -266,19 +262,18 @@ We will go with some dependentish square matrices,
 but nothing that makes our code too complicated.
 
 > -- | n x n square matrix with components in r
-> newtype Matrix :: Natural -> Type -> Type where
->  Matrix :: (Array (Natural, Natural) a) -> Matrix n a
->     deriving (Functor, Foldable, Traversable)
+> newtype Matrix (n :: Nat) a = Matrix (Array (Nat, Nat) a)
+>   deriving (Eq, Functor, Foldable, Traversable)
 
 To ease our life, let's also define some methods to get a cleaner interface.
 First of all, a smart constructor
 that transforms a function on pairs of indices into a `Matrix`.
 
 > -- | Extract a type-level natural to the term level
-> nat :: forall n. KnownNat n => Natural
+> nat :: forall n. KnownNat n => Nat
 > nat = natVal (Proxy @n)
 >
-> matrix :: forall n a. KnownNat n => ((Natural, Natural) -> a) -> Matrix n a
+> matrix :: forall n a. KnownNat n => ((Nat, Nat) -> a) -> Matrix n a
 > matrix f = Matrix $ array ends [(x, f x) | x <- range ends]
 >   where ends = ((1, 1), (nat @n, nat @n))
 
@@ -295,7 +290,7 @@ Notice that since our matrices are a type with fixed size,
 we can lift operations by simply matching the components.
 
 > instance KnownNat n => Applicative (Matrix n) where
->  pure x       = matrix (const x)
+>  pure x = matrix (const x)
 >  liftA2 f (Matrix x) (Matrix y) =
 >     matrix $ \(s, t) -> f (x ! (s, t)) (y ! (s, t))
 
@@ -380,7 +375,7 @@ that is adapted to work on any closed semiring.[^idempotent-algo]
   Sadly, it requires idempotence...
 
 
-To see that it always necessary to cross $n$ vertices,
+To see that it is in general necessary to cross $n$ vertices,
 consider a graph consisting of a single path passing through all nodes.
 It takes exactly $n$ iterations to discover that all vertices are reacheable from the first.
 
@@ -408,13 +403,16 @@ digraph "Linear Graph" {
 From distances to paths
 -----------------------
 
+Great, we now have a procedure capable of converting any
+weight matrix into a matrix of shortest distances!
+We can even write a little wrapper to work directly
+with association lists of edges.
+
 > shortestDistances :: (KnownNat n, Num r, Ord r)
 >                   => [((Nat, Nat), r)] -> Matrix n (Tropical r)
 > shortestDistances = closure . adjacency . tropicalize
 >  where tropicalize = (fmap . fmap) Finite
 
-Great, we now have a procedure capable of converting any
-weight matrix into a matrix of shortest distances!
 
 
 
@@ -430,31 +428,60 @@ As you may guess, there is a semiring capable of just that.
 Transitive Closures of Relations
 ================================
 
-Now, suppose that your graph is unweighted
-and you don't care about shortest paths,
-all you want to know is whether a path between each pair of nodes exists.
-This is called the **reflexive-transitive closure** of a graph[^rel].
-Probably you already imagine that the algorithm is exacly the same.
-All we have to do is to use the Boolean semiring.
+Let's now divert our attention to another topic
+that is nevertheless closely related: finite relations.
+Think about the common binary relations that we work with everyday:
+equality, order ($\le$, <, $\ge$, >), equivalence relations...
+All of them share two importante properties: **transitivity** and **reflexivity**.
 
-[^rel]: Or of the relation represented by the graph's adjacency matrix.
+So, if you're going to work with some  relation,
+a typical process is to complete it in order to turn
+this relation transitive and reflexive.
+Of course, your relation is just for the VIP
+and you don't want to add every arbitrary pair of elements during this operation.
+You want to find the _smallest_ reflexive-transitive relation containing yours.
+
+<object data="finite-relation.svg" type="image/svg+xml">
+  <img src="finite-relation.svg"
+       alt=""
+       title="Three Views on Finite Relations"
+  />
+</object>
+
+This is called the **reflexive-transitive closure** of a relation.
+Now, how do we calculate this thing?
+As you may imagine, there is a semiring made just for that
+and the algorithm is exactly the same as for shortest paths.
+All we have to do is to use the Boolean semiring.
 
 > instance Semiring Bool where
 >  one  = True
 >  zero = False
 >  (|+|) = (||)
 >  (|*|) = (&&)
->  -- A vertex is always reachable from itself
->  closure _ = one
+>  closure _ = one  -- Reflexivity for a single vertex
 
-And, to honour its name,
-the reflexive-transitive closure is exactly the semiring closure.
+Using the old trick of representing a finite relation as a Boolean matrix,
+the operation we need is exaclty the closure for the matrix semiring. 
 
 > reflexiveTransitive :: KnownNat n => Matrix n Bool -> Matrix n Bool
 > reflexiveTransitive = closure
 
-Freedom to the Regular Expressions
-==================================
+Interestingly, the above can also be comprehended as a common operation on graphs.
+By translating the boolean matrix into the (unweighted) adjacency matrix of a directed graph,
+this closure returns the graph whose edges are all paths on the original graph.
+If there one can go from $s$ to $t$ in $G$, then $G^\star(s, t) = \mathtt{true}$.
+In the figure below, we illustrate this relationship.
+
+<object data="finite-relation-views.svg" type="image/svg+xml">
+  <img src="finite-relation-views.svg"
+       alt=""
+       title="Three Views on Finite Relations"
+  />
+</object>
+
+Free as in Regular Expressions
+==============================
 
 When we study some kind of algebraic structure,
 we tend to find out some kind of datastructure that is intimately related to it.
@@ -488,14 +515,6 @@ as its own a [datatype](https://en.wikipedia.org/wiki/Regular_expression#Formal_
 >              | Union (Regex a) (Regex a) -- matches either an argument or the other
 >              | Join  (Regex a) (Regex a) -- Matches one argument followed by the other
 >              | Many  (Regex a)           -- Kleene star: Matches zero or more instances of something
-
-> instance Show a => Show (Regex a) where
->  show Nope  = ""
->  show Empty = "ε"
->  show (Literal a) = show a
->  show (Union x y) = "(" ++ show x ++ "|" ++ show y ++ ")"
->  show (Join  x y) = "(" ++ show x ++ show y ++ ")"
->  show (Many x) = show x ++ "*"
 
 Notice that we're limiting ourselves to truly regular expressions,
 those that represent some kind of [**Regular Language**](https://en.wikipedia.org/wiki/Regular_language).
@@ -540,8 +559,8 @@ Hence, each component $A^*(s, t)$ is a regular expression
 representing the language accepted by this automaton with initial state $s$
 and accepting state $t$.
 
-Additionaly, our Floyd-Warshall implementation to calculate the closure
-is Kleene's algorithm for converting a finite state machine into a regular expression.
+What is the Floyd-Warshall implementation, when specialized to this context?
+Here it becomes Kleene's algorithm for converting a finite state machine into a regular expression.
 
 As we discussed earlier, regular expressions are the free closed (idempotent) semiring.
 This means that any operation on semirings, such as finding shortest-paths,
@@ -560,11 +579,17 @@ works for monoids or the `eval` function that we
 [defined for calculus expressions on another post](/posts/calculus-symbolic#sec:floating-calculus).
 All of them are some kind of "realizations of typeclass".
 
+The usefulness of this interpreter comes from the fact that it commutes with the matrix operations.
+Thus, whenever we want to perform many different queries in a same graph with idempotent aggregations
+(such as shortest paths, largest paths, most reliable paths, widest paths etc.),
+we may first calculate the regular expressions representing these paths
+and then collapse them separately for each semiring.
+
 Classical Matrix Inversion
---------------------------
+==========================
 
 To wrap up this post,
-let's take a look into a semiring that is not idempotent:
+let's take a look at a semiring that is not idempotent:
 the classical field structure on the real/complex numbers.
 Or, to be technicality accurate, one of these fields complete with an extra point
 to amout for the non-invertibility of zero.
@@ -578,6 +603,9 @@ to amout for the non-invertibility of zero.
 >  Extra   |+| _       = Extra
 >  _       |+| Extra   = Extra
 >  Field x |+| Field y = Field (x + y)
+
+>  Field 0 |*| _       = Field 0
+>  _       |*| Field 0 = Field 0
 >  Extra   |*| _       = Extra
 >  _       |*| Extra   = Extra
 >  Field x |*| Field y = Field (x * y)
@@ -606,14 +634,65 @@ we arrive at a formula for matrix inversion:
 
 $$ A^{-1} = (I - A)^*.$$
 
-Furthermore, this works whenever the right-hand side has no `Extra` terms in it.
-We arrive at a safe inversion formula for a matrix.
+Furthermore, this works whenever the right-hand side has no `Extra` terms,
+meaning that we've arrived at a safe inversion formula for a matrix.
 
 > inv :: (Fractional a, Eq a, KnownNat n) => Matrix n a -> Maybe (Matrix n a)
-> inv = traverse toMaybe . closure . fmap Field
+> inv = traverse toMaybe . closure . conj
 >  where
->   toMaybe Extra      = Nothing
->   toMaybe (Field a)  = Just a
+>   conj a = one |+| fmap (Field . negate) a   -- A -> I - A
+>   toMaybe Extra     = Nothing
+>   toMaybe (Field a) = Just a
+
+To which classical algorithm is this equivalent?
+By looking attentively at the definition of closure,
+you will see that this is exactly the Gauss-Jordan elimination,
+where in our case multiplying by the closure takes the same role
+as dividing by a row in the classical presentation.
+
+
+\begin{code}
+  instance Show a => Show (Regex a) where
+   show Nope  = ""
+   show Empty = "ε"
+   show (Literal a) = show a
+   show (Union x y) = "(" ++ show x ++ "|" ++ show y ++ ")"
+   show (Join  x y) = "(" ++ show x ++ show y ++ ")"
+   show (Many x) = show x ++ "*"
+
+
+  instance Show a => Show (Classical a) where
+   show Extra     = "∞"
+   show (Field a) = show a
+  instance Show a => Show (Tropical a) where
+   show Infinity     = "∞"
+   show (Finite a) = show a
+
+
+  pp (Matrix m) = printGrid m
+
+  printGrid :: Show a => Array (Nat, Nat) a -> IO ()
+  printGrid grid = mapM_ (putStrLn . textRepresentation) (toSimpleArray grid)
+
+  toSimpleArray :: Array (Nat, Nat) a -> [[a]]
+  toSimpleArray grid = [[grid ! (x, y) | x<-[lowx..highx]] |  y<-[lowy..highy]]
+    where ((lowx, lowy), (highx, highy)) =  bounds grid
+
+  textRepresentation :: Show a => [a] -> String
+  textRepresentation = unwords . fmap show
+
+  deriving instance Show a => Show (Matrix n a)
+
+
+  es :: [[Bool]]
+  es = (fmap.fmap) (==1) [[1,1,0,0], [1,0,1,0], [0,0,0,0], [1,0,0,1]]
+
+  a :: Matrix 4 Bool
+  a = matrix (\(s,t) -> (es !! fromIntegral (t-1) ) !! fromIntegral (s-1))
+
+  b :: Matrix 4 Bool
+  b = closure a
+\end{code}
 
 
 References

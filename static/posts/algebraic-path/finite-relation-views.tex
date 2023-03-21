@@ -1,0 +1,205 @@
+\documentclass{standalone}
+% For matrix loop see: https://tex.stackexchange.com/questions/47595/nested-foreach-inside-a-tikz-matrix-for-both-rows-and-columns
+% For graph from array see: https://tex.stackexchange.com/questions/202151/how-to-plot-a-graph-from-its-adjacency-matrix-and-coordinates-of-vertices#203070
+
+\def\pgfsysdriver{pgfsys-dvisvgm.def}
+\usepackage{lmodern,tikz,pgffor,ifthen}
+\usepackage{etoolbox}
+
+\usetikzlibrary{positioning, arrows, arrows.meta, shapes.geometric}
+\usetikzlibrary {decorations.pathmorphing, chains, calc, matrix, quotes}
+
+\begin{document}
+
+\colorlet{smoothgray}{gray!80}
+\colorlet{bluestrong}{blue!70}
+\colorlet{blueweak}{blue!40}
+
+% Reflexive-transitive closure
+% 0 => no edge
+% 1 => original relation
+% 2 => only on closure
+\def\adjacency{{1,1,2,0}%
+              ,{1,2,1,0}%
+              ,{0,0,2,0}%
+              ,{1,2,2,1}}
+
+\makeatletter
+\tikzset{
+    to path={
+        \pgfextra{
+            \tikz@scan@one@point\relax(\tikztostart)
+            \pgfmathsetmacro\start@x{\pgf@x}
+            \pgfmathsetmacro\start@y{\pgf@y}
+            \tikz@scan@one@point\relax(\tikztotarget)
+            \pgfmathsetmacro\target@x{\pgf@x}
+            \pgfmathsetmacro\target@y{\pgf@y}
+            \pgfmathsetmacro\middle@x{(\start@x+\target@x)/2}
+            \pgfmathsetmacro\middle@ya{(4*\start@y+\target@y)/5}
+            \pgfmathsetmacro\middle@yb{(\start@y+4*\target@y)/5}
+        }
+        ..controls(\middle@x pt,\middle@ya pt)and(\middle@x pt,\middle@yb pt)..(\tikztotarget)
+    }
+}
+
+\begin{tikzpicture}[
+      state/.style = {circle, minimum width = 0.7cm, fill = gray!20, draw = gray!40, very thick }
+    , rel/.style   = {shorten >= 1mm, shorten <= 1mm, draw = bluestrong, thick}
+    , loop arc/.style={in=240,out=200,loop,min distance=4mm}
+    , action/.style   = {
+        bluestrong,
+        ->,
+        >={Kite[length=4pt,width=2.5pt,inset=1.5pt]},
+        thick,
+    }
+    , baseline=(current bounding box.south)
+    ]
+
+  % Relations
+  \begin{scope}[ start chain        = source going below
+               , local bounding box = relScope
+               , node distance      = 2mm
+               , baseline           = {(0,0)}
+               ]
+    \foreach[count=\n] \row in \adjacency {
+      \node[state, on chain = source] (s\n) {$\n$};
+      \node[state] (t\n) [right = 20mm of s\n.east] {$\n$};
+    }
+
+    \foreach[count=\s] \row in \adjacency {
+      \foreach[count=\t] \cell in \row {
+          \ifnum\cell=1
+            \draw[rel] (s\s.east) -- (t\t.west);
+          \fi
+      }
+    }
+  \end{scope}
+
+  % Complete relation
+  \begin{scope}[ start chain        = source going below
+               , local bounding box = relCloScope,
+               , node distance      = 2mm
+               , yshift = -5cm,
+               ]
+    \foreach[count=\n] \row in \adjacency {
+      \node[state, on chain = source] (s\n) {$\n$};
+      \node[state] (t\n) [right = 20mm of s\n.east] {$\n$};
+    }
+
+    \foreach[count=\s] \row in \adjacency {
+      \foreach[count=\t] \cell in \row {
+          \ifnum\cell=1
+            \draw[rel] (s\s.east) -- (t\t.west);
+          \else
+            \ifnum\cell=2
+              \draw[rel, draw = blueweak, semithick] (s\s.east) -- (t\t.west);
+            \fi
+          \fi
+      }
+    }
+  \end{scope}
+
+  % Adjacency matrix
+  \begin{scope}[shift={($(relScope.east)+(3cm,0)$)},
+                local bounding box = matScope]
+    % First of all, we write a macro to build the matrix content.
+    % This is necessary because there is no way to put a \foreach
+    % inside a \matrix command.
+    \let\mymatrixcontent\empty
+    \foreach[count=\s] \row in \adjacency {
+      \foreach[count=\t] \cell in \row {
+        \xappto\mymatrixcontent{\ifnum\cell=1 1 \else 0 \fi \expandonce{\&}}
+      }%
+      \gappto\mymatrixcontent{\\}
+    }%%
+
+    \matrix[matrix of math nodes, ampersand replacement=\&,
+            left delimiter = {[}, right delimiter = {]},
+            column sep=1ex,
+            ] (m)
+      { \mymatrixcontent };
+  \end{scope}
+
+  \begin{scope}[shift={($(relCloScope.east)+(3cm,0)$)},
+                local bounding box = matCloScope]
+    \let\mymatrixcontent\empty
+    \foreach[count=\s] \row in \adjacency {
+      \foreach[count=\t] \cell in \row {
+        \xappto\mymatrixcontent{\ifnum\cell>0 \ifnum\cell=2 |[blueweak]| \fi 1 \else 0 \fi \expandonce{\&}}
+      }%
+      \gappto\mymatrixcontent{\\}
+    }%%
+
+    \matrix[matrix of math nodes, ampersand replacement=\&,
+            left delimiter = {[}, right delimiter = {]},
+            column sep=1ex,
+            ] (m)
+      { \mymatrixcontent };
+  \end{scope}
+
+  % Graph
+  \begin{scope}[ shift={($(matScope.east)+(4cm,0)$)},
+               , local bounding box = graphScope
+               ]
+
+    % Nodes
+    \foreach [count=\s] \where in {(0, 0), (-2, 1), (-2, -1), (0, -1.5)} {
+      \node[state] (g\s) at \where {$\s$};
+    }
+
+    % Edges from adjacency matrix
+    \foreach[count=\s] \row in \adjacency {
+      \foreach[count=\t] \cell in \row {
+        \ifnum\cell=1
+          \ifnum\s=\t
+            \path[action] (g\s) edge [loop arc]  (g\s);
+          \else
+            \path[action] (g\s) edge [bend right=30]  (g\t);
+          \fi
+        \fi
+      }
+    }
+  \end{scope}
+
+  \begin{scope}[ shift={($(matCloScope.east)+(4cm,0)$)},
+               , local bounding box = graphCloScope
+               ]
+
+    % Nodes
+    \foreach [count=\s] \where in {(0, 0), (-2, 1), (-2, -1), (0, -1.5)} {
+      \node[state] (g\s) at \where {$\s$};
+    }
+
+    % Edges from adjacency matrix
+    \foreach[count=\s] \row in \adjacency {
+      \foreach[count=\t] \cell in \row {
+        \ifnum\cell>0
+          \pgfmathsetmacro\ncol{iseven(\cell) ? "blueweak": "bluestrong"}
+          \ifnum\s=\t
+            \path[action] (g\s) edge [loop arc]  (g\s);
+          \else
+            \path[action, \ncol] (g\s) edge [bend left=10]  (g\t);
+          \fi
+        \fi
+      }
+    }
+  \end{scope}
+
+  \begin{scope}[arrow/.style = {-Latex, thick, shorten >= 2mm, shorten <= 2mm}
+               , iso/.style  = {arrow, Latex-Latex}
+               ]
+    % Closure arrows
+    \path[arrow] let \p1 = (relScope.south), \p2 = (matScope.south), \p3 = (graphScope.south)
+                 in (\x1, \y1) edge  ++(0cm, -1.5cm)
+                    (\x2, \y1) edge  ++(0cm, -1.5cm)
+                    (\x3, \y1) edge  ++(0cm, -1.5cm);
+
+    % Adjacency arrows
+    \path[iso] (relScope.east)    edge +(1.5cm, 0cm)
+               (matScope.east)    edge +(1.5cm, 0cm)
+               (relCloScope.east) edge +(1.5cm, 0cm)
+               (matCloScope.east) edge +(1.5cm, 0cm);
+  \end{scope}
+\end{tikzpicture}
+
+\end{document}
