@@ -1,6 +1,4 @@
 \documentclass{standalone}
-% For matrix loop see: https://tex.stackexchange.com/questions/47595/nested-foreach-inside-a-tikz-matrix-for-both-rows-and-columns
-% For graph from array see: https://tex.stackexchange.com/questions/202151/how-to-plot-a-graph-from-its-adjacency-matrix-and-coordinates-of-vertices#203070
 
 \def\pgfsysdriver{pgfsys-dvisvgm.def}
 \usepackage{tikz,pgffor,ifthen}
@@ -13,6 +11,7 @@
 
 \colorlet{smoothgray}{gray!80}
 \colorlet{smoothorange}{orange!70}
+\colorlet{greenish}{green!50!cyan!50}
 
 % Reflexive-transitive closure
 % 0 => no edge
@@ -23,45 +22,33 @@
               ,{0,0,2,0}%
               ,{1,2,2,1}}
 
-\makeatletter
-\tikzset{
-    to path={
-        \pgfextra{
-            \tikz@scan@one@point\relax(\tikztostart)
-            \pgfmathsetmacro\start@x{\pgf@x}
-            \pgfmathsetmacro\start@y{\pgf@y}
-            \tikz@scan@one@point\relax(\tikztotarget)
-            \pgfmathsetmacro\target@x{\pgf@x}
-            \pgfmathsetmacro\target@y{\pgf@y}
-            \pgfmathsetmacro\middle@x{(\start@x+\target@x)/2}
-            \pgfmathsetmacro\middle@ya{(4*\start@y+\target@y)/5}
-            \pgfmathsetmacro\middle@yb{(\start@y+4*\target@y)/5}
-        }
-        ..controls(\middle@x pt,\middle@ya pt)and(\middle@x pt,\middle@yb pt)..(\tikztotarget)
-    }
-}
+\def\colors{{"green!30"%
+            ,"orange!50"%
+            ,"red!30!blue!50"%
+            ,"yellow!90!black"%
+            }}
 
 \begin{tikzpicture}[
-    state/.style = {circle, radius = 0.9cm, minimum width = 0.7cm, fill = gray!20, draw = gray!40, very thick },
-    rel/.style   = {shorten >= 1mm, shorten <= 1mm, draw = blue!70, thick},
-    baseline=(current bounding box.south),
+    state/.style  = {circle, draw = black, fill=greenish, thin, minimum size=2pt}
+  , rel/.style    = {shorten >= 1mm, shorten <= 1mm, draw = black, {Round Cap[]}-{Triangle Cap[cap angle = 60]}}
+  , baseline      = (current bounding box.south),
+  , node distance = 5mm
   ]
 
   % Relations
   \begin{scope}[ start chain        = source going below
                , local bounding box = relScope
-               , node distance      = 2mm
                , baseline           = {(0,0)}
                ]
-    \foreach[count=\n] \row in \adjacency {
-      \node[state, on chain = source] (s\n) {$\n$};
-      \node[state] (t\n) [right = 20mm of s\n.east] {$\n$};
+    \foreach \row [count=\n, evaluate= \n as \color using {\colors[\n-1]}] in \adjacency {
+      \node[state, fill=\color, on chain = source] (s\n) {};
+      \node[state, fill=\color] (t\n) [right = 20mm of s\n.east] {};
     }
 
     \foreach[count=\s] \row in \adjacency {
       \foreach[count=\t] \cell in \row {
           \ifnum\cell=1
-            \draw[rel] (s\s.east) -- (t\t.west);
+            \draw[rel] (s\s) -- (t\t);
           \fi
       }
     }
@@ -70,18 +57,17 @@
   % Complete relation
   \begin{scope}[ start chain        = source going below
                , local bounding box = relCloScope,
-               , node distance      = 2mm
                , xshift = 7cm,
                ]
-    \foreach[count=\n] \row in \adjacency {
-      \node[state, on chain = source] (s\n) {$\n$};
-      \node[state] (t\n) [right = 20mm of s\n.east] {$\n$};
+    \foreach \row [count=\n, evaluate= \n as \color using {\colors[\n-1]}] in \adjacency {
+      \node[state, fill=\color, on chain = source] (s\n) {};
+      \node[state, fill=\color] (t\n) [right = 20mm of s\n.east] {};
     }
 
     \foreach[count=\s] \row in \adjacency {
       \foreach[count=\t] \cell in \row {
           \ifnum\cell=1
-            \draw[rel] (s\s.east) -- (t\t.west);
+            \draw[rel] (s\s) -- (t\t);
           \else
             \ifnum\cell=2
               \draw[rel, draw = blue!30, semithick] (s\s.east) -- (t\t.west);
@@ -92,7 +78,7 @@
   \end{scope}
 
   % \draw ($(relScope.east)$)
-  \draw[->, -Latex, thick, shorten >= 4mm, shorten <= 4mm] (relScope.east) -- node[above] {closure} (relCloScope.west);
+  \draw[->, -Kite, thick, shorten >= 4mm, shorten <= 4mm] (relScope.east) -- node[above] {closure} (relCloScope.west);
 \end{tikzpicture}
 
 \end{document}

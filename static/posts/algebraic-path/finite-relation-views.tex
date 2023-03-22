@@ -19,57 +19,44 @@
 % 0 => no edge
 % 1 => original relation
 % 2 => only on closure
-\def\adjacency{{1,1,2,0}%
-              ,{1,2,1,0}%
+\def\adjacency{{2,1,2,0}%
+              ,{1,1,1,0}%
               ,{0,0,2,0}%
               ,{1,2,2,1}}
 
-\makeatletter
-\tikzset{
-    to path={
-        \pgfextra{
-            \tikz@scan@one@point\relax(\tikztostart)
-            \pgfmathsetmacro\start@x{\pgf@x}
-            \pgfmathsetmacro\start@y{\pgf@y}
-            \tikz@scan@one@point\relax(\tikztotarget)
-            \pgfmathsetmacro\target@x{\pgf@x}
-            \pgfmathsetmacro\target@y{\pgf@y}
-            \pgfmathsetmacro\middle@x{(\start@x+\target@x)/2}
-            \pgfmathsetmacro\middle@ya{(4*\start@y+\target@y)/5}
-            \pgfmathsetmacro\middle@yb{(\start@y+4*\target@y)/5}
-        }
-        ..controls(\middle@x pt,\middle@ya pt)and(\middle@x pt,\middle@yb pt)..(\tikztotarget)
-    }
-}
+\def\colors{{"green!30"%
+            ,"orange!50"%
+            ,"red!30!blue!50"%
+            ,"yellow!90!black"%
+            }}
 
 \begin{tikzpicture}[
-      state/.style = {circle, minimum width = 0.7cm, fill = gray!20, draw = gray!40, very thick }
-    , rel/.style   = {shorten >= 1mm, shorten <= 1mm, draw = bluestrong, thick}
-    , loop arc/.style={in=240,out=200,loop,min distance=4mm}
-    , action/.style   = {
-        bluestrong,
-        ->,
-        >={Kite[length=4pt,width=2.5pt,inset=1.5pt]},
-        thick,
+    state/.style  = {circle, draw = black, thin, minimum size=2pt}
+  , rel/.style    = {shorten >= 1mm, shorten <= 1mm, draw = black, {Round Cap[]}-{Triangle Cap[cap angle = 60]}}
+  , loop arc/.style={in=240,out=200,loop,min distance=4mm}
+  , action/.style   = {
+      black,
+      ->,
+      >={Kite[length=4pt,width=2.5pt,inset=1.5pt]},
     }
-    , baseline=(current bounding box.south)
-    ]
+  , baseline=(current bounding box.south)
+  ]
 
   % Relations
   \begin{scope}[ start chain        = source going below
                , local bounding box = relScope
-               , node distance      = 2mm
+               , node distance      = 5mm
                , baseline           = {(0,0)}
                ]
-    \foreach[count=\n] \row in \adjacency {
-      \node[state, on chain = source] (s\n) {$\n$};
-      \node[state] (t\n) [right = 20mm of s\n.east] {$\n$};
+    \foreach \row [count=\n, evaluate= \n as \color using {\colors[\n-1]}] in \adjacency {
+      \node[state, fill=\color, on chain = source] (s\n) {};
+      \node[state, fill=\color] (t\n) [right = 20mm of s\n.east] {};
     }
 
     \foreach[count=\s] \row in \adjacency {
       \foreach[count=\t] \cell in \row {
           \ifnum\cell=1
-            \draw[rel] (s\s.east) -- (t\t.west);
+            \draw[rel] (s\s) -- (t\t);
           \fi
       }
     }
@@ -78,21 +65,21 @@
   % Complete relation
   \begin{scope}[ start chain        = source going below
                , local bounding box = relCloScope,
-               , node distance      = 2mm
-               , yshift = -5cm,
+               , node distance      = 5mm
+               , yshift = -4.3cm,
                ]
-    \foreach[count=\n] \row in \adjacency {
-      \node[state, on chain = source] (s\n) {$\n$};
-      \node[state] (t\n) [right = 20mm of s\n.east] {$\n$};
+    \foreach \row [count=\n, evaluate= \n as \color using {\colors[\n-1]}] in \adjacency {
+      \node[state, fill=\color, on chain = source] (s\n) {};
+      \node[state, fill=\color] (t\n) [right = 20mm of s\n.east] {};
     }
 
     \foreach[count=\s] \row in \adjacency {
       \foreach[count=\t] \cell in \row {
           \ifnum\cell=1
-            \draw[rel] (s\s.east) -- (t\t.west);
+            \draw[rel] (s\s) -- (t\t);
           \else
             \ifnum\cell=2
-              \draw[rel, draw = blueweak, semithick] (s\s.east) -- (t\t.west);
+              \draw[rel, draw = blue!30, semithick] (s\s.east) -- (t\t.west);
             \fi
           \fi
       }
@@ -143,8 +130,8 @@
                ]
 
     % Nodes
-    \foreach [count=\s] \where in {(0, 0), (-2, 1), (-2, -1), (0, -1.5)} {
-      \node[state] (g\s) at \where {$\s$};
+    \foreach [count=\n, evaluate=\n as \color using {\colors[\n-1]}] \where in {(0, 0), (-2, 1), (-2, -1), (0, -1.5)} {
+      \node[state, fill=\color] (g\n) at \where {};
     }
 
     % Edges from adjacency matrix
@@ -154,31 +141,32 @@
           \ifnum\s=\t
             \path[action] (g\s) edge [loop arc]  (g\s);
           \else
-            \path[action] (g\s) edge [bend right=30]  (g\t);
+            \path[action] (g\s) edge [bend left=15]  (g\t);
           \fi
         \fi
       }
     }
   \end{scope}
 
+  % Graph
   \begin{scope}[ shift={($(matCloScope.east)+(4cm,0)$)},
                , local bounding box = graphCloScope
                ]
 
     % Nodes
-    \foreach [count=\s] \where in {(0, 0), (-2, 1), (-2, -1), (0, -1.5)} {
-      \node[state] (g\s) at \where {$\s$};
+    \foreach [count=\n, evaluate=\n as \color using {\colors[\n-1]}] \where in {(0, 0), (-2, 1), (-2, -1), (0, -1.5)} {
+      \node[state, fill=\color] (g\n) at \where {};
     }
 
     % Edges from adjacency matrix
     \foreach[count=\s] \row in \adjacency {
       \foreach[count=\t] \cell in \row {
         \ifnum\cell>0
-          \pgfmathsetmacro\ncol{iseven(\cell) ? "blueweak": "bluestrong"}
+          \pgfmathsetmacro\ncol{iseven(\cell) ? "blueweak": "black"}
           \ifnum\s=\t
             \path[action] (g\s) edge [loop arc]  (g\s);
           \else
-            \path[action, \ncol] (g\s) edge [bend left=10]  (g\t);
+            \path[action, \ncol] (g\s) edge [bend left=15]  (g\t);
           \fi
         \fi
       }

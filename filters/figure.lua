@@ -68,9 +68,11 @@ end
 -- Block types
 -------------------
 local template_tag = [[
-<object data="%s" type="image/svg+xml">
-  <img src="%s">
-</object>
+<div class="illustration">
+  <object data="%s" type="image/svg+xml">
+    <img src="%s">
+  </object>
+<div>
 ]]
 
 local function format_tag(fname)
@@ -82,7 +84,7 @@ local template_tikz = [[
 
 \def\pgfsysdriver{pgfsys-dvisvgm.def}
 
-\usepackage{xcolor,lmodern,amsfonts,tikz}
+\usepackage{xcolor,lmodern,amsfonts,tikz,pgffor,ifthen}
 
 %% Additional packages: usepackage
 \usepackage{%s}

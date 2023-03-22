@@ -1,7 +1,8 @@
 ---
-title: The Algebraic Path Problem
-keywords: [math, haskell]
-date: 2023-03-11
+title: Algebraic Path Finding
+keywords: [math, dynamic-programming, haskell]
+date: 2023-03-21
+suppress-bibliography: true
 ---
 
 \def\States{\mathcal{S}}
@@ -10,38 +11,68 @@ date: 2023-03-11
 \def\E{\mathbb{E}}
 \def\Bellman{\mathcal{B}}
 
-> {-# LANGUAGE PackageImports,      DataKinds           #-}
-> {-# LANGUAGE DeriveTraversable,   KindSignatures      #-}
+There's something magical about polymorphic algorithms.
+Really, isn't it awesome to write a piece of code once
+and then just tweak the meaning of some inputs to solve
+another seemly unrelated problem?
+Let's see an example of those with applications ranging from regular expressions
+to matrix inversion, with a lot of useful queries on graphs along the way.
+
+Today we will continue our explorations in
+the land of [dynamic programming](/posts/dynamic-programming)
+but with a much more abstract view.
+As it stands, dynamic programming in a finite horizon
+isn't necessarily concerned with solving optimization problems.
+It can be abstracted to any kind of problem
+where we have well-behaved notions of _combining_ and _aggregating_ values along paths,
+and the solution methods remain exactly the same.
+This way, we go from the optimization view of the _shortest path problem_
+to the generic view of the _algebraic path problem_,
+which subsumes a lot of classical algorithms from computational mathematics.
+
+By the way, be alert! Because it's possible that your favorite algorithm
+is also an alternative view on finding shortest paths.
+
+> {-# LANGUAGE PackageImports,      DeriveTraversable   #-}
+> {-# LANGUAGE DataKinds,           KindSignatures      #-}
 > {-# LANGUAGE TypeApplications,    AllowAmbiguousTypes #-}
 > {-# LANGUAGE ScopedTypeVariables, RankNTypes          #-}
-> import         Control.Applicative
-> import         Data.List (foldl')
-> import         Data.Proxy ( Proxy(Proxy) )
-> import         GHC.TypeNats ( KnownNat, Nat, natVal )
-> import "array" Data.Array
+> import         Control.Applicative (liftA2)
+> import         Data.Ord            (Down(..))
+> import         Data.Semigroup      (Min(..), Sum(..), Product(..))
+> import         Data.List           (foldl')
+> import         Data.Proxy          (Proxy(Proxy))
+> import         GHC.TypeNats        (KnownNat, Nat, natVal)
+> import "array" Data.Array          (Array, array, Ix(range), (!), (//), bounds)
+
 
 Classical Shortest Paths
 ========================
 
 ```{.tikz tikzlibrary="positioning,quotes,arrows,arrows.meta"}
-\begin{scope}[every node/.style = {circle, fill=black, outer sep=1mm, minimum size=2mm}]
-  \node [] (A) []                       {};
-  \node [] (B) [above right = of A]     {};
-  \node [] (C) [below right = 2cm of A] {};
-  \node [] (D) [right       = 4cm of A] {};
-  \node [] (E) [left        = 2cm of A] {};
+\begin{scope}[every node/.style = {circle, draw=black, thin, outer sep=1mm, minimum size=2mm}]
+  \node [fill = cyan!20         ] (A) []                       {};
+  \node [fill = orange!50       ] (B) [above right =     of A] {};
+  \node [fill = red!30!blue!50  ] (C) [below right = 2cm of A] {};
+  \node [fill = yellow!90!black ] (D) [right       = 4cm of A] {};
+  \node [fill = green!50!cyan!50] (E) [left        = 2cm of A] {};
 \end{scope}
 
-\begin{scope}[every edge/.style = {-Latex, draw}
+\def\colors{{"green!30"%
+            ,"orange!50"%
+            ,"red!30!blue!50"%
+            ,"yellow!90!black"%
+            }}
+\begin{scope}[every edge/.style = {{Round Cap}-Kite, draw}
             ,every edge quotes/.style = {anchor = center, pos=0.5, fill = white, inner sep = 2pt, font = \tiny}
             ]
-\path[->] (A) edge["10",   bend left]  (B)
-          (A) edge["5",    bend right] (C)
-          (B) edge["21",   bend left]  (C)
-          (C) edge["-3",   bend right] (A)
-          (D) edge["19.5", bend right] (B)
-          (E) edge["2",    bend right] (A)
-          (E) edge["-2",   bend right] (C);
+  \path[->] (A) edge["10",   bend left=10 ]  (B)
+            (A) edge["5",    bend right   ]  (C)
+            (B) edge["21",   bend left    ]  (C)
+            (C) edge["-3",   bend right   ]  (A)
+            (D) edge["19.5", bend right=20]  (B)
+            (E) edge["2",    bend right   ]  (A)
+            (E) edge["-2",   bend right   ]  (C);
 \end{scope}
 ```
 
@@ -59,7 +90,7 @@ a `Maybe` value to make a partial function total,
 with $\infty$ playing the role of `Nothing`.[^maybe-monad]
 
 [^maybe-monad]: Assuming you don't consider Kleisli categories
-as something as dirty as arithmetic with infinites.
+are as dirty as arithmetic with infinities.
 
 
 Given this graph, a common question to ask is
@@ -85,7 +116,7 @@ $$
 
 The first line is the base case for the recursion
 and represents the 0-step paths.
-It costs nothing to just stay where you are but it is in turn impossible
+It costs nothing to just stay where you are, but it is in turn impossible
 to reach any other vertex in zero steps.
 This may seem really simple, but let's nevertheless define a matrix $I$
 to represent this 0-step reachability relation.
@@ -101,7 +132,7 @@ $$
 We can use $I$ to write the recurrence more compactly:
 
 $$
-  V(s, t) = \min \left\{ I(s, t),\, \min_{q \in \States}\, A(s, q) + V(q, t) \right\}.
+  V(s, t) = \min \left\{ I(s, t),\, \min_{q \in \States} A(s, q) + V(q, t) \right\}
 $$
 
 What the above equation means is that the minimal distance between two vertices
@@ -111,9 +142,9 @@ and recursively following the shortest path with at least one edge.
 Every problem is linear if you squint hard enough {#sec:algebraic-paths}
 =================================================
 
-The equation above is rather ugly indeed.
+The equation above is indeed rather ugly.
 However, by looking at it with care, one can the structure unveiling.
-First of all, the term
+First, the term
 
 $$
   \min_{q \in \States}\, A(s, q) + V(q, t)
@@ -123,7 +154,7 @@ looks a lot like some kind of composition where we aggregate over the middle ind
 Even more: if you squint your eyes enough, it looks a lot like the formula for matrix multiplication.
 
 Well, let's try to discover where this idea takes us.
-Even if it is just for the sake of abstract non-sense, it could be interesting.
+Even if it is just for the sake of abstract nonsense, it could be interesting.
 In general, when talking about real numbers, we use the usual arithmetic structure
 with addition and multiplication.
 Today we're going to be eccentric and define a new kind of addition and multiplication:
@@ -215,40 +246,48 @@ with an operation for combining two values ($\otimes$)
 and another for aggregating values ($\oplus$).
 Since the min-plus semiring was our choice for intuition,
 let's start the implementation with it.
-For the sake of polymorphism, we allow a Tropical version of any type.
 
 > data Tropical a = Finite a | Infinity
->   deriving (Eq, Ord)
+>   deriving (Eq, Functor)
 
-For any ordered numerical type, such as the integers or reals,
-there is a Tropical structure given by what we discussed earlier.
+One thing to notice about our motivation is that
+we only used two operations on the real numbers:
+the capacity of combining weights along a path with addition (our product)
+and the capacity of aggregating weights of different paths
+by choosing the smallest among them (our addition).
+Thus, the Tropical structure works for any monoid endowed with a total order.
+We will define the operations in this more general setting[^general-monoid]
+however, I advise you to keep the Real numbers in mind for the intuition.
+You will shortly see why this generality pays off.
 
-> instance (Ord a, Num a) => Semiring (Tropical a) where
->  zero = Infinity
->  one  = Finite 0
+[^general-monoid]: As if this posts wasn't abstract enough.
 
-For addition, the derived `Ord` instance
-already puts `Infinity` as the largest element.
+> instance (Ord a, Monoid a) => Semiring (Tropical a) where
+>  zero = Infinity       -- Weight of nonexistent path
+>  one  = Finite mempty  -- Weight of empty path
 
->  (|+|) = min
+For addition, `Infinity` works as identity since we are minimizing.
 
-The product equals the usual sum for numbers
+>  Infinity |+| x        = x
+>  x        |+| Infinity = x
+>  Finite x |+| Finite y = Finite (min x y) -- Choose the smallest among paths
+
+For the product, we combine two values in the usual way
 with the extension that `Infinity` is absorbing:
 adding an infinite quantity to any number, no matter how small,
 always produces an infinite result.
 
 >  x        |*| Infinity = Infinity
 >  Infinity |*| y        = Infinity
->  Finite x |*| Finite y = Finite (x + y)
+>  Finite x |*| Finite y = Finite (x <> y)  -- Combine weights along a path
 
 Now, this next one is interesting.
 The closure of `x` is equivalent to the shortest distance
 in a graph with a single node.
-If there are no negative cycles, this equals to $0$,
-the length of the empty path.
-Therefore,
+If there are no negative cycles, this should equal the weight of an empty path,
+which is the identity to the product.
 
->  closure _ = Finite 0 -- the distance taken by not moving
+>  closure _ = one -- the distance taken by not moving
 
 Of course, we are not interested only in single node graphs.
 Let's take a look at weighted adjacency matrices.
@@ -261,8 +300,10 @@ let's define some simple wrappers to ease our life a little bit.
 We will go with some dependentish square matrices,
 but nothing that makes our code too complicated.
 
+> type Edge = (Nat, Nat)
+>
 > -- | n x n square matrix with components in r
-> newtype Matrix (n :: Nat) a = Matrix (Array (Nat, Nat) a)
+> newtype Matrix (n :: Nat) a = Matrix (Data.Array.Array Edge a)
 >   deriving (Eq, Functor, Foldable, Traversable)
 
 To ease our life, let's also define some methods to get a cleaner interface.
@@ -273,17 +314,17 @@ that transforms a function on pairs of indices into a `Matrix`.
 > nat :: forall n. KnownNat n => Nat
 > nat = natVal (Proxy @n)
 >
-> matrix :: forall n a. KnownNat n => ((Nat, Nat) -> a) -> Matrix n a
-> matrix f = Matrix $ array ends [(x, f x) | x <- range ends]
+> matrix :: forall n a. KnownNat n => (Edge -> a) -> Matrix n a
+> matrix f = Matrix $ Data.Array.array ends [(x, f x) | x <- Data.Array.range ends]
 >   where ends = ((1, 1), (nat @n, nat @n))
 
 And another smart constructor that turns a list of edges
 into the respective adjacency matrix.
 
 > adjacency :: forall n r. (KnownNat n, Semiring r)
->           => [((Nat, Nat), r)] -> Matrix n r
+>           => [(Edge, r)] -> Matrix n r
 > adjacency es = let Matrix o = one :: Matrix n r
->                in Matrix (o // es)
+>                in Matrix (o Data.Array.// es)
 
 It is also nice to have an `Applicative` instance, in order to aide us during future lifts.
 Notice that since our matrices are a type with fixed size,
@@ -291,8 +332,7 @@ we can lift operations by simply matching the components.
 
 > instance KnownNat n => Applicative (Matrix n) where
 >  pure x = matrix (const x)
->  liftA2 f (Matrix x) (Matrix y) =
->     matrix $ \(s, t) -> f (x ! (s, t)) (y ! (s, t))
+>  (Matrix f) <*> (Matrix y) = matrix $ \(s,t) -> (f Data.Array.! (s,t)) (y Data.Array.! (s,t))
 
 
 With these tools, we can keep away from the Array low-level API,
@@ -315,7 +355,7 @@ and use the traditional definition to build the product.
 >  -- Matrix multiplication using Semiring operators
 >  Matrix x |*| Matrix y = matrix contract
 >   where
->    contract (s, t) = add [x ! (s, q) |*| y ! (q, t) | q <- [1..nat @n]]
+>    contract (s, t) = add [x Data.Array.! (s, q) |*| y Data.Array.! (q, t) | q <- [1..nat @n]]
 >    add             = foldl' (|+|) zero
 
 Finally, it is time for our main algorithm: how to calculate the closure of a matrix.
@@ -361,8 +401,8 @@ that is adapted to work on any closed semiring.[^idempotent-algo]
 
 >  closure x = one |+| foldl' step x [1..nat @n]
 >   where step (Matrix m) k = matrix relax
->          where relax (i, j) = let c = closure (m ! (k, k))
->                  in m ! (i, j) |+| m ! (i, k) |*| c |*| m ! (k, j)
+>          where relax (i, j) = let c = closure (m Data.Array.! (k, k))
+>                  in m Data.Array.! (i, j) |+| m Data.Array.! (i, k) |*| c |*| m Data.Array.! (k, j)
 
 [^idempotent-algo]: There is also a pretty elegant alternative that,
   unfortunately, only works for idempotent semirings.
@@ -400,30 +440,106 @@ digraph "Linear Graph" {
 }
 ```
 
-From distances to paths
------------------------
+Everything you ever wanted to know about your graphs
+----------------------------------------------------
 
-Great, we now have a procedure capable of converting any
-weight matrix into a matrix of shortest distances!
-We can even write a little wrapper to work directly
-with association lists of edges.
+Great, we have all the necessary tools to solve the Bellman Equation
+on the tropical semiring!
+Let's write a little wrapper that turns an association list of weighted edges
+into the matrix of shortest distance between vertices.
+It works by converting the weights into a Tropical semiring
+where we use Haskell's `Sum` monoid to indicate
+that it should combine values with addition.
 
-> shortestDistances :: (KnownNat n, Num r, Ord r)
->                   => [((Nat, Nat), r)] -> Matrix n (Tropical r)
-> shortestDistances = closure . adjacency . tropicalize
->  where tropicalize = (fmap . fmap) Finite
+> shortestDistances :: (KnownNat n, Ord r, Num r)
+>                   => [(Edge, r)] -> Matrix n (Tropical (Sum r))
+> shortestDistances = closure . adjacency . fmap tropicalize
+>  where tropicalize = fmap (Finite . Sum)
 
+This matrix represents the problem's optimal value function,
+and, from it we can reconstruct the optimal paths.
+But wouldn't it be cooler if the algorithm could already form the paths for us?
+It is, in some sense, walking over the graph after all...
+As you may guess, there is a semiring capable of just that!
 
+Thanks to our generic Tropical semiring
+and Haskell's default instances, this addition is almost an one-liner.
 
+> -- | Perform an optimization problem storing the optimal paths
+> solveWithPath :: (KnownNat n, Ord (f r), Monoid (f r))
+>               => (a -> f r) -> [(Edge, a)] -> Matrix n (Tropical (f r, [Edge]))
+> solveWithPath f = closure . adjacency . fmap withEdge
+>  where withEdge (e, w) = (e, Finite (f w, [e]))
+>
+> shortestPath :: (KnownNat n, Ord r, Num r)
+>              => [(Edge, r)] -> Matrix n (Tropical (Sum r, [Edge]))
+> shortestPath = solveWithPath Sum
 
+Well, how does the above work?
+The List type has a default Monoid instance given by `[]` and concatenation,
+and pairs of monoids are also monoids with pointwise operations.
+Furthermore, Haskell provides default `Òrd` instances for pairs and lists
+using the lexicographic order.
+Thus, in the type `Tropical (Sum r, [Edge])`,
+the product is sums sums the weights in the first component
+and concatenate the paths in the second,
+while the addition takes the lexicographic minimum:
+keep the pair with smallest weight or, if they are equal,
+disambiguate the paths lexicographically.
+Since we only want one shortest path, any disambiguation criterion works,
+and we happily receive our path.
 
-From this matrix, it is possible to reconstruct
-the arguments for the optimal paths.
-But wouldn't it be great if the algorithm could already return that for us?
-As you may guess, there is a semiring capable of just that.
+Of course, this technique works for many more operations.
+By using the `Down` constructor, which inverts an `Ord` instance,
+we can also solve maximization problems!
+For example, by changing a single constructor,
+we can query for the largest path.
 
-> -- | A type with path information appended
-> data Path a = Path a [(Nat, Nat)] | Unreacheable
+> largestPath :: (KnownNat n, Ord r, Num r)
+>             => [(Edge, r)] -> Matrix n (Tropical (Down (Sum r), [Edge]))
+> largestPath = solveWithPath (Down . Sum)
+
+Keep in mind that in this case,
+our previous assumption of no negative cycles
+becomes the dual, but for some reason much less agreeable,
+assumption of of positive cycles.
+
+Now suppose that you heavy a very important letter
+to send to somebody you know.
+Unfortunately, the roads (or the network links) are each day more dangerous
+and finding a route that will actually deliver your message is no easy task.
+One can model this situation as a graph whose weights this edge's **reliability**,
+that is, the probability of the message crossing that edge without being compromised.
+Assuming independence, the reliability of a path is the product
+of its edge's probabilities and we can find
+the most reliable path by maximizing among all of them.
+At this point, you can already guess: there is a semiring for that.
+Use take $\max$ to be the sum and $\times$ for the product et voilà, were' done.
+
+> mostReliablePath :: (KnownNat n, Ord r, Num r)
+>                  => [(Edge, r)] -> Matrix n (Tropical (Down (Product r), [Edge]))
+> mostReliablePath = solveWithPath (Down . Product)
+
+Suppose now that you're not worried about the message failing to be delivered,
+but with its size.
+You want to send a really big package and most know whether it can pass on the road.
+In order to guarantee the delivery,
+you decide to find the **widest path** on the graph.
+To find it, we define the width of a path
+as the minimum width among its edges (the bottleneck)
+and then aggregate among all paths by choosing the one
+with the largest bottleneck.
+That's a semiring with $\oplus = \max$, and $\otimes = \min$.
+
+> widestPath :: (KnownNat n, Ord r, Bounded r)
+>            => [(Edge, r)] -> Matrix n (Tropical (Down (Min r), [Edge]))
+> widestPath = solveWithPath (Down . Min)
+
+Besides those, a lot of other queries on graphs are realizable
+in terms of semirings, and specially some variation of the tropical semiring.
+A book with a lot of examples in the applied field of networks
+is the one by @{path_networks_2010}.
+
 
 Transitive Closures of Relations
 ================================
@@ -431,8 +547,8 @@ Transitive Closures of Relations
 Let's now divert our attention to another topic
 that is nevertheless closely related: finite relations.
 Think about the common binary relations that we work with everyday:
-equality, order ($\le$, <, $\ge$, >), equivalence relations...
-All of them share two importante properties: **transitivity** and **reflexivity**.
+equality, order ($\le$, $<$, $\ge$, $>$), equivalence relations...
+All of them share two important properties: **transitivity** and **reflexivity**.
 
 So, if you're going to work with some  relation,
 a typical process is to complete it in order to turn
@@ -470,7 +586,7 @@ the operation we need is exaclty the closure for the matrix semiring.
 Interestingly, the above can also be comprehended as a common operation on graphs.
 By translating the boolean matrix into the (unweighted) adjacency matrix of a directed graph,
 this closure returns the graph whose edges are all paths on the original graph.
-If there one can go from $s$ to $t$ in $G$, then $G^\star(s, t) = \mathtt{true}$.
+If one can go from $s$ to $t$ in $G$, then $G^\star(s, t) = \mathtt{true}$.
 In the figure below, we illustrate this relationship.
 
 <object data="finite-relation-views.svg" type="image/svg+xml">
@@ -488,7 +604,7 @@ we tend to find out some kind of datastructure that is intimately related to it.
 For example, monoids have lists, magmas have binary trees,
 and vector spaces have fixed-length boxes of numbers.
 These datatypes are a way to represent the **free** version of the algebraic structure.
-The actual definition of something begin free in mathematics is a bit too technical
+The actual definition of something being free in mathematics is a bit too technical
 for this blog's tone, but the important to us is that, in general,
 a free structure can act as a skeleton (or syntax tree) representing a computation
 and any other instance of the algebraic structure can be recovered with a suitable interpreter.[^perrone]
@@ -501,13 +617,17 @@ Well, do you have any guess for what is the free closed semiring?
 Perhaps surprisingly, it consists of **Regular Expressions**,
 at least when we assume the sum to be idempotent.[^kleene-algebra]
 Yep, regular expressions, those strange grawlixes that perl programmers love so much
-and that renders your queries completely unreadable a couple weeks after you've written them.
+and that renders your queries completely unreadable a couple of weeks after you've written them.
 Since I don't want this page to be worthy of a comic book cursing context,
 we will follow a more disciplined approach and represent the regular expressions
-as its own a [datatype](https://en.wikipedia.org/wiki/Regular_expression#Formal_definition).
+as its own a [datatype](https://en.wikipedia.org/wiki/Regular_expression#Formal_definition).[^regex-haskell]
 
 [^kleene-algebra]: To be precise, regular expressions are the free
                    [Kleene Algebra](https://en.wikipedia.org/wiki/Kleene_algebra).
+
+[^regex-haskell]: For a primer on regular expressions in Haskell, see
+  Pedro Vasconcelos' [A regular expression matcher](https://www.schoolofhaskell.com/user/pbv/a-regular-expression-matcher).
+
 
 > data Regex a = Nope                      -- Empty Set: matches nothing
 >              | Empty                     -- Empty String: matches anything
@@ -522,9 +642,9 @@ those that represent some kind of [**Regular Language**](https://en.wikipedia.or
 The semiring instance is straighforward,
 since the constructors closely resemble the class methods.
 We will only implement a couple simplifications
-in order to not get expressions with redundants parts.
+in order to not get expressions with redundant parts.
 
-> instance Semiring (Regex a) where
+> instance Eq a => Semiring (Regex a) where
 >  zero    = Nope
 >  one     = Empty
 >  -- Union with some eliminations for empty elements
@@ -550,7 +670,7 @@ in order to not get expressions with redundants parts.
 The previous definition was long but rather mechanical
 and, most important of all, gave us a shining new semiring to play with!
 Alright, what does the closure of a matrix of regular expressions?
-First of all, a graph labeled with regular expressions is exactly a finite state machine
+First, a graph labeled with regular expressions is exactly a finite state machine
 (more precisely, a ε-NFA),
 and since in this case $\oplus$ is union and $\otimes$ is concatenation,
 we get from the power series interpretation that the closure $A^*$
@@ -570,9 +690,10 @@ We achieve this with an interpreter function.
 > interpret :: Semiring r => (a -> r) -> (Regex a -> r)
 > interpret f Nope        = zero
 > interpret f Empty       = one
+> interpret f (Literal a) = f a
 > interpret f (Union x y) = interpret f x |+| interpret f y
-> interpret f (Join x y)  = interpret f x |*| interpret f y
-> interpret f (Many e)    = closure (interpret f e)
+> interpret f (Join  x y) = interpret f x |*| interpret f y
+> interpret f (Many  e)   = closure (interpret f e)
 
 This is similar to how Haskell's [`foldMap`](https://hackage.haskell.org/package/base-4.18.0.0/docs/Prelude.html#v:foldMap)
 works for monoids or the `eval` function that we
@@ -580,7 +701,7 @@ works for monoids or the `eval` function that we
 All of them are some kind of "realizations of typeclass".
 
 The usefulness of this interpreter comes from the fact that it commutes with the matrix operations.
-Thus, whenever we want to perform many different queries in a same graph with idempotent aggregations
+Thus, whenever we want to perform many queries in a same graph with idempotent aggregations
 (such as shortest paths, largest paths, most reliable paths, widest paths etc.),
 we may first calculate the regular expressions representing these paths
 and then collapse them separately for each semiring.
@@ -592,7 +713,7 @@ To wrap up this post,
 let's take a look at a semiring that is not idempotent:
 the classical field structure on the real/complex numbers.
 Or, to be technicality accurate, one of these fields complete with an extra point
-to amout for the non-invertibility of zero.
+to amount for the non-invertibility of zero.
 
 > data Classical a = Field a | Extra
 >   deriving Eq
@@ -603,7 +724,7 @@ to amout for the non-invertibility of zero.
 >  Extra   |+| _       = Extra
 >  _       |+| Extra   = Extra
 >  Field x |+| Field y = Field (x + y)
-
+>
 >  Field 0 |*| _       = Field 0
 >  _       |*| Field 0 = Field 0
 >  Extra   |*| _       = Extra
@@ -650,58 +771,16 @@ you will see that this is exactly the Gauss-Jordan elimination,
 where in our case multiplying by the closure takes the same role
 as dividing by a row in the classical presentation.
 
+Farewell
+========
 
-\begin{code}
-  instance Show a => Show (Regex a) where
-   show Nope  = ""
-   show Empty = "ε"
-   show (Literal a) = show a
-   show (Union x y) = "(" ++ show x ++ "|" ++ show y ++ ")"
-   show (Join  x y) = "(" ++ show x ++ show y ++ ")"
-   show (Many x) = show x ++ "*"
+This was a lot of fun, but every post must come to an end.
+Most of it, I've learned from @{path_networks_2010},
+which also contains _a lot_ of examples in the context of networks.
+If you want to go deeper on tropical mathematics
+and the theory of closed semirings, the best book I know is @{graphs_dioids_semirings_2008}.
+A lot of the implementations on this site where inspired by those
+from @{dolan_semiring_pearl_2013}'s paper and the very interesting blog post by @{r6_ca_paths}.
 
-
-  instance Show a => Show (Classical a) where
-   show Extra     = "∞"
-   show (Field a) = show a
-  instance Show a => Show (Tropical a) where
-   show Infinity     = "∞"
-   show (Finite a) = show a
-
-
-  pp (Matrix m) = printGrid m
-
-  printGrid :: Show a => Array (Nat, Nat) a -> IO ()
-  printGrid grid = mapM_ (putStrLn . textRepresentation) (toSimpleArray grid)
-
-  toSimpleArray :: Array (Nat, Nat) a -> [[a]]
-  toSimpleArray grid = [[grid ! (x, y) | x<-[lowx..highx]] |  y<-[lowy..highy]]
-    where ((lowx, lowy), (highx, highy)) =  bounds grid
-
-  textRepresentation :: Show a => [a] -> String
-  textRepresentation = unwords . fmap show
-
-  deriving instance Show a => Show (Matrix n a)
-
-
-  es :: [[Bool]]
-  es = (fmap.fmap) (==1) [[1,1,0,0], [1,0,1,0], [0,0,0,0], [1,0,0,1]]
-
-  a :: Matrix 4 Bool
-  a = matrix (\(s,t) -> (es !! fromIntegral (t-1) ) !! fromIntegral (s-1))
-
-  b :: Matrix 4 Bool
-  b = closure a
-\end{code}
-
-
-References
-==========
-
-https://r6.ca/blog/20110808T035622Z.html
-
-@{graphs_dioids_semirings_2008}
-@{path_networks_2010}
-@{dolan_semiring_pearl_2013}
-
-https://www.schoolofhaskell.com/user/pbv/a-regular-expression-matcher
+Farewell, and have fun spotting shortest paths where you would never imagine before.
+Heads up, there's a lot of semirings lurking around.

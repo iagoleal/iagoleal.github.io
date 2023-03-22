@@ -16,6 +16,14 @@
     <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
 
     <item>
+      <guid isPermaLink="false">1176588861</guid>
+      <title>Algebraic Path Finding</title>
+      <link>https://iagoleal.com/posts/algebraic-path/</link>
+      <dc:creator>Administrator</dc:creator>
+      <category>Blog</category>
+      <pubDate>21 Mar 2023 00:00:00 GMT</pubDate>
+    </item>
+    <item>
       <guid isPermaLink="false">1176588860</guid>
       <title>Memoization via Representables</title>
       <link>https://iagoleal.com/posts/representable-memoize/</link>
