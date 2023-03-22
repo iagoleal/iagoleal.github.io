@@ -227,7 +227,7 @@ and anything that can be formed combining those
 via composition or arithmetic operations.
 For example:
 
-$$ \frac{1}{23}\log\left(\sin(3x^3) + \frac{e^{45x} - 21}{x^{0.49}\mathrm{asin}(-\frac{\pi}{x})}\right) + \cos(x^2)$$
+$$ \frac{1}{\pi}\log\left(\sin(3x^3) + \frac{e^{45x} - 21}{x^{0.49}\mathrm{asin}(-\frac{\pi}{x})}\right) + \cos(x^2)$$
 
 
 This sort of object is called an [Elementary function](https://en.wikipedia.org/wiki/Elementary_function)
@@ -414,8 +414,8 @@ One thing to remember though is that the rules should eventually converge.
 If you use identities that may cancel each other,
 the simplification may never terminate.
 
-[^anedocte-trig]: Countless times I only finished a proof
-because I used an identity on the non-intuitive side.
+[^anedocte-trig]: Countless times I've only got to finish a proof
+because I've used an identity on the non-intuitive side.
 For example writing something like
 $$f(x) = f(x) \cdot 1 = f(x) \cdot (\sin(x)^2 + \cos(x)^2).$$
 Those are always some great _A-ha!_ moments.

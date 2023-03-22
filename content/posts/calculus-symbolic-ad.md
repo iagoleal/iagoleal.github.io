@@ -235,10 +235,12 @@ For division, we use the same trick as with complex numbers
 and multiply by the denominators conjugate.
 
 $$
+\begin{aligned}
   \frac{a + b\varepsilon}{c + d\varepsilon}
-  = \frac{a + b\varepsilon}{c + d\varepsilon} \cdot \frac{c - d\varepsilon}{c - d\varepsilon}
-  = \frac{ac + (bc - ad)\varepsilon}{c^2}
-  = \frac{a}{c} + \frac{bc - ad}{c^2}\varepsilon
+    &= \frac{a + b\varepsilon}{c + d\varepsilon} \cdot \frac{c - d\varepsilon}{c - d\varepsilon} \\
+    &= \frac{ac + (bc - ad)\varepsilon}{c^2} \\
+    &= \frac{a}{c} + \frac{bc - ad}{c^2}\varepsilon
+\end{aligned}
 $$
 
 

@@ -43,7 +43,7 @@ simply by writing the equivalent Haskell definition:
 Calculus with Infinite Lists
 ============================
 
-> {-# LANGUAGE DeriveFunctor, DeriveFoldable, NoMonomorphismRestriction #-}
+> {-# LANGUAGE DeriveTraversable, NoMonomorphismRestriction #-}
 > import Data.Foldable (toList)
 
 First, a disclaimer:

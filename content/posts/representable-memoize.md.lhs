@@ -456,7 +456,7 @@ Farewell
 ========
 
 With this we finish our stroll through memoization-land.
-By the way, this post is a [literate haskell file](https://github.com/iagoleal/iagoleal.github.io/blob/master/content/posts/representable-memoize.md).
+By the way, this post is a [literate haskell file](https://github.com/iagoleal/iagoleal.github.io/blob/master/content/posts/representable-memoize.md.lhs).
 Thus, I really recommend you to take the functions in it and try some benchmarks
 to see how much the memoization helps.
 From my own tests in ghci, the Tree Fibonacci is much faster than the other two.
