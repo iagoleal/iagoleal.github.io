@@ -126,7 +126,7 @@ img {
 /* Pre and Code */
 pre {
   display: block;
-  padding: 1em;
+  padding: 0; 
   overflow-x: auto;
   margin-top: 0px;
   margin-bottom: 2.5rem; }

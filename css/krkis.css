@@ -19,7 +19,7 @@ html {
   scroll-behavior: smooth;
   position: relative;
   min-height:100%;
-  font-family: 'Montserrat', 'Montserrat Alternates', 'IBM Plex Sans', 'Fira Sans', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', 'Noto Sans', sans-serif;
+  font-family:'Montserrat', 'Avenir', 'Avenir Next LT Pro', 'Corbel', 'URW Gothic', source-sans-pro, sans-serif;
 }
 
 h1,h2,h3,h4,h5,h6 {
@@ -44,9 +44,15 @@ p {
 }
 
 img,video,object {
-  margin: auto;
+  height: auto;
+  margin-left: auto;
+  margin-right: auto;
   display: block;
   max-width: 100%;
+}
+
+object {
+  align: middle;
 }
 
 ul {
@@ -240,4 +246,11 @@ body {
   max-width: 200px;
   object-fit: cover;
   border-radius: 50%;
+  display: flex;
+  padding-right: 20px;
+}
+
+.illustration {
+   display: block;
+   margin: 0 auto;
 }
