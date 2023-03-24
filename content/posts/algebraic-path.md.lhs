@@ -303,7 +303,7 @@ but nothing that makes our code too complicated.
 > type Edge = (Nat, Nat)
 >
 > -- | n x n square matrix with components in r
-> newtype Matrix (n :: Nat) a = Matrix (Data.Array.Array Edge a)
+> newtype Matrix (n :: Nat) a = Matrix (Array Edge a)
 >   deriving (Eq, Functor, Foldable, Traversable)
 
 To ease our life, let's also define some methods to get a cleaner interface.
@@ -315,7 +315,7 @@ that transforms a function on pairs of indices into a `Matrix`.
 > nat = natVal (Proxy @n)
 >
 > matrix :: forall n a. KnownNat n => (Edge -> a) -> Matrix n a
-> matrix f = Matrix $ Data.Array.array ends [(x, f x) | x <- Data.Array.range ends]
+> matrix f = Matrix $ array ends [(x, f x) | x <- range ends]
 >   where ends = ((1, 1), (nat @n, nat @n))
 
 And another smart constructor that turns a list of edges
@@ -324,7 +324,7 @@ into the respective adjacency matrix.
 > adjacency :: forall n r. (KnownNat n, Semiring r)
 >           => [(Edge, r)] -> Matrix n r
 > adjacency es = let Matrix o = one :: Matrix n r
->                in Matrix (o Data.Array.// es)
+>                in Matrix (o // es)
 
 It is also nice to have an `Applicative` instance, in order to aide us during future lifts.
 Notice that since our matrices are a type with fixed size,
@@ -332,7 +332,7 @@ we can lift operations by simply matching the components.
 
 > instance KnownNat n => Applicative (Matrix n) where
 >  pure x = matrix (const x)
->  (Matrix f) <*> (Matrix y) = matrix $ \(s,t) -> (f Data.Array.! (s,t)) (y Data.Array.! (s,t))
+>  (Matrix f) <*> (Matrix y) = matrix $ \(s,t) -> (f ! (s,t)) (y ! (s,t))
 
 
 With these tools, we can keep away from the Array low-level API,
@@ -355,7 +355,7 @@ and use the traditional definition to build the product.
 >  -- Matrix multiplication using Semiring operators
 >  Matrix x |*| Matrix y = matrix contract
 >   where
->    contract (s, t) = add [x Data.Array.! (s, q) |*| y Data.Array.! (q, t) | q <- [1..nat @n]]
+>    contract (s, t) = add [x ! (s, q) |*| y ! (q, t) | q <- [1..nat @n]]
 >    add             = foldl' (|+|) zero
 
 Finally, it is time for our main algorithm: how to calculate the closure of a matrix.
@@ -401,14 +401,14 @@ that is adapted to work on any closed semiring.[^idempotent-algo]
 
 >  closure x = one |+| foldl' step x [1..nat @n]
 >   where step (Matrix m) k = matrix relax
->          where relax (i, j) = let c = closure (m Data.Array.! (k, k))
->                  in m Data.Array.! (i, j) |+| m Data.Array.! (i, k) |*| c |*| m Data.Array.! (k, j)
+>          where relax (i, j) = let c = closure (m ! (k, k))
+>                  in m ! (i, j) |+| m ! (i, k) |*| c |*| m ! (k, j)
 
 [^idempotent-algo]: There is also a pretty elegant alternative that,
   unfortunately, only works for idempotent semirings.
   It is a little slower ($O(n^3 \log n)$ versus $O(n^3)$) but it is worth showing here.
   If $R$ is idempotent, then all cross-terms in a binomial cancel out and we get
-  $$ (I \oplus A)^n = \bigoplus_{k=0}^n = A^\star. $$
+  $$ (I \oplus A)^n = \bigoplus_{k=0}^n A^k = A^\star. $$
   From this equation follows a pretty sleek one-liner:
 
         closure a = (one |+| a) |^| nat @n
