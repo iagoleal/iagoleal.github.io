@@ -19,7 +19,6 @@ citeproc: true
 
 # Log boilerplate
 verbosity: WARNING
-log-file: pandoc-log.json
 
 # Styling
 strip-comments:  true

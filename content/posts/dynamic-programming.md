@@ -88,7 +88,7 @@ This description may seem overly complicated on text,
 but fortunately the nice folks in the Comp Sci department
 already invented diagrams that show these transitions nicely.
 
-<object data="state-machine.svg" type="image/svg+xml" width="100%">
+<object data="state-machine.svg" type="image/svg+xml">
 </object>
 
 Our modeling above is an instance of something called

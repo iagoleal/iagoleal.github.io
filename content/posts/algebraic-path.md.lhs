@@ -228,7 +228,7 @@ by defining a `Semiring` class.
 >
 > infixl 6 |+|
 > infixl 7 |*|
-> infixl 8 |^|
+> infixr 8 |^|
 
 For later use, let's also define an exponentiation operator
 using the classic divide-and-conquer formula.
