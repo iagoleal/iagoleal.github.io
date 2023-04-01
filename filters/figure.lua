@@ -84,12 +84,13 @@ local template_tikz = [[
 
 \def\pgfsysdriver{pgfsys-dvisvgm.def}
 
-\usepackage{xcolor,lmodern,amsfonts,tikz,pgffor,ifthen}
+\usepackage{xcolor,lmodern,amsfonts,tikz}
 
 %% Additional packages: usepackage
 \usepackage{%s}
 
 %% Libraries for tikz: tikzlibrary
+\usetikzlibrary{scopes}
 \usetikzlibrary{%s}
 
 %% Additional preamble; loaded after tikz
