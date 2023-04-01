@@ -11,17 +11,17 @@
 \colorlet{smoothorange}{orange!70}
 
 \begin{tikzpicture}[
-  node distance = 2.5cm,
+  node distance = 4cm,
   state/.style = {
     circle,
-    minimum width={width("shooting")+2pt},,
+    minimum width={width("shooting")},
     fill = gray!20,
     draw = gray!40,
     very thick,
   },
   action/.style   = {
     opacity = 0.8,
-    thin,
+    semithick,
     smoothgray,
     text = black,
     ->,
@@ -33,20 +33,19 @@
   },
 ]
   \node [animate={glow}, state] (B) []                   {idle};
-  \node [animate={glow}, state] (A) [left = of B]        {shooting};
+  \node [animate={glow}, state] (A) [left = of B]        {firing};
   \node [animate={glow}, state] (C) [below right = of B] {walking};
   \node [animate={glow}, state] (D) [above right = of C] {jumping};
 
-
-  \path[action] (A) edge [bend left]         node [above]       {finish attack} (B)
-                (B) edge [bend left]         node [below]       {attack}        (A)
-                (B) edge [loop above]        node [above]       {rest}          ()
-                (B) edge []                  node [above right] {walk}          (C)
-                (B) edge [bend left]         node [above]       {jump}          (D)
-                (C) edge [loop right]        node [above right] {walk}          ()
-                (C) edge [bend left]         node [below left]  {stop}          (B)
-                (C) edge []                  node [below right] {jump}          (D)
-                (D) edge []                  node [above]       {hit ground}    (B);
+  \path[action] (A) edge [bend left]       node [above]       {finish attack} (B)
+                (B) edge [bend left]       node [below]       {attack}        (A)
+                (B) edge [loop above]      node [above]       {rest}          ()
+                (B) edge [bend left=10]    node [above right] {walk}          (C)
+                (B) edge [bend left]       node [above]       {jump}          (D)
+                (C) edge [loop right]      node [above right] {walk}          ()
+                (C) edge [out=180, in=270] node [below left]  {stop}          (B)
+                (C) edge [bend right=10]   node [below right] {jump}          (D)
+                (D) edge [bend left=7]     node [above]       {hit ground}    (B);
 \end{tikzpicture}
 
 \end{document}

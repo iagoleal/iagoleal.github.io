@@ -50,22 +50,26 @@ Classical Shortest Paths
 ========================
 
 ```{.tikz tikzlibrary="positioning,quotes,arrows,arrows.meta"}
-\begin{scope}[every node/.style = {circle, draw=black, thin, outer sep=1mm, minimum size=2mm}]
+{ [every node/.style = {circle, draw=black, thin, outer sep=1mm, minimum size=2mm}]
   \node [fill = cyan!20         ] (A) []                       {};
   \node [fill = orange!50       ] (B) [above right =     of A] {};
   \node [fill = red!30!blue!50  ] (C) [below right = 2cm of A] {};
   \node [fill = yellow!90!black ] (D) [right       = 4cm of A] {};
   \node [fill = green!50!cyan!50] (E) [left        = 2cm of A] {};
-\end{scope}
+}
 
-\def\colors{{"green!30"%
-            ,"orange!50"%
-            ,"red!30!blue!50"%
-            ,"yellow!90!black"%
-            }}
-\begin{scope}[every edge/.style = {{Round Cap}-Kite, draw}
-            ,every edge quotes/.style = {anchor = center, pos=0.5, fill = white, inner sep = 2pt, font = \tiny}
-            ]
+{ [ every edge/.style = {{Round Cap}-Kite, draw}
+  , transparency group = knockout
+  , every edge quotes/.style =
+      { anchor = center
+      , pos=0.5
+      , inner sep = 2pt
+      , font = \tiny
+      , fill = white
+      , circle
+      , text opacity = 1
+      }
+  ]
   \path[->] (A) edge["10",   bend left=10 ]  (B)
             (A) edge["5",    bend right   ]  (C)
             (B) edge["21",   bend left    ]  (C)
@@ -73,7 +77,7 @@ Classical Shortest Paths
             (D) edge["19.5", bend right=20]  (B)
             (E) edge["2",    bend right   ]  (A)
             (E) edge["-2",   bend right   ]  (C);
-\end{scope}
+}
 ```
 
 Consider a graph with weights on its edges.

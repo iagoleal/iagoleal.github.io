@@ -8,10 +8,10 @@ date: 2020-09-10
 \def\op#1{\operatorname{\mathrm{#1}}}
 \def\catC{\mathcal{C}}
 \def\catD{\mathcal{D}}
-\DeclareMathOperator{\fat}{fat}
-\DeclareMathOperator{\maybe}{\mathtt{maybe}}
-\DeclareMathOperator{\true}{true}
-\DeclareMathOperator{\false}{false}
+\def\fat{\mathrm{fat}}
+\def\maybe{\mathtt{maybe}}
+\def\true{\mathrm{true}}
+\def\false{\mathrm{false}}
 \def\Types{\mathtt{Types}}
 \def\Bool{\mathtt{Bool}}
 \def\nil{\op{nil}}

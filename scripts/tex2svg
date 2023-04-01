@@ -22,9 +22,9 @@ TMPFILE="$TMPDIR/$(basename "$INFILE")"
 
 cp "$INFILE" "${TMPFILE}.tex"
 # tex -> dvi
-latex --output-format=dvi --halt-on-error --interaction nonstopmode --output-directory "$TMPDIR" "${TMPFILE}.tex"
+latex --output-format=dvi --halt-on-error --file-line-error --interaction nonstopmode --output-directory "$TMPDIR" "${TMPFILE}.tex"
 # dvi -> svg
-dvisvgm --relative --zoom=2 --optimize=all --font-format=woff2 --exact -o "${TMPFILE}.svg" "${TMPFILE}.dvi"
+dvisvgm --relative --zoom=2 --optimize=all --font-format=woff2 --exact --bbox=min -o "${TMPFILE}.svg" "${TMPFILE}.dvi"
 # Generate output file
 cp "${TMPFILE}.svg" "$OUTFILE"
 # $DIR/svg-minify "${TMPFILE}.svg" "$OUTFILE"
