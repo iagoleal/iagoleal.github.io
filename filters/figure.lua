@@ -3,6 +3,10 @@ local path   = require "pandoc.path"
 
 local fmt = string.format
 
+-- State for remembering all raw tex code
+-- that comes before the code block in the post.
+local tex_snippets = {}
+
 -----------------------------
 -- Shell-like functionality
 -----------------------------
@@ -93,6 +97,9 @@ local template_tikz = [[
 \usetikzlibrary{scopes}
 \usetikzlibrary{%s}
 
+%% Raw TeX blocks
+%s
+
 %% Additional preamble; loaded after tikz
 %s
 
@@ -105,19 +112,20 @@ local template_tikz = [[
 ]]
 
 local function format_tikz(block)
-    local pkgs     = block.attributes["usepackage"]  or ""
-    local libs     = block.attributes["tikzlibrary"] or ""
-    local preamble = block.attributes["preamble"]    or ""
+  local pkgs     = block.attributes["usepackage"]  or ""
+  local libs     = block.attributes["tikzlibrary"] or ""
+  local preamble = block.attributes["preamble"]    or ""
+  local rawtex   = table.concat(tex_snippets, "\n\n")
 
-    local env
-    if     block.classes[1] == "tikz" then
-      env = "tikzpicture"
-    elseif block.classes[1] == "tikzcd" then
-      pkgs = pkgs .. ",tikz-cd"
-      env = "tikzcd"
-    end
+  local env
+  if     block.classes[1] == "tikz" then
+    env = "tikzpicture"
+  elseif block.classes[1] == "tikzcd" then
+    pkgs = pkgs .. ",tikz-cd"
+    env = "tikzcd"
+  end
 
-    return template_tikz:format(pkgs, libs, preamble, env, block.text, env)
+  return template_tikz:format(pkgs, libs, rawtex, preamble, env, block.text, env)
 end
 
 local function islatex(s)
@@ -165,12 +173,22 @@ local function make_figure(svg_maker, content)
   return pandoc.RawBlock("html", format_tag(svgname))
 end
 
-function CodeBlock(block)
-  if block.classes[1] == "dot" then
-    return make_figure(dot_to_svg, block.text)
-  elseif islatex(block.classes[1]) then
-    return make_figure(latex_to_svg, format_tikz(block))
-  else
-    return
-  end
-end
+return {
+  {
+    traverse = "topdown",
+
+    RawBlock = function(block)
+      if block.format == "tex" then
+        table.insert(tex_snippets, block.text)
+      end
+    end,
+
+    CodeBlock = function(block)
+      if block.classes[1] == "dot" then
+        return make_figure(dot_to_svg, block.text)
+      elseif islatex(block.classes[1]) then
+        return make_figure(latex_to_svg, format_tikz(block))
+      end
+    end,
+  }
+}
