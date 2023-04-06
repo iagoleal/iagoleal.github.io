@@ -39,12 +39,11 @@
   \node [state] (prev) [right = of Actor] {$s$};
   \node [state] (next) [right = of prev]  {$s'$};
 
-  \begin{scope}[on background layer]
+  \scoped[on background layer]
     \node [rectangle, rounded corners, inner ysep=0.5cm,
            fill = orange, fill opacity = 0.3, draw opacity = 0.5, draw = orange, ultra thick,
            label = above:{Environment},
            fit = (next) (prev)] (Env) {};
-  \end{scope}
 
   \draw [action, decorate, thick, decoration={snake,amplitude=.4mm,segment length=2mm,post length=1mm}]
     (prev) -- (next)

@@ -49,7 +49,7 @@ is also an alternative view on finding shortest paths.
 Classical Shortest Paths
 ========================
 
-```{.tikz tikzlibrary="positioning,quotes,arrows,arrows.meta"}
+```tikz
 { [every node/.style = {circle, draw=black, thin, outer sep=1mm, minimum size=2mm}]
   \node [fill = cyan!20         ] (A) []                       {};
   \node [fill = orange!50       ] (B) [above right =     of A] {};
@@ -61,13 +61,13 @@ Classical Shortest Paths
 { [ every edge/.style = {{Round Cap}-Kite, draw}
   , transparency group = knockout
   , every edge quotes/.style =
-      { anchor = center
-      , pos=0.5
-      , inner sep = 2pt
-      , font = \tiny
-      , fill = white
-      , circle
+      { anchor       = center
+      , pos          = 0.5
+      , fill         = white
+      , font         = \tiny
+      , inner sep    = 2pt
       , text opacity = 1
+      , circle
       }
   ]
   \path[->] (A) edge["10",   bend left=10 ]  (B)

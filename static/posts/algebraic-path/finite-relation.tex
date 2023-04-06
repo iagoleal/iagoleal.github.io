@@ -4,7 +4,7 @@
 \usepackage{lmodern,tikz}
 
 \usetikzlibrary{positioning, arrows, arrows.meta, shapes.geometric}
-\usetikzlibrary {decorations.pathmorphing, chains, calc, matrix}
+\usetikzlibrary {decorations.pathmorphing, chains, calc, matrix, scopes}
 
 \begin{document}
 
@@ -35,10 +35,11 @@
   ]
 
   % Relations
-  \begin{scope}[ start chain        = source going below
-               , local bounding box = relScope
-               , baseline           = {(0,0)}
-               ]
+  { [ start chain        = source going below
+    , local bounding box = relScope
+    , baseline           = {(0,0)}
+    ]
+
     \foreach \row [count=\n, evaluate= \n as \color using {\colors[\n-1]}] in \adjacency {
       \node[state, fill=\color, on chain = source] (s\n) {};
       \node[state, fill=\color] (t\n) [right = 20mm of s\n.east] {};
@@ -51,13 +52,14 @@
           \fi
       }
     }
-  \end{scope}
+  }
 
   % Complete relation
-  \begin{scope}[ start chain        = source going below
-               , local bounding box = relCloScope,
-               , xshift = 7cm,
-               ]
+  { [ start chain        = source going below
+    , local bounding box = relCloScope,
+    , xshift = 7cm,
+    ]
+
     \foreach \row [count=\n, evaluate= \n as \color using {\colors[\n-1]}] in \adjacency {
       \node[state, fill=\color, on chain = source] (s\n) {};
       \node[state, fill=\color] (t\n) [right = 20mm of s\n.east] {};
@@ -74,9 +76,8 @@
           \fi
       }
     }
-  \end{scope}
+  }
 
-  % \draw ($(relScope.east)$)
   \draw[->, -Kite, thick, shorten >= 4mm, shorten <= 4mm] (relScope.east) -- node[above] {closure} (relCloScope.west);
 \end{tikzpicture}
 

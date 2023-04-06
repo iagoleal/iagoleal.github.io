@@ -63,12 +63,10 @@
       { \draw [action] (q\t\s) -- (T); }
     }
 
-    \begin{scope}[on background layer]
-      \node (bg\t) [animate={glow={0.2}{0.4}{b\t}},
-                    bg=\maxStates, fill = orange,
-                    label=above:{$t = \t$}]
+    \scoped [on background layer]
+      \node (bg\t) [animate={glow={0.2}{0.4}{b\t}}, bg=\maxStates, fill = orange, label=above:{$t = \t$}]
                 at ({3*(\t-1)}, 0) {};
-    \end{scope}
+
     \node (b\t) [bg=\maxStates, fill = white, opacity = 0.0,
                   fit=(bg\t)] at (bg\t) {};
   }

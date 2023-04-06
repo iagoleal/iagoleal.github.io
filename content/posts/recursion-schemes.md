@@ -8,10 +8,10 @@ date: 2020-09-10
 \def\op#1{\operatorname{\mathrm{#1}}}
 \def\catC{\mathcal{C}}
 \def\catD{\mathcal{D}}
-\def\fat{\mathrm{fat}}
+\def\fat{\op{fat}}
 \def\maybe{\mathtt{maybe}}
-\def\true{\mathrm{true}}
-\def\false{\mathrm{false}}
+\def\true{\op{true}}
+\def\false{\op{false}}
 \def\Types{\mathtt{Types}}
 \def\Bool{\mathtt{Bool}}
 \def\nil{\op{nil}}
@@ -21,6 +21,7 @@ date: 2020-09-10
 \def\id{\op{id}}
 \def\N{\mathbb{N}}
 \def\Z{\mathbb{Z}}
+\def\C{\mathbb{C}}
 \def\R{\mathbb{R}}
 \def\cata{\op{cata}}
 \def\ana{\op{ana}}
@@ -90,31 +91,38 @@ the way to program was quite unstructured.
 The code of a program was essentially given by a sequence of commands
 whereas the data was simply piled up in a stack.
 
-```{.tikz tikzlibrary="scopes,chains,bending,arrows.meta,shapes.misc"}
-\def\colors{red!30!blue!50, red!50, green!30, blue!50, blue!50, red!50, green!30, red!30!blue!50, blue!20}
-\begin{scope}[start chain=ctrl going right,
-    node distance=0.3mm]
-    { [minimum size=0.5cm,
-       tmcell/.style={fill,draw=black, rounded corners=1.618},
-       every join/.style={-{Latex[length=1mm]}, shorten <= 0.5mm,shorten >= 0.5mm, in=-110, out=-80, looseness=2}]
-        \foreach \c in \colors
-            \node [tmcell,fill=\c, on chain, join] {\phantom{\tt goto}};
+```{.tikz tikzlibrary="chains,bending,shapes.misc"}
+{ [start chain=ctrl going right, node distance=0.3mm]
+
+  { [minimum size=0.5cm,
+     tmcell/.style={fill,draw=black, rounded corners=1.618},
+     every join/.style={-{Latex[length=1mm]}, shorten <= 0.5mm,shorten >= 0.5mm, in=-110, out=-80, looseness=2}]
+
+      \def\colors{red!30!blue!50, red!50, green!30, blue!50, blue!50, red!50, green!30, red!30!blue!50, blue!20}
+
+    \foreach \c in \colors
+      \node [tmcell,fill=\c, on chain, join] {\phantom{\tt goto}};
+  }
+
+  \node [on chain] {~~~};
+
+  { [orange, node distance = 0.2mm, minimum size=0.4cm]
+    \node [fill, on chain] {};
+
+    { [start branch=stckup going above]
+      \foreach \i in {1,...,2}
+      \node [draw,on chain] {};
     }
-    \node [on chain] {~~~};
-    { [orange, node distance = 0.2mm, minimum size=0.4cm]
-        \node [fill, on chain] {};
-        { [start branch=stckup going above]
-            \foreach \i in {1,...,2}
-                \node [draw,on chain] {};
-        }
-        { [start branch=stckdown going below]
-            \foreach \i in {1,...,3}
-                \node [fill, on chain] {};
-            \node[on chain, black] (stacklabel) {Stack};
-        }
+
+    { [start branch=stckdown going below]
+      \foreach \i in {1,...,3}
+      \node [fill, on chain] {};
+      \node[on chain, black] (stacklabel) {Stack};
     }
-    \node[yshift=-0.9cm] at (ctrl-1.south east) {Control flow};
-\end{scope}
+  }
+
+  \node[yshift=-0.9cm] at (ctrl-1.south east) {Control flow};
+}
 ```
 
 But the program does not have to execute the instructions in order.
@@ -211,18 +219,19 @@ the functional paradigm views the code as a composition of functions in the math
 A function takes a value as input, does some processing to it, calling other functions for this,
 and returns another value as output.
 
-```{.tikz
-     tikzlibrary="chains,scopes,arrows.meta"}
-\begin{scope}[start chain=funcs going right,
-              every join/.style={-{latex}, thick},
-              minimum size=0.8cm]
-    \node[on chain] {input};
-    \node[fill=blue!20!green!20, draw=black, circle, on chain, join] {$f$};
-    \node[fill=red!20, draw=black, circle,, on chain, join] {$g$};
-    \node[on chain,join] {$\cdots$};
-    \node[fill=blue!70!red!30, draw=black, circle, on chain, join] {$h$};
-    \node[on chain, join] {output};
-\end{scope}
+```{.tikz tikzlibrary="chains"}
+{ [start chain=funcs going right,
+   every join/.style={-{latex}, thick},
+   minimum size=0.8cm,
+  ]
+
+  \node[on chain] {input};
+  \node[fill=blue!20!green!20, draw=black, circle, on chain, join] {$f$};
+  \node[fill=red!20, draw=black, circle,, on chain, join] {$g$};
+  \node[on chain,join] {$\cdots$};
+  \node[fill=blue!70!red!30, draw=black, circle, on chain, join] {$h$};
+  \node[on chain, join] {output};
+}
 ```
 
 If every program only consisted of applying a finite amount of previously defined functions,
@@ -445,23 +454,24 @@ To represent a non-empty list,
 we notice that any non-empty list with $n$ elements
 may be "factorized" into its first element and another list with the remaining $n-1$ elements.
 
-``` {.tikz
-      tikzlibrary="calc,shapes.multipart,chains,arrows, arrows.meta,scopes"}
-\begin{scope}[list/.style={rectangle split, rectangle split parts=2,
-                           rounded corners, draw, rectangle split horizontal},
-              >=stealth,
-              start chain,
-             ]
-  \node[list,on chain] (A) {$10$};
-  \node[list,on chain] (B) {$150$};
-  \node[list,on chain] (C) {$87$};
+``` {.tikz tikzlibrary="calc,shapes.multipart,chains"}
+{ [list/.style={rectangle split, rectangle split parts=2,
+                rounded corners, draw, rectangle split horizontal},
+   >=stealth,
+   start chain,
+  ]
+
+  \node[list,on chain]               (A) {$10$};
+  \node[list,on chain]               (B) {$150$};
+  \node[list,on chain]               (C) {$87$};
   \node[on chain,draw,inner sep=6pt] (D) {};
+
   \draw (D.north east) -- (D.south west);
-  % \draw (D.north west) -- (D.south east);
+
   \draw[Circle->] let \p1 = (A.two), \p2 = (A.center) in (\x1,\y2) -- (B);
   \draw[Circle->] let \p1 = (B.two), \p2 = (B.center) in (\x1,\y2) -- (C);
   \draw[Circle->] let \p1 = (C.two), \p2 = (C.center) in (\x1,\y2) -- (D);
-\end{scope}
+}
 ```
 
 Thus, by defining a type operator $P$ as
@@ -625,24 +635,25 @@ there always exists another arrow $g \circ f \colon A \to C$.
 You may think of arrows as representing paths
 and $g \circ f$ as the arrow path going through $f$ and then through $g$.
 
-```{.tikz tikzlibrary="arrows.meta,bending,scopes"}
+```{.tikz tikzlibrary="bending"}
 { [scale=2.5, obj/.style={circle, minimum size=3.5pt, inner sep=0pt, outer sep=0pt, fill, draw=black},
    morph/.style={-{Stealth[length=1.5mm]}, thin, shorten >= 0.5mm, shorten <= 0.5mm}]
-    \node[obj, fill=green!30] (A) at (0,0) {};
-    \node[obj, fill=orange!50] (B) at (1,-1) {};
-    \node[obj, fill=green!70!black] (C) at (1.5,1) {};
-    \node[obj, fill=red!30!blue!50] (D) at (2.5,0.6) {};
-    \node[obj, fill=purple!70] (E) at (2.3,-0.5) {};
-    \node[obj, fill=yellow!90!black] (F) at (3,0.8) {};
 
-    \draw[morph] (A) edge (B);
-    \draw[morph] (B) edge (E);
-    \draw[morph] (C) edge [bend right] (B);
-    \draw[morph] (D) edge [bend left=10] (E);
-    \draw[morph] (D) edge [bend right=10] (C);
+    \node[obj, fill=green!30]        (A) at (0,0)      {};
+    \node[obj, fill=orange!50]       (B) at (1,-1)     {};
+    \node[obj, fill=green!70!black]  (C) at (1.5,1)    {};
+    \node[obj, fill=red!30!blue!50]  (D) at (2.5,0.6)  {};
+    \node[obj, fill=purple!70]       (E) at (2.3,-0.5) {};
+    \node[obj, fill=yellow!90!black] (F) at (3,0.8)    {};
+
+    \draw[morph] (A) edge                                (B);
+    \draw[morph] (B) edge                                (E);
+    \draw[morph] (C) edge [bend right]                   (B);
+    \draw[morph] (D) edge [bend left=10]                 (E);
+    \draw[morph] (D) edge [bend right=10]                (C);
     \draw[morph] (E) edge [in=270, out=10, looseness=30] (E);
-    \draw[morph] (D) edge [bend right=50] (F);
-    \draw[morph] (D) edge [bend left=40] (F);
+    \draw[morph] (D) edge [bend right=50]                (F);
+    \draw[morph] (D) edge [bend left=40]                 (F);
 
     \draw[morph, teal] (A) .. controls (1, -1.7) .. (E);
     \draw[morph, teal] (D) edge [bend right] (B);
@@ -669,35 +680,29 @@ Thus,
 there is a category $\Types$ whose objects are types and arrows are functions between types.
 Composition is the usual for functions and the identities are the identity functions $\id_A(x) = x$.
 
-```{.tikz
-     usepackage="amsmath,amssymb"
-     tikzlibrary="arrows.meta,bending,scopes"}
-\def\N{\mathbb{N}}
-\def\Z{\mathbb{Z}}
-\def\C{\mathbb{C}}
-\def\R{\mathbb{R}}
-\def\op#1{\operatorname{\mathrm{#1}}}
-\begin{scope} [scale=2.5,
+```{.tikz usepackage="amsmath,amssymb" tikzlibrary="bending"}
+{ [scale=2.5,
    morph/.style={-{Stealth[length=1.5mm]}, thin, shorten >= 0.5mm, shorten <= 0.5mm}]
-    \node (A) at (0,0) {$L(\Z)$};
-    \node (B) at (1,-1) {$L(\R)$};
-    \node (C) at (1.5,1) {$(A \to \mathtt{maybe} B)$};
-    \node (D) at (2.5,0.6) {$\N$};
-    \node (E) at (2.3,-0.5) {$\mathbb{R}$};
-    \node (F) at (3,0.8) {$\mathtt{Bool}$};
 
-    \draw[morph] (A) edge node[above, sloped] {\small $\op{map}\,\sqrt{\,\cdot\,}$} (B);
-    \draw[morph] (B) edge node[above, sloped] {\small $\op{prod}$} (E);
-    \draw[morph] (C) edge [bend right] node[left, midway] {\small $g$}(B);
-    \draw[morph] (D) edge [bend left=10] node[right] {\small $\sqrt{\,\cdot\,}$} (E);
-    \draw[morph] (D) edge [bend right=10] node[above] {\small $f$} (C);
-    \draw[morph] (E) edge [in=300, out=10, looseness=5] node[right] {\small $\op{id}$} (E);
-    \draw[morph] (D) edge [bend left=50] node[above, sloped] {\small odd} (F);
-    \draw[morph] (D) edge [bend right=40] node[below, sloped] {\small $\op{even}$} (F);
+  \node (A) at (0,0) {$L(\Z)$};
+  \node (B) at (1,-1) {$L(\R)$};
+  \node (C) at (1.5,1) {$(A \to \mathtt{maybe} B)$};
+  \node (D) at (2.5,0.6) {$\N$};
+  \node (E) at (2.3,-0.5) {$\mathbb{R}$};
+  \node (F) at (3,0.8) {$\mathtt{Bool}$};
 
-    \draw[morph] (A) .. controls (1, -1.7) .. node [below] {\small $\op{prod} \circ (\op{map}\, \sqrt{\,\cdot\,})$} (E);
-    \draw[morph] (D) edge [bend right] node [midway, above, sloped] {\small $g \circ f$} (B);
-\end{scope}
+  \draw[morph] (A) edge node[above, sloped] {\small $\op{map}\,\sqrt{\,\cdot\,}$} (B);
+  \draw[morph] (B) edge node[above, sloped] {\small $\op{prod}$} (E);
+  \draw[morph] (C) edge [bend right] node[left, midway] {\small $g$}(B);
+  \draw[morph] (D) edge [bend left=10] node[right] {\small $\sqrt{\,\cdot\,}$} (E);
+  \draw[morph] (D) edge [bend right=10] node[above] {\small $f$} (C);
+  \draw[morph] (E) edge [in=300, out=10, looseness=5] node[right] {\small $\op{id}$} (E);
+  \draw[morph] (D) edge [bend left=50] node[above, sloped] {\small odd} (F);
+  \draw[morph] (D) edge [bend right=40] node[below, sloped] {\small $\op{even}$} (F);
+
+  \draw[morph] (A) .. controls (1, -1.7) .. node [below] {\small $\op{prod} \circ (\op{map}\, \sqrt{\,\cdot\,})$} (E);
+  \draw[morph] (D) edge [bend right] node [midway, above, sloped] {\small $g \circ f$} (B);
+}
 ```
 
 Category theory is not only concerned with categories
@@ -1342,7 +1347,7 @@ and see how it requires much less than 100 computations!
 Better yet, to compute $e^{200}$, this tree would have to be augmented by only one node.
 
 ```tikz
-\begin{scope}[every node/.style = {rectangle, rounded corners, draw=black}]
+{ [every node/.style = {rectangle, rounded corners, draw=black}]
   \node {square} [grow=right]
     child {node {square}
       child {node {mult}
@@ -1361,7 +1366,7 @@ Better yet, to compute $e^{200}$, this tree would have to be augmented by only o
         }
       }
     };
-\end{scope}
+}
 ```
 
 Hylomorphisms really shine when an algorithm

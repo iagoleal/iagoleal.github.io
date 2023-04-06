@@ -94,7 +94,7 @@ local template_tikz = [[
 \usepackage{%s}
 
 %% Libraries for tikz: tikzlibrary
-\usetikzlibrary{scopes}
+\usetikzlibrary{scopes,quotes,positioning,arrows.meta}
 \usetikzlibrary{%s}
 
 %% Raw TeX blocks

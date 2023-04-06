@@ -133,29 +133,6 @@ In two dimensions, we can also visualize this as a figure:
         width="100%">
 </object>
 
-<!-- ```{.tikz tikzlibrary="calc,scopes,fadings,shadows,bending,arrows.meta,shapes.misc"} -->
-<!--   \def\vecolor{green!50} -->
-<!--   % Help lines -->
-<!--   \draw [help lines, step=1.2, path fading = east, fading angle = 45] (0,0) grid (4,4); -->
-<!--   \coordinate (I1) at (4, 0); -->
-<!--   \coordinate (I2) at (0, 4); -->
-
-<!--   % Vector and components -->
-<!--   \coordinate (X) at (2.9, 2.4); -->
-<!--   \node at (X) [above right = 0.01cm] {$X$}; -->
-<!--   \coordinate (comp1) at (X |- I1); -->
-<!--   \coordinate (comp2) at (I2 |- X); -->
-<!--   \draw[thin, gray] (X) -- (comp1) node[below, color=black] {$x_1$}; -->
-<!--   \draw[thin, gray] (X) -- (comp2) node[left,  color=black] {$x_2$};; -->
-<!--   \draw[thick, \vecolor, circular glow] (0, 0) -- (X); -->
-<!--   \draw[thick, -stealth] (0, 0) -- (2, 0) node[below] {$\mathbb{I}_1$}; -->
-<!--   \draw[thick, -stealth] (0, 0) -- (0, 3.5) node[left] {$\mathbb{I}_2$};; -->
-
-<!--   \fill[\vecolor, draw=black] (X) circle (2pt); -->
-<!--   \fill[\vecolor] (comp1) circle (1pt); -->
-<!--   \fill[\vecolor] (comp2) circle (1pt); -->
-<!-- ``` -->
-
 Because we are interested in a geometrical definition for the mean,
 let's consider a special example:
 random variables that always return the same value

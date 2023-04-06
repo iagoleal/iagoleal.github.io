@@ -95,7 +95,7 @@
             [state, outer sep = 2] (q\t\s) at ({3cm*(\t-1)}, {1.5cm*(\s - (\nStates+1)/2)}) {};
 
       % Arraws going out of each state
-      \ifthenelse{\t < \nStages}{
+      \ifnum \t<\nStages
         \pgfmathtruncatemacro{\next}{\t + 1}
         \pgfmathsetmacro{\nStatesNext}{\states[\t]}
         \pgfmathrandominteger{\bestaction}{1}{\nStatesNext}
@@ -112,10 +112,9 @@
                   [action] (q\t\s) -- (q\next\ny);
             \fi
         }
-      }
-      {
+      \else
         \draw [animate={pulse={0s}}, action] (q\t\s) -- (T);
-      }
+      \fi
     }
   }
 

@@ -6,7 +6,7 @@
 \usepackage{lmodern,tikz,etoolbox}
 
 \usetikzlibrary{positioning, arrows.meta, shapes.geometric}
-\usetikzlibrary{chains, calc, matrix, quotes}
+\usetikzlibrary{chains, calc, matrix, quotes, scopes}
 
 \begin{document}
 
@@ -42,11 +42,12 @@
   ]
 
   % Relations
-  \begin{scope}[ start chain        = source going below
-               , local bounding box = relScope
-               , node distance      = 5mm
-               , baseline           = {(0,0)}
-               ]
+  { [ start chain        = source going below
+    , local bounding box = relScope
+    , node distance      = 5mm
+    , baseline           = {(0,0)}
+    ]
+
     \foreach \row [count=\n, evaluate= \n as \color using {\colors[\n-1]}] in \adjacency {
       \node[state, fill=\color, on chain = source] (s\n) {};
       \node[state, fill=\color] (t\n) [right = 20mm of s\n.east] {};
@@ -59,14 +60,16 @@
           \fi
       }
     }
-  \end{scope}
+  }
+
 
   % Complete relation
-  \begin{scope}[ start chain        = source going below
-               , local bounding box = relCloScope,
-               , node distance      = 5mm
-               , yshift = -4.3cm,
-               ]
+  { [ start chain        = source going below
+    , local bounding box = relCloScope,
+    , node distance      = 5mm
+    , yshift = -4.3cm,
+    ]
+
     \foreach \row [count=\n, evaluate= \n as \color using {\colors[\n-1]}] in \adjacency {
       \node[state, fill=\color, on chain = source] (s\n) {};
       \node[state, fill=\color] (t\n) [right = 20mm of s\n.east] {};
@@ -83,11 +86,11 @@
           \fi
       }
     }
-  \end{scope}
+  }
+
 
   % Adjacency matrix
-  \begin{scope}[shift={($(relScope.east)+(3cm,0)$)},
-                local bounding box = matScope]
+  { [shift={($(relScope.east)+(3cm,0)$)}, local bounding box = matScope]
     % First of all, we write a macro to build the matrix content.
     % This is necessary because there is no way to put a \foreach
     % inside a \matrix command.
@@ -104,10 +107,10 @@
             column sep=1ex,
             ] (m)
       { \mymatrixcontent };
-  \end{scope}
+  }
 
-  \begin{scope}[shift={($(relCloScope.east)+(3cm,0)$)},
-                local bounding box = matCloScope]
+  { [shift={($(relCloScope.east)+(3cm,0)$)}, local bounding box = matCloScope]
+
     \let\mymatrixcontent\empty
     \foreach[count=\s] \row in \adjacency {
       \foreach[count=\t] \cell in \row {
@@ -121,12 +124,12 @@
             column sep=1ex,
             ] (m)
       { \mymatrixcontent };
-  \end{scope}
+  }
 
   % Graph
-  \begin{scope}[ shift={($(matScope.east)+(4cm,0)$)},
-               , local bounding box = graphScope
-               ]
+  { [ shift={($(matScope.east)+(4cm,0)$)},
+    , local bounding box = graphScope
+    ]
 
     % Nodes
     \foreach [count=\n, evaluate=\n as \color using {\colors[\n-1]}] \where in {(0, 0), (-2, 1), (-2, -1), (0, -1.5)} {
@@ -145,12 +148,12 @@
         \fi
       }
     }
-  \end{scope}
+  }
 
   % Graph
-  \begin{scope}[ shift={($(matCloScope.east)+(4cm,0)$)},
-               , local bounding box = graphCloScope
-               ]
+  { [ shift={($(matCloScope.east)+(4cm,0)$)},
+    , local bounding box = graphCloScope
+    ]
 
     % Nodes
     \foreach [count=\n, evaluate=\n as \color using {\colors[\n-1]}] \where in {(0, 0), (-2, 1), (-2, -1), (0, -1.5)} {
@@ -170,11 +173,12 @@
         \fi
       }
     }
-  \end{scope}
+  }
 
-  \begin{scope}[arrow/.style = {-Latex, thick, shorten >= 2mm, shorten <= 2mm}
-               , iso/.style  = {arrow, Latex-Latex}
-               ]
+  { [ arrow/.style = {-Latex, thick, shorten >= 2mm, shorten <= 2mm}
+    , iso/.style  = {arrow, Latex-Latex}
+    ]
+
     % Closure arrows
     \path[arrow] let \p1 = (relScope.south), \p2 = (matScope.south), \p3 = (graphScope.south)
                  in (\x1, \y1) edge  ++(0cm, -1.5cm)
@@ -186,7 +190,7 @@
                (matScope.east)    edge +(1.5cm, 0cm)
                (relCloScope.east) edge +(1.5cm, 0cm)
                (matCloScope.east) edge +(1.5cm, 0cm);
-  \end{scope}
+  }
 \end{tikzpicture}
 
 \end{document}
