@@ -1,7 +1,7 @@
 \documentclass{standalone}
 
 \def\pgfsysdriver{pgfsys-dvisvgm.def}
-\usepackage{tikz,pgffor,ifthen}
+\usepackage{tikz}
 
 \usetikzlibrary{animations,positioning, arrows, arrows.meta, backgrounds, fit}
 
@@ -53,14 +53,15 @@
       \node [state, outer sep = 2] (q\t\s) at ({3cm*(\t-1)}, {1.5cm*(\s - (\nStates+1)/2)}) {};
 
       % Arraws going out of each state
-      \ifthenelse{\t < \nStages}{
+      \ifnum \t<\nStages
         \pgfmathtruncatemacro{\next}{\t + 1}
         \pgfmathsetmacro{\nStatesNext}{\states[\t]}
 
         \foreach \ny in {1,...,\nStatesNext}
           \draw [action] (q\t\s) -- (q\next\ny);
-      }
-      { \draw [action] (q\t\s) -- (T); }
+      \else
+        \draw [action] (q\t\s) -- (T);
+      \fi
     }
 
     \scoped [on background layer]
