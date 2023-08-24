@@ -1,8 +1,18 @@
 ---
 title: Picturing Finite Relations as Graphs
 keywords: [math, theory]
-date: 2023-03-24
+date: 2023-08-24
 ---
+
+On the previous post about [Algebraic Path Finding](/posts/algebraic-path),
+I made some figures illustrating how a finite relation can be viewed a graph.
+This got me thinking about how certain usual notions on relations would
+translate to this graph world.
+
+This is a mostly visual post illustrating the graphs for many common kinds of relations.
+
+Common Properties
+=================
 
 ```{=tex}
 \usetikzlibrary{graphs}
@@ -15,7 +25,7 @@ date: 2023-03-24
 }
 ```
 
-- Reflexivity: Every vertex has a self-edge
+- **Reflexivity**: Every vertex has a self-edge.
 
 ```tikz
 \node [fill = cyan!20         ] (A) []                       {};
@@ -29,14 +39,14 @@ date: 2023-03-24
     (B) edge[unfocused] (D)
     (C) edge[unfocused] (A);
 
-\path[->] (A) edge[loop left] ()
+\path[->] (A) edge[loop left ] ()
           (B) edge[loop above] ()
           (C) edge[loop right] ()
           (D) edge[loop right] ();
 ```
 
 
-- Transitivity: Connected vertices are also adjacent.
+- **Transitivity**: Connected vertices are also adjacent.
 
 ```tikz
 \node [fill = cyan!20         ] (A) []             {};
@@ -55,7 +65,7 @@ date: 2023-03-24
 
 ```
 
-- Symmetry: the graph is undirected
+- **Symmetry**: the graph is undirected.
 
 ```tikz
 \node [fill = cyan!20         ] (A) []             {};
@@ -75,7 +85,7 @@ date: 2023-03-24
     (D) edge (C);
 ```
 
-- Antisymmetry: All cycles are self-edges
+- **Antisymmetry**: All cycles are self-edges.
 
 ```tikz
 \node [fill = cyan!20         ] (A) []             {};
@@ -93,7 +103,7 @@ date: 2023-03-24
       (A) edge[loop left]  ();
 ```
 
-- Connected: there is an edge between all vertices (no matter the direction)
+- **Connected**: there is an edge between all vertices (no matter the direction)
 
 ```tikz
 \node [fill = cyan!20         ] (A) []                       {};
@@ -116,7 +126,7 @@ date: 2023-03-24
       (D) edge[loop right]  ();
 ```
 
-- Strict: no self-edges
+- **Strict**: no self-edges.
 
 ```tikz
 \node [fill = cyan!20         ] (A) []             {};
@@ -131,7 +141,7 @@ date: 2023-03-24
     (D) edge (B);
 ```
 
-- Totality: Every vertex has an outgoing edge.
+- **Totality**: Every vertex has an outgoing edge.
 
 ```tikz
 \node [fill = cyan!20         ] (A) []             {};
@@ -150,8 +160,7 @@ date: 2023-03-24
     (E) edge[loop right] (E);
 ```
 
-
-- Deterministic: Each vertex has at most one outgoing edge.
+- **Deterministic**: Each vertex has at most one outgoing edge.
 
 ```tikz
 \node [fill = cyan!20         ] (A) []             {};
@@ -169,9 +178,16 @@ date: 2023-03-24
     (D) edge[loop above] (D)
     (E) edge[loop right] (E);
 ```
+
+Common Relations
+================
 
 Equality
-========
+--------
+
+Possibly the most famous relation among all is equality.
+An element is only equal to itself,
+meaning that there are only self-edges.
 
 ```tikz
 \node [fill = cyan!20         ] (A) []                       {};
@@ -188,9 +204,15 @@ Equality
 ```
 
 Equivalence Relations
-=====================
+---------------------
 
-Transitive, Symmetric and Reflexive
+_Transitive, Reflexive and Symmetric._
+
+Sometimes it is too strong to require equality of objects.
+It may be more interesting to look at things that are _equivalent_.
+
+In an equivalence relation, the vertices are clustered into equivalence classes.
+An edge exists if and only if the vertices are on the same class.
 
 ```tikz
 \node [fill = cyan!20         ] (A) []                       {};
@@ -217,7 +239,12 @@ Transitive, Symmetric and Reflexive
 ```
 
 Preorders
-=========
+---------
+
+_Transitive and Reflexive._
+
+These are graphs where every path corresponds to an edge.
+That is, if two vertices are connected, then there is an edge between them.
 
 ```tikz
 \node [fill = cyan!20         ] (A) []             {};
@@ -236,6 +263,11 @@ Preorders
 
 ```
 
+Preorders contain all self-edges and composite edges.
+Thus, in order to reduce all the noise created by edges that must be there anyway,
+it is common to only picture the essential edges that cannot be generated from other paths.
+This is called the relation's transitive reduction or its **Hasse Diagram**.
+
 ```tikz
 \node [fill = cyan!20         ] (A) []             {};
 \node [fill = orange!50       ] (B) [right = of A] {};
@@ -253,7 +285,13 @@ Preorders
 ```
 
 Partial Orders
-==============
+--------------
+
+_Transitive, Reflexive and Antisymmetric._
+
+By disallowing cycles in a preorder, what get what is called a partial order.
+These graphs flow in a certain direction,
+since a path cannot pass through the same vertices twice.
 
 ```tikz
 \node [fill = cyan!20         ] (A) []                       {};
@@ -282,6 +320,8 @@ Partial Orders
           (D) edge (F);
 ```
 
+Again, to prevent all the noise, it is useful to look at the Hasse Diagram.
+
 ```tikz
 \node [fill = cyan!20         ] (A) []                       {};
 \node [fill = orange!50       ] (B) [above right =     of A] {};
@@ -309,11 +349,13 @@ Partial Orders
           (D) edge (F);
 ```
 
-
-
-
 Total Orders
-============
+------------
+
+_Transitive, Reflexive, Antisymmetric and Connected._
+
+For these orders, there is also the requirement of existing
+and (undirected) edge between any pair of vertices.
 
 ```tikz
 \node [fill = cyan!20         ] (A) []             {};
@@ -334,6 +376,9 @@ Total Orders
           (C) edge (D);
 
 ```
+
+They are also called **Linear Orders**
+because their Hasse Diagram consists of a single path.
 
 ```tikz
 \node [fill = cyan!20         ] (A) []             {};
@@ -358,4 +403,26 @@ Total Orders
 ```
 
 Functions
-=========
+---------
+
+_Deterministic and Total._
+
+How could I end this post without illustrating the most pervasive kind of relation
+in the entire field of mathematics?
+I'm so used to looking at functions as maps that I even forget that they are relations.
+
+Functions are graphs where all vertices have a unique outgoing edge.
+
+```tikz
+\node [fill = cyan!20         ] (A) []             {};
+\node [fill = orange!50       ] (B) [right = of A] {};
+\node [fill = red!30!blue!50  ] (C) [below = of B] {};
+\node [fill = yellow!90!black ] (D) [below = of A] {};
+
+
+\path[->] (A) edge[] (B)
+          (B) edge[] (C)
+          (C) edge[bend right] (B)
+          (D) edge[] (C);
+
+```
