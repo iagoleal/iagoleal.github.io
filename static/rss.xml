@@ -16,6 +16,14 @@
     <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
 
     <item>
+      <guid isPermaLink="false">1176588862</guid>
+      <title>Picturing Finite Relations as Graphs</title>
+      <link>https://iagoleal.com/posts/finite-relations-graph/</link>
+      <dc:creator>Iago Leal</dc:creator>
+      <category>Blog</category>
+      <pubDate>24 Aug 2023 00:00:00 GMT</pubDate>
+    </item>
+    <item>
       <guid isPermaLink="false">1176588861</guid>
       <title>Algebraic Path Finding</title>
       <link>https://iagoleal.com/posts/algebraic-path/</link>
