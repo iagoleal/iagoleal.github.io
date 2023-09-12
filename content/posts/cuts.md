@@ -7,7 +7,10 @@ date: 2023-09-08
 
 \def\R{\mathbb{R}}
 \def\hole\cdot
-\def\inner<#1,#2>{\langle#1,\,#2\rangle}
+\def\inner<#1,#2>{\left\langle#1,\,#2\right\rangle}
+\def\op#1{\operatorname{\mathrm{#1}}}
+\def\graph{\op{graph}}
+\def\epi{\op{epi}}
 
 Oh, a friend just called you and started to talk about
 this amazing function $f : \R^n \to \R$ that he just found.
@@ -147,15 +150,20 @@ If you get a new cut $\phi$, all you have to do is update your bag of cuts
 from $C$ to $C \cup \{\phi\}$, and it's done.
 This allows for algorithms based on iterative refinement of the approximation.
 
-### Example: The cutting sandwich algorithm for optimization
+### Example: The cutting sandwich algorithm for optimization {#example-sandwich-algorithm}
 
 Let's now put all these properties to good use.
-We will devise a simple algorithm for unconstrained minimization
-of an arbitrary convex function.
-For it to work, we will have to suppose by now
+Imagine that you must minimize a convex function,
+but, unfortunately,
+you only have access to a linear programming solver such a Gurobi, Xpress or GLPK.
+How do you do that?
+
+Let's devise a simple algorithm that minimizes an arbitrary convex function
+by iteratively solving linear programs.
+For it to work, we will have to suppose (by now)
 that we have access some oracle capable of both evaluating a function and calculating a tight cut for it.
 This is not cheating though,
-because in section [AD] we will learn general methods to write such an oracle.
+because in section [cuts-from-derivatives] we will learn how to write such an oracle.
 
 We begin with an empty unconstrained cut approximation[^unconstrained-lp] $\tilde{f}_0$ of $f$.
 The idea is to, at each iteration, give the oracle a point $x_n$.
@@ -222,9 +230,9 @@ Alright, time for some definitions.
 :::Definition
 A set $X$ is convex if, given two points $x, y \in X$, it also contains
 the entire line segment between them.
-Algebraically, for any $\lambda \in [0, 1],
 
-$$ \lambda x + (1-\lambda) y \in X.
+Algebraically, for any $\lambda \in [0, 1]$,
+$$ \lambda x + (1-\lambda) y \in X.$$
 :::
 
 <svg width="800" height="200">
@@ -245,8 +253,8 @@ That is, given two disjoint convex sets, one can always divide the space
 such that each of them lies in one of the halves.[^hahn-banach]
 
 
-:::Theorem
-(Separating Hyperplane) For any pair of disjoint non-empty convex sets $X$, $Y$,
+::: {.Theorem data-title="Separating Hyperplane"}
+For any pair of disjoint non-empty convex sets $X$, $Y$,
 there is an affine function $\inner<a,\hole> + b$ that is non-negative on one of them
 and non-positive on the other one.
 
@@ -291,8 +299,8 @@ Very well, from the Separating Hyperplane Theorem,
 we can conclude a similar theorem saying that convex sets
 have supporting hyperplanes at all points in their boundary.
 
-:::Theorem
-(Supporting Hyperplane) A convex set $X$ has a supporting hyperplane
+::: {.Theorem data-title="Supporting Hyperplane"}
+A convex set $X$ has a supporting hyperplane
 for any point $x_0$ on its boundary.
 That is, there is an affine function $\inner<a,\hole> + b$
 such that
@@ -307,21 +315,125 @@ and if it is empty, then the entirety of $X$ lies inside in an affine subspace o
 and we can take this subspace as our hyperplane.
 :::
 
+Notice that this theorem also has the equivalent formulation as
+$$\forall x \in X,\, \inner<a,x> \ge \inner<a,x_0>.$$
+
 From convex sets to convex functions
 ====================================
 
 After our detour on convex sets,
 it's time to investigate how to convert these results about sets and hyperplanes
 into results about functions and cuts.
+After all, that is what we are interested in here.
+
+The most common definition in the wild for a **convex function**
+is through _Jensen's inequality_,
+
+$$ f(\lambda x + (1 - \lambda) y  \le \lambda f(x) + (1 - \lambda) f(y)..$$
+
+Nonetheless, convex functions are notorious for having a multitude of equivalent definitions.
+Hence, for our purposes it is better to use a more geometric one.
+
+:::Definition
+A function is **convex** if its epigraph is a convex set.
+:::
+
+But what is this **epigraph** thing after all?
+Well, everybody knows a function's graph,
+
+$$ \graph(f) = \left\{ (x, y) \in \R^{n+1} \mid f(x) = y \right\}. $$
+
+The epigraph adjoins the suffix epi-, from greek ['ἐπί']{lang=grc}
+meaning ["above" or "on top of"](https://outils.biblissima.fr/fr/eulexis-web/?lemma=%E1%BC%90%CF%80%CE%AF&dict=LSJ),
+to denote the set of all points _above the graph_:
+
+$$ \epi(f) = \left\{ (x, y) \in \R^{n+1} \mid f(x) \le y \right\}. $$
+
+<svg width="800" height="200">
+  <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
+  <text x="50" y="100" length="800" rx="20" ry="10">
+    TODO: Show graph and epigraph
+  </text>
+</svg>
+
+Besides sharing an etymology with _epic_,
+the epigraph also let's us easily translate results from convex sets to convex functions.
+For example, the supporting hyperplane theorem translates into a statement about tight cuts.
+
+:::Theorem
+A convex function $f$ has a tight cut at any point in its domain.
+:::
+
+:::Proof
+The graph of $f$ lies in the boundary of its epigraph, which is convex.
+Then, from the supporting hyperplane theorem, for any $x_0$,
+there is an affine function supporting $\epi(f)$ at $(x_0, f(x_0))$.
+Since the tangent to a graph is non-vertical,
+the last component of this graph cannot be zero
+and we can assume without loss of generality that it equals $1$.
+Then,
+
+$$ \begin{aligned}
+  \inner<(a,1), (x, f(x))> &\ge \inner<(a,1), (x_0, f(x_0))> \\
+  \inner<a,x> + f(x) &\ge \inner<a,x_0> + f(x_0) \\
+  f(x) &\ge f(x_0) - \inner<a,x - x_0>
+\end{aligned} $$
+
+By defining $\mu = -a$, we arrive at
+
+$$f(x) \ge f(x_0) + \inner<\mu,x - x_0>.$$
+:::
+
+This theorem gives us all we need to actually calculate cuts
+for a large set of functions.
+
+## Cuts from derivatives
+
+Cuts are a special case of tangent hyperplane
+which does not cross the functions graph anywhere.
+This means that they have everything to do with derivatives.
+Indeed, we just arrived into our first method for calculating cuts.
+
+Suppose $f$ is convex and differentiable at $x_0$.
+From the convexity it has a tight cut with inclination $\mu$
+
+$$f(x) \ge f(x_0) + \inner<\mu,x - x_0>.$$
+
+This cut is a tangent hyperplane at $x_0$,
+and, from differentiability,
+this hyperplane is unique with inclination given by the derivative.
+Therefore
+
+$$\boxed{\forall x,\, f(x) \ge f(x_0) + \inner<df(x_0),x - x_0>}.$$
+
+Now that's a formula!
+Recall our [sandwich algorithm](example-sandwich-algorithm)
+where I asked you to take in good faith my words about our oracle?
+It's finally time to pay my debt and turn that blackbox
+into a simple function.
+
+All you need is some `derivative` Julia function that calculates
+the derivative of `f` at a point `x`.
+There are lots of packages which do that using either automatic or numerical differentiation.
+You may choose your favorite.
+Our oracle then becomes a simple function that assembles the cut.
+
+```julia
+function oracle(f, x)
+    fx  = f(x)
+    dfx = derivative(f, x)
+
+    return fx, Cut(dfx, fx - dot(dfx, x))
+end
+```
+
+Cuts from Lagrangian duality
+----------------------------
 
 --------------------------------------------------------------------------------
 
-
 convex == intersection of half spaces
 
-## AD
-
-## Duality + Linear Programming
 
 # MILP {#milp}
 

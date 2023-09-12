@@ -17,7 +17,7 @@ http://drz.ac/downloads/code/css/theorems.css
   border-left: 5px solid;
 }
 
-.Theorem::before, .Lemma:before, .Definition:before {
+.Theorem::before, .Lemma::before, .Definition::before {
   font-weight: bold;
   font-style: normal;
   white-space: nowrap;
@@ -34,15 +34,27 @@ http://drz.ac/downloads/code/css/theorems.css
   border-left-color: #26cd00;
 }
 
+.Theorem[data-title]::before {
+  content: 'Theorem (' attr(data-title) ').';
+}
+
 .Theorem::before {
   content: "Theorem.";
 }
 
-.Lemma:before {
+.Lemma[data-title]::before {
+  content: 'Lemma (' attr(data-title) ').';
+}
+
+.Lemma::before {
   content: "Lemma.";
 }
 
-.Definition:before {
+.Definition[data-title]::before {
+  content: 'Definition (' attr(data-title) ').';
+}
+
+.Definition::before {
   content: "Definition.";
 }
 
