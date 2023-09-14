@@ -61,20 +61,27 @@ let's first present tonight's star.
 :::Definition
 A **cut** for $f : \R^n \to \R$ is an affine function everywhere below $x$.
 That is,
-    $$  f(x) \ge \inner<a, x> + b. $$
+
+$$  f(x) \ge \inner<a, x> + b. $$
 :::
+
+In particular, we say that a cut is **tight** at $x_0$
+if it equals the function at this point.
+In this case, it is common to denote the cut as centered around $x_0$:
+
+$$  f(x) \ge f(x_0) + \inner<a, x - x_0>. $$
 
 
 <svg width="800" height="200">
   <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
   <text x="50" y="100" length="800" rx="20" ry="10">
-    TODO: FIGURE with f and a cut.
+    TODO: FIGURE with f, a cut, and a tight cut.
   </text>
 </svg>
 
 In general, a single cut is a terrible approximation.
 But it is not its fault, after all, it is just a first order polynomial!
-The magic begins when you combine a lot of cuts to represent $f$ as a **piecewise-linear function**.
+The magic begins when you combine a lot of cuts to represent $f$ as a **polyhedral function**.
 Taking an approximation of $f$ by cuts $C = \{\inner<a,\hole> + b\}$
 amounts to choosing the largest cut at each given point:
 
@@ -84,9 +91,8 @@ This formula also explains why we refer to affine functions as "cuts".
 Think about the graph of $f$.
 The graph of a cut is a hyperplane diving the space in two halves:
 points above and below it.
-You can think of the process of maxing out the cuts
-as slicing the space to form a region containing the graph of $f$.
-Below we see an illustration of this view.
+To form the polyhedral function, we slice the space, one cut at a time,
+in order to carve a polyhedron containing the graph of $f$.
 
 <svg width="800" height="200">
   <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
@@ -103,7 +109,7 @@ Why is it used so much by the optimization and operations research folks?
 
 The first reason is that _it preserves convexity_,
 and convex functions are full of nice properties needed when doing optimization.
-Even more than that! As we will [later see](#milp),
+Even more than that! As we will [later see](#mip),
 as you add more cuts this approximation converges
 to the tightest convex function everywhere below $f$.
 
@@ -116,7 +122,7 @@ Another reason is that minimizing cuts can be transformed into a
 [Linear Program](https://en.wikipedia.org/wiki/Linear_programming),
 which is the among the easiest kinds of problems to optimize.
 So if $f$ is some complicated convex function, but you already have
-a good approximation by cuts to it, you can minimize it instead
+a good approximation by cuts for it, you can minimize it instead
 and get an approximation for the optimum.
 
 $$
@@ -178,21 +184,21 @@ The algorithm can also be more directly describe in Julia code:
 
 ```julia
 function minimize(f::Function ; eps, x = zeros())
-  opt = CutApproximation()
-  f_lb, f_ub = -Inf, +Inf
+  opt    = Polyhedral()
+  lb, ub = -Inf, +Inf
 
-  while abs(f_ub - f_lb) > eps
-    fx, cut = oracle(f, x)     # Ask oracle for evaluation and cut at x
+  while abs(ub - lb) > eps
+    fx, cut = oracle(f, x)  # Ask oracle for evaluation and cut at x
 
     # Improve upper bound
-    f_ub = min(f_ub, f(x))
+    ub = min(ub, f(x))
 
     # Improve lower bound
     add_cut!(opt, cut)
-    x, f_lb = solve_lp(opt)
+    x, lb = solve_lp(opt)   # Also updates the best solution
   end
 
-  return x, fx      # Optimal point and optimal value
+  return x, fx              # Optimal point and optimal value
 end
 ```
 
@@ -309,7 +315,7 @@ $$\inner<a,x_0> + b = 0 \quad \text{and}\quad \forall x \in X,\, \inner<a,x> + b
 :::
 
 :::Proof
-If $X$ has nonempty interior, there is an hyperplane separating
+If $X$ has nonempty interior, there is a hyperplane separating
 $\{x_0\}$ from the interior of $X$,
 and if it is empty, then the entirety of $X$ lies inside in an affine subspace of $\R^n$,
 and we can take this subspace as our hyperplane.
@@ -325,6 +331,14 @@ After our detour on convex sets,
 it's time to investigate how to convert these results about sets and hyperplanes
 into results about functions and cuts.
 After all, that is what we are interested in here.
+
+Foremost, one remark: for simplicity of presentation we will work with
+**extended real functions**.
+These are functions that, besides the usual real numbers, can evaluate to $\infty$.
+The advantage of this approach is that we can just
+assume that all functions are defined everywhere on $\R^n$.
+We call their **domain** wherever they are finite
+and define them as infinity elsewhere.
 
 The most common definition in the wild for a **convex function**
 is through _Jensen's inequality_,
@@ -357,7 +371,7 @@ $$ \epi(f) = \left\{ (x, y) \in \R^{n+1} \mid f(x) \le y \right\}. $$
 </svg>
 
 Besides sharing an etymology with _epic_,
-the epigraph also let's us easily translate results from convex sets to convex functions.
+the epigraph also lets us easily translate results from convex sets to convex functions.
 For example, the supporting hyperplane theorem translates into a statement about tight cuts.
 
 :::Theorem
@@ -369,7 +383,7 @@ The graph of $f$ lies in the boundary of its epigraph, which is convex.
 Then, from the supporting hyperplane theorem, for any $x_0$,
 there is an affine function supporting $\epi(f)$ at $(x_0, f(x_0))$.
 Since the tangent to a graph is non-vertical,
-the last component of this graph cannot be zero
+the last component of this graph cannot be zero,
 and we can assume without loss of generality that it equals $1$.
 Then,
 
@@ -384,10 +398,11 @@ By defining $\mu = -a$, we arrive at
 $$f(x) \ge f(x_0) + \inner<\mu,x - x_0>.$$
 :::
 
-This theorem gives us all we need to actually calculate cuts
-for a large set of functions.
+With this theorem we finally achieved all we need to be able
+to calculate, not just postulate, cuts for a large set of functions.
 
-## Cuts from derivatives
+Cuts from derivatives
+---------------------
 
 Cuts are a special case of tangent hyperplane
 which does not cross the functions graph anywhere.
@@ -404,18 +419,18 @@ and, from differentiability,
 this hyperplane is unique with inclination given by the derivative.
 Therefore
 
-$$\boxed{\forall x,\, f(x) \ge f(x_0) + \inner<df(x_0),x - x_0>}.$$
+$$\boxed{\forall x,\, f(x) \ge f(x_0) + \inner<df(x_0),x - x_0>.}$$
 
 Now that's a formula!
-Recall our [sandwich algorithm](example-sandwich-algorithm)
-where I asked you to take in good faith my words about our oracle?
-It's finally time to pay my debt and turn that blackbox
-into a simple function.
+Recall our [sandwich algorithm](example-sandwich-algorithm).
+There I asked you to take in good faith my words about our oracle,
+and now
+It's finally time to pay my debt and turn that black box into a simple procedure.
 
-All you need is some `derivative` Julia function that calculates
+All we need is a `derivative` Julia function that calculates
 the derivative of `f` at a point `x`.
 There are lots of packages which do that using either automatic or numerical differentiation.
-You may choose your favorite.
+I'll just let you choose your favorite.
 Our oracle then becomes a simple function that assembles the cut.
 
 ```julia
@@ -429,6 +444,216 @@ end
 
 Cuts from Lagrangian duality
 ----------------------------
+
+We have learned how to calculate cuts for a convex function at any point of differentiability.
+Nevertheless, the supporting hyperplane theorem guarantees a cut
+at _every point_ on the function's domain.
+How can we also calculate cuts where $f$ is not differentiable?
+
+If you are coming from an area of mathematics where everything is smooth,
+this last question may sound strange.
+Nevertheless, in operations research and optimization,
+it is rather common to stumble into non-smooth functions.
+Take the polyhedral functions, for example.
+They almost always have edges and corners,
+nonetheless, it should be easy to calculate cuts for them.
+They are made out of linear pieces, after all!
+
+Our focus on this section will be on calculating cuts for **optimal value functions**,
+that is, functions defined as the optimal value of a parameterized optimization,
+such as those one [would encounter, for example, in dynamic programming](/posts/dynamic-programming).
+
+$$
+  \begin{array}{rl}
+    f(x) = \min\limits_{u} & c(u) \\
+    \textrm{s.t.}   & (x, u) \in X.
+  \end{array}
+$$
+
+This last definition may, at first, seem to be too restrictive.
+Perhaps even more than requiring differentiability.
+There is a small, trick, however, that lets us write any function
+as an optimal value function:
+
+$$
+  \begin{array}{rl}
+    f(x) = \min\limits_{u} & f(u) \\
+    \textrm{s.t.}   & u = x.
+  \end{array}
+$$
+
+If this feels like cheating, it's because it certainly is!
+In practice, exchanging evaluation by optimization may be rather bad for performance.
+From a theoretical point-of-view, however,
+this representation always works and we are all safe.
+
+The advantage of concentrating in optimal value functions
+is that it opens to us a whole world of tools from Optimization.
+In particular, we will see that [Lagrangian duality](https://en.wikipedia.org/wiki/Duality_(optimization))
+has everything to do with cuts.[^duality-refs]
+
+[^duality-refs]: For an overview of duality, you can (again) check @boyd_convex_2004.
+And for duality in the context of optimal value functions, there is also my MSc thesis. [@leal_de_freitas_convexification_2019]
+
+Lagrangian duality consists of taking a hard constraint such as $(x, u) \in X$
+and substituting it by a linear penalty on how much we divert from the original feasible set.
+
+We thus go from this optimal value function,
+written with an additional equality for clarity,
+
+$$
+  \begin{array}{rl}
+    f(x) = \min\limits_{u} & c(u) \\
+    \textrm{s.t.}   & (y, u) \in X, \\
+                    & y = x, \\
+  \end{array}
+$$
+
+To the penalized value function, called its _Lagrangian relaxation_,
+
+$$
+  \begin{array}{rl}
+    L(x; \lambda) = \min\limits_{u, y} & c(u) - \inner<\lambda, y - x> \\
+    \textrm{s.t.}   & (y, u) \in X.
+  \end{array}
+$$
+
+Notice that while in the original problem we had $y$ fixed to be whatever
+argument the function receives,
+in the new problem $y$ can take any feasible value
+but the cost is augmented by a new penalty term on the difference between $y$ and $x$.
+The factor lambda is called a **dual variable** or **Lagrange multiplier**
+and represents how much $y$ should be averse to diverting from $x$.
+
+In the original feasible set where $x=y$,
+the term $\inner<\lambda, y - x>$ vanishes and both problems have the same objective function.
+However, the relaxed problem has a larger feasible region to explore
+in its search for the minimum, allowing it the opportunity to achieve lower costs.
+In other words, it is always below the primal:
+
+$$ f(x) \ge L(x; \lambda). $$
+
+<svg width="800" height="200">
+  <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
+  <text x="50" y="100" length="800" rx="20" ry="10">
+    TODO: Function and Lagrangian for many lambdas (or perhaps interactive)
+  </text>
+</svg>
+
+In forming the relaxation, one has freedom on which $\lambda$ to use.
+Essentially all state-of-the-art algorithms in (continuous) optimization[^market-opt]
+solve at the same time both the original problem
+and the problem of choosing the best multiplier possible.
+What do I mean with best multiplier?
+Well, it's the one who closes the gap the most!
+The optimal value of choosing the multiplier is defined as
+
+
+$$
+\begin{aligned}
+  \check{f}(x) &= \max\limits_{\lambda} L(x ; \lambda) \\
+               &= \max\limits_{\lambda} \min\limits_{(y, u) \in X} c(u) - \inner<\lambda, y - x>.
+\end{aligned}
+$$
+
+That thing looks scary scary but, fortunately for us,
+all solvers are pretty good at it.
+The $\check{f}$ is called the dual value function
+because it solves the dual problem.
+And since all relaxations are below $f(x)$, it also is.
+A result known as _weak duality_.
+
+$$ \boxed{f(x) \ge \check{f}(x)} $$
+
+[^market-opt]: And consequently all free or commercial solvers in the market.
+
+<svg width="800" height="200">
+  <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
+  <text x="50" y="100" length="800" rx="20" ry="10">
+    TODO: Function and Lagrangian for many lambdas and dual function
+  </text>
+</svg>
+
+Among the advantages of solving the dual problem at the same time as the primal,
+is that we gain a cut for free in the process!
+
+:::Theorem
+There is a cut for $f$ at the point $x_0$ defined by the dual value $\check{f}(x_0)$
+and optimal dual multiplier $\lambda_0$. That is,
+
+$$ \forall x, f(x) \ge \check{f}(x_0) + \inner<\lambda_0, x - x_0>.$$
+:::
+
+:::Proof
+By definition,
+$$ \check{f}(x_0) = \max\limits_{\lambda} \min\limits_{(y, u) \in X} c(u) - \inner<\lambda, y - x_0>. $$
+
+The maximum in the equation above is achieve precisely by $\lambda_0$:
+
+$$ \check{f}(x_0) = \min\limits_{(y, u) \in X} c(u) - \inner<\lambda_0, y - x_0>. $$
+
+The equation above has a minimum, hence it has to be below
+any feasible choice of $(y, u)$ that we make.
+In particular, we can fix $y$ equal to our desired $x$.
+
+$$
+  \begin{array}{rl}
+    \check{f}(x_0) \le \min\limits_{u} & c(u) - \inner<\lambda_0, x - x_0> \\
+    \textrm{s.t.}   & (x, u) \in X.
+  \end{array}
+$$
+
+Since the affine term in the objective function does not depend of $u$,
+we can take it out of the minimization and pass it to the left-hand side.
+
+$$
+  \begin{array}{rl}
+    \check{f}(x_0) + \inner<\lambda_0, x - x_0>
+        \le \min\limits_{u} & c(u) \\
+            \textrm{s.t.}   & (x, u) \in X.
+  \end{array}
+$$
+
+Now the right-hand side equals exactly the definition of $f(x)$.
+This concludes the theorem.
+:::
+
+Perfect! We just discovered that the solutions to the dual problem
+are cuts for the primal problem.
+And, best of all, solving an optimization problem in general
+already provides us with the dual solutions, meaning that we get cuts for free.
+How cool is that?
+
+Of course, now is the time for you to point your finger towards me
+and say that there is no tightness guarantee in the previous theorem.
+Although the dual is the best relaxation possible,
+it could still be too below the primal value function.
+Well, I gotta admit that in the general case this is most correct.
+Nonetheless, I still have an ace up my sleeve!
+Did you notice that we in no moment used convexity in this section?
+That is time to change that.
+
+There is an important result called _strong duality_
+which states that $\check{f}$'s epigraph is the closed convex hull
+of $f$'s epigraph.
+As a consequence, if $f$ is convex and continuous[^lsc-cvx],
+then it equals its dual function.
+Therefore, now we also know how to calculate tight cuts
+for the points of non-differentiability of a convex function!
+
+$$ f\;\text{convex} \implies \forall x, f(x) \ge f(x_0) + \inner<\lambda_0, x - x_0>.$$
+
+[^lsc-cvx]: Technically, the theorem only requires that $f$ is a proper convex _lower semicontinuous_ function.
+But I don't want to have to write yet another definition in this post.
+
+As a bonus, if you like automatic differentiation as much as I do,
+you also just learnt how to differentiate procedures defined as convex optimization problems.
+Suppose that $f$ is differentiable at $x_0$.
+Since the derivative is unique and the cut provides us with a tangent,
+it must follow that the derivative equals the optimal multiplier $\nabla f(x_0) = \lambda_0$.
+Thus, by solving a parameterized (convex) optimization problem,
+you gain both an evaluation and a derivative.
+Now all have to do is plug it into the chain rule et voilà!
 
 --------------------------------------------------------------------------------
 
