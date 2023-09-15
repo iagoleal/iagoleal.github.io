@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 DIR=$(dirname -- "$( realpath -- "$0")")
 
-CACHEDIR=cache
-
 if [ "$1" = "-" ]; then
   INFILE=/dev/stdin
 else
@@ -14,20 +12,14 @@ else
   OUTFILE="$2"
 fi
 
-TMPDIR="$(mktemp --directory --tmpdir tex2svg.XXXXXXXXXX)"
+TMPPATH="$(mktemp --directory --tmpdir tex2svg.XXXXXXXXXX)"
+trap '{ rm -rf -- "$TMPPATH"; }' EXIT
 
-# TMPFILE="${TMPDIR}/$(sha1sum "$INFILE" | awk '{print $1}')"
-TMPFILE="$TMPDIR/$(basename "$INFILE")"
-
+TMPFILE="$TMPPATH/$(basename "$INFILE")"
 
 cp "$INFILE" "${TMPFILE}.tex"
 # tex -> dvi
-latex --output-format=dvi --halt-on-error --file-line-error --interaction nonstopmode --output-directory "$TMPDIR" "${TMPFILE}.tex"
+latex --output-format=dvi --halt-on-error --file-line-error --interaction nonstopmode --output-directory "$TMPPATH" "${TMPFILE}.tex"
 # dvi -> svg
-dvisvgm --relative --zoom=2 --optimize=all --font-format=woff2 --exact --bbox=min -o "${TMPFILE}.svg" "${TMPFILE}.dvi"
-# Generate output file
-cp "${TMPFILE}.svg" "$OUTFILE"
+dvisvgm --relative --zoom=2 --optimize=all --font-format=woff2 --exact --bbox=min -o "$OUTFILE" "${TMPFILE}.dvi"
 # $DIR/svg-minify "${TMPFILE}.svg" "$OUTFILE"
-
-## Currently unused
-# pdftocairo -svg "${TMPFILE}.pdf" "${TMPFILE}.svg"

@@ -1,3 +1,16 @@
+--[[
+    CodeBlock -> Image filter
+
+  This filter compiles fenced code blocks describing figures
+  and substitutes them in the output html page.
+
+  Currently supported block classes:
+  * tikz
+  * tikzcd
+  * dot (graphviz)
+
+Note: Tex code blocks use any environment previously declared as raw tex blocks.
+--]]
 local system = require "pandoc.system"
 local path   = require "pandoc.path"
 
@@ -30,6 +43,7 @@ local function mkparent(fname)
   return pandoc.system.make_directory(path.directory(fname), true)
 end
 
+-- Check if file exists.
 local function file_exists(fname)
   local f = io.open(fname, "r")
   if f ~= nil then
@@ -40,16 +54,18 @@ local function file_exists(fname)
   end
 end
 
+-- Copy contents from a file to a another, creating any directory needed in the process.
 local function copy(source, target)
   mkparent(target)
   os.execute(fmt("cp --update --no-target-directory %s %s", source , target))
 end
 
-local function write(fname, img)
+-- Write contents to a file, creating any directory needed in the process.
+local function write(fname, content)
   mkparent(fname)
   local f = io.open(fname, 'w')
   if f then
-    f:write(img)
+    f:write(content)
     f:close()
     return true
   else
@@ -57,6 +73,7 @@ local function write(fname, img)
   end
 end
 
+-- Read file contents.
 local function read(fname)
   file = io.open(fname, 'rb')
   if file then
@@ -65,6 +82,16 @@ local function read(fname)
     return content
   else
     error(fmt("Cannot read from file '%s'.", fname))
+  end
+end
+
+-- Turn a file path absolute.
+local function make_absolute(fname)
+  if path.is_absolute(fname) then
+    return fname
+  else
+    local pwd = system.get_working_directory()
+    return path.normalize(path.join {pwd, path.make_relative(fname, pwd)})
   end
 end
 
@@ -135,24 +162,12 @@ end
 -- Turn a latex string into an svg string.
 local function latex_to_svg(target, code)
   local tex2svg = system.get_working_directory() .. "/scripts/tex2svg"
-  local svg = system.with_temporary_directory("tikz2image", function(tmpdir)
-    return system.with_working_directory(tmpdir, function()
-      local file_template = "%s/%s.%s"
-      local texfname = file_template:format(tmpdir, sha1(code), "tex")
-      local svgfname = file_template:format(tmpdir, sha1(code), "svg")
 
-      write(texfname, code)
-      os.execute(fmt("%s %s %s", tex2svg, texfname, svgfname))
-
-      -- Try to open and read the image:
-      return read(svgfname)
-    end)
-  end)
-
-  write(target, svg)
+  mkparent(target)
+  return pandoc.pipe(tex2svg, {"-", target}, code)
 end
 
--- Turn a string in Graphviz DOT language int on svg image.
+-- Turn a string in Graphviz DOT language into an SVG image.
 local function dot_to_svg(target, code)
   mkparent(target)
   return pandoc.pipe("dot", {"-Tsvg", "-o", target}, code)
@@ -160,8 +175,8 @@ end
 
 
 local function make_figure(svg_maker, content)
-  local page_path = path.make_relative(path.directory(PANDOC_STATE.output_file), "build")
   local svgname   = sha1(content) .. ".svg"
+  local page_path = path.make_relative(path.directory(PANDOC_STATE.output_file), "build")
   local cachefile = path.join {"cache", page_path, svgname }
   local buildfile = path.join {"build", page_path, svgname }
 
