@@ -48,6 +48,14 @@ Every method has its pros and cons,
 depending on what properties of the function you want to preserve.
 In today's post we will focus on one such method called **approximation by cuts** or **cutting planes**.
 
+<svg width="800" height="200">
+  <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
+  <text x="50" y="100" length="800" rx="20" ry="10">
+    TODO: Interactive figure with figure and cuts
+  </text>
+</svg>
+
+
 Approximation by cuts
 =====================
 
@@ -72,12 +80,23 @@ In this case, it is common to denote the cut as centered around $x_0$:
 $$  f(x) \ge f(x_0) + \inner<a, x - x_0>. $$
 
 
-<svg width="800" height="200">
-  <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
-  <text x="50" y="100" length="800" rx="20" ry="10">
-    TODO: FIGURE with f, a cut, and a tight cut.
-  </text>
-</svg>
+```tikz
+{ [domain=-1.8:2, xscale=1.8]
+  \draw[very thin, opacity=0.2, color=gray, path fading=west] (-2.9,-1.9) grid (2.9,1.9);
+
+  % Function
+  \draw[color=black, samples=100]  plot (\x,{0.5*(\x - 1.5)*(\x - 1)*(\x + 0.5)*(\x + 1.5)})
+    node[right] {function};
+  % Common cut
+  \draw[color=orange] plot (\x,{-1          + 0.403875*(\x - 1.35)})
+    node[right] {ordinary cut};
+  % Tight cut
+  \draw[color=blue]   plot (\x,{-0.13803125 + 0.403875*(\x - 1.35)})
+    node[right] {tight cut};
+  % Point of tangency
+  \node[fill=blue, draw, circle, inner sep = 0.5pt] at (1.35,-0.13803125) {};
+}
+```
 
 In general, a single cut is a terrible approximation.
 But it is not its fault, after all, it is just a first order polynomial!
@@ -89,17 +108,32 @@ $$ f(x) \approx \max\limits_{(a,b) \in C} \inner<a_,x> + b. $$
 
 This formula also explains why we refer to affine functions as "cuts".
 Think about the graph of $f$.
-The graph of a cut is a hyperplane diving the space in two halves:
+The graph of a cut is a hyperplane dividing the space in two halves:
 points above and below it.
 To form the polyhedral function, we slice the space, one cut at a time,
 in order to carve a polyhedron containing the graph of $f$.
 
-<svg width="800" height="200">
-  <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
-  <text x="50" y="100" length="800" rx="20" ry="10">
-    TODO: Interactive figure with figure and cuts
-  </text>
-</svg>
+```tikz
+{ [domain=-1.5:1.5, xscale=2.4]
+  \draw[very thin, opacity=0.2, color=gray, path fading=west] (-1.9,-1.4) grid (1.9,1.9);
+
+  % Cuts
+  { [opacity = 0.6]
+    \draw[color=orange, fill=orange, domain=-1.5:0.4] plot (\x, {1 - 2*(\x +1)});
+    \draw[color=yellow, ]   plot (\x,   {0.3*0.3 + 0.6*(\x-0.3)});
+    \draw[color=purple, domain=-0.4:1.5] plot (\x, {1 + 2*(\x - 1)});
+  }
+  \draw[color=blue, fill = blue, fill opacity = 0.3, samples = 100] plot (\x, {max(1 - 2*(\x +1), 0.09  + 0.6*(\x-0.3), 1 + 2*(\x - 1))});
+
+  % Function
+  \draw[color=black,samples=100, domain=-1.415:1.415]  plot (\x,{\x*\x});
+
+  % Point of tangency
+  \node[fill=blue, draw, circle, inner sep = 0.5pt] at (-1, 1) {};
+  \node[fill=blue, draw, circle, inner sep = 0.5pt] at (0.3, 0.09) {};
+  \node[fill=blue, draw, circle, inner sep = 0.5pt] at (1, 1) {};
+}
+```
 
 Why I like cuts and you should too
 ----------------------------------
@@ -108,14 +142,18 @@ What are the nice properties that an approximation by cuts has?
 Why is it used so much by the optimization and operations research folks?
 
 The first reason is that _it preserves convexity_,
-and convex functions are full of nice properties needed when doing optimization.
+and convex functions are full of nice properties needed for optimization.
 Even more than that! As we will [later see](#mip),
 as you add more cuts this approximation converges
 to the tightest convex function everywhere below $f$.
+I also find it worth commenting that this property works as a double-edged sword:
+since polyhedral functions are always convex,
+you cannot guarantee a satisfactory approximation for a non-convex function.
+Keep this in mind when using cuts.
 
 It is also an underapproximation of $f$,
 because since all cuts are below it, their maximum also has to be.
-Thus, cutting planes are a good tool for estimating lower bound,
+Thus, cutting planes are a good tool for estimating lower bounds,
 which is a necessity in optimization.
 
 Another reason is that minimizing cuts can be transformed into a
@@ -146,7 +184,8 @@ between two bounds.
 <svg width="800" height="200">
   <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
   <text x="50" y="100" length="800" rx="20" ry="10">
-    TODO: Figure illustrating solving via cutting planes
+    TODO: Interactive solution via cutting planes
+    The user selects a point and the algorithm updates the bounds.
   </text>
 </svg>
 
@@ -156,7 +195,7 @@ If you get a new cut $\phi$, all you have to do is update your bag of cuts
 from $C$ to $C \cup \{\phi\}$, and it's done.
 This allows for algorithms based on iterative refinement of the approximation.
 
-### Example: The cutting sandwich algorithm for optimization {#example-sandwich-algorithm}
+### Example: Kelley's cutting planes algorithm {#example-sandwich-algorithm}
 
 Let's now put all these properties to good use.
 Imagine that you must minimize a convex function,
@@ -164,17 +203,17 @@ but, unfortunately,
 you only have access to a linear programming solver such a Gurobi, Xpress or GLPK.
 How do you do that?
 
-Let's devise a simple algorithm that minimizes an arbitrary convex function
+Fortunately, one can minimize an arbitrary convex function
 by iteratively solving linear programs.
 For it to work, we will have to suppose (by now)
-that we have access some oracle capable of both evaluating a function and calculating a tight cut for it.
+that we have access to some oracle capable of both evaluating a function and calculating a tight cut for it.
 This is not cheating though,
 because in section [cuts-from-derivatives] we will learn how to write such an oracle.
 
 We begin with an empty unconstrained cut approximation[^unconstrained-lp] $\tilde{f}_0$ of $f$.
 The idea is to, at each iteration, give the oracle a point $x_n$.
 This will return an evaluation $f(x_n)$, which serves as an upper bound
-for $\min f$ because all evaluations are above the minimum.
+for $\min f$ because all evaluations are larger than the minimum.
 You also get a tight cut $c_n$ that can be used to improve your approximation to $\tilde{f}_n$.
 This way, we squeeze the optimal value between a sequence of bounds:
 
@@ -241,23 +280,63 @@ Algebraically, for any $\lambda \in [0, 1]$,
 $$ \lambda x + (1-\lambda) y \in X.$$
 :::
 
-<svg width="800" height="200">
-  <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
-  <text x="50" y="100" length="800" rx="20" ry="10">
-    TODO: Illustrate convex vs non-convex set
-  </text>
-</svg>
-
 My intuition for convex sets is that they are sets
 without holes nor wobbles.
 This encompasses a lot of the good ol' shapes you are familiar with,
 such as planes, balls, and polyhedra.
 
-A consequence of this regular shape is that they can be separated
-by hyperplanes.
-That is, given two disjoint convex sets, one can always divide the space
-such that each of them lies in one of the halves.[^hahn-banach]
+```tikz
+\coordinate (M) at (4.25,1);
+\coordinate (x) at (1,0);
+\coordinate (y) at (2, 0.7);
 
+\pgfmathsetmacro{\slope}{atan2(2,-4.5)}
+
+\draw[fill=orange!50] (M) --
+     ++ (-2, 0.5)
+    to[out=\slope+10,in=90] ++ (-2, -2.5)
+    to[out=-90,in=\slope+180] cycle;
+
+\draw[thick, fill=black]
+    (x) circle[radius=0.03] node[below]{x} --
+    (y) circle[radius=0.03] node[above]{y};
+
+\path[-Latex, semithick, color=black] (M) edge[bend left, shorten <= 7pt] node[pos=1.1] {Convex Set} +(2, -1);
+ ```
+
+```tikz
+\coordinate (A) at (0,2);
+\coordinate (B) at (4.5,0);
+\coordinate (C) at (0,-2);
+\coordinate (M) at (0, 0);
+
+
+\coordinate (x) at (-3,-3);
+\coordinate (y) at (-2, -0.5);
+
+\pgfmathsetmacro{\slope}{atan2(2,-4.5)}
+
+\draw[fill=yellow!30] (M)
+    to[out=\slope,in=0] ++ (-2,0.5)
+    to[out=180,in=90] ++ (-1,-0.5)
+    to[out=-90,in=90] ++ (1,-2)
+    to[out=-90,in=90] ++ (-2,-1)
+    to[out=-90,in=180] ++(4,-1)
+    to[out=0,in=\slope+180] cycle;
+
+\filldraw[fill=white] (C) circle [rotate=30, x radius=0.5, y radius = 0.4];
+
+% Draw points
+\draw[thick, fill=red, color=red]
+    (x) circle[radius=0.03] node[below, color=black]{$x$} --
+    (y) circle[radius=0.03] node[above, color=black]{$y$};
+
+\path[-Latex, semithick, color=black] (M) edge[bend right, shorten <= 7pt] node[pos=1.1] {Non-convex Set} +(2, 1);
+```
+
+A consequence of their regular shape is that they can be separated by hyperplanes.
+That is, given two disjoint convex sets, it is always possible
+to divide the space such that each of them lies in one of the halves.[^hahn-banach]
 
 ::: {.Theorem data-title="Separating Hyperplane"}
 For any pair of disjoint non-empty convex sets $X$, $Y$,
@@ -277,12 +356,27 @@ Due to their absence of wobbles, one can pass a plane between two convex sets wi
 [^hahn-banach]: For the Functional Analysts lurking around: in infinite dimension,
 this theorem is equivalent to the Hahn-Banach Theorem.
 
-<svg width="800" height="200">
-  <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
-  <text x="50" y="100" length="800" rx="20" ry="10">
-    TODO: Separating hyperplane (perhaps interactive)
-  </text>
-</svg>
+```tikz
+\coordinate (M) at (4.25,1);
+
+\pgfmathsetmacro{\slope}{atan2(2,-4.5)}
+
+{[xshift=7cm, rotate=45]
+\draw[fill=orange!50] (M) --
+     ++ (-2, 0.5)
+    to[out=\slope+10,in=90] ++ (-2, -2.5)
+    to[out=-90,in=\slope+180] cycle;
+}
+
+\coordinate (N) at (7,1);
+
+\draw[fill=purple!20] (N) --
+     ++ (-1, 0.5)
+    to[out=\slope+10,in=110] ++ (-1, -2.5)
+    to[out=-70,in=\slope+180] cycle;
+
+\draw[black, semithick] (5.5, 3) -- (4, -2);
+```
 
 The consequence of most interest to us is that this theorem can be used
 to acquire **supporting hyperplanes** for any convex set.
@@ -493,7 +587,7 @@ In particular, we will see that [Lagrangian duality](https://en.wikipedia.org/wi
 has everything to do with cuts.[^duality-refs]
 
 [^duality-refs]: For an overview of duality, you can (again) check @boyd_convex_2004.
-And for duality in the context of optimal value functions, there is also my MSc thesis. [@leal_de_freitas_convexification_2019]
+And for duality in the context of optimal value functions, there is also my M.Sc. thesis. [@leal_de_freitas_convexification_2019]
 
 Lagrangian duality consists of taking a hard constraint such as $(x, u) \in X$
 and substituting it by a linear penalty on how much we divert from the original feasible set.
@@ -520,10 +614,10 @@ $$
 
 Notice that while in the original problem we had $y$ fixed to be whatever
 argument the function receives,
-in the new problem $y$ can take any feasible value
+in the new problem $y$ can take any feasible value,
 but the cost is augmented by a new penalty term on the difference between $y$ and $x$.
 The factor lambda is called a **dual variable** or **Lagrange multiplier**
-and represents how much $y$ should be averse to diverting from $x$.
+and represents how much $y$ is averse to diverting from $x$.
 
 In the original feasible set where $x=y$,
 the term $\inner<\lambda, y - x>$ vanishes and both problems have the same objective function.
@@ -544,7 +638,7 @@ In forming the relaxation, one has freedom on which $\lambda$ to use.
 Essentially all state-of-the-art algorithms in (continuous) optimization[^market-opt]
 solve at the same time both the original problem
 and the problem of choosing the best multiplier possible.
-What do I mean with best multiplier?
+What do I mean by the best multiplier?
 Well, it's the one who closes the gap the most!
 The optimal value of choosing the multiplier is defined as
 
@@ -556,7 +650,7 @@ $$
 \end{aligned}
 $$
 
-That thing looks scary scary but, fortunately for us,
+That thing looks scary but, fortunately for us,
 all solvers are pretty good at it.
 The $\check{f}$ is called the dual value function
 because it solves the dual problem.
@@ -574,8 +668,14 @@ $$ \boxed{f(x) \ge \check{f}(x)} $$
   </text>
 </svg>
 
-Among the advantages of solving the dual problem at the same time as the primal,
-is that we gain a cut for free in the process!
+Since $\check{f}$ is defined as the maximum of a bunch of affine functions (affine in $\lambda$),
+it is convex!
+Meaning that it has a cut at every point.
+Moreover, one can prove that it is the tightest convex function everywhere below $f$.
+So the cuts for $\check{f}$ are also the best ones possible for $f$.
+The only thing remaining is discovering how to actually calculate these cuts.
+As it stands out, they come for free from the optimization problem,
+because their inclination is precisely the optimal multiplier.
 
 :::Theorem
 There is a cut for $f$ at the point $x_0$ defined by the dual value $\check{f}(x_0)$
@@ -588,7 +688,7 @@ $$ \forall x, f(x) \ge \check{f}(x_0) + \inner<\lambda_0, x - x_0>.$$
 By definition,
 $$ \check{f}(x_0) = \max\limits_{\lambda} \min\limits_{(y, u) \in X} c(u) - \inner<\lambda, y - x_0>. $$
 
-The maximum in the equation above is achieve precisely by $\lambda_0$:
+The maximum in the equation above is achieved precisely by $\lambda_0$:
 
 $$ \check{f}(x_0) = \min\limits_{(y, u) \in X} c(u) - \inner<\lambda_0, y - x_0>. $$
 
@@ -603,7 +703,7 @@ $$
   \end{array}
 $$
 
-Since the affine term in the objective function does not depend of $u$,
+Since the affine term in the objective function does not depend upon $u$,
 we can take it out of the minimization and pass it to the left-hand side.
 
 $$
@@ -624,27 +724,23 @@ And, best of all, solving an optimization problem in general
 already provides us with the dual solutions, meaning that we get cuts for free.
 How cool is that?
 
+
 Of course, now is the time for you to point your finger towards me
 and say that there is no tightness guarantee in the previous theorem.
 Although the dual is the best relaxation possible,
 it could still be too below the primal value function.
-Well, I gotta admit that in the general case this is most correct.
-Nonetheless, I still have an ace up my sleeve!
-Did you notice that we in no moment used convexity in this section?
-That is time to change that.
-
-There is an important result called _strong duality_
-which states that $\check{f}$'s epigraph is the closed convex hull
-of $f$'s epigraph.
-As a consequence, if $f$ is convex and continuous[^lsc-cvx],
-then it equals its dual function.
+But remember that we discussed above that $\check{f}$ is the _tighest_ convex function
+approximating $f$ from below.
+Thus, they should be equal whenever $f$ is convex.
+This is an important result called _strong duality_,
+which states that $\check{f}$'s epigraph is the closed convex hull of $f$'s epigraph.[^lsc-cvx]
 Therefore, now we also know how to calculate tight cuts
 for the points of non-differentiability of a convex function!
 
 $$ f\;\text{convex} \implies \forall x, f(x) \ge f(x_0) + \inner<\lambda_0, x - x_0>.$$
 
-[^lsc-cvx]: Technically, the theorem only requires that $f$ is a proper convex _lower semicontinuous_ function.
-But I don't want to have to write yet another definition in this post.
+[^lsc-cvx]: Technically, the theorem requires $f$ to be  proper convex _lower semicontinuous_ function.
+But in practice, convexity tends to be the only part you need to worry about.
 
 As a bonus, if you like automatic differentiation as much as I do,
 you also just learnt how to differentiate procedures defined as convex optimization problems.
@@ -660,10 +756,14 @@ Now all have to do is plug it into the chain rule et voilà!
 convex == intersection of half spaces
 
 
-# MILP {#milp}
+Cuts for mixed-integer programs {#mip}
+======================================
 
-## Benders
+Benders cuts
+------------
 
-## Lagrangian / exact
+Lagrangian cuts
+---------------
 
-## Strengthened Benders
+Strengthened Benders cuts
+-------------------------
