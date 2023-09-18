@@ -16,9 +16,6 @@ and some models related to astronomy.
 If you want to discuss something I wrote on the blog or just say "hi",
 feel free to send me an at `hello[at]iagoleal[dot]com`.
 
-If you liked any of my projects and want to know about my professional records,
-take a look at my [CV](/data/cv.pdf).
-
 Most of my personal projects are open source (including this site!)
 and you can find the repositories in my [Github profile](https://github.com/iagoleal).
 
