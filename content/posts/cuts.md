@@ -3,6 +3,8 @@ title: Approximation by a thousand cuts
 subtitle: A guide to piecewise-linear approximations
 keywords: [math]
 date: 2023-09-08
+header-includes:
+- '<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>'
 ---
 
 \def\R{\mathbb{R}}
@@ -11,6 +13,7 @@ date: 2023-09-08
 \def\op#1{\operatorname{\mathrm{#1}}}
 \def\graph{\op{graph}}
 \def\epi{\op{epi}}
+\def\d#1{\op{d}\!{#1}}
 
 Oh, a friend just called you and started to talk about
 this amazing function $f : \R^n \to \R$ that he just found.
@@ -49,7 +52,7 @@ depending on what properties of the function you want to preserve.
 In today's post we will focus on one such method called **approximation by cuts** or **cutting planes**.
 
 <svg width="800" height="200">
-  <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
+  <rect width="800" height="200" style="fill: rgb(200,200,200);stroke-width: 3;stroke: rgb(0,0,0)" />
   <text x="50" y="100" length="800" rx="20" ry="10">
     TODO: Interactive figure with figure and cuts
   </text>
@@ -466,11 +469,22 @@ $$ \epi(f) = \left\{ (x, y) \in \R^{n+1} \mid f(x) \le y \right\}. $$
 
 Besides sharing an etymology with _epic_,
 the epigraph also lets us easily translate results from convex sets to convex functions.
-For example, the supporting hyperplane theorem translates into a statement about tight cuts.
+For example, the supporting hyperplane theorem translates into a statement about tight cuts for convex function!
 
 :::Theorem
 A convex function $f$ has a tight cut at any point in its domain.
 :::
+
+Visually this theorem looks like the figure below.
+You can hover it to view the cut for each point.
+
+<div id=plot-container>
+  <svg id="function-supporting-cut" width="800" height="400" style="border:1px solid black">
+  </svg>
+</div>
+
+<script src="./function-supporting-cut.js">
+</script>
 
 :::Proof
 The graph of $f$ lies in the boundary of its epigraph, which is convex.
@@ -513,7 +527,7 @@ and, from differentiability,
 this hyperplane is unique with inclination given by the derivative.
 Therefore
 
-$$\boxed{\forall x,\, f(x) \ge f(x_0) + \inner<df(x_0),x - x_0>.}$$
+$$\boxed{\forall x,\, f(x) \ge f(x_0) + \inner<\d{f}(x_0),x - x_0>.}$$
 
 Now that's a formula!
 Recall our [sandwich algorithm](example-sandwich-algorithm).
