@@ -764,20 +764,3 @@ it must follow that the derivative equals the optimal multiplier $\nabla f(x_0) 
 Thus, by solving a parameterized (convex) optimization problem,
 you gain both an evaluation and a derivative.
 Now all have to do is plug it into the chain rule et voilà!
-
---------------------------------------------------------------------------------
-
-convex == intersection of half spaces
-
-
-Cuts for mixed-integer programs {#mip}
-======================================
-
-Benders cuts
-------------
-
-Lagrangian cuts
----------------
-
-Strengthened Benders cuts
--------------------------
