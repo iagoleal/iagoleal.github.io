@@ -7,6 +7,32 @@ header-includes:
 - '<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>'
 ---
 
+<style>
+/* CSS for styling */
+svg {
+    border: 1px solid #ccc;
+}
+
+.convex-set {
+    fill: lightblue;
+    stroke: black;
+}
+
+.hyperplane {
+    stroke: orange;
+    stroke-width: 2;
+}
+
+.half-space {
+    fill: rgba(255, 165, 0, 0.5);
+}
+
+.red-circle {
+fill: #de82a2;
+stroke: black;
+}
+</style>
+
 \def\R{\mathbb{R}}
 \def\hole\cdot
 \def\inner<#1,#2>{\left\langle#1,\,#2\right\rangle}
@@ -194,7 +220,7 @@ between two bounds.
 
 Finally, a nice property is that an approximation by cuts can be refined
 without much hassle.
-If you get a new cut $\phi$, all you have to do is update your bag of cuts
+Whenever you obtain a new cut $\phi$, all you have to do is update your bag of cuts
 from $C$ to $C \cup \{\phi\}$, and it's done.
 This allows for algorithms based on iterative refinement of the approximation.
 
@@ -222,7 +248,7 @@ This way, we squeeze the optimal value between a sequence of bounds:
 
 $$ \min_n f(x_n) \ge \min_x f(x) \ge \min_x \tilde{f}_n(x). $$
 
-The algorithm can also be more directly describe in Julia code:
+The algorithm can also be more directly described in Julia code:
 
 ```julia
 function minimize(f::Function ; eps, x = zeros())
@@ -381,21 +407,27 @@ this theorem is equivalent to the Hahn-Banach Theorem.
 \draw[black, semithick] (5.5, 3) -- (4, -2);
 ```
 
-The consequence of most interest to us is that this theorem can be used
-to acquire **supporting hyperplanes** for any convex set.
+Let's focus now on the case where one of the sets is a single point.
+An interesting consequence of this theorem is that given any point $p$ outside of the set,
+we can find an affine function that is zero in this point and contains
+a convex set in one of its half-spaces.
+It is really similar to a cut, but for a set.
+For example, in the imagine below, you can choose a separating hyperplane between
+your mouse and the convex set in the middle.
+
+<svg id="set-point-hyperplane" width="750" height="400" style="border:1px solid black">
+</svg>
+
+
+Now, what happens when we choose our point to be in the set's boundary?
+In this case, we acquire a **supporting hyperplanes**.
+That is, a tangent hyperplane that has the entire set in one of its sides.
 
 :::Definition
 A **supporting hyperplane** at a point $x$ in the boundary of $X$
-is a tangent hyperplane that is touches $X$ at $x$ and his
+is a tangent hyperplane that touches $X$ at $x$ and is
 non-negative at every other point of $X$.
 :::
-
-<svg width="800" height="200">
-  <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
-  <text x="50" y="100" length="800" rx="20" ry="10">
-    TODO: Interactive supporting hyperplane (point => hyperplane)
-  </text>
-</svg>
 
 This start to look a bit like cuts, right?
 Very well, from the Separating Hyperplane Theorem,
@@ -478,11 +510,8 @@ A convex function $f$ has a tight cut at any point in its domain.
 Visually this theorem looks like the figure below.
 You can hover it to view the cut for each point.
 
-<div id=plot-container>
-  <svg id="function-supporting-cut" width="800" height="400" style="border:1px solid black">
-  </svg>
-</div>
-
+<svg id="function-supporting-cut" width="750" height="400" style="border:1px solid black">
+</svg>
 <script src="./function-supporting-cut.js">
 </script>
 
@@ -764,3 +793,10 @@ it must follow that the derivative equals the optimal multiplier $\nabla f(x_0) 
 Thus, by solving a parameterized (convex) optimization problem,
 you gain both an evaluation and a derivative.
 Now all have to do is plug it into the chain rule et voilà!
+
+<script src="./convex-support.js"></script>
+<script>
+  figureSetPointHyperplane("#set-point-hyperplane");
+
+  figureFunctionSupportingCut("#function-supporting-cut", x => x*x+1, x => 2*x, -2, 2);
+</script>

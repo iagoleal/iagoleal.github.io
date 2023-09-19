@@ -36,11 +36,15 @@ function makeCut(f, df, x0, minX, maxX) {
     return d3.range(minX, maxX, 0.01).map(x => ({x: x, y: f(x0) + df(x0) * (x - x0)}));
 }
 
-function plotFunction(id, f, df, minX, maxX) {
+/*
+  Make Figures
+*/
+
+function figureFunctionSupportingCut(id, f, df, minX, maxX) {
   const svg    = d3.select(id);
   const width  = svg.attr("width");
   const height = svg.attr("height");
-  const margin = {top: 0, right: 0, bottom: 0, left: 0};
+  const margin = {top: 0, right: 10, bottom: 0, left: 10};
 
   const xScale = d3.scaleLinear()
     .domain([minX, maxX])
@@ -51,20 +55,14 @@ function plotFunction(id, f, df, minX, maxX) {
     .range([height - margin.bottom, margin.top]);
 
   // Generate data points
-  const fData = d3.range(minX, maxX, 0.1).map(x => ({x: x, y: f(x)}));
+  const fData = xScale.ticks(40).map(x => ({x: x, y: f(x)}));
 
-  // Create a line generator
-  const line = d3.line()
-    .x(d => xScale(d.x))
-    .y(d => yScale(d.y));
-
-  const functionColor = "steelblue"
 
   plot(svg, fData, xScale, yScale)
     .attr("stroke", "black");
 
   plotEpigraph(svg, fData, xScale, yScale)
-    .attr("fill", functionColor)
+    .attr("fill", "steelblue")
     .attr("fill-opacity", 0.3); // Adjust opacity as needed
 
   // Display cut for mouse x position
@@ -88,5 +86,3 @@ function plotFunction(id, f, df, minX, maxX) {
       .attr("fill", cutColor);
   });
 }
-
-plotFunction("#function-supporting-cut", x => x*x+1, x => 2*x, -2, 2);
