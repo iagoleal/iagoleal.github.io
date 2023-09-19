@@ -453,6 +453,9 @@ and we can take this subspace as our hyperplane.
 Notice that this theorem also has the equivalent formulation as
 $$\forall x \in X,\, \inner<a,x> \ge \inner<a,x_0>.$$
 
+<svg id="set-supporting-hyperplane" width="750" height="400" style="border:1px solid black">
+</svg>
+
 From convex sets to convex functions
 ====================================
 
@@ -797,6 +800,8 @@ Now all have to do is plug it into the chain rule et voilà!
 <script src="./convex-support.js"></script>
 <script>
   figureSetPointHyperplane("#set-point-hyperplane");
+
+  figureSetSupportingHyperplane("#set-supporting-hyperplane");
 
   figureFunctionSupportingCut("#function-supporting-cut", x => x*x+1, x => 2*x, -2, 2);
 </script>
