@@ -9,27 +9,27 @@ header-includes:
 
 <style>
 /* CSS for styling */
-svg {
-    border: 1px solid #ccc;
+svg.diagram {
+  border: 1px solid #fff;
 }
 
 .convex-set {
-    fill: lightblue;
-    stroke: black;
+  fill: lightblue;
+  stroke: black;
 }
 
 .hyperplane {
-    stroke: orange;
-    stroke-width: 2;
+  stroke: orange;
+  stroke-width: 1pt;
 }
 
 .half-space {
-    fill: rgba(255, 165, 0, 0.5);
+  fill: rgba(255, 165, 0, 0.5);
 }
 
 .red-circle {
-fill: #de82a2;
-stroke: black;
+  fill: #de82a2;
+  stroke: black;
 }
 </style>
 
@@ -75,12 +75,12 @@ Or, if you are feeling fancier, you could treat these evaluations as a dataset
 and train a neural network that approximates the function.
 Every method has its pros and cons,
 depending on what properties of the function you want to preserve.
-In today's post we will focus on one such method called **approximation by cuts** or **cutting planes**.
+In today's post we will focus on one such method called _approximation by cuts_ or _cutting planes_.
 
 <svg width="800" height="200">
   <rect width="800" height="200" style="fill: rgb(200,200,200);stroke-width: 3;stroke: rgb(0,0,0)" />
   <text x="50" y="100" length="800" rx="20" ry="10">
-    TODO: Interactive figure with figure and cuts
+  TODO: Interactive figure with figure and cuts
   </text>
 </svg>
 
@@ -102,7 +102,7 @@ That is,
 $$  f(x) \ge \inner<a, x> + b. $$
 :::
 
-In particular, we say that a cut is **tight** at $x_0$
+In particular, we say that a cut is _tight_ at $x_0$
 if it equals the function at this point.
 In this case, it is common to denote the cut as centered around $x_0$:
 
@@ -129,7 +129,7 @@ $$  f(x) \ge f(x_0) + \inner<a, x - x_0>. $$
 
 In general, a single cut is a terrible approximation.
 But it is not its fault, after all, it is just a first order polynomial!
-The magic begins when you combine a lot of cuts to represent $f$ as a **polyhedral function**.
+The magic begins when you combine a lot of cuts to represent $f$ as a _polyhedral function_.
 Taking an approximation of $f$ by cuts $C = \{\inner<a,\hole> + b\}$
 amounts to choosing the largest cut at each given point:
 
@@ -302,7 +302,7 @@ I recommend the great book by @{boyd_convex_2004} [chapter 2].
 Alright, time for some definitions.
 
 :::Definition
-A set $X$ is convex if, given two points $x, y \in X$, it also contains
+A set $X$ is **convex** if, given two points $x, y \in X$, it also contains
 the entire line segment between them.
 
 Algebraically, for any $\lambda \in [0, 1]$,
@@ -322,13 +322,13 @@ such as planes, balls, and polyhedra.
 \pgfmathsetmacro{\slope}{atan2(2,-4.5)}
 
 \draw[fill=orange!50] (M) --
-     ++ (-2, 0.5)
-    to[out=\slope+10,in=90] ++ (-2, -2.5)
-    to[out=-90,in=\slope+180] cycle;
+  ++ (-2, 0.5)
+  to[out=\slope+10,in=90] ++ (-2, -2.5)
+  to[out=-90,in=\slope+180] cycle;
 
 \draw[thick, fill=black]
-    (x) circle[radius=0.03] node[below]{x} --
-    (y) circle[radius=0.03] node[above]{y};
+  (x) circle[radius=0.03] node[below]{x} --
+  (y) circle[radius=0.03] node[above]{y};
 
 \path[-Latex, semithick, color=black] (M) edge[bend left, shorten <= 7pt] node[pos=1.1] {Convex Set} +(2, -1);
  ```
@@ -346,19 +346,19 @@ such as planes, balls, and polyhedra.
 \pgfmathsetmacro{\slope}{atan2(2,-4.5)}
 
 \draw[fill=yellow!30] (M)
-    to[out=\slope,in=0] ++ (-2,0.5)
-    to[out=180,in=90] ++ (-1,-0.5)
-    to[out=-90,in=90] ++ (1,-2)
-    to[out=-90,in=90] ++ (-2,-1)
-    to[out=-90,in=180] ++(4,-1)
-    to[out=0,in=\slope+180] cycle;
+  to[out=\slope,in=0] ++ (-2,0.5)
+  to[out=180,in=90] ++ (-1,-0.5)
+  to[out=-90,in=90] ++ (1,-2)
+  to[out=-90,in=90] ++ (-2,-1)
+  to[out=-90,in=180] ++(4,-1)
+  to[out=0,in=\slope+180] cycle;
 
 \filldraw[fill=white] (C) circle [rotate=30, x radius=0.5, y radius = 0.4];
 
 % Draw points
 \draw[thick, fill=red, color=red]
-    (x) circle[radius=0.03] node[below, color=black]{$x$} --
-    (y) circle[radius=0.03] node[above, color=black]{$y$};
+  (x) circle[radius=0.03] node[below, color=black]{$x$} --
+  (y) circle[radius=0.03] node[above, color=black]{$y$};
 
 \path[-Latex, semithick, color=black] (M) edge[bend right, shorten <= 7pt] node[pos=1.1] {Non-convex Set} +(2, 1);
 ```
@@ -385,27 +385,10 @@ Due to their absence of wobbles, one can pass a plane between two convex sets wi
 [^hahn-banach]: For the Functional Analysts lurking around: in infinite dimension,
 this theorem is equivalent to the Hahn-Banach Theorem.
 
-```tikz
-\coordinate (M) at (4.25,1);
-
-\pgfmathsetmacro{\slope}{atan2(2,-4.5)}
-
-{[xshift=7cm, rotate=45]
-\draw[fill=orange!50] (M) --
-     ++ (-2, 0.5)
-    to[out=\slope+10,in=90] ++ (-2, -2.5)
-    to[out=-90,in=\slope+180] cycle;
-}
-
-\coordinate (N) at (7,1);
-
-\draw[fill=purple!20] (N) --
-     ++ (-1, 0.5)
-    to[out=\slope+10,in=110] ++ (-1, -2.5)
-    to[out=-70,in=\slope+180] cycle;
-
-\draw[black, semithick] (5.5, 3) -- (4, -2);
-```
+<div>
+  <svg id="set-separating-hyperplane" class="diagram" viewBox="0 0 750 400" width="750" height="400">
+  </svg>
+</div>
 
 Let's focus now on the case where one of the sets is a single point.
 An interesting consequence of this theorem is that given any point $p$ outside of the set,
@@ -415,12 +398,14 @@ It is really similar to a cut, but for a set.
 For example, in the imagine below, you can choose a separating hyperplane between
 your mouse and the convex set in the middle.
 
-<svg id="set-point-hyperplane" width="750" height="400" style="border:1px solid black">
-</svg>
+<div>
+  <svg id="set-point-hyperplane" class="diagram" viewBox="0 0 750 400" width="750" height="400">
+  </svg>
+</div>
 
 
 Now, what happens when we choose our point to be in the set's boundary?
-In this case, we acquire a **supporting hyperplanes**.
+In this case, we acquire a _supporting hyperplane_.
 That is, a tangent hyperplane that has the entire set in one of its sides.
 
 :::Definition
@@ -453,7 +438,7 @@ and we can take this subspace as our hyperplane.
 Notice that this theorem also has the equivalent formulation as
 $$\forall x \in X,\, \inner<a,x> \ge \inner<a,x_0>.$$
 
-<svg id="set-supporting-hyperplane" width="750" height="400" style="border:1px solid black">
+<svg id="set-supporting-hyperplane" class="diagram" width="750" height="400">
 </svg>
 
 From convex sets to convex functions
@@ -465,33 +450,33 @@ into results about functions and cuts.
 After all, that is what we are interested in here.
 
 Foremost, one remark: for simplicity of presentation we will work with
-**extended real functions**.
+_extended real functions_.
 These are functions that, besides the usual real numbers, can evaluate to $\infty$.
 The advantage of this approach is that we can just
 assume that all functions are defined everywhere on $\R^n$.
-We call their **domain** wherever they are finite
+We call their _domain_ wherever they are finite
 and define them as infinity elsewhere.
 
-The most common definition in the wild for a **convex function**
+The most common definition in the wild for a _convex function_
 is through _Jensen's inequality_,
 
-$$ f(\lambda x + (1 - \lambda) y  \le \lambda f(x) + (1 - \lambda) f(y)..$$
+$$ f(\lambda x + (1 - \lambda) y  \le \lambda f(x) + (1 - \lambda) f(y).$$
 
 Nonetheless, convex functions are notorious for having a multitude of equivalent definitions.
-Hence, for our purposes it is better to use a more geometric one.
+Hence, for our purposes it will be better to choose a more geometric one.
 
 :::Definition
 A function is **convex** if its epigraph is a convex set.
 :::
 
-But what is this **epigraph** thing after all?
+But what is this _epigraph_ thing after all?
 Well, everybody knows a function's graph,
 
 $$ \graph(f) = \left\{ (x, y) \in \R^{n+1} \mid f(x) = y \right\}. $$
 
 The epigraph adjoins the suffix epi-, from greek ['ἐπί']{lang=grc}
 meaning ["above" or "on top of"](https://outils.biblissima.fr/fr/eulexis-web/?lemma=%E1%BC%90%CF%80%CE%AF&dict=LSJ),
-to denote the set of all points _above the graph_:
+to denote the set of all points _above the graph_.
 
 $$ \epi(f) = \left\{ (x, y) \in \R^{n+1} \mid f(x) \le y \right\}. $$
 
@@ -513,10 +498,8 @@ A convex function $f$ has a tight cut at any point in its domain.
 Visually this theorem looks like the figure below.
 You can hover it to view the cut for each point.
 
-<svg id="function-supporting-cut" width="750" height="400" style="border:1px solid black">
+<svg id="function-supporting-cut" class="diagram" width="750" height="400">
 </svg>
-<script src="./function-supporting-cut.js">
-</script>
 
 :::Proof
 The graph of $f$ lies in the boundary of its epigraph, which is convex.
@@ -575,10 +558,10 @@ Our oracle then becomes a simple function that assembles the cut.
 
 ```julia
 function oracle(f, x)
-    fx  = f(x)
-    dfx = derivative(f, x)
+  fx  = f(x)
+  dfx = derivative(f, x)
 
-    return fx, Cut(dfx, fx - dot(dfx, x))
+  return fx, Cut(dfx, fx - dot(dfx, x))
 end
 ```
 
@@ -599,7 +582,7 @@ They almost always have edges and corners,
 nonetheless, it should be easy to calculate cuts for them.
 They are made out of linear pieces, after all!
 
-Our focus on this section will be on calculating cuts for **optimal value functions**,
+Our focus on this section will be on calculating cuts for _optimal value functions_,
 that is, functions defined as the optimal value of a parameterized optimization,
 such as those one [would encounter, for example, in dynamic programming](/posts/dynamic-programming).
 
@@ -662,7 +645,7 @@ Notice that while in the original problem we had $y$ fixed to be whatever
 argument the function receives,
 in the new problem $y$ can take any feasible value,
 but the cost is augmented by a new penalty term on the difference between $y$ and $x$.
-The factor lambda is called a **dual variable** or **Lagrange multiplier**
+The factor lambda is called a _dual variable_ or _Lagrange multiplier_
 and represents how much $y$ is averse to diverting from $x$.
 
 In the original feasible set where $x=y$,
@@ -755,8 +738,8 @@ we can take it out of the minimization and pass it to the left-hand side.
 $$
   \begin{array}{rl}
     \check{f}(x_0) + \inner<\lambda_0, x - x_0>
-        \le \min\limits_{u} & c(u) \\
-            \textrm{s.t.}   & (x, u) \in X.
+      \le \min\limits_{u} & c(u) \\
+          \textrm{s.t.}   & (x, u) \in X.
   \end{array}
 $$
 
@@ -795,10 +778,13 @@ Since the derivative is unique and the cut provides us with a tangent,
 it must follow that the derivative equals the optimal multiplier $\nabla f(x_0) = \lambda_0$.
 Thus, by solving a parameterized (convex) optimization problem,
 you gain both an evaluation and a derivative.
-Now all have to do is plug it into the chain rule et voilà!
+Now all you have to do is plug it into the chain rule et voilà!
 
 <script src="./convex-support.js"></script>
+<script src="./function-supporting-cut.js"></script>
 <script>
+  figureSetSeparatingHyperplane("#set-separating-hyperplane");
+
   figureSetPointHyperplane("#set-point-hyperplane");
 
   figureSetSupportingHyperplane("#set-supporting-hyperplane");
