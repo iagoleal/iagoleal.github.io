@@ -16,6 +16,12 @@ svg.diagram {
 .convex-set {
   fill: lightblue;
   stroke: black;
+  opacity: 1;
+  transition: fill 100ms;
+}
+
+.not-good {
+  fill: #de82a2;
 }
 
 .hyperplane {
@@ -25,11 +31,6 @@ svg.diagram {
 
 .half-space {
   fill: rgba(255, 165, 0, 0.5);
-}
-
-.red-circle {
-  fill: #de82a2;
-  stroke: black;
 }
 </style>
 
@@ -115,13 +116,13 @@ $$  f(x) \ge f(x_0) + \inner<a, x - x_0>. $$
 
   % Function
   \draw[color=black, samples=100]  plot (\x,{0.5*(\x - 1.5)*(\x - 1)*(\x + 0.5)*(\x + 1.5)})
-    node[right] {function};
+  node[right] {function};
   % Common cut
   \draw[color=orange] plot (\x,{-1          + 0.403875*(\x - 1.35)})
-    node[right] {ordinary cut};
+  node[right] {ordinary cut};
   % Tight cut
   \draw[color=blue]   plot (\x,{-0.13803125 + 0.403875*(\x - 1.35)})
-    node[right] {tight cut};
+  node[right] {tight cut};
   % Point of tangency
   \node[fill=blue, draw, circle, inner sep = 0.5pt] at (1.35,-0.13803125) {};
 }
@@ -781,7 +782,6 @@ you gain both an evaluation and a derivative.
 Now all you have to do is plug it into the chain rule et voilà!
 
 <script src="./convex-support.js"></script>
-<script src="./function-supporting-cut.js"></script>
 <script>
   figureSetSeparatingHyperplane("#set-separating-hyperplane");
 
