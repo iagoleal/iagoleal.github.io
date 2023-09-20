@@ -14,7 +14,7 @@ svg.diagram {
 }
 
 .convex-set {
-  fill: lightblue;
+  fill: hsl(147 42% 64%);
   stroke: black;
   opacity: 1;
   transition: fill 100ms;
@@ -31,6 +31,21 @@ svg.diagram {
 
 .half-space {
   fill: rgba(255, 165, 0, 0.5);
+}
+
+.function-graph {
+  stroke: black;
+  fill: none;
+}
+
+.epigraph {
+  fill: steelblue;
+  fill-opacity: 0.3;
+  transition: fill 400ms;
+}
+
+.epigraph:hover {
+  fill: blue;;
 }
 </style>
 
@@ -439,8 +454,10 @@ and we can take this subspace as our hyperplane.
 Notice that this theorem also has the equivalent formulation as
 $$\forall x \in X,\, \inner<a,x> \ge \inner<a,x_0>.$$
 
-<svg id="set-supporting-hyperplane" class="diagram" width="750" height="400">
-</svg>
+<div>
+  <svg id="set-supporting-hyperplane" class="diagram" width="750" height="400">
+  </svg>
+</div>
 
 From convex sets to convex functions
 ====================================
@@ -481,12 +498,10 @@ to denote the set of all points _above the graph_.
 
 $$ \epi(f) = \left\{ (x, y) \in \R^{n+1} \mid f(x) \le y \right\}. $$
 
-<svg width="800" height="200">
-  <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
-  <text x="50" y="100" length="800" rx="20" ry="10">
-    TODO: Show graph and epigraph
-  </text>
-</svg>
+<div>
+  <svg id="function-epigraph" class="diagram" width="750" height="400">
+  </svg>
+</div>
 
 Besides sharing an etymology with _epic_,
 the epigraph also lets us easily translate results from convex sets to convex functions.
@@ -499,8 +514,10 @@ A convex function $f$ has a tight cut at any point in its domain.
 Visually this theorem looks like the figure below.
 You can hover it to view the cut for each point.
 
-<svg id="function-supporting-cut" class="diagram" width="750" height="400">
-</svg>
+<div>
+  <svg id="function-supporting-cut" class="diagram" width="750" height="400">
+  </svg>
+</div>
 
 :::Proof
 The graph of $f$ lies in the boundary of its epigraph, which is convex.
@@ -788,6 +805,8 @@ Now all you have to do is plug it into the chain rule et voilà!
   figureSetPointHyperplane("#set-point-hyperplane");
 
   figureSetSupportingHyperplane("#set-supporting-hyperplane");
+
+  figureFunctionEpigraph("#function-epigraph", x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5), -1.8, 2);
 
   figureFunctionSupportingCut("#function-supporting-cut", x => x*x+1, x => 2*x, -2, 2);
 </script>

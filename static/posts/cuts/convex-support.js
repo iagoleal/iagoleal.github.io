@@ -59,12 +59,11 @@ function plot(svg, fData, xScale, yScale) {
   .x(d => xScale(d.x))
   .y(d => yScale(d.y));
 
-  return svg.append("path")
-    .datum(fData)
-    .attr("fill", "none")
-    .attr("class", "graph")
+  return svg.selectAll(".function-graph")
+    .data([fData])
+    .join("path")
+    .attr("class", "function-graph")
     .attr("d", line);
-
 }
 
 function plotEpigraph(svg, fData, xScale, yScale) {
@@ -74,10 +73,11 @@ function plotEpigraph(svg, fData, xScale, yScale) {
   .y1(d => yScale(d.y))  // Function curve
   .curve(d3.curveLinear);
 
-  return svg.append("path")
-    .datum(fData)
+  return svg.selectAll(".epigraph")
+    .data([fData])
+    .join("path")
     .attr("class", "epigraph")
-    .attr("d", epigraphArea)
+    .attr("d", epigraphArea);
 }
 
 function mark(svg, x, y) {
@@ -255,6 +255,30 @@ function makeCut(f, df, x0, minX, maxX) {
   return d3.range(minX, maxX, 0.01).map(x => ({x: x, y: f(x0) + df(x0) * (x - x0)}));
 }
 
+function figureFunctionEpigraph(id, f, minX, maxX) {
+  const svg    = d3.select(id);
+  const width  = svg.attr("width");
+  const height = svg.attr("height");
+  const margin = {top: 0, right: 50, bottom: 0, left: 50};
+
+  const xScale = d3.scaleLinear()
+    .domain([minX, maxX])
+    .range([margin.left, width - margin.right]);
+
+  // Generate data points
+  const fData = xScale.ticks(40).map(x => ({x: x, y: f(x)}));
+
+  const yScale = d3.scaleLinear()
+    .domain(d3.extent(fData, d => d.y))
+    .range([height - margin.bottom, margin.top]);
+
+  plot(svg, fData, xScale, yScale)
+    .attr("stroke", "black");
+
+  const g = svg.append("g");
+  const epigraph = plotEpigraph(g, fData, xScale, yScale);
+}
+
 function figureFunctionSupportingCut(id, f, df, minX, maxX) {
   const svg    = d3.select(id);
   const width  = svg.attr("width");
@@ -270,7 +294,7 @@ function figureFunctionSupportingCut(id, f, df, minX, maxX) {
   .range([height - margin.bottom, margin.top]);
 
   // Generate data points
-  const fData = xScale.ticks(40).map(x => ({x: x, y: f(x)}));
+  const fData = xScale.ticks(100).map(x => ({x: x, y: f(x)}));
 
 
   plot(svg, fData, xScale, yScale)
@@ -282,22 +306,19 @@ function figureFunctionSupportingCut(id, f, df, minX, maxX) {
 
   // Display cut for mouse x position
   svg.on("mousemove", function(event, d) {
-    const cutColor   = "#ff8000"
     const [mouseX, _] = d3.pointer(event);
     const x0      = xScale.invert(mouseX);
     const cutData = makeCut(f, df, x0, minX, maxX);
 
     // Clean-up is required
     svg.select(".mark").remove();
-    svg.select(".tangent-line").remove();
+    svg.select(".hyperplane").remove();
 
     // Append the path for the tangent line
     plot(svg, cutData, xScale, yScale)
-      .attr("class", "tangent-line")
-      .attr("stroke", cutColor);
+      .attr("class", "hyperplane");
 
     // Append a dot at the mouse's x position
-    mark(svg, mouseX, yScale(f(x0)))
-      .attr("fill", cutColor);
+    mark(svg, mouseX, yScale(f(x0))).attr("fill", "orange");
   });
 }
