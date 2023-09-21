@@ -185,46 +185,57 @@ Why I like cuts and you should too
 
 What are the nice properties that an approximation by cuts has?
 Why is it used so much by the optimization and operations research folks?
+Let's go through some of the reasons.
 
-The first reason is that _it preserves convexity_,
-and convex functions are full of nice properties needed for optimization.
-Even more than that! As we will [later see](#mip),
-as you add more cuts this approximation converges
-to the tightest convex function everywhere below $f$.
-I also find it worth commenting that this property works as a double-edged sword:
-since polyhedral functions are always convex,
-you cannot guarantee a satisfactory approximation for a non-convex function.
-Keep this in mind when using cuts.
+- **Convexity**: 
+    Every polyhedral function is convex,
+    and convex functions are full of nice properties needed for optimization.
+    Furthermore, one can prove that
+    as you add more cuts any such approximation converges
+    to the tightest convex function everywhere below $f$.
 
-It is also an underapproximation of $f$,
-because since all cuts are below it, their maximum also has to be.
-Thus, cutting planes are a good tool for estimating lower bounds,
-which is a necessity in optimization.
+    I also find it worth commenting that this property works as a double-edged sword:
+    since polyhedral functions are always convex,
+    you cannot guarantee a satisfactory approximation for a non-convex function.
+    Keep this in mind when using cuts.
 
-Another reason is that minimizing cuts can be transformed into a
-[Linear Program](https://en.wikipedia.org/wiki/Linear_programming),
-which is the among the easiest kinds of problems to optimize.
-So if $f$ is some complicated convex function, but you already have
-a good approximation by cuts for it, you can minimize it instead
-and get an approximation for the optimum.
+- **Underapproximation**:
+    Since all cuts are below $f$, their maximum also has to be.
+    Thus, cutting planes are a good tool for estimating lower bounds,
+    which is a necessity in optimization.
 
-$$
-\begin{aligned}
-\min_x f(x) &\ge
-  \begin{array}{rl}
-    \min\limits_{x} &\max\limits_{(a,b) \in C} \inner<a_,x> + b  \\
-  \end{array} \\
-  &=
-  \begin{array}{rl}
-    \min\limits_{x, t} & t \\
-    \textrm{s.t.}  & \inner<a_,x> + b \le t,\, \forall (a,b) \in C  \\
-  \end{array}
-\end{aligned}
-$$
+- **Easy to improve**:
+    Approximations by cuts can be refined without much hassle.
+    Whenever you obtain a new cut $\phi$, all you have to do is update your bag of cuts
+    from $C$ to $C \cup \{\phi\}$, and it's done.
+    This allows for algorithms based on iterative refinement of the approximation.
 
-This last two properties make cuts an excellent tool for estimating lower bounds on optimization problems,
+- **Linear Programming Formulation**:
+    Minimizing a polyhedral functions can be represented as a
+    [Linear Program](https://en.wikipedia.org/wiki/Linear_programming),
+    which is among the easiest kinds of problems to optimize.
+    So if $f$ is some complicated convex function, but you already have
+    a good approximation by cuts for it, you can minimize it instead
+    and get an approximation for the optimum.
+
+    $$
+    \begin{aligned}
+    \min_x f(x) &\ge
+      \begin{array}{rl}
+        \min\limits_{x} &\max\limits_{(a,b) \in C} \inner<a_,x> + b  \\
+      \end{array} \\
+      &=
+      \begin{array}{rl}
+        \min\limits_{x, t} & t \\
+        \textrm{s.t.}  & \inner<a_,x> + b \le t,\, \forall (a,b) \in C  \\
+      \end{array}
+    \end{aligned}
+    $$
+
+These properties make cuts an excellent tool for estimating lower bounds on optimization problems,
 which is a necessity for any solving method that "sandwiches" the optimal value
 between two bounds.
+Let's see an example of how to do that.
 
 <svg width="800" height="200">
   <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
@@ -233,12 +244,6 @@ between two bounds.
     The user selects a point and the algorithm updates the bounds.
   </text>
 </svg>
-
-Finally, a nice property is that an approximation by cuts can be refined
-without much hassle.
-Whenever you obtain a new cut $\phi$, all you have to do is update your bag of cuts
-from $C$ to $C \cup \{\phi\}$, and it's done.
-This allows for algorithms based on iterative refinement of the approximation.
 
 ### Example: Kelley's cutting planes algorithm {#example-sandwich-algorithm}
 
@@ -255,7 +260,8 @@ that we have access to some oracle capable of both evaluating a function and cal
 This is not cheating though,
 because in section [cuts-from-derivatives] we will learn how to write such an oracle.
 
-We begin with an empty unconstrained cut approximation[^unconstrained-lp] $\tilde{f}_0$ of $f$.
+We begin with a constant cut approximation[^unconstrained-lp] $\tilde{f}_0$ of $f$
+everywhere equal to a initial lower bound.
 The idea is to, at each iteration, give the oracle a point $x_n$.
 This will return an evaluation $f(x_n)$, which serves as an upper bound
 for $\min f$ because all evaluations are larger than the minimum.
@@ -267,9 +273,10 @@ $$ \min_n f(x_n) \ge \min_x f(x) \ge \min_x \tilde{f}_n(x). $$
 The algorithm can also be more directly described in Julia code:
 
 ```julia
-function minimize(f::Function ; eps, x = zeros())
-  opt    = Polyhedral()
-  lb, ub = -Inf, +Inf
+function minimize(f::Function, initial_bound ; eps, x = zeros())
+  opt = Polyhedral(initial_bound)
+  ub  = +Inf
+  lb  = initial_bound
 
   while abs(ub - lb) > eps
     fx, cut = oracle(f, x)  # Ask oracle for evaluation and cut at x
