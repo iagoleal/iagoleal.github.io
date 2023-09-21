@@ -1,4 +1,13 @@
 /*
+ Types
+*/
+
+function Hyperplane(props) {
+  this.x = props.x
+  this.y = props.y
+}
+
+/*
   General Geometry
 */
 
@@ -31,13 +40,13 @@ function circleCircleIntersection(a, b) {
   Drawing figures
 */
 
-function updateHyperplane(svg, pos) {
+function updateHyperplanes(svg, pos) {
   const width     = svg.attr("width");
   const height    = svg.attr("height");
   const maxLength = Math.sqrt(width ** 2 + height ** 2);
 
   return svg.selectAll(".hyperplane")
-    .data(pos ? [pos] : [])
+    .data(pos)
     .join(
       "line",
       update => update,
@@ -59,8 +68,8 @@ function plot(svg, fData, xScale, yScale) {
   .x(d => xScale(d.x))
   .y(d => yScale(d.y));
 
-  return svg.selectAll(".function-graph")
-    .data([fData])
+  return svg.append("path")
+    .datum(fData)
     .join("path")
     .attr("class", "function-graph")
     .attr("d", line);
@@ -68,14 +77,13 @@ function plot(svg, fData, xScale, yScale) {
 
 function plotEpigraph(svg, fData, xScale, yScale) {
   const epigraphArea = d3.area()
-  .x(d => xScale(d.x))
-  .y0(0)                 // Top of the plot
-  .y1(d => yScale(d.y))  // Function curve
-  .curve(d3.curveLinear);
+    .x(d => xScale(d.x))
+    .y0(0)                 // Top of the plot
+    .y1(d => yScale(d.y))  // Function curve
+    .curve(d3.curveLinear);
 
-  return svg.selectAll(".epigraph")
-    .data([fData])
-    .join("path")
+  return svg.append("path")
+    .datum(fData)
     .attr("class", "epigraph")
     .attr("d", epigraphArea);
 }
@@ -115,8 +123,6 @@ function figureSetPointHyperplane(id) {
   .attr("r",  d => d.r)
   .attr("class", "convex-set");
 
-  updateHyperplane(svg, pos);
-
   // Draw hyperplane separating mouse and convex set
   svg.on("mousemove", function (event) {
     const [x, y] = d3.pointer(event);
@@ -129,7 +135,7 @@ function figureSetPointHyperplane(id) {
     const normal = normalize({x: circle.x - x, y: circle.y - y});
     pos = {x, y, normal};
 
-    updateHyperplane(svg, isInside? null : pos);
+    updateHyperplanes(svg, isInside? [] : [pos]);
 
     // Mouse marker
     svg.selectAll(".mark").remove();
@@ -137,14 +143,16 @@ function figureSetPointHyperplane(id) {
       mark(svg, pos.x, pos.y).attr("fill", "orange");
     }
   });
+
+  updateHyperplanes(svg, [pos]);
 }
 
 function figureSetSupportingHyperplane(id) {
   const svg = d3.select(id);
 
-  const width     = svg.attr("width");
-  const height    = svg.attr("height");
-  const circle    = { x: width/2, y: height/2, r: 100 };
+  const width  = svg.attr("width");
+  const height = svg.attr("height");
+  const circle = { x: width/2, y: height/2, r: 100 };
 
   let pos = {
     x: circle.x + circle.r/Math.sqrt(2),
@@ -161,7 +169,7 @@ function figureSetSupportingHyperplane(id) {
   .attr("r",  d => d.r)
   .attr("class", "convex-set");
 
-  updateHyperplane(svg, pos);
+  updateHyperplanes(svg, [pos]);
 
   // Draw hyperplane separating mouse and convex set
   svg.on("mousemove", function (event) {
@@ -176,7 +184,7 @@ function figureSetSupportingHyperplane(id) {
     const border = {x: circle.x - normal.x*circle.r, y: circle.y - normal.y*circle.r};
     pos = {x: border.x, y: border.y, normal};
 
-    updateHyperplane(svg, isInside ? null : pos);
+    updateHyperplanes(svg, isInside ? [] : [pos]);
 
     // Mouse marker
     svg.selectAll(".mark").remove();
@@ -230,7 +238,7 @@ function figureSetSeparatingHyperplane(id) {
 
     if (circleCircleIntersection(c1, c2)) {
       bodiesSVG.classed("not-good", true);
-      updateHyperplane(svg, null);
+      updateHyperplanes(svg, []);
     } else {
       bodiesSVG.classed("not-good", false);
 
@@ -241,19 +249,15 @@ function figureSetSeparatingHyperplane(id) {
         y: (c1.y + normal.y * c1.r + c2.y - normal.y * c2.r) / 2,
       }
 
-      let pos = {x: mid.x, y: mid.y, normal};
+      const pos = {x: mid.x, y: mid.y, normal};
 
-      updateHyperplane(svg, pos).lower();
+      updateHyperplanes(svg, [pos]).lower();
     }
   }
 
   updateScene(); // Initial hyperplane calculation
 }
 
-
-function makeCut(f, df, x0, minX, maxX) {
-  return d3.range(minX, maxX, 0.01).map(x => ({x: x, y: f(x0) + df(x0) * (x - x0)}));
-}
 
 function figureFunctionEpigraph(id, f, minX, maxX) {
   const svg    = d3.select(id);
@@ -305,10 +309,11 @@ function figureFunctionSupportingCut(id, f, df, minX, maxX) {
     .attr("fill-opacity", 0.3); // Adjust opacity as needed
 
   // Display cut for mouse x position
-  svg.on("mousemove", function(event, d) {
+  svg.on("mousemove", function(event) {
     const [mouseX, _] = d3.pointer(event);
     const x0      = xScale.invert(mouseX);
-    const cutData = makeCut(f, df, x0, minX, maxX);
+    const cut     = {x: x0, fx: f(x0), dual: df(x0)};
+    const cutData = makeCut(cut, xScale);
 
     // Clean-up is required
     svg.select(".mark").remove();
@@ -321,4 +326,150 @@ function figureFunctionSupportingCut(id, f, df, minX, maxX) {
     // Append a dot at the mouse's x position
     mark(svg, mouseX, yScale(f(x0))).attr("fill", "orange");
   });
+}
+
+function figureFunctionCuts(id, f, df, minX, maxX) {
+  const svg    = d3.select(id);
+  const width  = svg.attr("width");
+  const height = svg.attr("height");
+  const margin = {top: 0, right: 10, bottom: 0, left: 10};
+  const cuts   = []
+
+  const xScale = d3.scaleLinear()
+  .domain([minX, maxX])
+  .range([margin.left, width - margin.right]);
+
+  const yScale = d3.scaleLinear()
+  .domain([0, 5])   // TODO: calculate range for y
+  .range([height - margin.bottom, margin.top]);
+
+  // Generate data points
+  const fData = xScale.ticks(100).map(x => ({x: x, y: f(x)}));
+
+  plot(svg, fData, xScale, yScale)
+    .attr("stroke", "black");
+
+  // Polyhedral approximation begins as empty graph
+  svg.append("path").datum([]).attr("class", "function-graph polyhedral").raise();
+
+  svg.on("click", function(event) {
+    const [mouseX, mouseY] = d3.pointer(event);
+    const x0      = xScale.invert(mouseX);
+    const y0      = Math.min(f(x0), yScale.invert(mouseY));
+    const cut     = {x: x0, fx: y0, dual: df(x0)};
+    const cutData = makeCut(cut, xScale);
+    cuts.push(cut);
+
+    updatePolyhedral(svg, cuts, xScale, yScale);
+
+    // Append the path for the tangent line
+    plot(svg, cutData, xScale, yScale)
+      .attr("class", "hyperplane")
+      .style("opacity", 0.2);
+
+    // Append a dot at the mouse's x position
+    mark(svg, mouseX, yScale(y0)).attr("fill", "orange");
+  });
+}
+
+function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
+  const svg    = d3.select(id);
+  const width  = svg.attr("width");
+  const height = svg.attr("height");
+  const margin = {top: 0, right: 10, bottom: 0, left: 10};
+  const cuts   = [{x: 0, y: 1, dual: 0}];
+
+  const xScale = d3.scaleLinear()
+  .domain([minX, maxX])
+  .range([margin.left, width - margin.right]);
+
+  const yScale = d3.scaleLinear()
+  .domain([0, 5])   // TODO: calculate range for y
+  .range([height - margin.bottom, margin.top]);
+
+  // Generate data points
+  const fData = xScale.ticks(100).map(x => ({x: x, y: f(x)}));
+
+  // Polyhedral approximation begins as empty graph
+  const poly = svg.append("path")
+    .datum(cuts)
+    .attr("class", "function-graph polyhedral")
+    .raise();
+
+
+  plot(svg, fData, xScale, yScale)
+    .style("opacity", 0.1);
+
+  plotEpigraph(svg, [{x: minX, y: 0}, {x: maxX, y: 0}], xScale, yScale);
+
+  svg.on("click", function(event) {
+    const [mouseX, mouseY] = d3.pointer(event);
+    const x0      = xScale.invert(mouseX);
+    const y0      = Math.min(f(x0), yScale.invert(mouseY));
+    const cut     = {x: x0, fx: y0, dual: df(x0)};
+    const cutData = makeCut(cut, xScale);
+    cuts.push(cut);
+
+    const ff = x => d3.max(cuts, cut => cut.fx + cut.dual*(x - cut.x));
+    const ffData = xScale.ticks(400).map(x => ({x: x, y: ff(x)}));
+
+    svg.select(".epigraph").remove();
+    plotEpigraph(svg, ffData, xScale, yScale);
+
+    // Append the path for the tangent line
+    plot(svg, cutData, xScale, yScale)
+      .attr("class", "hyperplane")
+      .style("opacity", 0.2);
+
+    updatePolyhedral(poly, cuts, xScale, yScale);
+
+    // Append a dot at the mouse's x position
+    mark(svg, mouseX, yScale(y0)).attr("fill", "orange");
+  });
+}
+
+function plot(svg, fData, xScale, yScale) {
+  const line = d3.line()
+  .x(d => xScale(d.x))
+  .y(d => yScale(d.y));
+
+  return svg.append("path")
+    .datum(fData)
+    .join("path")
+    .attr("class", "function-graph")
+    .attr("d", line);
+}
+
+function updatePolyhedral(poly, cuts, xScale, yScale) {
+  const ff = x => d3.max(cuts, cut => cut.fx + cut.dual*(x - cut.x));
+  const ffData = xScale.ticks(400).map(x => ({x: x, y: ff(x)}));
+
+  const line = d3.line()
+    .curve(d3.curveLinear)
+    .x(d => xScale(d.x))
+    .y(d => yScale(d.y));
+
+  return poly
+    .datum(ffData)
+    .transition()
+    .duration(100)
+    .ease(d3.easeCubic)
+    .attr("d", line);
+}
+
+function makeCut(cut, xScale) {
+  return xScale.ticks(2).map(x => ({x: x, y: cut.fx + cut.dual * (x - cut.x)}));
+}
+
+
+function cutToHyperplane(cut, xScale, yScale) {
+  const x = xScale(cut.x);
+  const y = yScale(cut.fx);
+  const tx = xScale(1);
+  const ty = yScale(cut.dual);
+  return {
+    x,
+    y,
+    normal: normalize({x: -ty, y: tx}),
+  }
 }

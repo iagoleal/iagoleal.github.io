@@ -10,7 +10,7 @@ header-includes:
 <style>
 /* CSS for styling */
 svg.diagram {
-  border: 1px solid #fff;
+  border: 1px solid #ccc;
 }
 
 .convex-set {
@@ -100,6 +100,11 @@ In today's post we will focus on one such method called _approximation by cuts_ 
   </text>
 </svg>
 
+<div>
+  <svg id="function-cuts" class="diagram" viewBox="0 0 750 400" width="750" height="400">
+  </svg>
+</div>
+
 
 Approximation by cuts
 =====================
@@ -158,27 +163,12 @@ points above and below it.
 To form the polyhedral function, we slice the space, one cut at a time,
 in order to carve a polyhedron containing the graph of $f$.
 
-```tikz
-{ [domain=-1.5:1.5, xscale=2.4]
-  \draw[very thin, opacity=0.2, color=gray, path fading=west] (-1.9,-1.4) grid (1.9,1.9);
+Click anywhere in the figure below to carve the shape of a function using cuts.
 
-  % Cuts
-  { [opacity = 0.6]
-    \draw[color=orange, fill=orange, domain=-1.5:0.4] plot (\x, {1 - 2*(\x +1)});
-    \draw[color=yellow, ]   plot (\x,   {0.3*0.3 + 0.6*(\x-0.3)});
-    \draw[color=purple, domain=-0.4:1.5] plot (\x, {1 + 2*(\x - 1)});
-  }
-  \draw[color=blue, fill = blue, fill opacity = 0.3, samples = 100] plot (\x, {max(1 - 2*(\x +1), 0.09  + 0.6*(\x-0.3), 1 + 2*(\x - 1))});
-
-  % Function
-  \draw[color=black,samples=100, domain=-1.415:1.415]  plot (\x,{\x*\x});
-
-  % Point of tangency
-  \node[fill=blue, draw, circle, inner sep = 0.5pt] at (-1, 1) {};
-  \node[fill=blue, draw, circle, inner sep = 0.5pt] at (0.3, 0.09) {};
-  \node[fill=blue, draw, circle, inner sep = 0.5pt] at (1, 1) {};
-}
-```
+<div>
+  <svg id="function-epigraph-carving" class="diagram" viewBox="0 0 750 400" width="750" height="400">
+  </svg>
+</div>
 
 Why I like cuts and you should too
 ----------------------------------
@@ -807,6 +797,10 @@ Now all you have to do is plug it into the chain rule et voilà!
 
 <script src="./convex-support.js"></script>
 <script>
+  figureFunctionCuts("#function-cuts", x => x*x+1, x => 2*x, -2, 2);
+
+  figureFunctionEpigraphCarving("#function-epigraph-carving", x => x*x+1, x => 2*x, -2, 2);
+
   figureSetSeparatingHyperplane("#set-separating-hyperplane");
 
   figureSetPointHyperplane("#set-point-hyperplane");
