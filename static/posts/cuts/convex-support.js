@@ -300,7 +300,6 @@ function figureFunctionSupportingCut(id, f, df, minX, maxX) {
   // Generate data points
   const fData = xScale.ticks(100).map(x => ({x: x, y: f(x)}));
 
-
   plot(svg, fData, xScale, yScale)
     .attr("stroke", "black");
 
@@ -329,15 +328,28 @@ function figureFunctionSupportingCut(id, f, df, minX, maxX) {
 }
 
 function figureFunctionCuts(id, f, df, minX, maxX) {
-  const svg    = d3.select(id);
-  const width  = svg.attr("width");
-  const height = svg.attr("height");
+  const div    = d3.select(id);
+  const width = 350;
+  const height = 400;
   const margin = {top: 0, right: 10, bottom: 0, left: 10};
-  const cuts   = []
+  const cuts   = [];
+
+
+  const svgFunc= div.append("svg")
+    .attr("viewBox", `0 0 ${width} ${height}`)
+    .attr("width", width)
+    .attr("height", height)
+    .attr("class", "diagram");
+
+  const svgPoly = div.append("svg")
+    .attr("viewBox", `0 0 ${width} ${height}`)
+    .attr("width", width)
+    .attr("height", height)
+    .attr("class", "diagram");
 
   const xScale = d3.scaleLinear()
   .domain([minX, maxX])
-  .range([margin.left, width - margin.right]);
+  .range([0, width]);
 
   const yScale = d3.scaleLinear()
   .domain([0, 5])   // TODO: calculate range for y
@@ -346,29 +358,52 @@ function figureFunctionCuts(id, f, df, minX, maxX) {
   // Generate data points
   const fData = xScale.ticks(100).map(x => ({x: x, y: f(x)}));
 
-  plot(svg, fData, xScale, yScale)
+  plot(svgFunc, fData, xScale, yScale)
     .attr("stroke", "black");
 
   // Polyhedral approximation begins as empty graph
-  svg.append("path").datum([]).attr("class", "function-graph polyhedral").raise();
+  const poly = svgPoly.append("path")
+    .datum(cuts)
+    .attr("class", "function-graph polyhedral")
+    .raise();
 
-  svg.on("click", function(event) {
+  svgFunc.on("mousemove", function(event) {
+    const [mouseX, _] = d3.pointer(event);
+    const x0      = xScale.invert(mouseX);
+    const cut     = {x: x0, fx: f(x0), dual: df(x0)};
+    const cutData = makeCut(cut, xScale);
+
+    // Clean-up is required
+    svgFunc.selectAll(".mark").remove();
+    svgFunc.selectAll(".hyperplane").remove();
+
+    // Append the path for the tangent line
+    plot(svgFunc, cutData, xScale, yScale)
+      .attr("class", "hyperplane");
+
+    updatePolyhedral(poly, cuts.concat(cut), xScale, yScale);
+
+    // Append a dot at the mouse's x position
+    mark(svgFunc, mouseX, yScale(f(x0))).attr("fill", "orange");
+  });
+
+  svgFunc.on("click", function(event) {
     const [mouseX, mouseY] = d3.pointer(event);
     const x0      = xScale.invert(mouseX);
-    const y0      = Math.min(f(x0), yScale.invert(mouseY));
+    const y0      = f(x0);
     const cut     = {x: x0, fx: y0, dual: df(x0)};
     const cutData = makeCut(cut, xScale);
     cuts.push(cut);
 
-    updatePolyhedral(svg, cuts, xScale, yScale);
+    updatePolyhedral(poly, cuts, xScale, yScale);
 
     // Append the path for the tangent line
-    plot(svg, cutData, xScale, yScale)
+    plot(svgPoly, cutData, xScale, yScale)
       .attr("class", "hyperplane")
       .style("opacity", 0.2);
 
     // Append a dot at the mouse's x position
-    mark(svg, mouseX, yScale(y0)).attr("fill", "orange");
+    mark(svgPoly, mouseX, yScale(y0)).attr("fill", "orange");
   });
 }
 
@@ -376,8 +411,8 @@ function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
   const svg    = d3.select(id);
   const width  = svg.attr("width");
   const height = svg.attr("height");
-  const margin = {top: 0, right: 10, bottom: 0, left: 10};
-  const cuts   = [{x: 0, y: 1, dual: 0}];
+  const margin = {top: 0, right: 0, bottom: 0, left: 0};
+  const cuts   = [];
 
   const xScale = d3.scaleLinear()
   .domain([minX, maxX])
@@ -461,15 +496,21 @@ function makeCut(cut, xScale) {
   return xScale.ticks(2).map(x => ({x: x, y: cut.fx + cut.dual * (x - cut.x)}));
 }
 
-
 function cutToHyperplane(cut, xScale, yScale) {
-  const x = xScale(cut.x);
-  const y = yScale(cut.fx);
-  const tx = xScale(1);
-  const ty = yScale(cut.dual);
-  return {
+  // Assuming cut.x represents 'a', cut.fx represents 'b', and cut.dual represents 'k'
+  const x = xScale(cut.x); // x-coordinate of a point on the line
+  const y = yScale(cut.fx); // y-coordinate of a point on the line
+
+  // Normal vector for the line (taking into consideration the scales)
+  const normalX = -cut.dual;
+  const normalY = 1;
+
+  let p =  {
     x,
     y,
-    normal: normalize({x: -ty, y: tx}),
+    normal: normalize({x: xScale(normalX), y: yScale(normalY)}),
   }
+
+  console.log({cut, p});
+  return p
 }

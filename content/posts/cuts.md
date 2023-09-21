@@ -93,16 +93,7 @@ Every method has its pros and cons,
 depending on what properties of the function you want to preserve.
 In today's post we will focus on one such method called _approximation by cuts_ or _cutting planes_.
 
-<svg width="800" height="200">
-  <rect width="800" height="200" style="fill: rgb(200,200,200);stroke-width: 3;stroke: rgb(0,0,0)" />
-  <text x="50" y="100" length="800" rx="20" ry="10">
-  TODO: Interactive figure with figure and cuts
-  </text>
-</svg>
-
-<div>
-  <svg id="function-cuts" class="diagram" viewBox="0 0 750 400" width="750" height="400">
-  </svg>
+<div id="function-cuts">
 </div>
 
 
@@ -177,6 +168,17 @@ What are the nice properties that an approximation by cuts has?
 Why is it used so much by the optimization and operations research folks?
 Let's go through some of the reasons.
 
+- **Underapproximation**:
+    Since all cuts are below $f$, their maximum also has to be.
+    Thus, cutting planes are a good tool for estimating lower bounds,
+    which is a necessity in optimization.
+
+- **Easy to improve**:
+    Approximations by cuts can be refined without much hassle.
+    Whenever you obtain a new cut $\phi$, all you have to do is update your bag of cuts
+    from $C$ to $C \cup \{\phi\}$, and it's done.
+    This allows for algorithms based on iterative refinement of the approximation.
+
 - **Convexity**: 
     Every polyhedral function is convex,
     and convex functions are full of nice properties needed for optimization.
@@ -189,21 +191,10 @@ Let's go through some of the reasons.
     you cannot guarantee a satisfactory approximation for a non-convex function.
     Keep this in mind when using cuts.
 
-- **Underapproximation**:
-    Since all cuts are below $f$, their maximum also has to be.
-    Thus, cutting planes are a good tool for estimating lower bounds,
-    which is a necessity in optimization.
-
-- **Easy to improve**:
-    Approximations by cuts can be refined without much hassle.
-    Whenever you obtain a new cut $\phi$, all you have to do is update your bag of cuts
-    from $C$ to $C \cup \{\phi\}$, and it's done.
-    This allows for algorithms based on iterative refinement of the approximation.
-
-- **Linear Programming Formulation**:
-    Minimizing a polyhedral functions can be represented as a
+- **Linear Programming formulation**:
+    Minimizing a polyhedral function is among the easiest kinds of problems to optimize,
+    because it can be represented as a
     [Linear Program](https://en.wikipedia.org/wiki/Linear_programming),
-    which is among the easiest kinds of problems to optimize.
     So if $f$ is some complicated convex function, but you already have
     a good approximation by cuts for it, you can minimize it instead
     and get an approximation for the optimum.
@@ -223,21 +214,12 @@ Let's go through some of the reasons.
     $$
 
 These properties make cuts an excellent tool for estimating lower bounds on optimization problems,
-which is a necessity for any solving method that "sandwiches" the optimal value
+which is a necessity for any optimizer that "sandwiches" the optimal value
 between two bounds.
-Let's see an example of how to do that.
-
-<svg width="800" height="200">
-  <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
-  <text x="50" y="100" length="800" rx="20" ry="10">
-    TODO: Interactive solution via cutting planes
-    The user selects a point and the algorithm updates the bounds.
-  </text>
-</svg>
+Let's now put all these properties to good use.
 
 ### Example: Kelley's cutting planes algorithm {#example-sandwich-algorithm}
 
-Let's now put all these properties to good use.
 Imagine that you must minimize a convex function,
 but, unfortunately,
 you only have access to a linear programming solver such a Gurobi, Xpress or GLPK.
@@ -394,6 +376,8 @@ so we are going to skip it on this post.
 You can find a great presentation with all details on @{boyd_convex_2004}'s book.
 Fortunately, this is one of these results were we can get a good intuition from a picture.
 Due to their absence of wobbles, one can pass a plane between two convex sets without bumping into anything.
+
+Have fun trying to drag the sets below to a position with no separating hyperplane.
 
 [^hahn-banach]: For the Functional Analysts lurking around: in infinite dimension,
 this theorem is equivalent to the Hahn-Banach Theorem.
