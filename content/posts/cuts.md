@@ -29,6 +29,10 @@ svg.diagram {
   stroke-width: 1pt;
 }
 
+.mark {
+  fill: orange;
+}
+
 .half-space {
   fill: rgba(255, 165, 0, 0.5);
 }
@@ -45,7 +49,16 @@ svg.diagram {
 }
 
 .epigraph:hover {
-  fill: blue;;
+  fill: blue;
+}
+
+.draggable {
+  cursor:move;
+}
+
+.draggable:hover {
+  cursor:move;
+  fill: #eab253;
 }
 </style>
 
