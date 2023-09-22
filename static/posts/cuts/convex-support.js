@@ -383,20 +383,25 @@ function figureFunctionSupportingCut(id, f, df, minX, maxX) {
   const fGraph = svg.append("g");
   const cutsGraph = svg.append("g");
 
-  plotEpigraph(fGraph, f, xScale, yScale);
-  plot(fGraph, f, xScale, yScale);
-
-  // Display cut for mouse x position
-  svg.on("mousemove", function(event) {
-    const [mouseX, _] = d3.pointer(event);
-    const x0  = xScale.invert(mouseX);
+  function placeCut(x0) {
     const cut = new Cut(x0, f(x0), df(x0));
     const hyperplane = cut.toHyperplane(xScale, yScale);
 
     // Show where is the tangent line
     updateHyperplanes(cutsGraph, [hyperplane]);
     updateMarks(cutsGraph, [hyperplane]);
+  }
+
+  // Display cut for mouse x position
+  svg.on("mousemove", function(event) {
+    const [mouseX, _] = d3.pointer(event);
+    const x0  = xScale.invert(mouseX);
+    placeCut(x0);
   });
+
+  plotEpigraph(fGraph, f, xScale, yScale);
+  plot(fGraph, f, xScale, yScale);
+  placeCut(1);
 }
 
 
@@ -405,8 +410,8 @@ function figureFunctionCuts(id, f, df, minX, maxX) {
   const width = 350;
   const height = 400;
   const margin = {top: 0, right: 10, bottom: 0, left: 10};
-  const cuts   = [];
-  const hyperplanes = [];
+  let cuts   = [];
+  let hyperplanes = [];
 
   const svgFunc= div.append("svg")
     .attr("viewBox", `0 0 ${width} ${height}`)
@@ -433,9 +438,6 @@ function figureFunctionCuts(id, f, df, minX, maxX) {
   const poly = svgPoly.append("g");
   const planes = svgFunc.append("g");
   const marks = svgFunc.append("g");
-
-  plot(func, f, xScale, yScale);
-  updatePolyhedral(poly, cuts, xScale, yScale);
 
   svgFunc.on("mousemove", function(event) {
     const [mouseX, _] = d3.pointer(event);
@@ -465,15 +467,28 @@ function figureFunctionCuts(id, f, df, minX, maxX) {
     updatePolyhedral(poly, cuts, xScale, yScale);
     updateMarks(marks, hyperplanes);
   });
+
+  d3.select("#reset-function-cuts").on("click", function(event) {
+    cuts        = [];
+    hyperplanes = [];
+
+    updateHyperplanes(planes, hyperplanes)
+      .style("opacity", 0.2);
+    updatePolyhedral(poly, cuts, xScale, yScale);
+    updateMarks(marks, hyperplanes);
+  });
+
+  plot(func, f, xScale, yScale);
+  updatePolyhedral(poly, cuts, xScale, yScale);
 }
 
 function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
   const svg    = d3.select(id);
-  const width  = svg.attr("width");
-  const height = svg.attr("height");
+  const width  = +svg.attr("width");
+  const height = +svg.attr("height");
   const margin = {top: 0, right: 0, bottom: 0, left: 0};
-  const cuts   = [];
-  const hyperplanes = [];
+  let cuts        = [];
+  let hyperplanes = [];
 
   const xScale = d3.scaleLinear()
     .domain([minX, maxX])
@@ -511,6 +526,18 @@ function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
       .style("opacity", 0.2);
 
     // Append a dot at the mouse's x position
+    updateMarks(marks, hyperplanes);
+  });
+
+  d3.select("#reset-epigraph-carving").on("click", function(event) {
+    cuts        = [];
+    hyperplanes = [];
+
+    updatePolyhedral(poly, cuts, xScale, yScale);
+    plotEpigraph(poly, x => 0, xScale, yScale);
+
+    updateHyperplanes(planes, hyperplanes)
+      .style("opacity", 0.2);
     updateMarks(marks, hyperplanes);
   });
 }

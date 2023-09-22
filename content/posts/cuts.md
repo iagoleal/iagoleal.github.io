@@ -13,6 +13,20 @@ svg.diagram {
   border: 1px solid #ccc;
 }
 
+.multi-figure-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 40px; /* Adjust the gap between SVGs */
+  justify-content: center;
+  align-items: center;
+}
+
+.multi-figure-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
 .convex-set {
   fill: hsl(147 42% 64%);
   stroke: black;
@@ -106,7 +120,11 @@ Every method has its pros and cons,
 depending on what properties of the function you want to preserve.
 In today's post we will focus on one such method called _approximation by cuts_ or _cutting planes_.
 
-<div id="function-cuts">
+<div>
+  <div id="function-cuts" class="multi-figure-container">
+  </div>
+  <br/>
+  <button id="reset-function-cuts" type="button">Clear the cuts</button>
 </div>
 
 
@@ -172,6 +190,7 @@ Click anywhere in the figure below to carve the shape of a function using cuts.
 <div>
   <svg id="function-epigraph-carving" class="diagram" viewBox="0 0 750 400" width="750" height="400">
   </svg>
+  <button id="reset-epigraph-carving" type="button">Clear the cuts</button>
 </div>
 
 Why I like cuts and you should too
