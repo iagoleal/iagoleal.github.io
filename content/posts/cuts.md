@@ -1,8 +1,9 @@
 ---
 title: Approximation by a thousand cuts
-subtitle: A guide to piecewise-linear approximations
+subtitle: A guide to polyhedral representations
 keywords: [math]
 date: 2023-09-08
+suppress-bibliography: true
 header-includes:
 - '<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>'
 ---
@@ -11,13 +12,15 @@ header-includes:
 /* CSS for styling */
 svg.diagram {
   border: 1px solid #ccc;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .multi-figure-container {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 40px; /* Adjust the gap between SVGs */
+  gap: 40px;
   justify-content: center;
   align-items: center;
 }
@@ -84,47 +87,72 @@ svg.diagram {
 \def\epi{\op{epi}}
 \def\d#1{\op{d}\!{#1}}
 
-Oh, a friend just called you and started to talk about
-this amazing function $f : \R^n \to \R$ that he just found.
-It is well-behaved, fits perfectly with your current work
-and has all the good characteristics you can imagine.
-Excited, you ask see such an impressive function.
-But there is a problem, describing an arbitrary function
-requires an infinite amount of information and any of our modern ways to send messages,
-such as email, disks, or carrier pigeon,
-can only transmit a finite number of bits.
 
-What to do in such a situation?
-If it was a polynomial, it would be easy: all you would need are the coefficients.
-The same applies if it was a finite domain instead of $\R^n$.
-Even for elementary functions, one can transmit a syntax tree
-that completely represents the function.
-Those all need some finite amount of information to represent.[^real-numbers-size]
-In the general case, however, the solution is to somehow approximate
-the function using something storable
-and then invoke any of the magical theorems from analysis
-that guarantee that the error in your approximation is less
-than the smallest $\epsilon > 0$ that you may care about.
+As the late hours of the night embrace you,
+you find yourself seated at your workbench,
+the substantial dose of caffeine you recently consumed
+still coursing through your veins with unwavering energy.
+Then, in a sudden sparkle of inspiration, you stumble upon it
+--—the elusive function you so much needed.
+It's a remarkable little function $f : \R^n \to \R$,
+that fits perfectly with all the simulations you intend to run.
+
+You already envision it:
+the number crunching, the evaluations, the convergence.
+There is a problem, however.
+This function, you realize, is as real-valued as it gets,
+constructed with infinite precision,
+while all your code and simulations reside
+in the digital world of a computer's memory,
+capable of storing only a finite number of bits.
+What can one do in such a situation?
+
+Fortunately, mathematicians all over the world
+have already studied a myriad of methods for approximating functions in a computer.
+The answer depends, most of all, on what are your objectives,
+because each kind of approximation only preserves some characteristics,
+and is, thus, only appropriate for certain applications.
+If being accurate in some known points is your primary concern,
+polynomial interpolation may be your answer.
+On the other hand, if you worry about extrapolating into new datasets,
+a neural network might prove to be a better fit.
+Or if your aim is not evaluation but measurement through filters,
+projection into the Fourier domain or another functional basis could be the path to pursue.
+
+Fortunately,
+mathematicians from all corners of the world have delved
+into a myriad of methods for approximating functions within the realm of computers.
+The choice largely hinges on the specific objectives you have in mind for your function.
+Each method of approximation possesses its own strengths and weaknesses,
+preserving only certain facets of the original function,
+making them suitable for distinct applications.
+If precision in known realms is your primary concern,
+polynomial interpolation may be your answer.
+Conversely, if you aspire to extrapolate into uncharted territories,
+a neural network might prove to be a better companion.
+Alternatively, if your aim is not evaluation but measurement through filters,
+projection into the Fourier domain or another functional basis could be the path to pursue.[^real-numbers-size]
+
+In this post,
+we will explore _approximations by cuts_,
+a technique for representing functions most suitable for optimization problems.
+This is a well-known tool within the Operations Research community and,
+I believe, has the potential to find resonance in various other domains of engineering and mathematics.
+
 
 [^real-numbers-size]: This all assumes that you can somehow store
 a single real number with finite information.
 But this is not today's subject, so I'm just going to gloss over it.
 
-Mathematicians all over the world have already discovered a myriad of methods
-for performing such approximations.
-For example, if all you can do is evaluate $f$,
-an option is to interpolate and represent it as a polynomial.
-Or, if you are feeling fancier, you could treat these evaluations as a dataset
-and train a neural network that approximates the function.
-Every method has its pros and cons,
-depending on what properties of the function you want to preserve.
-In today's post we will focus on one such method called _approximation by cuts_ or _cutting planes_.
+Before we delve deeper into the world of cuts,
+you can stop and play with the interactive diagram below.
+Each click on a point in the left panel improves the approximation by cuts on the right.
 
 <div>
   <div id="function-cuts" class="multi-figure-container">
   </div>
   <br/>
-  <button id="reset-function-cuts" type="button">Clear the cuts</button>
+  <button id="reset-function-cuts" type="button">Clear cuts</button>
 </div>
 
 
@@ -190,7 +218,7 @@ Click anywhere in the figure below to carve the shape of a function using cuts.
 <div>
   <svg id="function-epigraph-carving" class="diagram" viewBox="0 0 750 400" width="750" height="400">
   </svg>
-  <button id="reset-epigraph-carving" type="button">Clear the cuts</button>
+  <button id="reset-epigraph-carving" type="button">Clear cuts</button>
 </div>
 
 Why I like cuts and you should too
@@ -703,7 +731,7 @@ So, do affine functions everywhere below $f$ make you think of something?
   <svg id="function-lagrangian" class="diagram" viewBox="0 0 750 400" width="750" height="400">
   </svg>
   <input type="range" id="slider-lagrangian-lambda" min="-5" max="5" step="0.1" value="1" style="width: 100%"/>
-  <label for="slider-lagrangian-lambda"> Multiplier <span id="slider-lambda-value">$\lambda = 1$</span></label>
+  <label for="slider-lagrangian-lambda"> Multiplier <span id="slider-lambda-value">$\lambda = 1$</span>.</label>
 </div>
 
 As illustrated above, the relaxation is always a cut for $f$,
