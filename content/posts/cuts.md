@@ -243,7 +243,7 @@ by iteratively solving linear programs.
 For it to work, we will have to suppose (by now)
 that we have access to some oracle capable of both evaluating a function and calculating a tight cut for it.
 This is not cheating though,
-because in section [cuts-from-derivatives] we will learn how to write such an oracle.
+because in section [Cuts from Derivatives] we will learn how to write such an oracle.
 
 We begin with a constant cut approximation[^unconstrained-lp] $\tilde{f}_0$ of $f$
 everywhere equal to a initial lower bound.
@@ -653,8 +653,7 @@ $$
   \end{array}
 $$
 
-Notice that while in the original problem we had $y$ fixed to be whatever
-argument the function receives,
+While in the original problem we had $y$ fixed to be whatever argument the function receives,
 in the new problem $y$ can take any feasible value,
 but the cost is augmented by a new penalty term on the difference between $y$ and $x$.
 The factor lambda is called a _dual variable_ or _Lagrange multiplier_
@@ -668,21 +667,31 @@ In other words, it is always below the primal:
 
 $$ f(x) \ge L(x; \lambda). $$
 
-<svg width="800" height="200">
-  <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
-  <text x="50" y="100" length="800" rx="20" ry="10">
-    TODO: Function and Lagrangian for many lambdas (or perhaps interactive)
-  </text>
-</svg>
+Also notice that the optimization procedure on itself is no longer dependent on x,
+and we can remove it from the objective value.
 
-In forming the relaxation, one has freedom on which $\lambda$ to use.
-Essentially all state-of-the-art algorithms in (continuous) optimization[^market-opt]
-solve at the same time both the original problem
-and the problem of choosing the best multiplier possible.
-What do I mean by the best multiplier?
-Well, it's the one who closes the gap the most!
-The optimal value of choosing the multiplier is defined as
+$$
+  \begin{array}{rl}
+    L(x; \lambda) = \inner<\lambda, x> + \min\limits_{u, y} & c(u) - \inner<\lambda, y> \\
+    \textrm{s.t.}   & (y, u) \in X.
+  \end{array}
+$$
 
+Thus, for each fixed $\lambda$, the relaxation $L(\cdot; \lambda)$ is an affine function.
+So, do affine functions everywhere below $f$ make you think of something?
+
+<div>
+  <svg id="function-lagrangian" class="diagram" viewBox="0 0 750 400" width="750" height="400">
+  </svg>
+  <input type="range" id="slider-lagrangian-lambda" min="-5" max="5" step="0.1" value="1" style="width: 100%"/>
+  <label for="slider-lagrangian-lambda"> Multiplier <span id="slider-lambda-value">$\lambda = 1$</span></label>
+</div>
+
+As illustrated above, the relaxation is always a cut for $f$,
+but we don't have control over its intercept, only over the inclination $\lambda$.
+Hence, a natural question to ask is, given a parameter $x$,
+what inclination gives the tightest relaxation at this point?
+This is called the _dual value function_ and amounts to a minimax problem:
 
 $$
 \begin{aligned}
@@ -691,32 +700,34 @@ $$
 \end{aligned}
 $$
 
-That thing looks scary but, fortunately for us,
-all solvers are pretty good at it.
-The $\check{f}$ is called the dual value function
-because it solves the dual problem.
-And since all relaxations are below $f(x)$, it also is.
-A result known as _weak duality_.
+That thing looks scary but, fortunately for us, all solvers are pretty good at it.
+In fact, for most usual kinds optimization programs,
+the dual problem has a known closed form
+and all state-of-the-art algorithms in (continuous) optimization[^market-opt]
+solve for the primal and the dual problems at the same time.
+Who would say that optimizing two function is easier than a single one?
 
-$$ \boxed{f(x) \ge \check{f}(x)} $$
+Since $\check{f}$ is the maximum of lower approximations to $f$,
+it is also a lower approximation, a result known as _weak duality_.
 
-[^market-opt]: And consequently all free or commercial solvers in the market.
+$$ \boxed{f(x) \ge \check{f}(x)}$$
 
-<svg width="800" height="200">
-  <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
-  <text x="50" y="100" length="800" rx="20" ry="10">
-    TODO: Function and Lagrangian for many lambdas and dual function
-  </text>
-</svg>
-
-Since $\check{f}$ is defined as the maximum of a bunch of affine functions (affine in $\lambda$),
-it is convex!
-Meaning that it has a cut at every point.
-Moreover, one can prove that it is the tightest convex function everywhere below $f$.
+It is also guaranteed to be convex,
+because it is the maximum of affine functions.
+A convex lower approximation made of cuts, it looks like we are getting to something.
+Moreover, one can prove that it is not some ordinary convex function,
+but the tightest convex function everywhere below $f$.
 So the cuts for $\check{f}$ are also the best ones possible for $f$.
 The only thing remaining is discovering how to actually calculate these cuts.
 As it stands out, they come for free from the optimization problem,
 because their inclination is precisely the optimal multiplier.
+
+[^market-opt]: And consequently all free or commercial solvers in the market.
+
+<div>
+  <svg id="function-lagrangian-dual" class="diagram" viewBox="0 0 750 400" width="750" height="400">
+  </svg>
+</div>
 
 :::Theorem
 There is a cut for $f$ at the point $x_0$ defined by the dual value $\check{f}(x_0)$
@@ -792,11 +803,40 @@ Thus, by solving a parameterized (convex) optimization problem,
 you gain both an evaluation and a derivative.
 Now all you have to do is plug it into the chain rule et voilà!
 
+Farewell
+========
+
+Today you gained a new tool to your repertoire of functional representations.
+We've seem how cutting planes are a computationally amenable structure
+that harmoniously integrate with convexity and optimization,
+and how we can use them to represent functions for minimization.
+And, best of all, if you are working with convex optimization or calculating any derivatives,
+you already have some cuts lying around for free!
+
+I am also planning some further posts
+were we will explore how to combine cuts with value and policy iteration
+to extend dynamic programming to infinite dimensional state spaces,
+and how to put to good use the various available ways to calculate cuts for mixed integer programs.
+
+Good convergence for y'all and stay tuned!
+
+
 <script src="./convex-support.js"></script>
-<script>
+<script type="module">
+  const kelleyData = await d3.csv("./kelley.csv", d => {
+    return {
+      iter: +d.iter,
+      cut: new Cut(+d.x, +d.fx, +d.dual),
+      ub: +d.ub,
+      lb: +d.lb,
+    }
+  });
+
   figureFunctionCuts("#function-cuts", x => x*x+1, x => 2*x, -2, 2);
 
   figureFunctionEpigraphCarving("#function-epigraph-carving", x => x*x+1, x => 2*x, -2, 2);
+
+  figureAnimationCuttingPlanes("#animation-cutting-planes", kelleyData, x => 3/(x+1) + 0.5*x^2, -2, 2);
 
   figureSetSeparatingHyperplane("#set-separating-hyperplane");
 
@@ -807,4 +847,8 @@ Now all you have to do is plug it into the chain rule et voilà!
   figureFunctionEpigraph("#function-epigraph", x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5), -1.8, 2);
 
   figureFunctionSupportingCut("#function-supporting-cut", x => x*x+1, x => 2*x, -2, 2);
+
+  figureLagrangian("#function-lagrangian",  x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5), -1.8, 2);
+
+  figureLagrangianDual("#function-lagrangian-dual", x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5), -1.8, 2);
 </script>

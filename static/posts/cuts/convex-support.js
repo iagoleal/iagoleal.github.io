@@ -24,13 +24,51 @@ class Cut {
   eval(p) {
     return this.fx + this.dual*(p - this.x);
   }
+
+  toHyperplane(xScale, yScale) {
+    // Assuming cut.x represents 'a', cut.fx represents 'b', and cut.dual represents 'k'
+    const x = xScale(this.x); // x-coordinate of a point on the line
+    const y = yScale(this.fx); // y-coordinate of a point on the line
+
+    // Tangent components taking the scale into consideration
+    const tx = xScale(this.x + 1) - xScale(this.x)
+    const ty = yScale(this.fx + this.dual) - yScale(this.fx)
+
+    return new Hyperplane({
+      x,
+      y,
+      normal: normalize({x: -ty, y: tx}),
+    });
+  }
 }
 
+function cutApproximation(cuts) {
+   return x => d3.max(cuts, cut => cut.fx + cut.dual*(x - cut.x));
+}
+
+class Diagram {
+  constructor(id) {
+
+  }
 }
 
 /*
   General Geometry
 */
+
+function findMax(a, f) {
+  return a.reduce((acc, x, i) => {
+      const fx = f(x)
+      if (fx > acc.value) {
+        acc.value    = fx;
+        acc.argument = x;
+        acc.index    = i;
+      }
+      return acc;
+    },
+    { value: -Infinity, argument: undefined, index: -1 }
+  );
+}
 
 function norm2(v) {
   return v.x ** 2 + v.y ** 2;
@@ -119,7 +157,7 @@ function updateMarks(selector, pos) {
 
 function plot(elem, fs, xScale, yScale) {
   fs = Array.isArray(fs) ? fs : [fs]
-  const fData = fs.map(f => xScale.ticks(40).map(x => ({x: x, y: f(x)})));
+  const fData = fs.map(f => xScale.ticks(400).map(x => ({x: x, y: f(x)})));
 
   return elem.selectAll(".function-graph")
     .data(fData)
@@ -353,7 +391,7 @@ function figureFunctionSupportingCut(id, f, df, minX, maxX) {
     const [mouseX, _] = d3.pointer(event);
     const x0  = xScale.invert(mouseX);
     const cut = new Cut(x0, f(x0), df(x0));
-    const hyperplane = cutToHyperplane(cut, xScale, yScale);
+    const hyperplane = cut.toHyperplane(xScale, yScale);
 
     // Show where is the tangent line
     updateHyperplanes(cutsGraph, [hyperplane]);
@@ -403,7 +441,7 @@ function figureFunctionCuts(id, f, df, minX, maxX) {
     const [mouseX, _] = d3.pointer(event);
     const x0      = xScale.invert(mouseX);
     const cut     = new Cut(x0,  f(x0), df(x0));
-    const hyperplane = cutToHyperplane(cut, xScale, yScale);
+    const hyperplane = cut.toHyperplane(xScale, yScale);
 
     const tmpHyperplanes = hyperplanes.concat(hyperplane);
 
@@ -418,7 +456,7 @@ function figureFunctionCuts(id, f, df, minX, maxX) {
     const x0      = xScale.invert(mouseX);
     const y0      = f(x0);
     const cut     = new Cut(x0, y0, df(x0));
-    const hyperplane = cutToHyperplane(cut, xScale, yScale);
+    const hyperplane = cut.toHyperplane(xScale, yScale);
     cuts.push(cut);
     hyperplanes.push(hyperplane);
 
@@ -459,11 +497,11 @@ function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
 
   svg.on("click", function(event) {
     const [mouseX, mouseY] = d3.pointer(event);
-    const x0      = xScale.invert(mouseX);
-    const y0      = Math.min(f(x0), yScale.invert(mouseY));
-    const cut     = new Cut(x0, y0, df(x0));
+    const x0  = xScale.invert(mouseX);
+    const y0  = Math.min(f(x0), yScale.invert(mouseY));
+    const cut = new Cut(x0, y0, df(x0));
     cuts.push(cut);
-    hyperplanes.push(cutToHyperplane(cut, xScale, yScale));
+    hyperplanes.push(cut.toHyperplane(xScale, yScale));
 
     updatePolyhedral(poly, cuts, xScale, yScale);
     plotEpigraph(poly, cutApproximation(cuts), xScale, yScale);
@@ -477,26 +515,111 @@ function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
   });
 }
 
-function makeCut(cut, xScale) {
-  return xScale.ticks(2).map(x => ({x: x, y: cut.eval(x)}));
+function figureAnimationCuttingPlanes(id, data, f, minX, maxX) {
+  const svg    = d3.select(id);
+  const width  = svg.attr("width");
+  const height = svg.attr("height");
+  const margin = {top: 0, right: 0, bottom: 0, left: 0};
+  const cuts   = [];
+  const hyperplanes = [];
+
+  const xScale = d3.scaleLinear()
+    .domain([minX, maxX])
+    .range([margin.left, width - margin.right]);
+
+  const yScale = d3.scaleLinear()
+    .domain([0, 5])   // TODO: calculate range for y
+    .range([height - margin.bottom, margin.top]);
 }
 
-function cutToHyperplane(cut, xScale, yScale) {
-  // Assuming cut.x represents 'a', cut.fx represents 'b', and cut.dual represents 'k'
-  const x = xScale(cut.x); // x-coordinate of a point on the line
-  const y = yScale(cut.fx); // y-coordinate of a point on the line
+function figureRenderKelley(id, obj, cuts) {
 
-  // Tangent components taking the scale into consideration
-  const tx = xScale(cut.x + 1) - xScale(cut.x)
-  const ty = yScale(cut.fx + cut.dual) - yScale(cut.fx)
+}
 
-  return new Hyperplane({
-    x,
-    y,
-    normal: normalize({x: -ty, y: tx}),
+function figureLagrangian(id, f, minX, maxX) {
+  const svg    = d3.select(id);
+  const width  = svg.attr("width");
+  const height = svg.attr("height");
+  const margin = {top: 0, right: 0, bottom: 0, left: 0};
+
+  const xScale = d3.scaleLinear()
+    .domain([minX, maxX])
+    .range([margin.left, width - margin.right]);
+
+  const yScale = d3.scaleLinear()
+    .domain([-1.5, 2])
+    .range([height - margin.bottom, margin.top]);
+
+  const gFunc = svg.append("g");
+  const gLagrangian = svg.append("g");
+
+  function Lagrangian(f, lambda) {
+    return (x) =>
+      d3.min(d3.range(minX, maxX, 0.1), u => f(u) - lambda*(u-x))
+  }
+
+  const sliderLabel = document.getElementById("slider-lambda-value");
+
+  function updateLagrangian() {
+    const lambda = +d3.select("#slider-lagrangian-lambda").property("valueAsNumber");
+
+    katex.render(`\\lambda = ${lambda}`, sliderLabel);
+
+    plot(gLagrangian, Lagrangian(f, lambda), xScale, yScale)
+      .classed("hyperplane", true);
+  }
+
+  // Allow choosing lambda on the slider
+  d3.select("#slider-lagrangian-lambda").on("input", updateLagrangian);
+
+  plot(gFunc, f, xScale, yScale);
+  plotEpigraph(gFunc, f, xScale, yScale);
+  updateLagrangian();
+}
+
+function figureLagrangianDual(id, f, minX, maxX) {
+  const svg    = d3.select(id);
+  const width  = svg.attr("width");
+  const height = svg.attr("height");
+  const margin = {top: 0, right: 0, bottom: 0, left: 0};
+
+  const xScale = d3.scaleLinear()
+    .domain([minX, maxX])
+    .range([margin.left, width - margin.right]);
+
+  const yScale = d3.scaleLinear()
+    .domain([-1.5, 2])
+    .range([height - margin.bottom, margin.top]);
+
+  const gFunc       = svg.append("g");
+  const gLagrangian = svg.append("g");
+  const gCuts       = svg.append("g");
+
+  function dual(x) {
+    return findMax(d3.range(-12, 8.0, 0.1), lambda =>
+      d3.min(d3.range(minX, maxX, 0.1), u => f(u) - lambda*(u - x))
+    )
+  }
+
+  function placeCut(x0) {
+    const d0 = dual(x0);
+    const cut = new Cut(x0, d0.value, d0.argument);
+    const hyperplane = cut.toHyperplane(xScale, yScale);
+
+    // Show where is the tangent line
+    updateHyperplanes(gCuts, [hyperplane]);
+    updateMarks(gCuts, [hyperplane]);
+  }
+
+  // Display cut for mouse x position
+  svg.on("mousemove", function(event) {
+    const [mouseX, _] = d3.pointer(event);
+    const x0  = xScale.invert(mouseX);
+    placeCut(x0);
   });
-}
 
-function cutApproximation(cuts) {
-   return x => d3.max(cuts, cut => cut.fx + cut.dual*(x - cut.x));
+  plot(gFunc, f, xScale, yScale);
+  plotEpigraph(gFunc, f, xScale, yScale);
+  plot(gLagrangian, x => dual(x).value, xScale, yScale);
+  placeCut(1.5);
 }
