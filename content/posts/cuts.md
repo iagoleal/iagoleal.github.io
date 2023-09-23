@@ -2,7 +2,7 @@
 title: Approximation by a thousand cuts
 subtitle: A guide to polyhedral representations
 keywords: [math]
-date: 2023-09-08
+date: 2023-09-22
 suppress-bibliography: true
 header-includes:
 - '<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>'
@@ -10,7 +10,16 @@ header-includes:
 
 <style>
 /* CSS for styling */
+.diagram-container {
+  width: 100%;
+  flex: 1;
+  max-width: 100%;
+  min-width: 350px;
+  height: auto;
+}
 svg.diagram {
+  width: 100%;
+  height: 100%;
   border: 1px solid #ccc;
   margin-left: auto;
   margin-right: auto;
@@ -20,12 +29,12 @@ svg.diagram {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 40px;
-  justify-content: center;
+  gap: 20px;
+  justify-content: space-between;
   align-items: center;
 }
 
-.multi-figure-container svg {
+.multi-figure-container > svg {
   max-width: 100%;
   height: auto;
 }
@@ -119,26 +128,11 @@ a neural network might prove to be a better fit.
 Or if your aim is not evaluation but measurement through filters,
 projection into the Fourier domain or another functional basis could be the path to pursue.
 
-Fortunately,
-mathematicians from all corners of the world have delved
-into a myriad of methods for approximating functions within the realm of computers.
-The choice largely hinges on the specific objectives you have in mind for your function.
-Each method of approximation possesses its own strengths and weaknesses,
-preserving only certain facets of the original function,
-making them suitable for distinct applications.
-If precision in known realms is your primary concern,
-polynomial interpolation may be your answer.
-Conversely, if you aspire to extrapolate into uncharted territories,
-a neural network might prove to be a better companion.
-Alternatively, if your aim is not evaluation but measurement through filters,
-projection into the Fourier domain or another functional basis could be the path to pursue.[^real-numbers-size]
-
 In this post,
 we will explore _approximations by cuts_,
-a technique for representing functions most suitable for optimization problems.
+a technique for representing functions that is suitable for optimization problems.
 This is a well-known tool within the Operations Research community and,
-I believe, has the potential to find resonance in various other domains of engineering and mathematics.
-
+I believe, is also full of potential in various other domains of engineering and mathematics.
 
 [^real-numbers-size]: This all assumes that you can somehow store
 a single real number with finite information.
@@ -148,12 +142,18 @@ Before we delve deeper into the world of cuts,
 you can stop and play with the interactive diagram below.
 Each click on a point in the left panel improves the approximation by cuts on the right.
 
+```{=html}
 <div>
   <div id="function-cuts" class="multi-figure-container">
+    <div class="diagram-container">
+    </div>
+    <div class="diagram-container">
+    </div>
   </div>
   <br/>
   <button id="reset-function-cuts" type="button">Clear cuts</button>
 </div>
+```
 
 
 Approximation by cuts
@@ -215,8 +215,8 @@ in order to carve a polyhedron containing the graph of $f$.
 
 Click anywhere in the figure below to carve the shape of a function using cuts.
 
-<div>
-  <svg id="function-epigraph-carving" class="diagram" viewBox="0 0 750 400" width="750" height="400">
+<div class="diagram-container">
+  <svg id="function-epigraph-carving" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
   </svg>
   <button id="reset-epigraph-carving" type="button">Clear cuts</button>
 </div>
@@ -325,14 +325,8 @@ function minimize(f::Function, initial_bound ; eps, x = zeros())
 end
 ```
 
-<svg width="800" height="200">
-  <rect width="800" height="200" style="fill:rgb(200,200,200);stroke-width:3;stroke:rgb(0,0,0)" />
-  <text x="50" y="100" length="800" rx="20" ry="10">
-    TODO: Animation of solution via this algorithm
-  </text>
-</svg>
-
-[^unconstrained-lp]: One way to think of it is as $f(x) = -\infty$.
+[^unconstrained-lp]: You can always use $\tilde{f}_0(x) = -\infty$
+in case you don't know a better bound.
 
 In practice there are better ways to do unconstrained optimization,
 but this idea of sandwiching with evaluations and cuts
@@ -442,8 +436,8 @@ Have fun trying to drag the sets below to a position with no separating hyperpla
 [^hahn-banach]: For the Functional Analysts lurking around: in infinite dimension,
 this theorem is equivalent to the Hahn-Banach Theorem.
 
-<div>
-  <svg id="set-separating-hyperplane" class="diagram" viewBox="0 0 750 400" width="750" height="400">
+<div class="diagram-container">
+  <svg id="set-separating-hyperplane" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
   </svg>
 </div>
 
@@ -455,8 +449,8 @@ It is really similar to a cut, but for a set.
 For example, in the imagine below, you can choose a separating hyperplane between
 your mouse and the convex set in the middle.
 
-<div>
-  <svg id="set-point-hyperplane" class="diagram" viewBox="0 0 750 400" width="750" height="400">
+<div class="diagram-container">
+  <svg id="set-point-hyperplane" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
   </svg>
 </div>
 
@@ -495,8 +489,8 @@ and we can take this subspace as our hyperplane.
 Notice that this theorem also has the equivalent formulation as
 $$\forall x \in X,\, \inner<a,x> \ge \inner<a,x_0>.$$
 
-<div>
-  <svg id="set-supporting-hyperplane" class="diagram" width="750" height="400">
+<div class="diagram-container">
+  <svg id="set-supporting-hyperplane" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
   </svg>
 </div>
 
@@ -539,8 +533,8 @@ to denote the set of all points _above the graph_.
 
 $$ \epi(f) = \left\{ (x, y) \in \R^{n+1} \mid f(x) \le y \right\}. $$
 
-<div>
-  <svg id="function-epigraph" class="diagram" width="750" height="400">
+<div class="diagram-container">
+  <svg id="function-epigraph" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
   </svg>
 </div>
 
@@ -555,8 +549,8 @@ A convex function $f$ has a tight cut at any point in its domain.
 Visually this theorem looks like the figure below.
 You can hover it to view the cut for each point.
 
-<div>
-  <svg id="function-supporting-cut" class="diagram" width="750" height="400">
+<div class="diagram-container">
+  <svg id="function-supporting-cut" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
   </svg>
 </div>
 
@@ -727,8 +721,8 @@ $$
 Thus, for each fixed $\lambda$, the relaxation $L(\cdot; \lambda)$ is an affine function.
 So, do affine functions everywhere below $f$ make you think of something?
 
-<div>
-  <svg id="function-lagrangian" class="diagram" viewBox="0 0 750 400" width="750" height="400">
+<div class="diagram-container">
+  <svg id="function-lagrangian" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
   </svg>
   <input type="range" id="slider-lagrangian-lambda" min="-5" max="5" step="0.1" value="1" style="width: 100%"/>
   <label for="slider-lagrangian-lambda"> Multiplier <span id="slider-lambda-value">$\lambda = 1$</span>.</label>
@@ -771,8 +765,8 @@ because their inclination is precisely the optimal multiplier.
 
 [^market-opt]: And consequently all free or commercial solvers in the market.
 
-<div>
-  <svg id="function-lagrangian-dual" class="diagram" viewBox="0 0 750 400" width="750" height="400">
+<div class="diagram-container">
+  <svg id="function-lagrangian-dual" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
   </svg>
 </div>
 
@@ -870,20 +864,9 @@ Good convergence for y'all and stay tuned!
 
 <script src="./convex-support.js"></script>
 <script type="module">
-  const kelleyData = await d3.csv("./kelley.csv", d => {
-    return {
-      iter: +d.iter,
-      cut: new Cut(+d.x, +d.fx, +d.dual),
-      ub: +d.ub,
-      lb: +d.lb,
-    }
-  });
-
   figureFunctionCuts("#function-cuts", x => x*x+1, x => 2*x, -2, 2);
 
   figureFunctionEpigraphCarving("#function-epigraph-carving", x => x*x+1, x => 2*x, -2, 2);
-
-  figureAnimationCuttingPlanes("#animation-cutting-planes", kelleyData, x => 3/(x+1) + 0.5*x^2, -2, 2);
 
   figureSetSeparatingHyperplane("#set-separating-hyperplane");
 

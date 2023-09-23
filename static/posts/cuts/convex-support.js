@@ -123,8 +123,8 @@ function updateConvexSets(selector, data) {
 
 function updateHyperplanes(selector, pos) {
   // TODO: Fix these numbers
-  const width     = 750
-  const height    = 400
+  const width     = 750;
+  const height    = 400;
   const maxLength = Math.sqrt(width ** 2 + height ** 2);
 
   return selector.selectAll(".hyperplane")
@@ -222,9 +222,8 @@ function mark(svg, x, y) {
 
 function figureSetPointHyperplane(id) {
   const svg = d3.select(id);
-
-  const width  = svg.attr("width");
-  const height = svg.attr("height");
+  const width  = 750;
+  const height = 400;
   const circle = { x: width/2, y: height/2, r: 100 };
 
   let pos = new Hyperplane({
@@ -262,9 +261,8 @@ function figureSetPointHyperplane(id) {
 
 function figureSetSupportingHyperplane(id) {
   const svg = d3.select(id);
-
-  const width  = svg.attr("width");
-  const height = svg.attr("height");
+  const width  = 750;
+  const height = 400;
   const circle = { x: width/2, y: height/2, r: 100 };
 
   // Initial hyperplane
@@ -305,8 +303,8 @@ function figureSetSupportingHyperplane(id) {
 
 function figureSetSeparatingHyperplane(id) {
   const svg    = d3.select(id);
-  const width  = +svg.attr("width");
-  const height = +svg.attr("height");
+  const width  = 750;
+  const height = 400;
 
   // data for convex bodies
   const bodies = [
@@ -347,8 +345,8 @@ function figureSetSeparatingHyperplane(id) {
 
 function figureFunctionEpigraph(id, f, minX, maxX) {
   const svg    = d3.select(id);
-  const width  = svg.attr("width");
-  const height = svg.attr("height");
+  const width  = 750;
+  const height = 400;
   const margin = {top: 0, right: 50, bottom: 0, left: 50};
 
   const xScale = d3.scaleLinear()
@@ -368,8 +366,8 @@ function figureFunctionEpigraph(id, f, minX, maxX) {
 
 function figureFunctionSupportingCut(id, f, df, minX, maxX) {
   const svg    = d3.select(id);
-  const width  = svg.attr("width");
-  const height = svg.attr("height");
+  const width  = 750;
+  const height = 400;
   const margin = {top: 0, right: 10, bottom: 0, left: 10};
 
   const xScale = d3.scaleLinear()
@@ -413,16 +411,16 @@ function figureFunctionCuts(id, f, df, minX, maxX) {
   let cuts   = [];
   let hyperplanes = [];
 
-  const svgFunc= div.append("svg")
+  const svgFunc= d3.select("#function-cuts > div:first-child").append("svg")
     .attr("viewBox", `0 0 ${width} ${height}`)
-    .attr("width", width)
-    .attr("height", height)
+    .attr("width", "100%")
+    .attr("height", "100%")
     .attr("class", "diagram");
 
-  const svgPoly = div.append("svg")
+  const svgPoly = d3.select("#function-cuts > div:last-child").append("svg")
     .attr("viewBox", `0 0 ${width} ${height}`)
-    .attr("width", width)
-    .attr("height", height)
+    .attr("width", "100%")
+    .attr("height", "100%")
     .attr("class", "diagram");
 
   const xScale = d3.scaleLinear()
@@ -484,8 +482,8 @@ function figureFunctionCuts(id, f, df, minX, maxX) {
 
 function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
   const svg    = d3.select(id);
-  const width  = +svg.attr("width");
-  const height = +svg.attr("height");
+  const width  = 750;
+  const height = 400;
   const margin = {top: 0, right: 0, bottom: 0, left: 0};
   let cuts        = [];
   let hyperplanes = [];
@@ -542,31 +540,10 @@ function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
   });
 }
 
-function figureAnimationCuttingPlanes(id, data, f, minX, maxX) {
-  const svg    = d3.select(id);
-  const width  = svg.attr("width");
-  const height = svg.attr("height");
-  const margin = {top: 0, right: 0, bottom: 0, left: 0};
-  const cuts   = [];
-  const hyperplanes = [];
-
-  const xScale = d3.scaleLinear()
-    .domain([minX, maxX])
-    .range([margin.left, width - margin.right]);
-
-  const yScale = d3.scaleLinear()
-    .domain([0, 5])   // TODO: calculate range for y
-    .range([height - margin.bottom, margin.top]);
-}
-
-function figureRenderKelley(id, obj, cuts) {
-
-}
-
 function figureLagrangian(id, f, minX, maxX) {
   const svg    = d3.select(id);
-  const width  = svg.attr("width");
-  const height = svg.attr("height");
+  const width  = 750;
+  const height = 400;
   const margin = {top: 0, right: 0, bottom: 0, left: 0};
 
   const xScale = d3.scaleLinear()
@@ -606,8 +583,8 @@ function figureLagrangian(id, f, minX, maxX) {
 
 function figureLagrangianDual(id, f, minX, maxX) {
   const svg    = d3.select(id);
-  const width  = svg.attr("width");
-  const height = svg.attr("height");
+  const width  = 750;
+  const height = 400;
   const margin = {top: 0, right: 0, bottom: 0, left: 0};
 
   const xScale = d3.scaleLinear()
