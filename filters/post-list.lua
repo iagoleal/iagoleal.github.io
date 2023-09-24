@@ -60,7 +60,7 @@ end
 
 local function format_title(title, subtitle)
   if subtitle then
-    return fmt("%s: %s", title, subtitle)
+    return fmt("%s", title)
   else
     return title
   end
