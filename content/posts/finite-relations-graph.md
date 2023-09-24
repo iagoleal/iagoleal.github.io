@@ -155,6 +155,7 @@ Common Properties
     (A) edge[bend left] (C)
     (B) edge (C)
     (B) edge (D)
+    (C) edge (E)
     (D) edge (B)
     (D) edge[loop above] (D)
     (E) edge[loop right] (E);
@@ -170,13 +171,9 @@ Common Properties
 \node [fill = green!50!cyan!50] (E) [right       = of B] {};
 
 \path[]
-    (A) edge (B)
     (A) edge[bend left] (C)
     (B) edge (C)
-    (B) edge (D)
-    (D) edge (B)
-    (D) edge[loop above] (D)
-    (E) edge[loop right] (E);
+    (D) edge[loop above] (D);
 ```
 
 Common Relations
@@ -192,14 +189,14 @@ meaning that there are only self-edges.
 ```tikz
 \node [fill = cyan!20         ] (A) []                       {};
 \node [fill = orange!50       ] (B) [above right =     of A] {};
-\node [fill = red!30!blue!50  ] (C) [below right = 2cm of A] {};
-\node [fill = yellow!90!black ] (D) [right       = 4cm of A] {};
-\node [fill = green!50!cyan!50] (E) [left        = 2cm of A] {};
+\node [fill = red!30!blue!50  ] (C) [right       = 2cm of A] {};
+\node [fill = yellow!90!black ] (D) [right       =     of C] {};
+\node [fill = green!50!cyan!50] (E) [above right =     of C] {};
 
-\path[->] (A) edge[loop above] ()
-          (B) edge[loop above] ()
-          (C) edge[loop above] ()
-          (D) edge[loop above] ()
+\path[->] (A) edge[loop below] ()
+          (B) edge[loop right] ()
+          (C) edge[loop left] ()
+          (D) edge[loop right] ()
           (E) edge[loop above] ();
 ```
 
@@ -228,9 +225,8 @@ An edge exists if and only if the vertices are on the same class.
           (E) edge[loop above] ();
 
 \path[->] (A) edge (B)
-          (B) edge (A);
-
-\path[->] (C) edge (D)
+          (B) edge (A)
+          (C) edge (D)
           (C) edge (E)
           (D) edge (C)
           (D) edge (E)
