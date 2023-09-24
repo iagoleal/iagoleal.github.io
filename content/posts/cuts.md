@@ -17,6 +17,7 @@ header-includes:
   min-width: 350px;
   height: auto;
 }
+
 svg.diagram {
   width: 100%;
   height: 100%;
@@ -95,7 +96,6 @@ svg.diagram {
 \def\graph{\op{graph}}
 \def\epi{\op{epi}}
 \def\d#1{\op{d}\!{#1}}
-
 
 As the late hours of the night embrace you,
 you find yourself seated at your workbench,
@@ -293,7 +293,7 @@ This is not cheating though,
 because in section [Cuts from Derivatives] we will learn how to write such an oracle.
 
 We begin with a constant cut approximation[^unconstrained-lp] $\tilde{f}_0$ of $f$
-everywhere equal to a initial lower bound.
+everywhere equal to an initial lower bound.
 The idea is to, at each iteration, give the oracle a point $x_n$.
 This will return an evaluation $f(x_n)$, which serves as an upper bound
 for $\min f$ because all evaluations are larger than the minimum.
@@ -442,7 +442,7 @@ this theorem is equivalent to the Hahn-Banach Theorem.
 </div>
 
 Let's focus now on the case where one of the sets is a single point.
-An interesting consequence of this theorem is that given any point $p$ outside of the set,
+An interesting consequence of this theorem is that given any point $p$ not in the set,
 we can find an affine function that is zero in this point and contains
 a convex set in one of its half-spaces.
 It is really similar to a cut, but for a set.
@@ -673,7 +673,6 @@ And for duality in the context of optimal value functions, there is also my M.Sc
 
 Lagrangian duality consists of taking a hard constraint such as $(x, u) \in X$
 and substituting it by a linear penalty on how much we divert from the original feasible set.
-
 We thus go from this optimal value function,
 written with an additional equality for clarity,
 
@@ -694,21 +693,21 @@ $$
   \end{array}
 $$
 
-While in the original problem we had $y$ fixed to be whatever argument the function receives,
-in the new problem $y$ can take any feasible value,
-but the cost is augmented by a new penalty term on the difference between $y$ and $x$.
+While in the original problem $y$ was fixed to whatever argument the function receives,
+in the new problem it can be any feasible value.
+Nonetheless, the cost is augmented by a new penalty term on the difference between $y$ and $x$.
 The factor lambda is called a _dual variable_ or _Lagrange multiplier_
 and represents how much $y$ is averse to diverting from $x$.
 
-In the original feasible set where $x=y$,
+In the original feasible set where $x = y$,
 the term $\inner<\lambda, y - x>$ vanishes and both problems have the same objective function.
-However, the relaxed problem has a larger feasible region to explore
-in its search for the minimum, allowing it the opportunity to achieve lower costs.
+However, the relaxed problem has a larger feasible region to explore in its search for the minimum,
+allowing it the opportunity to achieve lower costs.
 In other words, it is always below the primal:
 
 $$ f(x) \ge L(x; \lambda). $$
 
-Also notice that the optimization procedure on itself is no longer dependent on x,
+Also notice that the optimization procedure is itself no longer dependent on $x$,
 and we can remove it from the objective value.
 
 $$
@@ -742,7 +741,7 @@ $$
 $$
 
 That thing looks scary but, fortunately for us, all solvers are pretty good at it.
-In fact, for most usual kinds optimization programs,
+In fact, for most usual kinds of optimization programs,
 the dual problem has a known closed form
 and all state-of-the-art algorithms in (continuous) optimization[^market-opt]
 solve for the primal and the dual problems at the same time.
@@ -832,7 +831,7 @@ for the points of non-differentiability of a convex function!
 
 $$ f\;\text{convex} \implies \forall x, f(x) \ge f(x_0) + \inner<\lambda_0, x - x_0>.$$
 
-[^lsc-cvx]: Technically, the theorem requires $f$ to be  proper convex _lower semicontinuous_ function.
+[^lsc-cvx]: Technically, the theorem requires $f$ to be proper convex _lower semicontinuous_ function.
 But in practice, convexity tends to be the only part you need to worry about.
 
 As a bonus, if you like automatic differentiation as much as I do,
@@ -848,7 +847,7 @@ Farewell
 ========
 
 Today you gained a new tool to your repertoire of functional representations.
-We've seem how cutting planes are a computationally amenable structure
+We seemed how cutting planes are a computationally amenable structure
 that harmoniously integrate with convexity and optimization,
 and how we can use them to represent functions for minimization.
 And, best of all, if you are working with convex optimization or calculating any derivatives,
