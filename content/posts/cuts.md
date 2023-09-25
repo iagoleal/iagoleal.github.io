@@ -891,23 +891,24 @@ Acknowledgements
 I want to thank [Pedro Xavier](https://pedromxavier.github.io)
 for commenting and proof-reading this post's first draft.
 
-<script src="./convex-support.js"></script>
 <script type="module">
-  figureFunctionCuts("#function-cuts", x => x*x+1, x => 2*x, -2, 2);
+  import * as figures from "./figures.js";
 
-  figureFunctionEpigraphCarving("#function-epigraph-carving", x => x*x+1, x => 2*x, -2, 2);
+  figures.figureFunctionCuts("#function-cuts", x => x*x+1, x => 2*x, -2, 2);
 
-  figureSetSeparatingHyperplane("#set-separating-hyperplane");
+  figures.figureFunctionEpigraphCarving("#function-epigraph-carving", x => x*x+1, x => 2*x, -2, 2);
 
-  figureSetPointHyperplane("#set-point-hyperplane");
+  figures.figureSetSeparatingHyperplane("#set-separating-hyperplane");
 
-  figureSetSupportingHyperplane("#set-supporting-hyperplane");
+  figures.figureSetPointHyperplane("#set-point-hyperplane");
 
-  figureFunctionEpigraph("#function-epigraph", x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5), -1.8, 2);
+  figures.figureSetSupportingHyperplane("#set-supporting-hyperplane");
 
-  figureFunctionSupportingCut("#function-supporting-cut", x => x*x+1, x => 2*x, -2, 2);
+  figures.figureFunctionEpigraph("#function-epigraph", x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5), -1.8, 2);
 
-  figureLagrangian("#function-lagrangian",  x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5), -1.8, 2);
+  figures.figureFunctionSupportingCut("#function-supporting-cut", x => x*x+1, x => 2*x, -2, 2);
 
-  figureLagrangianDual("#function-lagrangian-dual", x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5), -1.8, 2);
+  figures.figureLagrangian("#function-lagrangian",  x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5), -1.8, 2);
+
+  figures.figureLagrangianDual("#function-lagrangian-dual", x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5), -1.8, 2);
 </script>

@@ -1,4 +1,5 @@
-"use strict";
+import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
 /*
  Types
 */
@@ -27,9 +28,8 @@ class Cut {
   }
 
   toHyperplane(scale) {
-    // Assuming cut.x represents 'a', cut.fx represents 'b', and cut.dual represents 'k'
-    const x = scale.x(this.x); // x-coordinate of a point on the line
-    const y = scale.y(this.fx); // y-coordinate of a point on the line
+    const x = scale.x(this.x);
+    const y = scale.y(this.fx);
 
     // Tangent components taking the scale into consideration
     const tx = scale.x(this.x + 1) - scale.x(this.x)
@@ -102,7 +102,7 @@ function intersectionPointCircle(point, circle) {
   return norm(v) <= circle.r;
 }
 
-function circleCircleIntersection(a, b) {
+function intersectionCircleCircle(a, b) {
   const v = {x: a.x - b.x, y: a.y - b.y};
 
   return norm(v) <= a.r + b.r
@@ -236,7 +236,7 @@ function updatePolyhedral(poly, cuts, scale) {
   Page figures
 */
 
-function figureSetPointHyperplane(id) {
+export function figureSetPointHyperplane(id) {
   const svg = d3.select(id);
   const width  = 750;
   const height = 400;
@@ -247,11 +247,17 @@ function figureSetPointHyperplane(id) {
   const gPlane = svg.append("g");
 
   function updateScene(x, y) {
-    const isInside = intersectionPointCircle({x, y}, circle);
+    // const isInside = intersectionPointCircle({x, y}, circle);
+
+    let isInside = false
+    gSet.selectAll(".convex-set").each(function() {
+      isInside = this.isPointInFill(new DOMPoint(x, y));
+      d3.select(this).classed("not-good", isInside);
+    });
 
     // Update convex set
-    gSet.selectAll(".convex-set")
-      .classed("not-good", isInside);
+    // gSet.selectAll(".convex-set")
+    //   .classed("not-good", isInside);
 
     // Update hyperplane
     const pos = new Hyperplane({x, y, normal: {x: circle.x - x, y: circle.y - y}});
@@ -266,7 +272,7 @@ function figureSetPointHyperplane(id) {
   updateScene(1, 1);
 }
 
-function figureSetSupportingHyperplane(id) {
+export function figureSetSupportingHyperplane(id) {
   const svg = d3.select(id);
   const width  = 750;
   const height = 400;
@@ -298,7 +304,7 @@ function figureSetSupportingHyperplane(id) {
   updateScene(1, 1);
 }
 
-function figureSetSeparatingHyperplane(id) {
+export function figureSetSeparatingHyperplane(id) {
   const svg    = d3.select(id);
   const width  = 750;
   const height = 400;
@@ -315,7 +321,7 @@ function figureSetSeparatingHyperplane(id) {
   function updateScene() {
     const c1 = bodies[0];
     const c2 = bodies[1];
-    const inter = circleCircleIntersection(c1, c2)
+    const inter = intersectionCircleCircle(c1, c2)
 
     gBodies.selectAll(".convex-set").classed("not-good", inter);
     updateHyperplanes(gPlane, inter ? [] : [circleDisjointSeparator(c1, c2)]);
@@ -336,7 +342,7 @@ function figureSetSeparatingHyperplane(id) {
   updateScene(); // Initial hyperplane calculation
 }
 
-function figureFunctionEpigraph(id, f, minX, maxX) {
+export function figureFunctionEpigraph(id, f, minX, maxX) {
   const svg   = d3.select(id);
   const scale = new Scale(svg, [minX, maxX], [-1, 2]);
 
@@ -347,7 +353,7 @@ function figureFunctionEpigraph(id, f, minX, maxX) {
 }
 
 
-function figureFunctionSupportingCut(id, f, df, minX, maxX) {
+export function figureFunctionSupportingCut(id, f, df, minX, maxX) {
   const svg   = d3.select(id);
   const scale = new Scale(svg, [minX, maxX], [0, 5]);
 
@@ -375,7 +381,7 @@ function figureFunctionSupportingCut(id, f, df, minX, maxX) {
 }
 
 
-function figureFunctionCuts(id, f, df, minX, maxX) {
+export function figureFunctionCuts(id, f, df, minX, maxX) {
   const width     = 350;
   const height    = 400;
   let cuts        = [];
@@ -437,7 +443,7 @@ function figureFunctionCuts(id, f, df, minX, maxX) {
   updateScene(cuts, hyperplanes);
 }
 
-function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
+export function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
   const svg   = d3.select(id);
   const scale = new Scale(svg, [minX, maxX], [0, 5]);
 
@@ -481,7 +487,7 @@ function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
   updateScene();
 }
 
-function figureLagrangian(id, f, minX, maxX) {
+export function figureLagrangian(id, f, minX, maxX) {
   const svg   = d3.select(id);
   const scale = new Scale(svg, [minX, maxX], [-1.5, 2]);
 
@@ -510,7 +516,7 @@ function figureLagrangian(id, f, minX, maxX) {
   updateLagrangian();
 }
 
-function figureLagrangianDual(id, f, minX, maxX) {
+export function figureLagrangianDual(id, f, minX, maxX) {
   const svg   = d3.select(id);
   const scale = new Scale(svg, [minX, maxX], [-1.5, 2]);
 
