@@ -52,12 +52,12 @@ svg.diagram {
 }
 
 .hyperplane {
-  stroke: orange;
+  stroke: rgb(255, 165, 0);
   stroke-width: 1pt;
 }
 
 .mark {
-  fill: orange;
+  fill: rgb(255, 165, 0);
 }
 
 .half-space {
@@ -85,7 +85,7 @@ svg.diagram {
 
 .draggable:hover {
   cursor:move;
-  fill: #eab253;
+  fill: #ffd700;
 }
 </style>
 
@@ -101,8 +101,8 @@ As the late hours of the night embrace you,
 you find yourself seated at your workbench,
 the substantial dose of caffeine you recently consumed
 still coursing through your veins with unwavering energy.
-Then, in a sudden sparkle of inspiration, you stumble upon it
---—the elusive function you so much needed.
+Then, in a sudden sparkle of inspiration,
+you stumble upon it--—the elusive function you so much needed.
 It's a remarkable little function $f : \R^n \to \R$,
 that fits perfectly with all the simulations you intend to run.
 
@@ -213,7 +213,8 @@ points above and below it.
 To form the polyhedral function, we slice the space, one cut at a time,
 in order to carve a polyhedron containing the graph of $f$.
 
-Click anywhere in the figure below to carve the shape of a function using cuts.
+Click anywhere in the figure below to carve the space
+until the function's shape is recognizable.
 
 <div class="diagram-container">
   <svg id="function-epigraph-carving" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
@@ -358,8 +359,7 @@ Algebraically, for any $\lambda \in [0, 1]$,
 $$ \lambda x + (1-\lambda) y \in X.$$
 :::
 
-My intuition for convex sets is that they are sets
-without holes nor wobbles.
+My intuition for convex sets is that they are sets without holes nor wobbles.
 This encompasses a lot of the good ol' shapes you are familiar with,
 such as planes, balls, and polyhedra.
 
@@ -412,36 +412,48 @@ such as planes, balls, and polyhedra.
 \path[-Latex, semithick, color=black] (M) edge[bend right, shorten <= 7pt] node[pos=1.1] {Non-convex Set} +(2, 1);
 ```
 
-A consequence of their regular shape is that they can be separated by hyperplanes.
-That is, given two disjoint convex sets, it is always possible
-to divide the space such that each of them lies in one of the halves.[^hahn-banach]
+In this post, we will also talk a lot about hyperplanes and their relation to convex sets.
+It is useful to think about a hyperplane interchangeably as a geometrical and an analytical object.
+We can view it as an affine function's zero set
+
+$$H = \{ x \mid \inner<a,x> + b = 0 \}$$
+
+Or as the affine function itself.
+The important part is that a hyperplane divides the space in two halves,
+depending on whether the affine function is non-negative or not.
+
+This division is specially important for convex sets,
+because, as a consequence of their regular shape,
+one can always pass a hyperplane between them
+in such a one that each one lies in one of the halves.
 
 ::: {.Theorem data-title="Separating Hyperplane"}
 For any pair of disjoint non-empty convex sets $X$, $Y$,
-there is an affine function $\inner<a,\hole> + b$ that is non-negative on one of them
-and non-positive on the other one.
+there is a hyperplane dividing the space in a way that
+each one lies in one of its sides.
 
-That is, for all $x \in X$ and $y \in Y$,
+In other words, there exists an affine function $\inner<a,\hole> + b$
+such that for all $x \in X$ and $y \in Y$,
 $$\inner<a,x> + b \le 0 \quad \text{and}\quad \inner<a,y> + b \ge 0.$$
 :::
 
-The proof to this result is more technical than elucidating,
-so we are going to skip it on this post.
+The proof to this result is more technical than elucidating[^hahn-banach],
+so we are going to skip over it on this post.
 You can find a great presentation with all details on @{boyd_convex_2004}'s book.
-Fortunately, this is one of these results were we can get a good intuition from a picture.
-Due to their absence of wobbles, one can pass a plane between two convex sets without bumping into anything.
+Fortunately, this is one of these results were we can get a good intuition from a picture:
+due to their absence of wobbles, one can pass a plane between two convex sets without bumping into anything.
 
 Have fun trying to drag the sets below to a position with no separating hyperplane.
 
 [^hahn-banach]: For the Functional Analysts lurking around: in infinite dimension,
-this theorem is equivalent to the Hahn-Banach Theorem.
+it is equivalent to the Hahn-Banach Theorem.
 
 <div class="diagram-container">
   <svg id="set-separating-hyperplane" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
   </svg>
 </div>
 
-Let's focus now on the case where one of the sets is a single point.
+Let's turn our focus to the case where one of the sets is a single point.
 An interesting consequence of this theorem is that given any point $p$ not in the set,
 we can find an affine function that is zero in this point and contains
 a convex set in one of its half-spaces.
@@ -480,13 +492,12 @@ $$\inner<a,x_0> + b = 0 \quad \text{and}\quad \forall x \in X,\, \inner<a,x> + b
 :::
 
 :::Proof
-If $X$ has nonempty interior, there is a hyperplane separating
-$\{x_0\}$ from the interior of $X$,
-and if it is empty, then the entirety of $X$ lies inside in an affine subspace of $\R^n$,
+If $X$ has nonempty interior, there is a hyperplane separating $\{x_0\}$ from the interior of $X$,
+and if it is empty, the entirety of $X$ lies inside in an affine subspace of $\R^n$,
 and we can take this subspace as our hyperplane.
 :::
 
-Notice that this theorem also has the equivalent formulation as
+Notice that this theorem has the equivalent formulation as
 $$\forall x \in X,\, \inner<a,x> \ge \inner<a,x_0>.$$
 
 <div class="diagram-container">
@@ -556,22 +567,20 @@ You can hover it to view the cut for each point.
 
 :::Proof
 The graph of $f$ lies in the boundary of its epigraph, which is convex.
-Then, from the supporting hyperplane theorem, for any $x_0$,
-there is an affine function supporting $\epi(f)$ at $(x_0, f(x_0))$.
+Therefore, from the supporting hyperplane theorem, for any $x_0$,
+the epigraph of $f$ has a supporting hyperplane touching it at $(x_0, f(x_0))$.
 Since the tangent to a graph is non-vertical,
-the last component of this graph cannot be zero,
-and we can assume without loss of generality that it equals $1$.
-Then,
+the last component of this hyperplane cannot be zero.
+We can represent this supporting hyperplane as
 
 $$ \begin{aligned}
-  \inner<(a,1), (x, f(x))> &\ge \inner<(a,1), (x_0, f(x_0))> \\
-  \inner<a,x> + f(x) &\ge \inner<a,x_0> + f(x_0) \\
-  f(x) &\ge f(x_0) - \inner<a,x - x_0>
+  \inner<a,x> + bf(x) &\ge \inner<a,x_0> + bf(x_0) \\
+  f(x) &\ge f(x_0) + \inner<-\frac{{1}}{b} a,x - x_0>.
 \end{aligned} $$
 
-By defining $\mu = -a$, we arrive at
+By defining $\lambda = -\frac{{1}}{b} a$, we arrive at
 
-$$f(x) \ge f(x_0) + \inner<\mu,x - x_0>.$$
+$$f(x) \ge f(x_0) + \inner<\lambda,x - x_0>.$$
 :::
 
 With this theorem we finally achieved all we need to be able
@@ -688,7 +697,7 @@ To the penalized value function, called its _Lagrangian relaxation_,
 
 $$
   \begin{array}{rl}
-    L(x; \lambda) = \min\limits_{u, y} & c(u) - \inner<\lambda, y - x> \\
+    L(x; \lambda) = \min\limits_{u, y} & c(u) + \inner<\lambda, x - y> \\
     \textrm{s.t.}   & (y, u) \in X.
   \end{array}
 $$
@@ -700,7 +709,7 @@ The factor lambda is called a _dual variable_ or _Lagrange multiplier_
 and represents how much $y$ is averse to diverting from $x$.
 
 In the original feasible set where $x = y$,
-the term $\inner<\lambda, y - x>$ vanishes and both problems have the same objective function.
+the term $\inner<\lambda, x - y>$ vanishes and both problems have the same objective function.
 However, the relaxed problem has a larger feasible region to explore in its search for the minimum,
 allowing it the opportunity to achieve lower costs.
 In other words, it is always below the primal:
@@ -730,13 +739,13 @@ So, do affine functions everywhere below $f$ make you think of something?
 As illustrated above, the relaxation is always a cut for $f$,
 but we don't have control over its intercept, only over the inclination $\lambda$.
 Hence, a natural question to ask is, given a parameter $x$,
-what inclination gives the tightest relaxation at this point?
+what inclination yields the tightest relaxation at this point?
 This is called the _dual value function_ and amounts to a minimax problem:
 
 $$
 \begin{aligned}
   \check{f}(x) &= \max\limits_{\lambda} L(x ; \lambda) \\
-               &= \max\limits_{\lambda} \min\limits_{(y, u) \in X} c(u) - \inner<\lambda, y - x>.
+               &= \max\limits_{\lambda} \min\limits_{(y, u) \in X} c(u) + \inner<\lambda, x - y>.
 \end{aligned}
 $$
 
@@ -778,19 +787,19 @@ $$ \forall x, f(x) \ge \check{f}(x_0) + \inner<\lambda_0, x - x_0>.$$
 
 :::Proof
 By definition,
-$$ \check{f}(x_0) = \max\limits_{\lambda} \min\limits_{(y, u) \in X} c(u) - \inner<\lambda, y - x_0>. $$
+$$ \check{f}(x_0) = \max\limits_{\lambda} \min\limits_{(y, u) \in X} c(u) + \inner<\lambda, x_0 - y>. $$
 
 The maximum in the equation above is achieved precisely by $\lambda_0$:
 
-$$ \check{f}(x_0) = \min\limits_{(y, u) \in X} c(u) - \inner<\lambda_0, y - x_0>. $$
+$$ \check{f}(x_0) = \min\limits_{(y, u) \in X} c(u) + \inner<\lambda_0, x_0 - y>. $$
 
-The equation above has a minimum, hence it has to be below
-any feasible choice of $(y, u)$ that we make.
+The right-hand side is a minimum,
+hence it has to be below any feasible choice of $(y, u)$.
 In particular, we can fix $y$ equal to our desired $x$.
 
 $$
   \begin{array}{rl}
-    \check{f}(x_0) \le \min\limits_{u} & c(u) - \inner<\lambda_0, x - x_0> \\
+    \check{f}(x_0) \le \min\limits_{u} & c(u) + \inner<\lambda_0, x_0 - x> \\
     \textrm{s.t.}   & (x, u) \in X.
   \end{array}
 $$
