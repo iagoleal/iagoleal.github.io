@@ -124,6 +124,11 @@ function circleDisjointSeparator(c1, c2) {
   Drawing figures
 */
 
+function mouseUnscale(event, scale) {
+  const [mx, my] = d3.pointer(event);
+  return [scale.x.invert(mx), scale.y.invert(my)]
+}
+
 function updateConvexSets(selector, data) {
   return selector.selectAll(".convex-set")
     .data(data)
@@ -255,11 +260,7 @@ function figureSetPointHyperplane(id) {
     updateMarks(gPlane, isInside ? [] : [pos]);
   }
 
-  // Draw hyperplane separating mouse and convex set
-  svg.on("mousemove", function (event) {
-    const [x, y]  = d3.pointer(event);
-    updateScene(x, y);
-  });
+  svg.on("mousemove", event => updateScene(...d3.pointer(event)));
 
   updateConvexSets(gSet, [circle]);
   updateScene(1, 1);
@@ -291,12 +292,7 @@ function figureSetSupportingHyperplane(id) {
     updateMarks(gPlane, isInside ? [] : [pos]);
   }
 
-  // Draw hyperplane separating mouse and convex set
-  svg.on("mousemove", function (event) {
-    const [x, y] = d3.pointer(event);
-
-    updateScene(x, y);
-  });
+  svg.on("mousemove", event => updateScene(...d3.pointer(event)));
 
   updateConvexSets(gSet, [circle]);
   updateScene(1, 1);
@@ -369,8 +365,7 @@ function figureFunctionSupportingCut(id, f, df, minX, maxX) {
 
   // Display cut for mouse x position
   svg.on("mousemove", function(event) {
-    const [mouseX, _] = d3.pointer(event);
-    const x0  = scale.x.invert(mouseX);
+    const [x0] = mouseUnscale(event, scale);
     placeCut(x0);
   });
 
@@ -381,19 +376,18 @@ function figureFunctionSupportingCut(id, f, df, minX, maxX) {
 
 
 function figureFunctionCuts(id, f, df, minX, maxX) {
-  const div       = d3.select(id);
   const width     = 350;
   const height    = 400;
   let cuts        = [];
   let hyperplanes = [];
 
-  const svgFunc= d3.select("#function-cuts > div:first-child").append("svg")
+  const svgFunc= d3.select(`${id} > div:first-child`).append("svg")
     .attr("viewBox", `0 0 ${width} ${height}`)
     .attr("width", "100%")
     .attr("height", "100%")
     .attr("class", "diagram");
 
-  const svgPoly = d3.select("#function-cuts > div:last-child").append("svg")
+  const svgPoly = d3.select(`${id} > div:last-child`).append("svg")
     .attr("viewBox", `0 0 ${width} ${height}`)
     .attr("width", "100%")
     .attr("height", "100%")
@@ -415,8 +409,7 @@ function figureFunctionCuts(id, f, df, minX, maxX) {
   }
 
   svgFunc.on("mousemove", function(event) {
-    const [mouseX]   = d3.pointer(event);
-    const x0         = scale.x.invert(mouseX);
+    const [x0]       = mouseUnscale(event, scale);
     const cut        = new Cut(x0, f(x0), df(x0));
     const hyperplane = cut.toHyperplane(scale);
 
@@ -424,8 +417,7 @@ function figureFunctionCuts(id, f, df, minX, maxX) {
   });
 
   svgFunc.on("click", function(event) {
-    const [mouseX]   = d3.pointer(event);
-    const x0         = scale.x.invert(mouseX);
+    const [x0]       = mouseUnscale(event, scale);
     const cut        = new Cut(x0, f(x0), df(x0));
     const hyperplane = cut.toHyperplane(scale);
     cuts.push(cut);
@@ -459,7 +451,7 @@ function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
 
   function updateScene(x0, y0) {
     if (x0 && y0) {
-      const cut = new Cut(x0, y0, df(x0));
+      const cut = new Cut(x0, Math.min(f(x0), y0), df(x0));
       cuts.push(cut);
       hyperplanes.push(cut.toHyperplane(scale));
     }
@@ -474,11 +466,7 @@ function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
   }
 
   svg.on("click", function(event) {
-    const [mouseX, mouseY] = d3.pointer(event);
-    const x0  = scale.x.invert(mouseX);
-    const y0  = Math.min(f(x0), scale.y.invert(mouseY));
-
-    updateScene(x0, y0);
+    updateScene(...mouseUnscale(event, scale));
   });
 
   d3.select("#reset-epigraph-carving").on("click", function(event) {
@@ -548,8 +536,7 @@ function figureLagrangianDual(id, f, minX, maxX) {
 
   // Display cut for mouse x position
   svg.on("mousemove", function(event) {
-    const [mouseX] = d3.pointer(event);
-    const x0  = scale.x.invert(mouseX);
+    const [x0] = mouseUnscale(event, scale);
     placeCut(x0);
   });
 
