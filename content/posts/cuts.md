@@ -712,7 +712,8 @@ In the original feasible set where $x = y$,
 the term $\inner<\lambda, x - y>$ vanishes and both problems have the same objective function.
 However, the relaxed problem has a larger feasible region to explore in its search for the minimum,
 allowing it the opportunity to achieve lower costs.
-In other words, it is always below the primal:
+In other words, the Lagrangian is an underapproximation to the primal problem
+whenever it is feasible for $x$:
 
 $$ f(x) \ge L(x; \lambda). $$
 
@@ -729,6 +730,30 @@ $$
 Thus, for each fixed $\lambda$, the relaxation $L(\cdot; \lambda)$ is an affine function.
 So, do affine functions everywhere below $f$ make you think of something?
 
+In general, we are interested in cuts centered around a point, say $x_0$.
+Let's add and subtract $\inner<\lambda, x_0>R from the relaxation's definition
+to put it in this form.
+
+$$
+  \begin{array}{rl}
+    L(x; \lambda) = \inner<\lambda, x - x_0> + \min\limits_{u, y} & c(u) + \inner<\lambda, x_0 - y> \\
+    \textrm{s.t.}   & (y, u) \in X.
+  \end{array}
+$$
+
+
+Notice thta the minimization on the right-hand side
+is precisely the relaxation at the point $x_0$.
+This is always true for affine functions,
+nonetheless, yields a neat relation for the relaxation,
+
+$$ L(x; \lambda) =  L(x_0; \lambda) + \inner<\lambda, x - x_0>. $$
+
+And using that $L$ is always an underapproximation for $f$,
+we get to the desired cut equation:
+
+$$ f(x) \ge L(x; \lambda) =  L(x_0; \lambda) + \inner<\lambda, x - x_0>. $$
+
 <div class="diagram-container">
   <svg id="function-lagrangian" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
   </svg>
@@ -736,8 +761,10 @@ So, do affine functions everywhere below $f$ make you think of something?
   <label for="slider-lagrangian-lambda"> Multiplier <span id="slider-lambda-value">$\lambda = 1$</span>.</label>
 </div>
 
-As illustrated above, the relaxation is always a cut for $f$,
-but we don't have control over its intercept, only over the inclination $\lambda$.
+Notice in the figure above that for many points,
+there is some multiplier $\lambda$ for which the relaxation touches the primal function.
+Unfortunately, we don't have control of where this happens,
+because we first fix the inclination and only them solve the relaxation.
 Hence, a natural question to ask is, given a parameter $x$,
 what inclination yields the tightest relaxation at this point?
 This is called the _dual value function_ and amounts to a minimax problem:
@@ -762,14 +789,13 @@ it is also a lower approximation, a result known as _weak duality_.
 $$ \boxed{f(x) \ge \check{f}(x)}$$
 
 It is also guaranteed to be convex,
-because it is the maximum of affine functions.
+for it is the maximum of affine functions.
 A convex lower approximation made of cuts, it looks like we are getting to something.
 Moreover, one can prove that it is not some ordinary convex function,
 but the tightest convex function everywhere below $f$.
-So the cuts for $\check{f}$ are also the best ones possible for $f$.
-The only thing remaining is discovering how to actually calculate these cuts.
-As it stands out, they come for free from the optimization problem,
-because their inclination is precisely the optimal multiplier.
+So the cuts for $\check{f}$ are also the best ones possible for $f$ at a certain point.
+The best part is that these cuts come for free from solving the optimization problem
+because they are formed by the dual value $\check{f}(x)$ and its associated multiplier $\lambda_x$.
 
 [^market-opt]: And consequently all free or commercial solvers in the market.
 
@@ -786,37 +812,27 @@ $$ \forall x, f(x) \ge \check{f}(x_0) + \inner<\lambda_0, x - x_0>.$$
 :::
 
 :::Proof
-By definition,
-$$ \check{f}(x_0) = \max\limits_{\lambda} \min\limits_{(y, u) \in X} c(u) + \inner<\lambda, x_0 - y>. $$
+The dual value function is the maximum among all Lagrangian relaxations.
+Let's look at it centered at $x_0$.
 
-The maximum in the equation above is achieved precisely by $\lambda_0$:
+$$ \check{f}(x) = \max\limits_{\lambda} L(x_0; \lambda) + \inner<\lambda, x - x_0>.$$
 
-$$ \check{f}(x_0) = \min\limits_{(y, u) \in X} c(u) + \inner<\lambda_0, x_0 - y>. $$
+The maximum above selects the best $\lambda$ for the chosen parameter $x$.
+Therefore its solution is above any other choice of $\lambda$ we can make,
+including our desired $\lambda_0$.
 
-The right-hand side is a minimum,
-hence it has to be below any feasible choice of $(y, u)$.
-In particular, we can fix $y$ equal to our desired $x$.
+$$ \check{f}(x) \ge L(x_0; \lambda_0) + \inner<\lambda_0, x - x_0>.$$
 
-$$
-  \begin{array}{rl}
-    \check{f}(x_0) \le \min\limits_{u} & c(u) + \inner<\lambda_0, x_0 - x> \\
-    \textrm{s.t.}   & (x, u) \in X.
-  \end{array}
-$$
+Now the term $L(x_0; \lambda_0)$ is the relaxation at $x_0$
+with the optimal multiplier $\lambda_0$ at this point,
+which is precisely the definition of $\check{f}(x_0)$.
+This yields a tight cut for the dual function.
 
-Since the affine term in the objective function does not depend upon $u$,
-we can take it out of the minimization and pass it to the left-hand side.
+$$ \check{f}(x) \ge \check{f}(x_0) + \inner<\lambda_0, x - x_0>.$$
 
-$$
-  \begin{array}{rl}
-    \check{f}(x_0) + \inner<\lambda_0, x - x_0>
-      \le \min\limits_{u} & c(u) \\
-          \textrm{s.t.}   & (x, u) \in X.
-  \end{array}
-$$
+From weak duality, it follows that it is also a cut for $f(x)$.
 
-Now the right-hand side equals exactly the definition of $f(x)$.
-This concludes the theorem.
+$$ f(x) \ge \check{f}(x) \ge \check{f}(x_0) + \inner<\lambda_0, x - x_0>.$$
 :::
 
 Perfect! We just discovered that the solutions to the dual problem
