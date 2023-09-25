@@ -1,6 +1,6 @@
 ---
-title: Approximation by a thousand cuts
-subtitle: A guide to polyhedral representations
+title: Approximation by a Thousand Cuts
+subtitle: An interactive guide to polyhedral representations
 keywords: [math]
 date: 2023-09-22
 suppress-bibliography: true
@@ -161,7 +161,7 @@ Approximation by cuts
 
 Cutting planes have widespread usage on the Operations Research community
 because they play really well with optimization problems.
-Nevertheless, I unfortunately don't see them being used quite as much on other branch
+Nevertheless, I unfortunately don't see them being used quite as much in other branches
 of engineering or mathematics.
 Thus, before talking about why they are so cool,
 let's first present tonight's star.
@@ -446,7 +446,7 @@ An interesting consequence of this theorem is that given any point $p$ not in th
 we can find an affine function that is zero in this point and contains
 a convex set in one of its half-spaces.
 It is really similar to a cut, but for a set.
-For example, in the imagine below, you can choose a separating hyperplane between
+For example, in the image below, you can choose a separating hyperplane between
 your mouse and the convex set in the middle.
 
 <div class="diagram-container">
@@ -513,7 +513,7 @@ and define them as infinity elsewhere.
 The most common definition in the wild for a _convex function_
 is through _Jensen's inequality_,
 
-$$ f(\lambda x + (1 - \lambda) y  \le \lambda f(x) + (1 - \lambda) f(y).$$
+$$ f(\lambda x) + (1 - \lambda) y  \le \lambda f(x) + (1 - \lambda) f(y).$$
 
 Nonetheless, convex functions are notorious for having a multitude of equivalent definitions.
 Hence, for our purposes it will be better to choose a more geometric one.
@@ -835,10 +835,10 @@ $$ f\;\text{convex} \implies \forall x, f(x) \ge f(x_0) + \inner<\lambda_0, x - 
 But in practice, convexity tends to be the only part you need to worry about.
 
 As a bonus, if you like automatic differentiation as much as I do,
-you also just learnt how to differentiate procedures defined as convex optimization problems.
+you also just learnt how to differentiate procedures performing convex optimization.
 Suppose that $f$ is differentiable at $x_0$.
 Since the derivative is unique and the cut provides us with a tangent,
-it must follow that the derivative equals the optimal multiplier $\nabla f(x_0) = \lambda_0$.
+it follows that the derivative equals the optimal multiplier $\nabla f(x_0) = \lambda_0$.
 Thus, by solving a parameterized (convex) optimization problem,
 you gain both an evaluation and a derivative.
 Now all you have to do is plug it into the chain rule et voilà!
@@ -860,6 +860,11 @@ and how to put to good use the various available ways to calculate cuts for mixe
 
 Good convergence for y'all and stay tuned!
 
+Acknowledgements
+================
+
+I want to thank [Pedro Xavier](https://pedromxavier.github.io)
+for commenting and proof-reading this post's first draft.
 
 <script src="./convex-support.js"></script>
 <script type="module">
