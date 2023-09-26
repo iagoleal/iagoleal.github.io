@@ -515,7 +515,7 @@ export function figureLagrangianDual(id, f, minX, maxX) {
 
   function dual(x) {
     return findMax(d3.range(-12, 8.0, 0.1), lambda =>
-      d3.min(d3.range(minX, maxX, 0.1), u => f(u) - lambda*(u - x))
+      d3.min(d3.range(minX, maxX, 0.05), u => f(u) - lambda*(u - x))
     )
   }
 

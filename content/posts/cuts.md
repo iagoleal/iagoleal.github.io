@@ -118,7 +118,7 @@ What can one do in such a situation?
 
 Fortunately, mathematicians all over the world
 have already studied a myriad of methods for approximating functions in a computer.
-The answer depends, most of all, on what are your objectives,
+The answer depends, most of all, on what your objectives are,
 because each kind of approximation only preserves some characteristics,
 and is, thus, only appropriate for certain applications.
 If being accurate in some known points is your primary concern,
@@ -200,7 +200,7 @@ $$  f(x) \ge f(x_0) + \inner<a, x - x_0>. $$
 
 In general, a single cut is a terrible approximation.
 But it is not its fault, after all, it is just a first order polynomial!
-The magic begins when you combine a lot of cuts to represent $f$ as a _polyhedral function_.
+The magic begins when you combine many cuts to represent $f$ as a _polyhedral function_.
 Taking an approximation of $f$ by cuts $C = \{\inner<a,\hole> + b\}$
 amounts to choosing the largest cut at each given point:
 
@@ -215,6 +215,9 @@ in order to carve a polyhedron containing the graph of $f$.
 
 Click anywhere in the figure below to carve the space
 until the function's shape is recognizable.
+You start with no cut and, as you click, the polyhedral approximation
+improves until the function's graph become recognizable.
+A fun game is to try to do this with the least amount of cuts possible.
 
 <div class="diagram-container">
   <svg id="function-epigraph-carving" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
@@ -291,10 +294,13 @@ by iteratively solving linear programs.
 For it to work, we will have to suppose (by now)
 that we have access to some oracle capable of both evaluating a function and calculating a tight cut for it.
 This is not cheating though,
-because in section [Cuts from Derivatives] we will learn how to write such an oracle.
+because in the section [Cuts from Derivatives] we will learn how to write such an oracle.
 
-We begin with a constant cut approximation[^unconstrained-lp] $\tilde{f}_0$ of $f$
-everywhere equal to an initial lower bound.
+Besides the function $f$, the algorithm needs three more inputs:
+a tolerance $\epsilon$, an initial point (can be any point) to evaluate,
+and an uniform bound $\forall x,\, M \le f(x)$.
+Since we are minimizing, this bound must exist for the problem to be well-posed.
+We begin with a polyhedral approximation $\tilde{f}_0$ which equals $M$ everywhere.
 The idea is to, at each iteration, give the oracle a point $x_n$.
 This will return an evaluation $f(x_n)$, which serves as an upper bound
 for $\min f$ because all evaluations are larger than the minimum.
@@ -306,16 +312,17 @@ $$ \min_n f(x_n) \ge \min_x f(x) \ge \min_x \tilde{f}_n(x). $$
 The algorithm can also be more directly described in Julia code:
 
 ```julia
-function minimize(f::Function, initial_bound ; eps, x = zeros())
+function minimize(f::Function, initial_bound, x = 0; tolerance)
   opt = Polyhedral(initial_bound)
   ub  = +Inf
   lb  = initial_bound
 
-  while abs(ub - lb) > eps
-    fx, cut = oracle(f, x)  # Ask oracle for evaluation and cut at x
+  while ub - lb > tolerance
+    # Ask oracle for evaluation and cut at x
+    fx, cut = oracle(f, x)
 
     # Improve upper bound
-    ub = min(ub, f(x))
+    ub = min(ub, fx)
 
     # Improve lower bound
     add_cut!(opt, cut)
@@ -325,9 +332,6 @@ function minimize(f::Function, initial_bound ; eps, x = zeros())
   return x, fx              # Optimal point and optimal value
 end
 ```
-
-[^unconstrained-lp]: You can always use $\tilde{f}_0(x) = -\infty$
-in case you don't know a better bound.
 
 In practice there are better ways to do unconstrained optimization,
 but this idea of sandwiching with evaluations and cuts
@@ -425,7 +429,7 @@ depending on whether the affine function is non-negative or not.
 This division is specially important for convex sets,
 because, as a consequence of their regular shape,
 one can always pass a hyperplane between them
-in such a one that each one lies in one of the halves.
+in such a way that each lies in one of the halves.
 
 ::: {.Theorem data-title="Separating Hyperplane"}
 For any pair of disjoint non-empty convex sets $X$, $Y$,
@@ -477,7 +481,7 @@ is a tangent hyperplane that touches $X$ at $x$ and is
 non-negative at every other point of $X$.
 :::
 
-This start to look a bit like cuts, right?
+This is starting to look a bit like cuts, right?
 Very well, from the Separating Hyperplane Theorem,
 we can conclude a similar theorem saying that convex sets
 have supporting hyperplanes at all points in their boundary.
@@ -619,11 +623,11 @@ I'll just let you choose your favorite.
 Our oracle then becomes a simple function that assembles the cut.
 
 ```julia
-function oracle(f, x)
-  fx  = f(x)
-  dfx = derivative(f, x)
+function oracle(f, a)
+  fa  = f(a)
+  dfx = derivative(f, a)
 
-  return fx, Cut(dfx, fx - dot(dfx, x))
+  return fa, Cut(a, fa, dfa)    # Cut(x) = fa + dot(dfa, x - a)
 end
 ```
 
@@ -672,7 +676,7 @@ In practice, exchanging evaluation by optimization may be rather bad for perform
 From a theoretical point-of-view, however,
 this representation always works and we are all safe.
 
-The advantage of concentrating in optimal value functions
+The advantage of concentrating on optimal value functions
 is that it opens to us a whole world of tools from Optimization.
 In particular, we will see that [Lagrangian duality](https://en.wikipedia.org/wiki/Duality_(optimization))
 has everything to do with cuts.[^duality-refs]
@@ -705,7 +709,7 @@ $$
 While in the original problem $y$ was fixed to whatever argument the function receives,
 in the new problem it can be any feasible value.
 Nonetheless, the cost is augmented by a new penalty term on the difference between $y$ and $x$.
-The factor lambda is called a _dual variable_ or _Lagrange multiplier_
+The factor $\lambda$ is called a _dual variable_ or _Lagrange multiplier_
 and represents how much $y$ is averse to diverting from $x$.
 
 In the original feasible set where $x = y$,
@@ -731,7 +735,7 @@ Thus, for each fixed $\lambda$, the relaxation $L(\cdot; \lambda)$ is an affine 
 So, do affine functions everywhere below $f$ make you think of something?
 
 In general, we are interested in cuts centered around a point, say $x_0$.
-Let's add and subtract $\inner<\lambda, x_0>R from the relaxation's definition
+Let's add and subtract $\inner<\lambda, x_0>$ from the relaxation's definition
 to put it in this form.
 
 $$
@@ -742,14 +746,14 @@ $$
 $$
 
 
-Notice thta the minimization on the right-hand side
+Notice that the minimization on the right-hand side
 is precisely the relaxation at the point $x_0$.
-This is always true for affine functions,
-nonetheless, yields a neat relation for the relaxation,
+Despite being always true for affine functions,
+it still yields a neat relation for the relaxation,
 
 $$ L(x; \lambda) =  L(x_0; \lambda) + \inner<\lambda, x - x_0>. $$
 
-And using that $L$ is always an underapproximation for $f$,
+Using that $L$ is always an underapproximation for $f$,
 we get to the desired cut equation:
 
 $$ f(x) \ge L(x; \lambda) =  L(x_0; \lambda) + \inner<\lambda, x - x_0>. $$
@@ -764,7 +768,7 @@ $$ f(x) \ge L(x; \lambda) =  L(x_0; \lambda) + \inner<\lambda, x - x_0>. $$
 Notice in the figure above that for many points,
 there is some multiplier $\lambda$ for which the relaxation touches the primal function.
 Unfortunately, we don't have control of where this happens,
-because we first fix the inclination and only them solve the relaxation.
+because we first fix the inclination and only then solve the relaxation.
 Hence, a natural question to ask is, given a parameter $x$,
 what inclination yields the tightest relaxation at this point?
 This is called the _dual value function_ and amounts to a minimax problem:
@@ -777,7 +781,7 @@ $$
 $$
 
 That thing looks scary but, fortunately for us, all solvers are pretty good at it.
-In fact, for most usual kinds of optimization programs,
+In fact, for the most common types of optimization programs,
 the dual problem has a known closed form
 and all state-of-the-art algorithms in (continuous) optimization[^market-opt]
 solve for the primal and the dual problems at the same time.
@@ -791,7 +795,7 @@ $$ \boxed{f(x) \ge \check{f}(x)}$$
 It is also guaranteed to be convex,
 for it is the maximum of affine functions.
 A convex lower approximation made of cuts, it looks like we are getting to something.
-Moreover, one can prove that it is not some ordinary convex function,
+Moreover, one can prove that it is not just some ordinary convex function,
 but the tightest convex function everywhere below $f$.
 So the cuts for $\check{f}$ are also the best ones possible for $f$ at a certain point.
 The best part is that these cuts come for free from solving the optimization problem
@@ -856,11 +860,12 @@ for the points of non-differentiability of a convex function!
 
 $$ f\;\text{convex} \implies \forall x, f(x) \ge f(x_0) + \inner<\lambda_0, x - x_0>.$$
 
-[^lsc-cvx]: Technically, the theorem requires $f$ to be proper convex _lower semicontinuous_ function.
+[^lsc-cvx]: Technically, the theorem requires $f$ to be a proper convex _lower semicontinuous_ function.
 But in practice, convexity tends to be the only part you need to worry about.
 
 As a bonus, if you like automatic differentiation as much as I do,
-you also just learnt how to differentiate procedures performing convex optimization.
+you also just learnt how to calculate the derivative for any function
+performing convex optimization during its execution.
 Suppose that $f$ is differentiable at $x_0$.
 Since the derivative is unique and the cut provides us with a tangent,
 it follows that the derivative equals the optimal multiplier $\nabla f(x_0) = \lambda_0$.
@@ -872,7 +877,7 @@ Farewell
 ========
 
 Today you gained a new tool to your repertoire of functional representations.
-We seemed how cutting planes are a computationally amenable structure
+We have learned how cutting planes are a computationally amenable structure
 that harmoniously integrate with convexity and optimization,
 and how we can use them to represent functions for minimization.
 And, best of all, if you are working with convex optimization or calculating any derivatives,
@@ -888,7 +893,7 @@ Good convergence for y'all and stay tuned!
 Acknowledgements
 ================
 
-I want to thank [Pedro Xavier](https://pedromxavier.github.io)
+I want to thank Ivani Ivanova and [Pedro Xavier](https://pedromxavier.github.io)
 for commenting and proof-reading this post's first draft.
 
 <script type="module">
