@@ -55,6 +55,10 @@ object {
   align: middle;
 }
 
+figure {
+  margin: auto;
+}
+
 ul {
   list-style-type: square;
 }

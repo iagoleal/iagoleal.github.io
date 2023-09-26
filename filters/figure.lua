@@ -99,11 +99,11 @@ end
 -- Block types
 -------------------
 local template_tag = [[
-<div class="illustration">
+<figure class="illustration">
   <object data="%s" type="image/svg+xml">
     <img src="%s">
   </object>
-<div>
+</figure>
 ]]
 
 local function format_tag(fname)

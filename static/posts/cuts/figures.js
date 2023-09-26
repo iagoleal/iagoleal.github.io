@@ -376,17 +376,14 @@ export function figureFunctionCuts(id, f, df, minX, maxX) {
   let cuts        = [];
   let hyperplanes = [];
 
-  const svgFunc= d3.select(`${id} > div:first-child`).append("svg")
+  const svgs = d3.selectAll(`${id} > .diagram-container`).append("svg")
     .attr("viewBox", `0 0 ${width} ${height}`)
     .attr("width", "100%")
     .attr("height", "100%")
     .attr("class", "diagram");
 
-  const svgPoly = d3.select(`${id} > div:last-child`).append("svg")
-    .attr("viewBox", `0 0 ${width} ${height}`)
-    .attr("width", "100%")
-    .attr("height", "100%")
-    .attr("class", "diagram");
+  const svgFunc = d3.select(svgs.nodes()[0]);
+  const svgPoly = d3.select(svgs.nodes()[1]);
 
   const scale = new Scale(svgFunc, [minX, maxX], [0, 5]);
 

@@ -70,13 +70,13 @@ svg.diagram {
 }
 
 .epigraph {
-  fill: steelblue;
+  fill: hsl(147 42% 64%);
   fill-opacity: 0.3;
-  transition: fill 400ms;
+  transition: fill-opacity 400ms;
 }
 
 .epigraph:hover {
-  fill: blue;
+  fill-opacity: 0.6;
 }
 
 .draggable {
@@ -145,10 +145,10 @@ Each click on a point in the left panel improves the approximation by cuts on th
 ```{=html}
 <div>
   <div id="function-cuts" class="multi-figure-container">
-    <div class="diagram-container">
-    </div>
-    <div class="diagram-container">
-    </div>
+    <figure class="diagram-container">
+    </figure>
+    <figure class="diagram-container">
+    </figure>
   </div>
   <br/>
   <button id="reset-function-cuts" type="button">Clear cuts</button>
@@ -219,11 +219,11 @@ You start with no cut and, as you click, the polyhedral approximation
 improves until the function's graph become recognizable.
 A fun game is to try to do this with the least amount of cuts possible.
 
-<div class="diagram-container">
+<figure class="diagram-container">
   <svg id="function-epigraph-carving" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
   <button id="reset-epigraph-carving" type="button">Clear cuts</button>
-</div>
+</figure>
 
 Why I like cuts and you should too
 ----------------------------------
@@ -452,10 +452,10 @@ Have fun trying to drag the sets below to a position with no separating hyperpla
 [^hahn-banach]: For the Functional Analysts lurking around: in infinite dimension,
 it is equivalent to the Hahn-Banach Theorem.
 
-<div class="diagram-container">
+<figure class="diagram-container">
   <svg id="set-separating-hyperplane" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-</div>
+</figure>
 
 Let's turn our focus to the case where one of the sets is a single point.
 An interesting consequence of this theorem is that given any point $p$ not in the set,
@@ -465,10 +465,10 @@ It is really similar to a cut, but for a set.
 For example, in the image below, you can choose a separating hyperplane between
 your mouse and the convex set in the middle.
 
-<div class="diagram-container">
+<figure class="diagram-container">
   <svg id="set-point-hyperplane" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-</div>
+</figure>
 
 
 Now, what happens when we choose our point to be in the set's boundary?
@@ -504,10 +504,10 @@ and we can take this subspace as our hyperplane.
 Notice that this theorem has the equivalent formulation as
 $$\forall x \in X,\, \inner<a,x> \ge \inner<a,x_0>.$$
 
-<div class="diagram-container">
+<figure class="diagram-container">
   <svg id="set-supporting-hyperplane" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-</div>
+</figure>
 
 From convex sets to convex functions
 ====================================
@@ -548,10 +548,10 @@ to denote the set of all points _above the graph_.
 
 $$ \epi(f) = \left\{ (x, y) \in \R^{n+1} \mid f(x) \le y \right\}. $$
 
-<div class="diagram-container">
+<figure class="diagram-container">
   <svg id="function-epigraph" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-</div>
+</figure>
 
 Besides sharing an etymology with _epic_,
 the epigraph also lets us easily translate results from convex sets to convex functions.
@@ -564,10 +564,10 @@ A convex function $f$ has a tight cut at any point in its domain.
 Visually this theorem looks like the figure below.
 You can hover it to view the cut for each point.
 
-<div class="diagram-container">
+<figure class="diagram-container">
   <svg id="function-supporting-cut" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-</div>
+</figure>
 
 :::Proof
 The graph of $f$ lies in the boundary of its epigraph, which is convex.
@@ -758,12 +758,12 @@ we get to the desired cut equation:
 
 $$ f(x) \ge L(x; \lambda) =  L(x_0; \lambda) + \inner<\lambda, x - x_0>. $$
 
-<div class="diagram-container">
+<figure class="diagram-container">
   <svg id="function-lagrangian" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
   <input type="range" id="slider-lagrangian-lambda" min="-5" max="5" step="0.1" value="1" style="width: 100%"/>
   <label for="slider-lagrangian-lambda"> Multiplier <span id="slider-lambda-value">$\lambda = 1$</span>.</label>
-</div>
+</figure>
 
 Notice in the figure above that for many points,
 there is some multiplier $\lambda$ for which the relaxation touches the primal function.
@@ -803,10 +803,10 @@ because they are formed by the dual value $\check{f}(x)$ and its associated mult
 
 [^market-opt]: And consequently all free or commercial solvers in the market.
 
-<div class="diagram-container">
+<figure class="diagram-container">
   <svg id="function-lagrangian-dual" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-</div>
+</figure>
 
 :::Theorem
 There is a cut for $f$ at the point $x_0$ defined by the dual value $\check{f}(x_0)$
