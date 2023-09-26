@@ -217,7 +217,7 @@ Click anywhere in the figure below to carve the space
 until the function's shape is recognizable.
 
 <div class="diagram-container">
-  <svg id="function-epigraph-carving" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
+  <svg id="function-epigraph-carving" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
   <button id="reset-epigraph-carving" type="button">Clear cuts</button>
 </div>
@@ -449,7 +449,7 @@ Have fun trying to drag the sets below to a position with no separating hyperpla
 it is equivalent to the Hahn-Banach Theorem.
 
 <div class="diagram-container">
-  <svg id="set-separating-hyperplane" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
+  <svg id="set-separating-hyperplane" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </div>
 
@@ -462,7 +462,7 @@ For example, in the image below, you can choose a separating hyperplane between
 your mouse and the convex set in the middle.
 
 <div class="diagram-container">
-  <svg id="set-point-hyperplane" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
+  <svg id="set-point-hyperplane" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </div>
 
@@ -501,7 +501,7 @@ Notice that this theorem has the equivalent formulation as
 $$\forall x \in X,\, \inner<a,x> \ge \inner<a,x_0>.$$
 
 <div class="diagram-container">
-  <svg id="set-supporting-hyperplane" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
+  <svg id="set-supporting-hyperplane" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </div>
 
@@ -545,7 +545,7 @@ to denote the set of all points _above the graph_.
 $$ \epi(f) = \left\{ (x, y) \in \R^{n+1} \mid f(x) \le y \right\}. $$
 
 <div class="diagram-container">
-  <svg id="function-epigraph" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
+  <svg id="function-epigraph" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </div>
 
@@ -561,7 +561,7 @@ Visually this theorem looks like the figure below.
 You can hover it to view the cut for each point.
 
 <div class="diagram-container">
-  <svg id="function-supporting-cut" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
+  <svg id="function-supporting-cut" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </div>
 
@@ -755,7 +755,7 @@ we get to the desired cut equation:
 $$ f(x) \ge L(x; \lambda) =  L(x_0; \lambda) + \inner<\lambda, x - x_0>. $$
 
 <div class="diagram-container">
-  <svg id="function-lagrangian" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
+  <svg id="function-lagrangian" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
   <input type="range" id="slider-lagrangian-lambda" min="-5" max="5" step="0.1" value="1" style="width: 100%"/>
   <label for="slider-lagrangian-lambda"> Multiplier <span id="slider-lambda-value">$\lambda = 1$</span>.</label>
@@ -800,7 +800,7 @@ because they are formed by the dual value $\check{f}(x)$ and its associated mult
 [^market-opt]: And consequently all free or commercial solvers in the market.
 
 <div class="diagram-container">
-  <svg id="function-lagrangian-dual" class="diagram" viewBox="0 0 750 400" width="100%" height="100%">
+  <svg id="function-lagrangian-dual" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </div>
 

@@ -56,11 +56,11 @@ class Scale {
 
     this.x = d3.scaleLinear()
       .domain(xDomain)
-      .range([viewbox[0], viewbox[2]]);
+      .range([viewbox[0], viewbox[0] + viewbox[2]]);
 
     this.y = d3.scaleLinear()
       .domain(yDomain)
-      .range([viewbox[3], viewbox[1]]);  // Invert y-axis for plotting functions
+      .range([viewbox[1] + viewbox[3], viewbox[1]]);  // Invert y-axis for plotting functions
   }
 }
 
@@ -141,7 +141,7 @@ function updateConvexSets(selector, data) {
 
 function updateHyperplanes(selector, pos) {
   // TODO: Fix these numbers
-  const width     = 750;
+  const width     = 800;
   const height    = 400;
   const maxLength = Math.sqrt(width ** 2 + height ** 2);
 
@@ -204,8 +204,8 @@ function plotEpigraph(elem, fs, scale) {
     .ease(d3.easeCubic)
     .attr("d", d3.area()
       .x(d => scale.x(d.x))
-      .y0(0)                 // Top of the plot
-      .y1(d => scale.y(d.y))  // Function curve
+      .y0(scale.y.range()[1])  // Top of the plot
+      .y1(d => scale.y(d.y))   // Function curve
       .curve(d3.curveLinear)
     );
 
@@ -238,9 +238,7 @@ function updatePolyhedral(poly, cuts, scale) {
 
 export function figureSetPointHyperplane(id) {
   const svg = d3.select(id);
-  const width  = 750;
-  const height = 400;
-  const circle = { x: width/2, y: height/2, r: 100 };
+  const circle = { x: 0, y: 0, r: 100 };
 
   // Our convex set
   const gSet   = svg.append("g");
@@ -263,14 +261,12 @@ export function figureSetPointHyperplane(id) {
   svg.on("mousemove", event => updateScene(...d3.pointer(event)));
 
   updateConvexSets(gSet, [circle]);
-  updateScene(1, 1);
+  updateScene(circle.r, circle.r);
 }
 
 export function figureSetSupportingHyperplane(id) {
   const svg = d3.select(id);
-  const width  = 750;
-  const height = 400;
-  const circle = { x: width/2, y: height/2, r: 100 };
+  const circle = { x: 0, y: 0, r: 100 };
 
   // Our convex set
   const gSet   = svg.append("g");
@@ -295,18 +291,17 @@ export function figureSetSupportingHyperplane(id) {
   svg.on("mousemove", event => updateScene(...d3.pointer(event)));
 
   updateConvexSets(gSet, [circle]);
-  updateScene(1, 1);
+  updateScene(circle.r, circle.r);
 }
 
 export function figureSetSeparatingHyperplane(id) {
-  const svg    = d3.select(id);
-  const width  = 750;
-  const height = 400;
+  const svg  = d3.select(id);
+  const [minX, minY, width, height] = svg.attr("viewBox").split(" ").map(x => +x);
 
   // data for convex bodies
   const bodies = [
-    { x: 150, y: 150, r: 80,},
-    { x: 350, y: 300, r: 50, }
+    { x: minX + width*0.3, y: minY + height*0.3, r: 80,},
+    { x: minX + width*0.6, y: minY + height*0.6, r: 50, }
   ];
 
   const gPlane  = svg.append("g");
@@ -327,8 +322,8 @@ export function figureSetSeparatingHyperplane(id) {
       .on("drag", function(event, c) {
         // Ensure the circle stays within the SVG boundaries
         d3.select(this)
-          .attr("cx", c.x = Math.max(0 + c.r, Math.min(width  - c.r, event.x)))
-          .attr("cy", c.y = Math.max(0 + c.r, Math.min(height - c.r, event.y)));
+          .attr("cx", c.x = Math.max(minX + c.r, Math.min(minX + width  - c.r, event.x)))
+          .attr("cy", c.y = Math.max(minY + c.r, Math.min(minY + height - c.r, event.y)));
 
         updateScene();
       }));
