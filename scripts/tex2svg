@@ -15,11 +15,10 @@ fi
 TMPPATH="$(mktemp --directory --tmpdir tex2svg.XXXXXXXXXX)"
 trap '{ rm -rf -- "$TMPPATH"; }' EXIT
 
-TMPFILE="$TMPPATH/$(basename "$INFILE")"
+TMPFILE="$TMPPATH/convert"
 
 cp "$INFILE" "${TMPFILE}.tex"
 # tex -> dvi
 latex --output-format=dvi --halt-on-error --file-line-error --interaction nonstopmode --output-directory "$TMPPATH" "${TMPFILE}.tex"
 # dvi -> svg
 dvisvgm --relative --zoom=2 --optimize=all --font-format=woff2 --exact --bbox=min -o "$OUTFILE" "${TMPFILE}.dvi"
-# $DIR/svg-minify "${TMPFILE}.svg" "$OUTFILE"

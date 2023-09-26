@@ -161,7 +161,7 @@ end
 
 -- Turn a latex string into an svg string.
 local function latex_to_svg(target, code)
-  local tex2svg = system.get_working_directory() .. "/scripts/tex2svg"
+  local tex2svg = "scripts/tex2svg"
 
   mkparent(target)
   return pandoc.pipe(tex2svg, {"-", target}, code)

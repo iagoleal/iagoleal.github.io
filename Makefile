@@ -78,7 +78,6 @@ serve:
 	cd $(build) && $(PYTHON_3) -m http.server
 
 watch:
-	cd $(build) && $(PYTHON_3) -m http.server &
 	watch -n 0.5 -- $(MAKE) unpublished
 
 deploy:
@@ -94,17 +93,17 @@ posts:   $(posts-result)
 unposts: $(unposts-result)
 
 $(build)/posts/%/index.html: $(content)/posts/%.md $(DEPENDENCIES)
-	$(call generate_post,"$<","$@",markdown)
+	$(call generate_post,"$<","$@",markdown-markdown_in_html_blocks)
 
 $(build)/posts/%/index.html: $(content)/posts/%.md.lhs $(DEPENDENCIES)
-	$(call generate_post,"$<","$@",markdown+lhs)
+	$(call generate_post,"$<","$@",markdown+lhs-markdown_in_html_blocks)
 
 
 $(build)/posts/%/index.html: $(content)/unposts/%.md $(DEPENDENCIES)
-	$(call generate_post,"$<","$@",markdown)
+	$(call generate_post,"$<","$@",markdown-markdown_in_html_blocks)
 
 $(build)/posts/%/index.html: $(content)/unposts/%.md.lhs $(DEPENDENCIES)
-	$(call generate_post,"$<","$@",markdown+lhs)
+	$(call generate_post,"$<","$@",markdown+lhs-markdown_in_html_blocks)
 
 ###############
 # Other Pages #

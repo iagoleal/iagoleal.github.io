@@ -99,7 +99,7 @@ More abstractly,
 an automaton is a system that can be in one of many _states_ $s \in \States$
 and at each state, you can choose among a set of _actions_ $a \in \Actions(s)$
 that transition the system to a new state $s' = T(s, a)$,
-where $T$ is called the system's _transition function_.
+where $T : (s : \States) \times \Actions(s) \to \States$ is called the system's _transition function_.
 
 An important notice: If you come from Computer Science,
 you are probably used to _finite_ state machines.
