@@ -247,17 +247,11 @@ export function figureSetPointHyperplane(id) {
   const gPlane = svg.append("g");
 
   function updateScene(x, y) {
-    // const isInside = intersectionPointCircle({x, y}, circle);
-
-    let isInside = false
-    gSet.selectAll(".convex-set").each(function() {
-      isInside = this.isPointInFill(new DOMPoint(x, y));
-      d3.select(this).classed("not-good", isInside);
-    });
+    const isInside = intersectionPointCircle({x, y}, circle);
 
     // Update convex set
-    // gSet.selectAll(".convex-set")
-    //   .classed("not-good", isInside);
+    gSet.selectAll(".convex-set")
+      .classed("not-good", isInside);
 
     // Update hyperplane
     const pos = new Hyperplane({x, y, normal: {x: circle.x - x, y: circle.y - y}});
