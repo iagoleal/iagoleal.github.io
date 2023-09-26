@@ -371,15 +371,15 @@ export function figureFunctionSupportingCut(id, f, df, minX, maxX) {
 
 
 export function figureFunctionCuts(id, f, df, minX, maxX) {
-  const width     = 350;
+  const width     = 400;
   const height    = 400;
   let cuts        = [];
   let hyperplanes = [];
 
   const svgs = d3.selectAll(`${id} > .diagram-container`).append("svg")
-    .attr("viewBox", `0 0 ${width} ${height}`)
-    .attr("width", "100%")
-    .attr("height", "100%")
+    .attr("viewBox", `${-width/2} ${-height/2} ${width} ${height}`)
+    .attr("preserveAspectRatio", "none")
+    .style("max-height", "50vw")
     .attr("class", "diagram");
 
   const svgFunc = d3.select(svgs.nodes()[0]);

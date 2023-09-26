@@ -11,11 +11,8 @@ header-includes:
 <style>
 /* CSS for styling */
 .diagram-container {
-  width: 100%;
-  flex: 1;
+  flex: auto 1 1;
   max-width: 100%;
-  min-width: 350px;
-  height: auto;
 }
 
 svg.diagram {
@@ -30,9 +27,8 @@ svg.diagram {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 1.5rem;
   justify-content: space-between;
-  align-items: center;
 }
 
 .multi-figure-container > svg {
@@ -140,7 +136,7 @@ But this is not today's subject, so I'm just going to gloss over it.
 
 Before we delve deeper into the world of cuts,
 you can stop and play with the interactive diagram below.
-Each click on a point in the left panel improves the approximation by cuts on the right.
+Each click on a point in the first panel improves the approximation by cuts on the other one.
 
 ```{=html}
 <div>
