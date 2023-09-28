@@ -490,8 +490,7 @@ export function figureLagrangian(id, f, minX, maxX) {
     const sliderLabel = document.getElementById("slider-lambda-value");
     katex.render(`\\lambda = ${lambda}`, sliderLabel);
 
-    plot(gLagrangian, Lagrangian(f, lambda), scale)
-      .classed("hyperplane", true);
+    plot(gLagrangian, Lagrangian(f, lambda), scale);
   }
 
   // Allow choosing lambda on the slider

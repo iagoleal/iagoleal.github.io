@@ -176,7 +176,7 @@ In this case, it is common to denote the cut as centered around $x_0$:
 $$  f(x) \ge f(x_0) + \inner<a, x - x_0>. $$
 
 
-```tikz
+```tikz {name="function-tight-cuts"}
 { [domain=-1.8:2, xscale=1.8]
   \draw[very thin, opacity=0.2, color=gray, path fading=west] (-2.9,-1.9) grid (2.9,1.9);
 
@@ -294,7 +294,7 @@ because in the section [Cuts from Derivatives] we will learn how to write such a
 
 Besides the function $f$, the algorithm needs three more inputs:
 a tolerance $\epsilon$, an initial point (can be any point) to evaluate,
-and an uniform bound $\forall x,\, M \le f(x)$.
+and a uniform bound $\forall x,\, M \le f(x)$.
 Since we are minimizing, this bound must exist for the problem to be well-posed.
 We begin with a polyhedral approximation $\tilde{f}_0$ which equals $M$ everywhere.
 The idea is to, at each iteration, give the oracle a point $x_n$.
@@ -363,7 +363,9 @@ My intuition for convex sets is that they are sets without holes nor wobbles.
 This encompasses a lot of the good ol' shapes you are familiar with,
 such as planes, balls, and polyhedra.
 
-```tikz
+
+:::multi-figure-container
+```tikz {class=diagram-container}
 \coordinate (M) at (4.25,1);
 \coordinate (x) at (1,0);
 \coordinate (y) at (2, 0.7);
@@ -382,7 +384,7 @@ such as planes, balls, and polyhedra.
 \path[-Latex, semithick, color=black] (M) edge[bend left, shorten <= 7pt] node[pos=1.1] {Convex Set} +(2, -1);
  ```
 
-```tikz
+```tikz {class=diagram-container}
 \coordinate (A) at (0,2);
 \coordinate (B) at (4.5,0);
 \coordinate (C) at (0,-2);
@@ -411,6 +413,7 @@ such as planes, balls, and polyhedra.
 
 \path[-Latex, semithick, color=black] (M) edge[bend right, shorten <= 7pt] node[pos=1.1] {Non-convex Set} +(2, 1);
 ```
+:::
 
 In this post, we will also talk a lot about hyperplanes and their relation to convex sets.
 It is useful to think about a hyperplane interchangeably as a geometrical and an analytical object.
@@ -538,7 +541,7 @@ Well, everybody knows a function's graph,
 
 $$ \graph(f) = \left\{ (x, y) \in \R^{n+1} \mid f(x) = y \right\}. $$
 
-The epigraph adjoins the suffix epi-, from greek ['ἐπί']{lang=grc}
+The epigraph adjoins the suffix _epi-_, from Greek ['ἐπί']{lang=grc}
 meaning ["above" or "on top of"](https://outils.biblissima.fr/fr/eulexis-web/?lemma=%E1%BC%90%CF%80%CE%AF&dict=LSJ),
 to denote the set of all points _above the graph_.
 
@@ -818,7 +821,7 @@ Let's look at it centered at $x_0$.
 $$ \check{f}(x) = \max\limits_{\lambda} L(x_0; \lambda) + \inner<\lambda, x - x_0>.$$
 
 The maximum above selects the best $\lambda$ for the chosen parameter $x$.
-Therefore its solution is above any other choice of $\lambda$ we can make,
+Therefore, its solution is above any other choice of $\lambda$ we can make,
 including our desired $\lambda_0$.
 
 $$ \check{f}(x) \ge L(x_0; \lambda_0) + \inner<\lambda_0, x - x_0>.$$
@@ -846,7 +849,7 @@ Of course, now is the time for you to point your finger towards me
 and say that there is no tightness guarantee in the previous theorem.
 Although the dual is the best relaxation possible,
 it could still be too below the primal value function.
-But remember that we discussed above that $\check{f}$ is the _tighest_ convex function
+But remember that we discussed above that $\check{f}$ is the _tightest_ convex function
 approximating $f$ from below.
 Thus, they should be equal whenever $f$ is convex.
 This is an important result called _strong duality_,
@@ -890,7 +893,7 @@ Acknowledgements
 ================
 
 I want to thank Ivani Ivanova and [Pedro Xavier](https://pedromxavier.github.io)
-for commenting and proof-reading this post's first draft.
+for commenting and proofreading this post's first draft.
 
 <script type="module">
   import * as figures from "./figures.js";
