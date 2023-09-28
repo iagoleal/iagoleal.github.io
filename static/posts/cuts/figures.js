@@ -468,8 +468,6 @@ export function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
     updateScene()
   });
 
-  plot(graph, f, scale)
-    .style("opacity", 0.1);
   updateScene();
 }
 
