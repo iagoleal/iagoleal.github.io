@@ -20,24 +20,11 @@ local fmt = string.format
 -- that comes before the code block in the post.
 local tex_snippets = {}
 
+local illustrators = {}
+
 -----------------------------
 -- Shell-like functionality
 -----------------------------
-
-local function memoize(f)
-  local memory = {}
-  return function(x)
-    local fx = memory[x]
-    if fx then
-      return fx
-    else
-      memory[x] = f(x)
-      return memory[x]
-    end
-  end
-end
-
-local sha1 = memoize(pandoc.sha1)
 
 local function mkparent(fname)
   return pandoc.system.make_directory(path.directory(fname), true)
@@ -95,9 +82,10 @@ local function make_absolute(fname)
   end
 end
 
--------------------
--- Block types
--------------------
+-------------------------
+-- Source File Templates
+-------------------------
+
 local template_tag = [[
 <figure class="illustration">
   <object data="%s" type="image/svg+xml">
@@ -109,6 +97,29 @@ local template_tag = [[
 local function format_tag(fname)
   return template_tag:format(fname, fname)
 end
+
+-------------------------
+-- Graphviz Illustrator
+-------------------------
+
+illustrators.graphviz = {
+  match = function(class)
+    return class == "dot"
+  end,
+
+  format = function(block)
+    return block.text
+  end,
+
+  -- Turn a string in Graphviz DOT language into a SVG image.
+  convert = function(target, code)
+    return pandoc.pipe("dot", {"-Tsvg", "-o", target}, code)
+  end
+}
+
+-------------------------
+-- Tikz Illustrator
+-------------------------
 
 local template_tikz = [[
 \documentclass{standalone}
@@ -138,54 +149,55 @@ local template_tikz = [[
 \end{document}
 ]]
 
-local function format_tikz(block)
-  local pkgs     = block.attributes["usepackage"]  or ""
-  local libs     = block.attributes["tikzlibrary"] or ""
-  local preamble = block.attributes["preamble"]    or ""
-  local rawtex   = table.concat(tex_snippets, "\n\n")
 
-  local env
-  if     block.classes[1] == "tikz" then
-    env = "tikzpicture"
-  elseif block.classes[1] == "tikzcd" then
-    pkgs = pkgs .. ",tikz-cd"
-    env = "tikzcd"
+illustrators.tikz = {
+  match = function(class)
+    return class == "tikz" or class == "tikzcd"
+  end,
+
+  format = function(block)
+    local pkgs     = block.attributes["usepackage"]  or ""
+    local libs     = block.attributes["tikzlibrary"] or ""
+    local preamble = block.attributes["preamble"]    or ""
+    local rawtex   = table.concat(tex_snippets, "\n\n")
+
+    local env
+    if     block.classes[1] == "tikz" then
+      env = "tikzpicture"
+    elseif block.classes[1] == "tikzcd" then
+      pkgs = pkgs .. ",tikz-cd"
+      env = "tikzcd"
+    end
+
+    return template_tikz:format(pkgs, libs, rawtex, preamble, env, block.text, env)
+  end,
+
+  -- Turn a string containing Latex code into a SVG image.
+  convert = function(target, code)
+    return pandoc.pipe("scripts/tex2svg", {"-", target}, code)
   end
+}
 
-  return template_tikz:format(pkgs, libs, rawtex, preamble, env, block.text, env)
-end
+------------------------------------------
+-- Actual figure making
+------------------------------------------
 
-local function islatex(s)
-  return s == "tikz" or s == "tikzcd"
-end
-
--- Turn a latex string into an svg string.
-local function latex_to_svg(target, code)
-  local tex2svg = "scripts/tex2svg"
-
-  mkparent(target)
-  return pandoc.pipe(tex2svg, {"-", target}, code)
-end
-
--- Turn a string in Graphviz DOT language into an SVG image.
-local function dot_to_svg(target, code)
-  mkparent(target)
-  return pandoc.pipe("dot", {"-Tsvg", "-o", target}, code)
-end
-
-
-local function make_figure(svg_maker, content)
-  local svgname   = sha1(content) .. ".svg"
+local function make_figure(svg_maker, content, name)
+  -- Assumes all outputs are of the form 'build/path/to/page/index.html'
   local page_path = path.make_relative(path.directory(PANDOC_STATE.output_file), "build")
-  local cachefile = path.join {"cache", page_path, svgname }
-  local buildfile = path.join {"build", page_path, svgname }
+  local hashed    = pandoc.sha1(content) .. ".svg"
+  local outname   = name and (name .. ".svg") or hashed
+  local cachefile = path.join {"cache", page_path, hashed}
+  local buildfile = path.join {"build", page_path, outname}
 
   if not file_exists(cachefile) then
+    mkparent(cachefile)
     svg_maker(cachefile, content)
   end
 
   copy(cachefile, buildfile)
-  return pandoc.RawBlock("html", format_tag(svgname))
+
+  return pandoc.RawBlock("html", format_tag(outname))
 end
 
 return {
@@ -199,10 +211,11 @@ return {
     end,
 
     CodeBlock = function(block)
-      if block.classes[1] == "dot" then
-        return make_figure(dot_to_svg, block.text)
-      elseif islatex(block.classes[1]) then
-        return make_figure(latex_to_svg, format_tikz(block))
+      for _, illustrator in pairs(illustrators) do
+        if illustrator.match(block.classes[1]) then
+          local text = illustrator.format(block)
+          return make_figure(illustrator.convert, text, block.attributes.name)
+        end
       end
     end,
   }
