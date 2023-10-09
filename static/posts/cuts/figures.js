@@ -418,7 +418,7 @@ export function figureFunctionCuts(id, f, df, minX, maxX) {
     updateScene(cuts, hyperplanes);
   });
 
-  d3.select("#reset-function-cuts").on("click", function(event) {
+  d3.select("#reset-function-cuts").on("click", function(_event) {
     cuts        = [];
     hyperplanes = [];
 
@@ -433,7 +433,6 @@ export function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
   const svg   = d3.select(id);
   const scale = new Scale(svg, [minX, maxX], [0, 5]);
 
-  const graph  = svg.append("g");
   const planes = svg.append("g");
   const poly   = svg.append("g");
   const marks  = svg.append("g");
@@ -461,7 +460,7 @@ export function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
     updateScene(...mouseUnscale(event, scale));
   });
 
-  d3.select("#reset-epigraph-carving").on("click", function(event) {
+  d3.select("#reset-epigraph-carving").on("click", function(_event) {
     cuts        = [];
     hyperplanes = [];
 

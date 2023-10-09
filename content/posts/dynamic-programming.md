@@ -658,7 +658,7 @@ Essentially, we work for $N$ stages and then reach $\blacksquare$,
 where we can just relax and do nothing for the rest of eternity.
 
 
-<object data="finite-horizon.svg" type="image/svg+xml" width=100%>
+<object data="finite-horizon.svg" type="image/svg+xml" width="100%">
 </object>
 
 
@@ -690,14 +690,14 @@ We repeat this procedure until we reach the first stage.
 This calculates an optimal policy by induction,
 but moving "backwards" in time.
 
+```{=html}
 <object data="backward-induction.svg" type="image/svg+xml" width="100%">
   <img src="backward-induction.svg"
        alt=""
        title="Backward induction algorithm"
-       width="100%"/>
+       width="100%" />
 </object>
-
-
+```
 
 In Julia code, the algorithm looks like this:
 
