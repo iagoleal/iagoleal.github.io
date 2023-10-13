@@ -1,3 +1,5 @@
+@import "settings.css";
+
 /*
   ~*~ Custom fonts ~*~
 */
@@ -29,9 +31,32 @@ html {
   font-family:     'Montserrat', 'Avenir', 'Avenir Next LT Pro', 'Corbel', 'URW Gothic', source-sans-pro, sans-serif;
 }
 
+body {
+  background-color: var(--color-background);
+  color:            var(--color-typography);
+  margin:           auto;
+  font-size:        1.8rem;
+  line-height:      1.618;
+  padding:          16px;
+  overflow-wrap:    break-word;
+  word-wrap:        break-word;
+  word-break:       break-word;
+  hyphens:          auto;
+  /* TODO: Get rid of this */
+  max-width:        38em;
+}
+
+::selection {
+  color:            var(--color-typography);
+  background-color: var(--color-accent);
+}
+
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Montserrat', 'Lato', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', 'Noto Sans', sans-serif;
-  font-weight: 500;
+  line-height:   1.1;
+  font-family:   'Montserrat', 'Lato', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', 'Noto Sans', sans-serif;
+  font-weight:   500;
+  margin-top:    3rem;
+  margin-bottom: 1.5rem;
 }
 
 h1 {
@@ -42,7 +67,6 @@ h1 {
    There is too little space on small screens for this to look good. */
 p {
   text-align: justify;
-  hyphens:    auto;
 }
 
 @media (max-width: 382px) {
@@ -57,35 +81,45 @@ figure {
 }
 
 img, video, object {
-  height:       auto;
-  margin-left:  auto;
-  margin-right: auto;
-  display:      block;
-  max-width:    100%;
+  display:   block;
+  height:    auto;
+  margin:    0 auto;
+  max-width: 100%;
+  align:     middle;
 }
-
-object {
-  align: middle;
-}
-
 
 ul {
   list-style-type: square;
 }
 
+/* Verbatim Code */
+
 pre {
+  display:          block;
   background-color: initial;
   border-radius:    12px;
-  overflow-x:       auto;
   font-family:      'IBM Plex Mono', Consolas, Monaco, monospace;
+  overflow-x:       auto;
 }
+
+code {
+  font-size:        0.9em;
+  padding:          0 0.5em;
+  white-space:      pre-wrap;
+}
+
+pre > code {
+  padding:          0;
+  white-space:      pre;
+}
+
+/* Decorations */
 
 hr {
   border:        0;
   border-bottom: 1px solid #d2d2d2;
   width:         100%;
 }
-
 
 /*
   ~*~ Class-dependent ~*~

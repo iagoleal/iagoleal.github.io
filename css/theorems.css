@@ -14,12 +14,12 @@ http://drz.ac/downloads/code/css/theorems.css
   padding-right:  0.2em;
   padding-top:    0.1em;
   padding-bottom: 0em;
-  border-left: 5px solid;
+  border-left:    5px solid;
 }
 
 .Theorem::before, .Lemma::before, .Definition::before {
   font-weight: bold;
-  font-style: normal;
+  font-style:  normal;
   white-space: nowrap;
 }
 
@@ -59,18 +59,18 @@ http://drz.ac/downloads/code/css/theorems.css
 }
 
 .Proof {
-  display: block;
-  margin: 12px 0;
+  display:    block;
+  margin:     12px 0;
   font-style: normal;
-  overflow: hidden;
+  overflow:   hidden;
 }
 
 .Proof > p:first-child:before {
-  content: "Proof. ";
+  content:    "Proof. ";
   font-style: italic;
 }
 
 .Proof > p:last-child:after {
   content: "\25FB";
-  float:right;
+  float:   right;
 }
