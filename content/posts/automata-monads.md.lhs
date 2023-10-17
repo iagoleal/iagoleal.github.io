@@ -1,104 +1,169 @@
 ---
-title: Exploring Automata with Monads
+title: Putting Automata into Context
 keywords: [haskell, automata]
 date: 2023-10-13
 ---
 
-Recently, I have been brushing up my knowledge of Formal Languages
-and stumbled into the many different faces of finite automata.
-And what is a better way to review then to write some Haskell?
+\def\powset{\mathcal{P}}
 
-One thing about formal languages that always itches me out
-is how similar some definitions are to one another.
+Recently, I have been brushing up my knowledge of Formal Languages
+and stumbled again into the many different faces of finite automata.
 Most materials present DFAs, NFAs and company
-as distinct concepts with their own properties and theorems.
-Well, if you read my posts, you probably already noticed
-that how much I like generic algorithms.
-Let's, therefore, explore the world of finite automata
-with an eye into unifying them.
+as distinct beasts, each with their own properties and theorems.
+Nevertheless, I couldn't get out of my mind that all definitions seemed _too similar_.
+After hitting my head into a couple walls, I finally noticed a link!
+Each kind of finite automaton has a dynamics that runs in a certain context,
+or equivalently, that is able to apply certain effects.
+
+The cooler part is that the way you write these contexts
+is exactly the same as you would do in a Haskell program: Monads.
+Even more, one models things such as nondeterminism or partiality
+using the exact same monads as in real life code.
+
+Depending on how used you are to these things,
+this last statement can be either obvious or shocking.
+Well, I can't say it for you.
+But for me, it was a rather interesting finding.
 
 > {-# LANGUAGE RecordWildCards #-}
-> {-# LANGUAGE DuplicateRecordFields #-}
-> import Data.Foldable          (Foldable(foldl'), foldlM)
-> import Control.Monad.Identity (Identity)
+> import Data.Foldable          (foldlM)
+> import Control.Monad.Identity (Identity, runIdentity)
 
-Deterministic Finite Automata
-=============================
+One Definition to Rule Them All
+===============================
 
-For a start, we will consider the simplest family of them all,
-deterministic finite automata.
-Their mathematical definition is rather dry and goes something like this.
+Since this post is about abstraction,
+let's start with a general definition.
+We will closely follow the [standard definition for a finite automaton](https://en.wikipedia.org/wiki/Finite-state_machine#Mathematical_model)
+with one twist: the transition function is parameterized for a certain context.
 
-:::Definition
-A **deterministic finite automaton** is a 5-tuple $(S, A, \delta, s_0, T)$
-where
-
-- $S$ is a finite set of _states_;
-- $A$ is a finite set of symbols called the _alphabet_;
-- $s_0$ is the _initial state_;
-- $T \subset S$ is a set of _accepting states_.
-- $\delta : S \times A \to S$ is the _transition function_;
-:::
-
-Ok, although the above definition is standard, it is also dryer than the Atacama.
-Besides, I nerver quite understood Computer Scientists' gusto for defining everything in terms of n-tuples.
-Its advantage, however, is in how easy it is to translate into a programming language.
-The finite sets become types, the subset relation becomes a predicate
-and our 5-tuple becomes a product type.
-
-> -- | Deterministic Finite Automaton with states `s` and alphabet `a`.
-> -- The type parameters are assumed to represent finite sets.
-> data DFA s a = DFA
->   { initial    :: s
->   , accepting  :: s -> Bool
->   , transition :: s -> a -> s
->   }
-
-Despite this algebraic definition,
-my intuition (and I suppose everyone else's) for automata is as a dynamical system.
-It starts at the initial state and, as the user feeds it characters in the alphabet,
-it accordngly transitions from state to state until the input ends.
-This represents a program that one can run in order to achieve some final state.
-
-> runDFA :: DFA s a -> [a] -> s
-> runDFA DFA{..} = foldl' transition initial
-
-When the dynamics ends, we can test if it arrived at one of the accepting states.
-In the affirmative case, we say that this automaton recognizes the input word.
-A large chunck of automata theory consists of idnetifying which
-automata can recognize all words on which languages.
-
-> recognizeDFA :: DFA s a -> [a] -> Bool
-> recognizeDFA aut@DFA{..} = accepting . runDFA aut
-
-Each automaton represents a program that one can run
-by feeding it a word in its alphabet,
-and the automaton will tran
-
-The transition function $\delta$ defines a graph with nodes in $S$
-and edges labeled by $A$.
-
-Many Flavours of Automata
-=========================
-
-> -- Finite automaton with state s, alphabet a
-> -- and a monadic context m.
+> -- | Finite automaton with state `s`, alphabet `a` and a monadic context `m`.
+> --   The type parameters `s` and `a` are assumed to represent finite sets.
 > data Automaton m s a = Automaton
->   { initial    :: s
->   , accepting  :: s -> Bool
->   , transition :: s -> a -> m s
+>   { initial    :: s               -- ^ Initial State
+>   , transition :: s -> a -> m s   -- ^ Change state with a context.
+>   , accepting  :: s -> Bool       -- ^ Accepting subset as a predicate.
 >   }
+
+The type above is a simple model of computation
+written as a controllable dynamical system.
+Given a string of characters in the alphabet,
+it starts in the `initial` state and,
+for each character follows the appropriate `transition`
+into the next state.
+The context `m` is a monad that represents what effects our automaton is able to perform.
+This way we can run the automaton by consuming the input characters until we arrive in the final state (in context).
 
 > run :: Monad m => Automaton m s a -> [a] -> m s
 > run Automaton{..} = foldlM transition initial
 
-> recognize :: (Monad m, Accepting m) => Automaton m s a -> [a] -> Bool
-> recognize aut@Automaton{..} = exists accepting . run aut
+The function `foldlM` is just Haskell's way of repeatedly iterating
+a transition from the initial state.
+Notice that in the above we are using `RecordWildCards`
+to put the `Automaton`'s in scope.
 
-> class Accepting m where
->  exists :: (a -> Bool) -> (m a -> Bool)
+By switching the Monad `m`, we recover different families of automata.
+For example, **Deterministic Finite Automata** use the `Identity` Monad
+because their transition is an ordinary function.
 
-> type FDA  = Automaton Identity
-> type PDFA = Automaton Maybe
+> -- | Deterministic Finite Automaton.
+> type DFA  = Automaton Identity
+
+On the other hand, for **Nondeterministic Finite Automata**,
+we can use the Haskell idiom of modeling power sets using Lists.
+This way, the transition has type `s -> a -> [s]` and represents a relation between states.
+
+> -- | Non-deterministic Finite Automaton.
 > type NFA  = Automaton []
 
+
+Automata Theory is all about languages.
+Thus, given an automaton, one is generally interested in using it to match or recognize input strings.
+To do that, we will need our remaining field `accepting`.
+If after running the automaton, it ends in an accepting state, we say that it recognizes the input.
+
+
+> recognize :: (Monad m, Context m) => Automaton m s a -> [a] -> Bool
+> recognize aut@Automaton{..} = possible accepting . run aut
+
+In order to complete the above we must define the `possible` function.
+By inspecting its type,
+
+    possible :: (s -> Bool) -> (m s -> Bool)
+
+We see that it lifts a predicate about a state into a predicate about a monadic state.
+In the case of all our examples,
+it will be equivalent to being possible that the final state is an accepting one.
+Hence its name.
+
+Since the `possible` function depends on the chosen Monad,
+we model it using a typeclass.
+
+> class Context m where
+>  possible :: (a -> Bool) -> (m a -> Bool)
+
+
+Many Flavours of Automata
+=========================
+
+Now that we are armed with the code for recognizing words,
+it is time to explore different automata.
+
+Let's begin with our old friends `DFA` and `NFA`
+and then proceed to their more exotic cousins.
+
+Deterministic
+-------------
+
+These are the simplest automata of them all
+because, after running them, we have a single unambigous state.
+To test whether it is accepting, all we have to do is checking it.
+
+> instance Context Identity where
+>  possible pred = pred . runIdentity
+
+Nondeterministic
+----------------
+
+These automata arrive at a whole list of states.
+We consider them to accept a word if any of the final states is accepting.
+
+> instance Context [] where
+>  possible pred = any pred
+
+Altough we aren't using parallel programming in here,
+you can think of these automata as following many sequences of states in parallel
+and, in the end, it recognizes the word if any sequence arrived at an accepting state.
+
+Partial Transitions
+-------------------
+
+An advantage of parameterizing the return context is that we are able to plug other Monads
+to get their effects on the automaton transition.
+For example, in a DFA any state is required to have a valid transition
+for any character in the alphabet.
+This can lead to some peculiar modeling where an automaton
+must have a lot of characters transitioning to some error state.
+Wouldn't it be better to allow the state machine to fail
+whenever it encounters a character that is invalid to the current state?
+
+Well, if you are in any way used to Haskell,
+you should know what Monad models a computation that maybe happens.
+
+> -- | Partial Deterministic Finite Automaton.
+> type PDFA = Automaton Maybe
+>
+> instance Context Maybe where
+>  possible pred Nothing  = False
+>  possible pred (Just s) = pred s
+
+
+
+
+Probabilistic Finite Automata
+-----------------------------
+
+Going Quantum
+-------------
+
+- Quantum http://blog.sigfpe.com/2007/03/monads-vector-spaces-and-quantum.html
