@@ -13,7 +13,7 @@ as distinct beasts, each with their own properties and theorems.
 Nevertheless, I couldn't get out of my mind that all definitions seemed _too similar_.
 After hitting my head into a couple walls, I finally noticed a link!
 Each kind of finite automaton has a dynamics that runs in a certain context,
-or equivalently, that is able to apply certain effects.
+or equivalently, that is able to apply certain effects while it executes.
 
 The cooler part is that the way you write these contexts
 is exactly the same as you would do in a Haskell program: Monads.
@@ -158,10 +158,74 @@ you should know what Monad models a computation that maybe happens.
 >  possible pred (Just s) = pred s
 
 
-
-
 Probabilistic Finite Automata
 -----------------------------
+
+Let's get a bit less classical with [Probabilistic Finite Automata](https://en.wikipedia.org/wiki/Probabilistic_automaton).
+These are similar to non-deterministic automata but
+also quantify the system's chance of taking a certain transition.
+
+Since Haskell does not have a built-in probabilistic programming,
+we have to first define a Monad that represents probability distributions.
+In order to not lose ourselves into a tangent,
+we will write the simplest probability monad possible
+without much worry about performance or flexibility.
+But know that there are production grade probability programming libraries in Haskell,
+such as [monad-bayes](https://hackage.haskell.org/package/monad-bayes).
+
+We represent a probability distribution as a list of outcomes paired to their respective probabilities.
+
+> data Dist p a = Dist [(a, p)]
+>   deriving (Functor, Show)
+>
+> listProb (Dist x) = x
+
+With an eye on some further applications,
+we are also parameterizing it on the probability's type.
+Nevertheless, for now we are interested on Real probabilities.
+
+> -- Probabilities over R
+> -- The coefficients are assumed to be in [0, 1] and to sum to 1.
+> type Prob = Dist Double
+
+It has Applicative and Monad instances representing,
+respectively, the interaction of independent and dependent random variables.
+
+> instance Num p => Applicative (Dist p) where
+>  pure x = Dist [(x, 1)]
+>  Dist fs <*> Dist xs = Dist [(f x, p * q) | (f, p) <- fs, (x, q) <- xs]
+>
+> instance Num p => Monad (Dist p) where
+>  Dist xs >>= g = Dist [(y, p * q) | (x, p) <- xs, (y, q) <- listProb (g x)]
+
+Finally, since we are assuming everything is finite,
+we can model events as predicates.
+The probability of an event happening is the sum of the probabilities
+for all outcomes for which the event holds.
+
+> prob :: (a -> Bool) -> Prob a -> Double
+> prob pred = sum . fmap snd . filter (pred . fst) . listProb
+
+Great! Despite being a bit crude,
+the above should be enough for our stochastic ambitions in this post.
+Also remember that we are glossing over a lot of details in here.
+So it is completely reasonable to not understand everything above.
+
+Our Probabilistic Finite Automaton is then an automaton whose contexts
+are probability distributions.
+That is, each transition is non-deterministic and uncertain:
+you don't know for which state it transitions but know the chance for each one.
+
+> -- | Partial Deterministic Finite Automaton.
+> type PFA = Automaton Prob
+
+Given a probability distribution on the final states,
+we consider that it is possible to be accepting if there is a non-zero probability
+to accept the input string.
+
+> instance Context Prob where
+>  possible pred m = prob pred m > 0
+
 
 Going Quantum
 -------------
