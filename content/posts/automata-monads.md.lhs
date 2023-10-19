@@ -28,6 +28,9 @@ But for me, it was a rather interesting finding.
 > {-# LANGUAGE RecordWildCards #-}
 > import Data.Foldable          (foldlM)
 > import Control.Monad.Identity (Identity, runIdentity)
+> import Data.Complex
+> import Data.Bifunctor (second)
+> import Data.Map qualified as Map
 
 One Definition to Rule Them All
 ===============================
@@ -83,7 +86,7 @@ To do that, we will need our remaining field `accepting`.
 If after running the automaton, it ends in an accepting state, we say that it recognizes the input.
 
 
-> recognize :: (Monad m, Context m) => Automaton m s a -> [a] -> Bool
+> recognize :: (Finite s, Monad m, Context m) => Automaton m s a -> [a] -> Bool
 > recognize aut@Automaton{..} = possible accepting . run aut
 
 In order to complete the above we must define the `possible` function.
@@ -100,7 +103,7 @@ Since the `possible` function depends on the chosen Monad,
 we model it using a typeclass.
 
 > class Context m where
->  possible :: (a -> Bool) -> (m a -> Bool)
+>  possible :: Finite s => (s -> Bool) -> (m s -> Bool)
 
 
 Many Flavours of Automata
@@ -158,8 +161,8 @@ you should know what Monad models a computation that maybe happens.
 >  possible pred (Just s) = pred s
 
 
-Probabilistic Finite Automata
------------------------------
+It's all a matter of chance
+---------------------------
 
 Let's get a bit less classical with [Probabilistic Finite Automata](https://en.wikipedia.org/wiki/Probabilistic_automaton).
 These are similar to non-deterministic automata but
@@ -226,8 +229,54 @@ to accept the input string.
 > instance Context Prob where
 >  possible pred m = prob pred m > 0
 
-
 Going Quantum
 -------------
 
-- Quantum http://blog.sigfpe.com/2007/03/monads-vector-spaces-and-quantum.html
+I remember reading some time ago [a post by Dan Piponi](http://blog.sigfpe.com/2007/03/monads-vector-spaces-and-quantum.html)
+about the similarities between probabilistic and quantum programming.
+Hence, after writing the previous section,
+I started thinking about if it was possible to also represent [Quantum Finite Automata](https://en.wikipedia.org/wiki/Quantum_finite_automaton)
+with minimal changes in the above formalism.
+
+The idea on Dan Piponi's post is to write a Quantum Monad
+as a Distribution Monads where the probabilities (or amplitudes) are complex numbers.
+
+> -- Quantum Amplitudes over C
+> -- The coefficients are assumed to lie in a unity circle, i.e., C |c_i|^2 = 1.
+> type Quantum = Dist (Complex Double)
+
+Among the main characteristics of a Quantum system is [wavefunction collapse](http://en.wikipedia.org/wiki/Wavefunction_collapse).
+When we observe the system, it collapses into a classical one
+with the probability for each eigenstate given by the square of the amplitude's magnitude.
+
+> observe :: Ord s => Quantum s -> Prob s
+> observe = Dist . fmap (second (magnitude . (^2))) . collect
+>  where
+>   collect = Map.toList . Map.fromListWith (+) . listProb
+
+Alright, after this quantum speed run,
+I imagine that you already know what a quantum automata should look like.
+
+> -- Quantum Finite Automaton
+> type QFA = Automaton Quantum
+
+Well, to be fair, there are some different descriptions of QFAs in the literature
+and I don't quite know to which one the above corresponds.
+If there is anybody in the audience more versed in Quantum Computing than I am,
+please shout about anything interesting that may be happening here.
+
+To wrap up this section, let's define how a QFA recognizes a language.
+Similarly to its classical cousin, we say that it possibly accepts
+a distribution over the final states if there is a non-zero probability
+of acceptance after we observe the system.
+
+> instance Context Quantum where
+>  possible pred m = prob pred (observe m) > 0
+
+
+
+
+
+
+
+> class Ord a => Finite a
