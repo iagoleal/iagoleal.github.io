@@ -1,5 +1,5 @@
 ---
-title: Putting Automata into Context
+title: A Fistful of Automata
 keywords: [haskell, automata]
 date: 2023-10-13
 ---
@@ -15,9 +15,9 @@ After hitting my head into a couple walls, I finally noticed a link!
 Each kind of finite automaton has a dynamics that runs in a certain context,
 or equivalently, that is able to apply certain effects while it executes.
 
-The cooler part is that the way you write these contexts
+The coolest part is that the way you write these contexts
 is exactly the same as you would do in a Haskell program: Monads.
-Even more, one models things such as nondeterminism or partiality
+Even more, you can model things such as nondeterminism or partiality
 using the exact same monads as in real life code.
 
 Depending on how used you are to these things,
@@ -27,9 +27,9 @@ But for me, it was a rather interesting finding.
 
 > {-# LANGUAGE RecordWildCards #-}
 > import Data.Foldable          (foldlM)
-> import Control.Monad.Identity (Identity, runIdentity)
-> import Data.Complex
-> import Data.Bifunctor (second)
+> import Control.Monad.Identity (Identity(..))
+> import Data.Bifunctor         (second)
+> import Data.Complex           (Complex, magnitude)
 > import Data.Map qualified as Map
 
 One Definition to Rule Them All
@@ -52,8 +52,7 @@ The type above is a simple model of computation
 written as a controllable dynamical system.
 Given a string of characters in the alphabet,
 it starts in the `initial` state and,
-for each character follows the appropriate `transition`
-into the next state.
+for each character, follows the appropriate `transition` into the next state.
 The context `m` is a monad that represents what effects our automaton is able to perform.
 This way we can run the automaton by consuming the input characters until we arrive in the final state (in context).
 
@@ -61,33 +60,29 @@ This way we can run the automaton by consuming the input characters until we arr
 > run Automaton{..} = foldlM transition initial
 
 The function `foldlM` is just Haskell's way of repeatedly iterating
-a transition from the initial state.
+a transition from the initial state
+while executing the monadic effects.
 Notice that in the above we are using `RecordWildCards`
-to put the `Automaton`'s in scope.
+to put the `Automaton`'s fields in scope.
 
 By switching the Monad `m`, we recover different families of automata.
 For example, **Deterministic Finite Automata** use the `Identity` Monad
-because their transition is an ordinary function.
-
-> -- | Deterministic Finite Automaton.
-> type DFA  = Automaton Identity
-
-On the other hand, for **Nondeterministic Finite Automata**,
-we can use the Haskell idiom of modeling power sets using Lists.
+because their transition is an ordinary function,
+while for **Nondeterministic Finite Automata**,
+we can use the Haskell idiom of modeling power sets via lists.
 This way, the transition has type `s -> a -> [s]` and represents a relation between states.
-
-> -- | Non-deterministic Finite Automaton.
-> type NFA  = Automaton []
-
 
 Automata Theory is all about languages.
 Thus, given an automaton, one is generally interested in using it to match or recognize input strings.
 To do that, we will need our remaining field `accepting`.
 If after running the automaton, it ends in an accepting state, we say that it recognizes the input.
 
-
 > recognize :: (Finite s, Monad m, Context m) => Automaton m s a -> [a] -> Bool
 > recognize aut@Automaton{..} = possible accepting . run aut
+
+I think it is pretty cool, given all it does, how short this function turns out to be!
+Another point of interest is that with our view of subsets as predicates,
+what `recognize` does is to convert an automaton into the language (subset of all strings) it recognizes.
 
 In order to complete the above we must define the `possible` function.
 By inspecting its type,
@@ -105,36 +100,52 @@ we model it using a typeclass.
 > class Context m where
 >  possible :: Finite s => (s -> Bool) -> (m s -> Bool)
 
+We also limit the function's scope to finite state spaces.
+I could say that this is to conform to the definition, but, to be fair,
+it is for technical reasons in some of the examples.
+We shall only use one property of finite sets:
+they are always orderable and comparable for equality.
+
+> class (Eq a, Ord a) => Finite a
 
 Many Flavours of Automata
 =========================
 
 Now that we are armed with the code for recognizing words,
 it is time to explore different automata.
-
 Let's begin with our old friends `DFA` and `NFA`
 and then proceed to their more exotic cousins.
 
-Deterministic
--------------
+Deterministic Finite Automata
+-----------------------------
 
 These are the simplest automata of them all
-because, after running them, we have a single unambigous state.
+because, after running them, we have a single unambiguous state.
+
+> -- | Deterministic Finite Automaton.
+> type DFA  = Automaton Identity
+
 To test whether it is accepting, all we have to do is checking it.
 
 > instance Context Identity where
->  possible pred = pred . runIdentity
+>  possible pred (Identity s) = pred s
 
-Nondeterministic
-----------------
+Nondeterministic Finite Automata
+--------------------------------
 
-These automata arrive at a whole list of states.
+To model nondeterminism,
+we use automaton that arrive at a whole list of states.
+This way, the transition represents a relation instead of a simple function.
+
+> -- | Non-deterministic Finite Automaton.
+> type NFA  = Automaton []
+
 We consider them to accept a word if any of the final states is accepting.
 
 > instance Context [] where
 >  possible pred = any pred
 
-Altough we aren't using parallel programming in here,
+Although we aren't using parallel programming in here,
 you can think of these automata as following many sequences of states in parallel
 and, in the end, it recognizes the word if any sequence arrived at an accepting state.
 
@@ -155,18 +166,37 @@ you should know what Monad models a computation that maybe happens.
 
 > -- | Partial Deterministic Finite Automaton.
 > type PDFA = Automaton Maybe
->
+
+For a word to be accepted,
+the run should succeed and end with an accepting state.
+
 > instance Context Maybe where
 >  possible pred Nothing  = False
 >  possible pred (Just s) = pred s
 
+As an example of an automaton that is easier to write with partiality,
+consider the Christmas-themed state machine that recognizes the language `ho(ho)*`.
+Notice how we only need to describe useful arrows.
+
+```tikz {tikzlibrary="automata"}
+{ [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]}]
+  \node[state, initial, initial text= ]  (q_0)                {};
+  \node[state]                           (q_1) [right=of q_0] {};
+  \node[state,accepting]                 (q_2) [right=of q_1] {};
+
+  \path[->] (q_0) edge             node [above] {h} (q_1)
+            (q_1) edge             node [above] {o} (q_2)
+            (q_2) edge [bend left] node [below] {h} (q_1);
+}
+```
 
 It's all a matter of chance
 ---------------------------
 
 Let's get a bit less classical with [Probabilistic Finite Automata](https://en.wikipedia.org/wiki/Probabilistic_automaton).
-These are similar to non-deterministic automata but
-also quantify the system's chance of taking a certain transition.
+These are close cousins to Markov Decision processes
+who act similarly to non-deterministic automata,
+while also quantifying the system's chance of taking a certain transition.
 
 Since Haskell does not have a built-in probabilistic programming,
 we have to first define a Monad that represents probability distributions.
@@ -239,7 +269,7 @@ I started thinking about if it was possible to also represent [Quantum Finite Au
 with minimal changes in the above formalism.
 
 The idea on Dan Piponi's post is to write a Quantum Monad
-as a Distribution Monads where the probabilities (or amplitudes) are complex numbers.
+as a Distribution Monad where the probabilities (or amplitudes) are complex numbers.
 
 > -- Quantum Amplitudes over C
 > -- The coefficients are assumed to lie in a unity circle, i.e., C |c_i|^2 = 1.
@@ -274,9 +304,38 @@ of acceptance after we observe the system.
 >  possible pred m = prob pred (observe m) > 0
 
 
+Parting Thoughts
+================
 
+Well, this post was more exploratory than usual,
+but I hope that you still had some fun.
+As I was learning many parts while I wrote it,
+there are still many questions to ask and answer!
+For example, what about other monads?
+What does an automaton with a Continuation monad represents?
+As everything that is related to continuations, I bet it should be interesting.
 
+Also, while all examples in this post fall into what people tend to consider "finite automata",
+I have an itch that it should be possible to model [pushdown automata](https://en.wikipedia.org/wiki/Pushdown_automaton)
+using a `State [w]` monad to represent the stack.
+However, I was unable to think of a way to write it
+such that the transitions depend only on the top of the stack instead of the whole list.
+It would be rather cool to go up the Chomsky hierarchy this way.
 
+Finally, our `possible` function is rather similar to `any` from the Prelude.
+In fact, they are the same for three of our examples: `Identity`, `[]`, and `Maybe`.
+Perhaps it's possible to write a Foldable instance for `Prob` and `Quantum`
+such that `any` does what we want.
+I decided to not pursue this because of the technical reasons with the `Ord` instance
+and because `Foldable` is famously not the most lawful among the typeclasses.
+Thus, I wasn't expecting any great insight to come from it.
 
+It's now time to goodbye.
+If you have any idea or insight about the above,
+or if you just like automata and want to discuss about this wonderful corner of mathematics,
+feel free to send me a mail!
 
-> class Ord a => Finite a
+Acknowledgments
+===============
+
+A lot of ideas on this post came after discussions with Alexandre Pierre.
