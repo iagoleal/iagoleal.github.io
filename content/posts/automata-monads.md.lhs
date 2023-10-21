@@ -1,7 +1,7 @@
 ---
 title: A Fistful of Automata
 keywords: [haskell, automata]
-date: 2023-10-13
+date: 2023-10-20
 ---
 
 \def\powset{\mathcal{P}}
