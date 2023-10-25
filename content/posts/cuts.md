@@ -527,7 +527,7 @@ and define them as infinity elsewhere.
 The most common definition in the wild for a _convex function_
 is through _Jensen's inequality_,
 
-$$ f(\lambda x) + (1 - \lambda) y  \le \lambda f(x) + (1 - \lambda) f(y).$$
+$$ f\left(\lambda x + (1 - \lambda) y\right)  \le \lambda f(x) + (1 - \lambda) f(y).$$
 
 Nonetheless, convex functions are notorious for having a multitude of equivalent definitions.
 Hence, for our purposes it will be better to choose a more geometric one.
@@ -660,7 +660,7 @@ $$
 
 This last definition may, at first, seem to be too restrictive.
 Perhaps even more than requiring differentiability.
-There is a small, trick, however, that lets us write any function
+There is a small trick, however, that lets us write any function
 as an optimal value function:
 
 $$
