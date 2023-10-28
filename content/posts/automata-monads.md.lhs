@@ -280,9 +280,11 @@ When we observe the system, it collapses into a classical one
 with the probability for each eigenstate given by the square of the amplitude's magnitude.
 
 > observe :: Ord s => Quantum s -> Prob s
-> observe = Dist . fmap (second (magnitude . (^2))) . collect
+> observe = Dist . realize . collect
 >  where
 >   collect = Map.toList . Map.fromListWith (+) . listProb
+>   norm2 z = (magnitude z) ^ 2
+>   realize = fmap (second norm2)
 
 Alright, after this quantum speed run,
 I imagine that you already know what a quantum automata should look like.
