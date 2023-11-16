@@ -18,7 +18,7 @@ date: 2021-12-29
 
 I have a confession to make: I never really quite grasped
 how to think about expected values.
-Of course, I use it a lot (really really a lot) and I know pretty well how useful it is,
+Of course, I use it a lot (really a lot) and I know pretty well how useful it is,
 but I never had a good intuition for it.
 In fact, I always thought that its importance was purely operational:
 the average is easy to calculate, has plenty of applications

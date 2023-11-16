@@ -485,7 +485,7 @@ and pairs of monoids are also monoids with pointwise operations.
 Furthermore, Haskell provides default `Òrd` instances for pairs and lists
 using the lexicographic order.
 Thus, in the type `Tropical (Sum r, [Edge])`,
-the product is sums sums the weights in the first component
+the product sums the weights in the first component
 and concatenate the paths in the second,
 while the addition takes the lexicographic minimum:
 keep the pair with smallest weight or, if they are equal,
@@ -506,7 +506,7 @@ we can query for the largest path.
 Keep in mind that in this case,
 our previous assumption of no negative cycles
 becomes the dual, but for some reason much less agreeable,
-assumption of of positive cycles.
+assumption of positive cycles.
 
 Now suppose that you heavy a very important letter
 to send to somebody you know.

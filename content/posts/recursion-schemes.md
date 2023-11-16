@@ -856,7 +856,7 @@ to explain where its name comes from.
 
 The word catamorphism has two parts,
 _cata-_ + _morphism_.
-The later comes comes from the Greek ['μορφή']{lang=grc}
+The later comes from the Greek ['μορφή']{lang=grc}
 and means ["form" or "shape"](https://outils.biblissima.fr/fr/eulexis-web/?lemma=%CE%BC%CE%BF%CF%81%CF%86%CE%AE&dict=LSJ).
 Its use is common in category theory
 and stems from the fact that usually,
