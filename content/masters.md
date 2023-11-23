@@ -1,5 +1,5 @@
 ---
-title: Master's thesis
+title: Convexification by Averages
 ---
 # Convexification by Averages
 

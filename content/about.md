@@ -1,3 +1,7 @@
+---
+title: About
+---
+
 # About me
 
 I am Iago Leal de Freitas,

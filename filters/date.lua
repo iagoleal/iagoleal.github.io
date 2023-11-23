@@ -1,6 +1,4 @@
---[[ Set the date if it is not already set
-     and properly format it
---]]
+--- Set and properly format a post's date
 
 local function split(s, delimiter)
     result = {}

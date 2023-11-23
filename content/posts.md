@@ -1,3 +1,7 @@
+---
+title: Posts
+---
+
 # Posts
 <br/>
 
