@@ -86,6 +86,71 @@ Writing an optimal value function in different ways may yield different relaxati
 Strengthened Benders Cuts
 -------------------------
 
+Although they may be loose,
+Benders cuts' greatest advantage is being cheap to calculate.
+It wouldn't be great if we could adapt them to become tight?
+Actually we can do that, by paying the price of solving one extra mixed integer program.
+
+The intuition is that we can calculate a Benders cut and then move it up
+until it hits the function's graph somewhere.
+This way we find a new tight cut with the Benders multiplier.
+How can we achieve this?
+
+Recall that in the previous post about cut,
+we introduced the [Lagrangian relaxation](/posts/cuts#lagrangian-duality)
+of a value function,
+
+$$
+  \begin{array}{rl}
+    L(x; \lambda) = \min\limits_{u, y} & c(u) + \inner<\lambda, x - y> \\
+    \textrm{s.t.}   & (y, u) \in X \\
+                    & y \in \R^n \times \Z^k,
+  \end{array}
+$$
+
+which calculates the value for the tightest cut with a fixed inclination $\lambda$.
+We can use this property to strengthen a loose cut into a tight one.
+In particular, Benders cuts are great candidates for being strengthened.
+
+
+:::Definition
+A **strengthened Benders cut** for $f$ at $x_0$ is a cut
+using the multiplier $\lambda$ of $\cont{f}$ at $x_0$
+and the Lagrangian relaxation as constant:
+
+$$ f(x) \ge L(x; \lambda)(x_0) + \inner<\lambda, x - x_0>.$$
+:::
+
+Evaluating the Lagrangian relaxation amounts to solving a MIP not much harder than $f$ itself.
+Thus, if we know how to find the value of $f$, we also know how to find its Lagrangian.
+
+In terms of computational effort,
+calculating a strengthened Benders cut requires
+solving a convex program for the inclination
+followed by a mixed integer program for the constant.
+Below is some Julia some illustrating the procedure.
+
+```julia
+funtion strenghtened_benders_cut(f, a)
+  # Calculate Benders cut to find dual multiplier
+  cut = benders_cut(f, a)
+  # Use multiplier to relax problem
+  L   = lagrangian_relaxation(f, cut.λ)
+
+  # Find optimal value for Lagrangian relaxation
+  value = solve_mip(L, a)
+  return Cut(a, value, cut.λ)
+end
+```
+
+Solving a MIP is much more costly than solving a convex program,
+especially if they are linear.
+Nevertheless, tight cuts tend to be worth the effort,
+since they are directly approximating the best convex underapproximation
+instead of some representation-dependent relaxation.
+The only problem of strengthened Benders is that they are only guaranteed to be tight _somewhere_.
+They are not necessarily tight at the point of choice.
+
 Lagrangian Cuts
 ---------------
 
