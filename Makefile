@@ -12,11 +12,6 @@ posts-src    := $(wildcard $(content)/posts/*)
 posts-result := $(patsubst $(content)/posts/%.md.lhs,$(build)/posts/%/index.html,$(posts-src))
 posts-result := $(patsubst $(content)/posts/%.md,$(build)/posts/%/index.html,$(posts-result))
 
-# For yet unpublished posts
-unposts-src    := $(wildcard $(content)/unposts/*)
-unposts-result := $(patsubst $(content)/unposts/%.md.lhs,$(build)/posts/%/index.html,$(unposts-src))
-unposts-result := $(patsubst $(content)/unposts/%.md,$(build)/posts/%/index.html,$(unposts-result))
-
 # All additional pages go here
 pages-names  = about masters posts
 pages-result = $(addprefix $(build)/,$(addsuffix /index.html,$(pages-names)) \
@@ -63,8 +58,6 @@ endef
 
 all: pages posts stylesheets static feed
 
-unpublished: all unposts
-
 clean: clean-cache clean-build
 
 clean-cache:
@@ -78,7 +71,7 @@ serve:
 	cd $(build) && $(PYTHON_3) -m http.server
 
 watch:
-	watch -n 0.5 -- $(MAKE) unpublished
+	watch -n 0.5 -- $(MAKE) all
 
 deploy:
 	scripts/deploy
@@ -87,22 +80,14 @@ deploy:
 # Posts #
 #########
 
-.PHONY: posts unposts
+.PHONY: posts
 
 posts:   $(posts-result)
-unposts: $(unposts-result)
 
 $(build)/posts/%/index.html: $(content)/posts/%.md $(DEPENDENCIES)
 	$(call generate_post,"$<","$@",markdown-markdown_in_html_blocks)
 
 $(build)/posts/%/index.html: $(content)/posts/%.md.lhs $(DEPENDENCIES)
-	$(call generate_post,"$<","$@",markdown+lhs-markdown_in_html_blocks)
-
-
-$(build)/posts/%/index.html: $(content)/unposts/%.md $(DEPENDENCIES)
-	$(call generate_post,"$<","$@",markdown-markdown_in_html_blocks)
-
-$(build)/posts/%/index.html: $(content)/unposts/%.md.lhs $(DEPENDENCIES)
 	$(call generate_post,"$<","$@",markdown+lhs-markdown_in_html_blocks)
 
 ###############
@@ -113,11 +98,11 @@ $(build)/posts/%/index.html: $(content)/unposts/%.md.lhs $(DEPENDENCIES)
 
 pages: $(pages-result)
 
-$(build)/index.html: $(content)/index.html $(DEPENDENCIES)
+$(build)/index.html: $(content)/index.html $(DEPENDENCIES) $(posts-src)
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
 	$(PANDOC) --defaults=pandoc.yaml \
 	   -f html -o "$@" "$<" \
-	   -M title:'Home Sweet Home'
+	   -M title:'Home'
 
 $(build)/404.html: $(content)/404.html   $(DEPENDENCIES)
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))

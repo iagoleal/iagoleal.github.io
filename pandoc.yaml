@@ -31,7 +31,7 @@ reference-links: false
 # block, section, or document
 reference-location: document
 
-fail-if-warnings: false
+fail-if-warnings: true
 
 filters:
 - filters/figure.lua
