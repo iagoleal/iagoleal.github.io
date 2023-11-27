@@ -11,6 +11,43 @@ header-includes:
 \def\cvx\check
 \def\inner<#1,#2>{\left\langle#1,\,#2\right\rangle}
 
+
+<style>
+/* CSS for styling */
+.diagram-container {
+  flex: auto 1 1;
+  max-width: 100%;
+}
+
+svg.diagram {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #ccc;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.multi-figure-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: space-between;
+}
+
+.multi-figure-container > svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.convex-set {
+  fill: hsl(147 42% 64%);
+  stroke: black;
+  opacity: 1;
+  transition: fill 100ms;
+}
+</style>
+
 The Shape of an Optimal Value Function
 ======================================
 <!-- (Anatomy ?) -->
@@ -18,13 +55,45 @@ The Shape of an Optimal Value Function
 Cut Families
 ============
 
+For a value function defined via a convex optimization problem,
+we can always calculate cuts via Lagrangian duality.
+In the presence of integer variables, however, life is not so simple
+because the solving methods do not automatically calculate dual multipliers for us.
+
+To calculate a cut for a MIP,
+the usual way is to underapproximate it using an easier to calculate, convex program
+and then employ the cuts for this approximation.
+As you may imagine, there are several options on how to do that,
+all with their pros and cons.
+In the following,
+let's take a look at three such methods with varying approximation quality,
+and corresponding computational cost.
+
+Throughout this section,
+we will only consider value functions with a convex objective and convex feasible set,
+
+$$
+  \begin{array}{rl}
+    f(x) = \min\limits_{u} & c(u) \\
+    \textrm{s.t.}   & (x, u) \in X \\
+                    & u \in \R^n \times \Z^k.
+  \end{array}
+$$
+
+All non-convexity arises from some of the decision variables being integer.
+
 Benders Cuts
 ------------
+
+<figure class="diagram-container">
+  <svg id="benders" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+</figure>
 
 Let's start with the simplest kind of cut for a mixed integer program.
 Given a value function $f$,
 we define its _continuous relaxation_ as the value of the same optimization problem,
-but with the integer variables constrained to be continuous.
+but with the integer variables relaxed to be continuous.
 
 $$
   \begin{array}{rl}
@@ -45,7 +114,8 @@ From this relation and the convexity of $f$,
 we can calculate (not necessarily tight) cuts at any point.
 
 :::Definition
-A **Benders cut** for $f$ at $x_0$ is a cut for $\cont{f}$ at $x_0$,
+A **Benders cut** for $f$ at $x_0$ is a tight cut
+for the continuous relaxation $\cont{f}$ at $x_0$,
 
 $$ f(x) \ge \cont{f}(x_0) + \inner<\lambda, x - x_0>.$$
 :::
@@ -114,11 +184,10 @@ In particular, Benders cuts are great candidates for being strengthened.
 
 
 :::Definition
-A **strengthened Benders cut** for $f$ at $x_0$ is a cut
-using the multiplier $\lambda$ of $\cont{f}$ at $x_0$
-and the Lagrangian relaxation as constant:
+A **strengthened Benders cut** for $f$ at $x_0$ is a tight cut
+for the Lagrangian relaxation using the multiplier $\lambda$ from the Benders cut:
 
-$$ f(x) \ge L(x; \lambda)(x_0) + \inner<\lambda, x - x_0>.$$
+$$ f(x) \ge L(x_0; \lambda) + \inner<\lambda, x - x_0>.$$
 :::
 
 Evaluating the Lagrangian relaxation amounts to solving a MIP not much harder than $f$ itself.
@@ -154,5 +223,50 @@ They are not necessarily tight at the point of choice.
 Lagrangian Cuts
 ---------------
 
+Sometimes, we really want to find a cut that is the tightest possible
+at a chosen point.
+In this case, we have to directly calculate a cut for the convex relaxation of $f$.
+
+As you may recall from the previous post,
+calculating the best cut at a point amounts to
+[solving the dual problem](/posts/cuts#lagrangian-duality)
+
+$$
+  \begin{array}{rl}
+    \cvx{f}(x) = \max\limits_{\lambda} \min\limits_{u, y} & c(u) + \inner<\lambda, x - y> \\
+    \textrm{s.t.}   & (x, u) \in X \\
+                    & u \in \R^n \times \Z^k.
+  \end{array}
+$$
+
+A cut for the dual value function is called a _Lagrangian cut_,
+because it comes from the Lagrangian dual,
+and is the tightest cut possible at a point.
+
+:::Definition
+A **Lagrangian cut** for $f$ at $x_0$ is a tight cut
+for the dual $\cvx{f}$ at $x_0$,
+
+$$f(x) \ge \cvx{f}(x_0) + \inner<\lambda, x - x_0>.$$
+:::
+
+The dual value function $\cvx{f}$ is always convex,
+since it is the maximum of affine functions (affine in $\lambda$).
+Nevertheless, calculating it is not as simple as solving a convex optimization problem
+because, for each evaluation, it is necessary to solve several mixed integer programs.
+Thus, despite their precision, Lagrangian cuts are computationally expensive approximations.
+This is a limiting factor in their usefulness.
+
 Conclusion
 ==========
+
++--------------+-------------------+------------------------+
+| Cut          | Tightness         | Effort                 |
++:============:+:=================:+:======================:+
+| Benders      | Loose             | Convex problem         |
++--------------+-------------------+------------------------+
+| Strengthened | Tight             | Convex problem         |
+| Benders      | somewhere         | +  MIP                 |
++--------------+-------------------+------------------------+
+| Lagrangian   | Tight             | Many MIP               |
++--------------+-------------------+------------------------+

@@ -626,7 +626,7 @@ function oracle(f, a)
 end
 ```
 
-Cuts from Lagrangian duality
+Cuts from Lagrangian duality {#lagrangian-duality}
 ----------------------------
 
 We have learned how to calculate cuts for a convex function at any point of differentiability.
