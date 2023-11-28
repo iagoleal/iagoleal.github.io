@@ -48,12 +48,141 @@ svg.diagram {
 }
 </style>
 
+In [a previous post](/posts/cuts),
+we discussed approximations by cuts
+and how they are a useful tool that permeates the world of optimization.
+We also saw that cuts have a close relation with convex functions and Lagrangian duality.
+In fact, calculating a dual problem automatically returns a cut for any convex function.
+
+Today, we will continue exploring the world of cutting planes
+with a focus on _mixed integer programs_ (MIP)
+--- optimization problems that can have both continuous and integer decision variables.
+We will investigate how the presence of integer variables affects the graph of value functions,
+and learn how to use cuts to both solve and approximate this kind of function.
+
 The Shape of an Optimal Value Function
 ======================================
-<!-- (Anatomy ?) -->
 
-Cut Families
-============
+First of all, let's take a look at some convex programming.
+These are among the well-behaved classes of optimization problems
+and, as expected, their optimal value functions have a well-defined shape.
+Interestingly, if all data in an optimization problem is convex,
+its optimal value function ends up also being convex.
+
+:::{.Theorem data-title="Convex Programming"}
+An optimal value function
+
+$$
+  \begin{array}{rl}
+    f(x) = \min\limits_{u} & c(u) \\
+    \textrm{s.t.}   & (x, u) \in X \\
+  \end{array}
+$$
+
+where the objective $c$ is a convex and the feasibility set $X$ is jointly convex in $x$ and $u$,
+_is a convex function_.
+:::
+
+A case of particular importance is that of linear programs,
+that is, optimization problems where the objective is linear
+and the feasibility set is given by linear equalities and inequalities.
+These are a special case of convex programming,
+so their optimal value functions are guaranteed to be convex.
+But in the presence all this structure, we can go further:
+they are in fact polyhedral.
+
+For simplicity, we will only state the theorem for standard form LPs.
+This is without loss of generality,
+since any linear program can be put into this form.
+
+:::{.Theorem data-title="Linear Programming"}
+The optimal value function for a _standard form linear program_
+
+$$
+  \begin{array}{rl}
+    f(x) = \min\limits_{u} & \inner<c, u> \\
+    \textrm{s.t.}   & Au = x, \\
+                    & x \ge 0,
+  \end{array}
+$$
+
+is a _polyhedral function_.
+:::
+
+A direct corollary is that the value function of any linear program
+can be represented by _finitely many cuts_.
+This is a powerful tool when proving the convergence
+of algorithms that approximate linear programs by cuts.
+
+Let's now focus on _mixed integer programs_ (MIP):
+optimization problems with both real and integer decision variables.
+
+$$
+  \begin{array}{rl}
+    f(x) = \min\limits_{u} & c(u) \\
+    \textrm{s.t.}   & (x, u) \in X \\
+                    & u \in \R^n \times \Z^k.
+  \end{array}
+$$
+
+Our first step in the analysis of MIP is to isolate the continuous and integer variables
+into a two-stage program.
+To do that, we have to rewrite $f$ into an equivalent form.
+We begin by separating the control variable $u$ into
+a continuous part $u_C$ and an integer part $u_I$.
+The trick is to change how we enforce the integrality of $u_I$.
+Let's allow the entire control --- including $u_I$ --- to be continuous
+but add a new integer variable $z$ that is constrained to equal $u_I$.
+
+$$
+  \begin{array}{rl}
+    f(x) = \min\limits_{u_C, u_I} & c(u) \\
+    \textrm{s.t.}   & (x, u) \in X \\
+                    & u = (u_C, u_I) \in \R^{n+k} \\
+                    & \textcolor{red}{u_I = z} \\
+                    & \textcolor{red}{z \in \Z^k}.
+  \end{array}
+$$
+
+This construction adds nothing but redundancy to our problem.
+Nevertheless, this gained redundancy isolates the integer variables
+into a single constraint separable from the others.
+This way, we can rewrite the optimization as a problem with two stages:
+
+$$
+  \begin{array}{rl}
+    f(x) = \min\limits_{z} & Q(x, z) \\
+    \textrm{s.t.}  & z \in \Z^k \\
+    Q(x, z) = \min\limits_{u_C} & c(u) \\
+    \textrm{s.t.}   & (x, u) \in X \\
+                    & u = (u_C, z).
+  \end{array}
+$$
+
+In the equation above, the second optimization problem in $Q$ has only continuous variables
+because it only sees the variable $z$ _fixed_ at some integer value.
+
+When $Q$ has some known structure on $x$ --- convex or linear programming, for example ---
+the function $f$ will locally have this same structure,
+because it is a discrete minimum of $Q$.
+The intuitive view is that for each value of z, there is a well-behaved function $Q(\cdot, z)$.
+For a given $x$, $f$ chooses the best of these functions and then optimizes on it.
+Furthermore, since the minimum in $z$ is discrete, continuity implies
+that we must have whole connected ranges of $x$ for which it will choose the same $z$.
+
+For example, in the case of a _mixed integer linear program_,
+the optimal value function is a discrete minimum of polyhedral functions,
+meaning that despite not being polyhedral itself, it is nevertheless piecewise-linear.
+See the paper by @ralphs_hassanzadeh_2014 for an in-depth study of such value functions.
+
+All this discussion indicates that convex problems with integer variables tend to look like convex, at least locally.
+Thanks to that, it is common to use techniques from convex programming to approximate and solve them.
+In particular, one generally expects to be able to approximate a MIP using cuts,
+even if this approximation isn't the tightest possible.
+Let's focus then on how to calculate cuts for this kind of value function.
+
+Different Flavours of Cuts
+==========================
 
 For a value function defined via a convex optimization problem,
 we can always calculate cuts via Lagrangian duality.
@@ -68,6 +197,8 @@ all with their pros and cons.
 In the following,
 let's take a look at three such methods with varying approximation quality,
 and corresponding computational cost.
+We follow the cut families defined by @sddip_2019
+while generalizing the ideas for a simpler context.
 
 Throughout this section,
 we will only consider value functions with a convex objective and convex feasible set,
