@@ -130,10 +130,6 @@ a technique for representing functions that is suitable for optimization problem
 This is a well-known tool within the Operations Research community and,
 I believe, is also full of potential in various other domains of engineering and mathematics.
 
-[^real-numbers-size]: This all assumes that you can somehow store
-a single real number with finite information.
-But this is not today's subject, so I'm just going to gloss over it.
-
 Before we delve deeper into the world of cuts,
 you can stop and play with the interactive diagram below.
 Each click on a point in the first panel improves the approximation by cuts on the other one.
