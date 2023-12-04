@@ -48,11 +48,30 @@ svg.diagram {
 }
 </style>
 
-In [a previous post](/posts/cuts),
-we discussed approximations by cuts
-and how they are a useful tool that permeates the world of optimization.
-We also saw that cuts have a close relation with convex functions and Lagrangian duality.
-In fact, calculating a dual problem automatically returns a cut for any convex function.
+For many people, when they hear about optimization, their mind wanders through about continuous variables, gradients and such.
+But there is much more out there.
+Sometimes, for example, we need to deal with variables that act like a _switch_,
+showing some kind of on--off behaviour.
+For modeling this we will need integer variables.
+
+<figure class="diagram-container">
+  <svg id="binary-variable-switch" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+  <b><caption>Switch between two states with integer variables.</caption></b>
+</figure>
+
+Integer variables naturally arise in a variety of situations:
+discrete choices,
+modeling generators that are either off or are on with a minimum output,
+feasibility sets formed as the union of simpler parts.
+Despite the richness of the continuous world,
+these are all common cases which are, sometimes, necessary for an accurate modeling.
+
+In [a previous post](/posts/cuts), we discussed approximations by cuts
+and how they are a useful tool for representing value functions of parameterized optimization problems.
+Cuts are tightly related to convex functions,
+and, consequently, to continuous optimization.
+Nevertheless, there are techniques to calculate cuts in the presence of integer variables.
 
 Today, we will continue exploring the world of cutting planes
 with a focus on _mixed integer programs_ (MIP)
@@ -79,9 +98,15 @@ $$
   \end{array}
 $$
 
-where the objective $c$ is a convex and the feasibility set $X$ is jointly convex in $x$ and $u$,
+where the objective $c$ is convex and the feasibility set $X$ is jointly convex in $x$ and $u$,
 _is a convex function_.
 :::
+
+<figure class="diagram-container">
+  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+  <b><caption>Graph of convex optimization problem.</caption></b>
+</figure>
 
 A case of particular importance is that of linear programs,
 that is, optimization problems where the objective is linear
@@ -109,12 +134,18 @@ $$
 is a _polyhedral function_.
 :::
 
+<figure class="diagram-container">
+  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+  <b><caption>Graph of linear program.</caption></b>
+</figure>
+
 A direct corollary is that the value function of any linear program
 can be represented by _finitely many cuts_.
 This is a powerful tool when proving the convergence
 of algorithms that approximate linear programs by cuts.
 
-Let's now focus on _mixed integer programs_ (MIP):
+Let's now switch our focus towards _mixed integer programs_ (MIP):
 optimization problems with both real and integer decision variables.
 
 $$
@@ -170,10 +201,22 @@ For a given $x$, $f$ chooses the best of these functions and then optimizes on i
 Furthermore, since the minimum in $z$ is discrete, continuity implies
 that we must have whole connected ranges of $x$ for which it will choose the same $z$.
 
+<figure class="diagram-container">
+  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+  <b><caption>Graph of Mixed Convex Program.</caption></b>
+</figure>
+
 For example, in the case of a _mixed integer linear program_,
 the optimal value function is a discrete minimum of polyhedral functions,
 meaning that despite not being polyhedral itself, it is nevertheless piecewise-linear.
 See the paper by @ralphs_hassanzadeh_2014 for an in-depth study of such value functions.
+
+<figure class="diagram-container">
+  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+  <b><caption>Graph of MILP.</caption></b>
+</figure>
 
 All this discussion indicates that convex problems with integer variables tend to look like convex, at least locally.
 Thanks to that, it is common to use techniques from convex programming to approximate and solve them.
@@ -185,7 +228,7 @@ Different Flavours of Cuts
 ==========================
 
 For a value function defined via a convex optimization problem,
-we can always calculate cuts via Lagrangian duality.
+calculating a Lagrangian dual automatically yields a cut.
 In the presence of integer variables, however, life is not so simple
 because the solving methods do not automatically calculate dual multipliers for us.
 
@@ -241,6 +284,13 @@ because they have the same objective function but $\cont{f}$ has a larger feasib
 
 $$f(x) \ge \cont{f}(x).$$
 
+
+<figure class="diagram-container">
+  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+  <b><caption>Function and its continuous relaxation.</caption></b>
+</figure>
+
 From this relation and the convexity of $f$,
 we can calculate (not necessarily tight) cuts at any point.
 
@@ -250,6 +300,12 @@ for the continuous relaxation $\cont{f}$ at $x_0$,
 
 $$ f(x) \ge \cont{f}(x_0) + \inner<\lambda, x - x_0>.$$
 :::
+
+<figure class="diagram-container">
+  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+  <b><caption>Function and benders cut at each point.</caption></b>
+</figure>
 
 Since $\cont{f}$ is convex,
 Benders cuts exist at each point by Lagrangian duality.
@@ -321,6 +377,12 @@ for the Lagrangian relaxation using the multiplier $\lambda$ from the Benders cu
 $$ f(x) \ge L(x_0; \lambda) + \inner<\lambda, x - x_0>.$$
 :::
 
+<figure class="diagram-container">
+  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+  <b><caption>Function and strengthened benders cut at each point.</caption></b>
+</figure>
+
 Evaluating the Lagrangian relaxation amounts to solving a MIP not much harder than $f$ itself.
 Thus, if we know how to find the value of $f$, we also know how to find its Lagrangian.
 
@@ -381,6 +443,12 @@ for the dual $\cvx{f}$ at $x_0$,
 $$f(x) \ge \cvx{f}(x_0) + \inner<\lambda, x - x_0>.$$
 :::
 
+<figure class="diagram-container">
+  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+  <b><caption>Function and Lagrangian cut at each point.</caption></b>
+</figure>
+
 The dual value function $\cvx{f}$ is always convex,
 since it is the maximum of affine functions (affine in $\lambda$).
 Nevertheless, calculating it is not as simple as solving a convex optimization problem
@@ -390,6 +458,13 @@ This is a limiting factor in their usefulness.
 
 Conclusion
 ==========
+
+<figure class="diagram-container">
+  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+  <b><caption>User can choose between each family of cuts.</caption></b>
+</figure>
+
 
 +--------------+-------------------+------------------------+
 | Cut          | Tightness         | Effort                 |
