@@ -142,9 +142,9 @@ _is a convex function_.
 :::
 
 <figure class="diagram-container">
-  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  <svg id="figure-ovf-convex" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <b><caption>Graph of convex optimization problem.</caption></b>
+  <caption>Graph of convex optimization problem.</caption>
 </figure>
 
 A case of particular importance is that of linear programs,
@@ -174,9 +174,9 @@ is a _polyhedral function_.
 :::
 
 <figure class="diagram-container">
-  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  <svg id="figure-ovf-lp" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <b><caption>Graph of linear program.</caption></b>
+  <caption>Graph of linear program.</caption>
 </figure>
 
 A direct corollary is that the value function of any linear program
@@ -241,9 +241,9 @@ Furthermore, since the minimum in $z$ is discrete, continuity implies
 that we must have whole connected ranges of $x$ for which it will choose the same $z$.
 
 <figure class="diagram-container">
-  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  <svg id="figure-ovf-cip" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <b><caption>Graph of Mixed Convex Program.</caption></b>
+  <caption>Graph of Mixed Convex Program.</caption>
 </figure>
 
 For example, in the case of a _mixed integer linear program_,
@@ -252,9 +252,9 @@ meaning that despite not being polyhedral itself, it is nevertheless piecewise-l
 See the paper by @ralphs_hassanzadeh_2014 for an in-depth study of such value functions.
 
 <figure class="diagram-container">
-  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  <svg id="figure-ovf-milp" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <b><caption>Graph of MILP.</caption></b>
+  <caption>Graph of MILP.</caption>
 </figure>
 
 All this discussion indicates that convex problems with integer variables tend to look like convex, at least locally.
@@ -318,7 +318,6 @@ because they have the same objective function but $\cont{f}$ has a larger feasib
 
 $$f(x) \ge \cont{f}(x).$$
 
-
 <figure class="diagram-container">
   <caption>
     Below, you can see a piecewise convex function,
@@ -381,29 +380,29 @@ Writing an optimal value function in different ways may yield different relaxati
 Strengthened Benders Cuts
 -------------------------
 
-Although they may be loose,
+Although their looseness,
 Benders cuts' greatest advantage is being cheap to calculate.
-It wouldn't be great if we could adapt them to become tight?
+It wouldn't be great if we could somehow make them tighter?
 Actually we can do that, by paying the price of solving one extra mixed integer program.
-
 The intuition is that we can calculate a Benders cut and then move it up
 until it hits the function's graph somewhere.
 This way we find a new tight cut with the Benders multiplier.
-How can we achieve this?
+But how can we achieve this?
 
-Recall that in the previous post about cut,
-we introduced the [Lagrangian relaxation](/posts/cuts#lagrangian-duality)
+Recall from the previous post about cuts,
+that we introduced the [Lagrangian relaxation](/posts/cuts#lagrangian-duality)
 of a value function,
 
 $$
   \begin{array}{rl}
     L(x; \lambda) = \min\limits_{u, y} & c(u) + \inner<\lambda, x - y> \\
     \textrm{s.t.}   & (y, u) \in X \\
-                    & y \in \R^n \times \Z^k,
+                    & y \in \R^n \times \Z^k.
   \end{array}
 $$
 
-which calculates the value for the tightest cut with a fixed inclination $\lambda$.
+This optimization problem is an affine function
+which equals the tightest cut to $f$ with fixed inclination $\lambda$.
 We can use this property to strengthen a loose cut into a tight one.
 The implementation goes something like this:
 
@@ -429,9 +428,10 @@ $$ f(x) \ge L(x_0; \lambda) + \inner<\lambda, x - x_0>.$$
 :::
 
 <figure class="diagram-container">
-  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  <svg id="figure-strenghtened-benders-cut" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <b><caption>Function and strengthened benders cut at each point.</caption></b>
+  <input type="checkbox" id="show-continuous-str" name="show-continuous-str" />
+  <label for="show-continuous-str">Show continuous relaxation?</label>
 </figure>
 
 Evaluating the Lagrangian relaxation amounts to solving a MIP not much harder than $f$ itself.
@@ -533,6 +533,13 @@ Conclusion
 
   const mip     = x => Math.min(Math.abs(x+1), Math.abs(x-1)+1);
   const benders = x => Math.max(-x -1.3, 0.5*x, x -0.5);
+  const convex  = x => Math.max(Math.exp(-x-1.2), x, (0.7*x)**4) - 0.5;
+  const cip     = x => Math.min( 4*(x+1)**4, 1*(x-1.5)**2 + 0.5, Math.max(1, (x-1)+2));
+
+  figures.figureOVF("#figure-ovf-convex", convex, -2, 2);
+  figures.figureOVF("#figure-ovf-lp", benders, -2, 2);
+  figures.figureOVF("#figure-ovf-cip", cip, -2, 2);
+  figures.figureOVF("#figure-ovf-milp", mip, -2, 2);
 
   figures.figureContinuousRelaxation("#figure-benders-relaxation", mip, benders, -2, 2);
 

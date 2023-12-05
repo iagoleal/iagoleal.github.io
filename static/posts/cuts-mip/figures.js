@@ -243,6 +243,17 @@ function numdiff(f) {
   Page figures
 */
 
+export function figureOVF(id, mip, minX, maxX) {
+  const svg   = d3.select(id);
+  const scale = new Scale(svg, [minX, maxX], [-0.5, 2]);
+
+  const gMip     = svg.append("g");
+  const gBenders = svg.append("g");
+
+  plotEpigraph(gMip, mip, scale);
+  plot(gMip, mip, scale);
+}
+
 export function figureContinuousRelaxation(id, mip, relax, minX, maxX) {
   const svg   = d3.select(id);
   const scale = new Scale(svg, [minX, maxX], [-0.5, 2]);
