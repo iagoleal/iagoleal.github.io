@@ -46,6 +46,45 @@ svg.diagram {
   opacity: 1;
   transition: fill 100ms;
 }
+
+.hyperplane {
+  stroke: rgb(255, 165, 0);
+  stroke-width: 1pt;
+}
+
+.mark {
+  fill: rgb(255, 165, 0);
+}
+
+.function-graph {
+  stroke: black;
+  fill: none;
+}
+
+.relaxation-continuous {
+  stroke: blue;
+  fill: none;
+}
+
+.relaxation-lagrangian {
+  stroke: orange;
+  fill: none;
+}
+
+.relaxation-dual {
+  stroke: yellow;
+  fill: none;
+}
+
+.epigraph {
+  fill: hsl(147 42% 64%);
+  fill-opacity: 0.3;
+  transition: fill-opacity 400ms;
+}
+
+.epigraph:hover {
+  fill-opacity: 0.6;
+}
 </style>
 
 For many people, when they hear about optimization, their mind wanders through about continuous variables, gradients and such.
@@ -259,11 +298,6 @@ All non-convexity arises from some of the decision variables being integer.
 Benders Cuts
 ------------
 
-<figure class="diagram-container">
-  <svg id="benders" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
-  </svg>
-</figure>
-
 Let's start with the simplest kind of cut for a mixed integer program.
 Given a value function $f$,
 we define its _continuous relaxation_ as the value of the same optimization problem,
@@ -286,9 +320,12 @@ $$f(x) \ge \cont{f}(x).$$
 
 
 <figure class="diagram-container">
-  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  <caption>
+    Below, you can see a piecewise convex function,
+    representing optimal value of of MIP, and its relaxation.
+  </caption>
+  <svg id="figure-benders-relaxation" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <b><caption>Function and its continuous relaxation.</caption></b>
 </figure>
 
 From this relation and the convexity of $f$,
@@ -302,9 +339,10 @@ $$ f(x) \ge \cont{f}(x_0) + \inner<\lambda, x - x_0>.$$
 :::
 
 <figure class="diagram-container">
-  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  <svg id="figure-benders-cut" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <b><caption>Function and benders cut at each point.</caption></b>
+  <input type="checkbox" id="show-continuous-relaxation" name="show-continuous-relaxation" />
+  <label for="show-continuous-relaxation">Show continuous relaxation?</label>
 </figure>
 
 Since $\cont{f}$ is convex,
@@ -367,8 +405,21 @@ $$
 
 which calculates the value for the tightest cut with a fixed inclination $\lambda$.
 We can use this property to strengthen a loose cut into a tight one.
-In particular, Benders cuts are great candidates for being strengthened.
+The implementation goes something like this:
 
+```julia
+# Returns the tightest cut for `f`
+# with the same inclination as the argument cut.
+function strengthen_cut(f, cut)
+  L = lagrangian_relaxation(f, cut.λ)
+  # Find optimal value for Lagrangian relaxation
+  opt = solve_mip(L, cut.point)
+
+  return Cut(cut.point, opt, cut.λ)
+end
+```
+
+In particular, Benders cuts are great candidates for being strengthened.
 
 :::Definition
 A **strengthened Benders cut** for $f$ at $x_0$ is a tight cut
@@ -395,13 +446,13 @@ Below is some Julia some illustrating the procedure.
 ```julia
 funtion strenghtened_benders_cut(f, a)
   # Calculate Benders cut to find dual multiplier
-  cut = benders_cut(f, a)
-  # Use multiplier to relax problem
-  L   = lagrangian_relaxation(f, cut.λ)
+  # Cost: Solve 1 convex program
+  cut_b = benders_cut(f, a)
+  # Solve Lagragian relaxation to improve cut
+  # Cost: Solve 1 mixed integer program
+  cut_sb = strengthen(f, cut)
 
-  # Find optimal value for Lagrangian relaxation
-  value = solve_mip(L, a)
-  return Cut(a, value, cut.λ)
+  return cut_sb
 end
 ```
 
@@ -476,3 +527,15 @@ Conclusion
 +--------------+-------------------+------------------------+
 | Lagrangian   | Tight             | Many MIP               |
 +--------------+-------------------+------------------------+
+
+<script type="module">
+  import * as figures from "./figures.js";
+
+  const mip     = x => Math.min(Math.abs(x+1), Math.abs(x-1)+1);
+  const benders = x => Math.max(-x -1.3, 0.5*x, x -0.5);
+
+  figures.figureContinuousRelaxation("#figure-benders-relaxation", mip, benders, -2, 2);
+
+  figures.figureCutBenders("#figure-benders-cut", mip, benders, -2, 2);
+
+</script>
