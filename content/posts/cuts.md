@@ -4,8 +4,6 @@ subtitle: An interactive guide to polyhedral representations
 keywords: [math]
 date: 2023-09-22
 suppress-bibliography: true
-header-includes:
-- '<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>'
 ---
 
 <style>
@@ -894,9 +892,13 @@ for commenting and proofreading this post's first draft.
 <script type="module">
   import * as figures from "./figures.js";
 
-  figures.figureFunctionCuts("#function-cuts", x => x*x+1, x => 2*x, -2, 2);
+  const f_ncvx = x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5);
+  const f_cvx  = x => x*x+1;
+  const df_cvx = x => 2*x;
 
-  figures.figureFunctionEpigraphCarving("#function-epigraph-carving", x => x*x+1, x => 2*x, -2, 2);
+  figures.figureFunctionCuts("#function-cuts", f_cvx, df_cvx, -2, 2);
+
+  figures.figureFunctionEpigraphCarving("#function-epigraph-carving", f_cvx, df_cvx, -2, 2);
 
   figures.figureSetSeparatingHyperplane("#set-separating-hyperplane");
 
@@ -904,11 +906,11 @@ for commenting and proofreading this post's first draft.
 
   figures.figureSetSupportingHyperplane("#set-supporting-hyperplane");
 
-  figures.figureFunctionEpigraph("#function-epigraph", x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5), -1.8, 2);
+  figures.figureFunctionEpigraph("#function-epigraph", f_ncvx, -1.8, 2);
 
-  figures.figureFunctionSupportingCut("#function-supporting-cut", x => x*x+1, x => 2*x, -2, 2);
+  figures.figureFunctionSupportingCut("#function-supporting-cut", f_cvx, df_cvx, -2, 2);
 
-  figures.figureLagrangian("#function-lagrangian",  x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5), -1.8, 2);
+  figures.figureLagrangian("#function-lagrangian", f_ncvx, -1.8, 2);
 
-  figures.figureLagrangianDual("#function-lagrangian-dual", x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5), -1.8, 2);
+  figures.figureLagrangianDual("#function-lagrangian-dual", f_ncvx, -1.8, 2);
 </script>
