@@ -22,7 +22,8 @@ header-includes:
 svg.diagram {
   width: 100%;
   height: 100%;
-  border: 1px solid #ccc;
+  background-color: hsl(147 0% 96%);
+  border-radius: 15px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -48,12 +49,12 @@ svg.diagram {
 }
 
 .hyperplane {
-  stroke: rgb(255, 165, 0);
+  stroke: hsl(39 100% 50%);
   stroke-width: 1pt;
 }
 
 .mark {
-  fill: rgb(255, 165, 0);
+  fill: hsl(39 100% 50%);
 }
 
 .function-graph {
@@ -73,6 +74,7 @@ svg.diagram {
 
 .relaxation-dual {
   stroke: yellow;
+  stroke-width: 2px;
   fill: none;
 }
 
@@ -84,6 +86,15 @@ svg.diagram {
 
 .epigraph:hover {
   fill-opacity: 0.6;
+}
+
+.epigraph-component {
+  fill: hsl(180 43% 51%);
+  fill-opacity: 1;
+}
+
+.epigraph-component:hover {
+  fill-opacity: 1;
 }
 </style>
 
