@@ -199,9 +199,6 @@ function plotEpigraph(elem, fs, scale) {
     .data(fData)
     .join("path")
     .attr("class", "epigraph")
-    .transition()
-    .duration(200)
-    .ease(d3.easeCubic)
     .attr("d", d3.area()
       .x(d => scale.x(d.x))
       .y0(scale.y.range()[1])  // Top of the plot
@@ -243,15 +240,40 @@ function numdiff(f) {
   Page figures
 */
 
-export function figureOVF(id, mip, minX, maxX) {
+export function figureOVF(id, f, minX, maxX) {
   const svg   = d3.select(id);
   const scale = new Scale(svg, [minX, maxX], [-0.5, 2]);
 
-  const gMip     = svg.append("g");
-  const gBenders = svg.append("g");
+  const gFunc = svg.append("g");
 
-  plotEpigraph(gMip, mip, scale);
-  plot(gMip, mip, scale);
+  plotEpigraph(gFunc, f, scale);
+  plot(gFunc, f, scale);
+}
+
+export function figureMinOVF(id, fs, minX, maxX) {
+  const svg   = d3.select(id);
+  const scale = new Scale(svg, [minX, maxX], [-0.5, 2]);
+
+  const cip = x => d3.min(fs.map(f => f(x)));
+
+  const gCip     = svg.append("g");
+  const gCurrent = svg.append("g");
+
+  function turnOn(x0) {
+    const smallest = d3.minIndex(fs, f => f(x0));
+    plotEpigraph(gCurrent, fs[smallest], scale)
+      .classed("epigraph-component", true);
+    plot(gCurrent, fs[smallest], scale)
+      .attr("opacity", 0.3);
+  }
+
+  svg.on("mousemove", function(event) {
+    const [x0] = mouseUnscale(event, scale);
+    turnOn(x0);
+  });
+
+  plotEpigraph(gCip, cip, scale);
+  plot(gCip, cip, scale);
 }
 
 export function figureContinuousRelaxation(id, mip, relax, minX, maxX) {
@@ -269,7 +291,8 @@ export function figureContinuousRelaxation(id, mip, relax, minX, maxX) {
 }
 
 export function figureCutBenders(id, mip, relax, minX, maxX) {
-  const svg   = d3.select(id);
+  const svg   = d3.select(`${id} svg`);
+  const box   = d3.select(`${id} input[name="show-continuous-relaxation"`);
   const scale = new Scale(svg, [minX, maxX], [-0.5, 2]);
 
   const gBenders = svg.append("g");
@@ -291,11 +314,10 @@ export function figureCutBenders(id, mip, relax, minX, maxX) {
   });
 
   // Show or not show sliders
-  const box = document.getElementById("show-continuous-relaxation");
 
-  d3.select("#show-continuous-relaxation").on("input", function() {
+  box.on("input", function() {
     gBenders.selectAll(".relaxation-continuous")
-      .attr("opacity", box.checked ? 1 : 0);
+      .attr("opacity", this.checked ? 1 : 0);
   });
 
   // Initial plots
@@ -303,6 +325,95 @@ export function figureCutBenders(id, mip, relax, minX, maxX) {
   plot(gMip, mip, scale);
   plot(gBenders, relax, scale)
     .attr("class", "relaxation-continuous")
-    .attr("opacity", box.checked ? 1 : 0);
+    .attr("opacity", box.property("checked") ? 1 : 0);
   placeCut(1);
+}
+
+export function figureCutStrenghtenedBenders(id, mip, relax, minX, maxX) {
+  const svg   = d3.select(`${id} svg`);
+  const box   = d3.select(`${id} input[name="show-continuous-relaxation"`);
+  const scale = new Scale(svg, [minX, maxX], [-0.5, 2]);
+
+  const gBenders = svg.append("g");
+  const gMip     = svg.append("g");
+  const gCuts = svg.append("g");
+
+  function Lagrangian(f, lambda) {
+    return x => d3.min(d3.range(minX, maxX, 0.1), u => f(u) - lambda*(u-x))
+  }
+
+  function placeCut(x0) {
+    const lambda = numdiff(relax)(x0);
+    const cut = new Cut(x0, Lagrangian(mip, lambda)(x0), numdiff(relax)(x0));
+    const hyperplane = cut.toHyperplane(scale);
+
+    // Show where is the tangent line
+    updateHyperplanes(gCuts, [hyperplane]);
+    updateMarks(gCuts, [hyperplane]);
+  }
+
+  svg.on("mousemove", function(event) {
+    const [x0] = mouseUnscale(event, scale);
+    placeCut(x0);
+  });
+
+
+  box.on("input", function() {
+    gBenders.selectAll(".relaxation-continuous")
+      .attr("opacity", this.checked ? 1 : 0);
+  });
+
+  // Initial plots
+  plotEpigraph(gMip, mip, scale);
+  plot(gMip, mip, scale);
+  plot(gBenders, relax, scale)
+    .attr("class", "relaxation-continuous")
+    .attr("opacity", box.property("checked") ? 1 : 0);
+  placeCut(1);
+}
+
+function dualize(f, minX, maxX) {
+  return x => findMax(d3.range(-6, 1.0, 0.1), lambda =>
+    d3.min(d3.range(minX, maxX, 0.05), u => f(u) - lambda*(u - x))
+  )
+}
+
+export function figureCutLagrangian(id, f, minX, maxX) {
+  const svg   = d3.select(`${id} svg`);
+  const box   = d3.select(`${id} input[name="show-dual-relaxation"`);
+  const scale = new Scale(svg, [minX, maxX], [-0.5, 2]);
+
+  const gFunc       = svg.append("g");
+  const gLagrangian = svg.append("g");
+  const gCuts       = svg.append("g");
+
+  const dual = dualize(f, minX, maxX);
+
+  function placeCut(x0) {
+    const d0  = dual(x0);
+    const cut = new Cut(x0, d0.value, d0.argument);
+    const hyperplane = cut.toHyperplane(scale);
+
+    // Show where is the tangent line
+    updateHyperplanes(gCuts, [hyperplane]);
+    updateMarks(gCuts, [hyperplane]);
+  }
+
+  // Display cut for mouse x position
+  svg.on("mousemove", function(event) {
+    const [x0] = mouseUnscale(event, scale);
+    placeCut(x0);
+  });
+
+  box.on("input", function() {
+    gLagrangian.selectAll(".relaxation-dual")
+      .attr("opacity", this.checked ? 1 : 0);
+  });
+
+  plot(gFunc, f, scale);
+  plotEpigraph(gFunc, f, scale);
+  plot(gLagrangian, x => dual(x).value, scale)
+    .attr("class", "relaxation-dual")
+    .attr("opacity", box.property("checked") ? 1 : 0);
+  placeCut(1.5);
 }

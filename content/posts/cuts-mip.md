@@ -282,11 +282,12 @@ calculating a Lagrangian dual automatically yields a cut.
 In the presence of integer variables, however, life is not so simple
 because the solving methods do not automatically calculate dual multipliers for us.
 
-To calculate a cut for a MIP,
-the usual way is to underapproximate it using an easier to calculate, convex program
-and then employ the cuts for this approximation.
-As you may imagine, there are several options on how to do that,
-all with their pros and cons.
+Calculating a cut for a MIP, however, requires more work.
+All the strategies that we will show today follow the same idea:
+Find a convex underapproximation for your value function and calculate cuts for it.
+These are also automatically cuts for the original problem.
+
+As you may imagine, there are several options to choose from, each with its pros and cons.
 In the following,
 let's take a look at three such methods with varying approximation quality,
 and corresponding computational cost.
@@ -294,7 +295,8 @@ We follow the cut families defined by @sddip_2019
 while generalizing the ideas for a simpler context.
 
 Throughout this section,
-we will only consider value functions with a convex objective and convex feasible set,
+we will only consider optimization problems that are "convex except for integer variables",
+that is, problems having a convex objective and convex feasible set,
 
 $$
   \begin{array}{rl}
@@ -348,11 +350,13 @@ for the continuous relaxation $\cont{f}$ at $x_0$,
 $$ f(x) \ge \cont{f}(x_0) + \inner<\lambda, x - x_0>.$$
 :::
 
-<figure class="diagram-container">
-  <svg id="figure-benders-cut" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+<figure id="figure-benders-cut" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <input type="checkbox" id="show-continuous-relaxation" name="show-continuous-relaxation" />
-  <label for="show-continuous-relaxation">Show continuous relaxation?</label>
+  <label>
+    <input type="checkbox" name="show-continuous-relaxation" />
+    Show continuous relaxation?
+  </label>
 </figure>
 
 Since $\cont{f}$ is convex,
@@ -438,11 +442,13 @@ for the Lagrangian relaxation using the multiplier $\lambda$ from the Benders cu
 $$ f(x) \ge L(x_0; \lambda) + \inner<\lambda, x - x_0>.$$
 :::
 
-<figure class="diagram-container">
-  <svg id="figure-strenghtened-benders-cut" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+<figure id="figure-strenghtened-benders-cut" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <input type="checkbox" id="show-continuous-str" name="show-continuous-str" />
-  <label for="show-continuous-str">Show continuous relaxation?</label>
+  <label>
+    <input type="checkbox" name="show-continuous-relaxation" />
+    Show continuous relaxation?
+  </label>
 </figure>
 
 Evaluating the Lagrangian relaxation amounts to solving a MIP not much harder than $f$ itself.
@@ -505,10 +511,13 @@ for the dual $\cvx{f}$ at $x_0$,
 $$f(x) \ge \cvx{f}(x_0) + \inner<\lambda, x - x_0>.$$
 :::
 
-<figure class="diagram-container">
-  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+<figure id="figure-lagrangian-cut" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <b><caption>Function and Lagrangian cut at each point.</caption></b>
+  <label>
+    <input type="checkbox" name="show-dual-relaxation" />
+    Show Lagrangian dual?
+  </label>
 </figure>
 
 The dual value function $\cvx{f}$ is always convex,
@@ -524,7 +533,14 @@ Conclusion
 <figure class="diagram-container">
   <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <b><caption>User can choose between each family of cuts.</caption></b>
+  <label>
+    <input type="checkbox" name="show-continuous-relaxation" />
+    Show continuous relaxation?
+  </label>
+  <label>
+    <input type="checkbox" name="show-dual-relaxation" />
+    Show Lagrangian dual?
+  </label>
 </figure>
 
 
@@ -542,18 +558,23 @@ Conclusion
 <script type="module">
   import * as figures from "./figures.js";
 
-  const mip     = x => Math.min(Math.abs(x+1), Math.abs(x-1)+1);
-  const benders = x => Math.max(-x -1.3, 0.5*x, x -0.5);
-  const convex  = x => Math.max(Math.exp(-x-1.2), x, (0.7*x)**4) - 0.5;
+  const cvxs    = [x => 4*(x+1)**4, x => 1*(x-1.5)**2 + 0.5, x => Math.max(1, (x-1)+2)];
+  const lps     = [x => Math.abs(x+1), x => Math.abs(x-1)+1];
+  const mip     = x => Math.min(...lps.map(f => f(x)));
   const cip     = x => Math.min( 4*(x+1)**4, 1*(x-1.5)**2 + 0.5, Math.max(1, (x-1)+2));
+  const benders = x => Math.max(-0.9*x -1.3, 0.5*x, 0.9*x -0.5);
+  const convex  = x => Math.max(Math.exp(-x-1.2), x, (0.7*x)**4) - 0.5;
 
   figures.figureOVF("#figure-ovf-convex", convex, -2, 2);
   figures.figureOVF("#figure-ovf-lp", benders, -2, 2);
-  figures.figureOVF("#figure-ovf-cip", cip, -2, 2);
-  figures.figureOVF("#figure-ovf-milp", mip, -2, 2);
+  figures.figureMinOVF("#figure-ovf-cip", cvxs, -2, 2);
+  figures.figureMinOVF("#figure-ovf-milp", lps, -2, 2);
 
   figures.figureContinuousRelaxation("#figure-benders-relaxation", mip, benders, -2, 2);
 
   figures.figureCutBenders("#figure-benders-cut", mip, benders, -2, 2);
 
+  figures.figureCutStrenghtenedBenders("#figure-strenghtened-benders-cut", mip, benders, -2, 2);
+
+  figures.figureCutLagrangian("#figure-lagrangian-cut", cip, -2, 2);
 </script>
