@@ -147,20 +147,12 @@ function updateHyperplanes(selector, pos) {
 
   return selector.selectAll(".hyperplane")
     .data(pos)
-    .join(
-      enter  => enter.append("line"),
-      update => update,
-      exit   =>
-        exit.transition("movePlane")
-        .duration(50)
-        .style("opacity", 0)
-        .remove(),
-    )
-    .attr("x1", d => d.x - d.tangent.x * maxLength)
-    .attr("y1", d => d.y - d.tangent.y * maxLength)
-    .attr("x2", d => d.x + d.tangent.x * maxLength)
-    .attr("y2", d => d.y + d.tangent.y * maxLength)
-    .attr("class", "hyperplane");
+    .join("line")
+      .attr("x1", d => d.x - d.tangent.x * maxLength)
+      .attr("y1", d => d.y - d.tangent.y * maxLength)
+      .attr("x2", d => d.x + d.tangent.x * maxLength)
+      .attr("y2", d => d.y + d.tangent.y * maxLength)
+      .attr("class", "hyperplane");
 }
 
 function updateMarks(selector, pos) {
@@ -345,15 +337,36 @@ export function figureCutStrenghtenedBenders(id, mip, relax, minX, maxX) {
 
   function placeCut(x0) {
     const lambda = numdiff(relax)(x0);
-    const cut = new Cut(x0, Lagrangian(mip, lambda)(x0), numdiff(relax)(x0));
+    const cut = new Cut(x0, relax(x0), numdiff(relax)(x0));
     const hyperplane = cut.toHyperplane(scale);
 
-    // Show where is the tangent line
-    updateHyperplanes(gCuts, [hyperplane]);
-    updateMarks(gCuts, [hyperplane]);
+    const strcut = (new Cut(x0, Lagrangian(mip, lambda)(x0), numdiff(relax)(x0))).toHyperplane(scale);
+
+    const width     = 800;
+    const height    = 400;
+    const maxLength = Math.sqrt(width ** 2 + height ** 2);
+
+    // Start with Benders cut and then animate it going up to str Benders
+    updateHyperplanes(gCuts, [hyperplane])
+      .interrupt("strenghtened-benders")
+      .transition('strenghtened-benders')
+        .delay(250)
+        .duration(750)
+        .attr("x1", d => strcut.x - d.tangent.x * maxLength)
+        .attr("y1", d => strcut.y - d.tangent.y * maxLength)
+        .attr("x2", d => strcut.x + d.tangent.x * maxLength)
+        .attr("y2", d => strcut.y + d.tangent.y * maxLength)
+
+    updateMarks(gCuts, [hyperplane])
+      .interrupt("strenghtened-benders")
+      .transition('strenghtened-benders')
+        .delay(250)
+        .duration(750)
+        .attr("cx", _ => strcut.x)
+        .attr("cy", _ => strcut.y)
   }
 
-  svg.on("mousemove", function(event) {
+  svg.on("click", function(event) {
     const [x0] = mouseUnscale(event, scale);
     placeCut(x0);
   });
