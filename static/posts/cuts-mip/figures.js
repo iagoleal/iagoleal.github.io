@@ -274,6 +274,7 @@ export function figureMinOVF(id, fs, minX, maxX) {
 
   plotEpigraph(gCip, cip, scale);
   plot(gCip, cip, scale);
+  turnOn(maxX);
 }
 
 export function figureContinuousRelaxation(id, mip, relax, minX, maxX) {

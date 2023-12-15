@@ -132,7 +132,14 @@ and learn how to use cuts to both solve and approximate this kind of function.
 The Shape of an Optimal Value Function
 ======================================
 
-First of all, let's take a look at some convex programming.
+Given a parameterized optimization problem,
+how does it value function look like?
+One should expect that the better behaved a problem,
+the better behaved its value function,
+and it is totally right!
+Value functions inherit some good properties of their underlying programs.
+
+Let's start with convex programming.
 These are among the well-behaved classes of optimization problems
 and, as expected, their optimal value functions have a well-defined shape.
 Interestingly, if all data in an optimization problem is convex,
@@ -155,7 +162,6 @@ _is a convex function_.
 <figure class="diagram-container">
   <svg id="figure-ovf-convex" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <caption>Graph of convex optimization problem.</caption>
 </figure>
 
 A case of particular importance is that of linear programs,
@@ -163,7 +169,7 @@ that is, optimization problems where the objective is linear
 and the feasibility set is given by linear equalities and inequalities.
 These are a special case of convex programming,
 so their optimal value functions are guaranteed to be convex.
-But in the presence all this structure, we can go further:
+But in the presence of all this structure, we can go further:
 they are in fact polyhedral.
 
 For simplicity, we will only state the theorem for standard form LPs.
@@ -187,13 +193,11 @@ is a _polyhedral function_.
 <figure class="diagram-container">
   <svg id="figure-ovf-lp" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <caption>Graph of linear program.</caption>
 </figure>
 
 A direct corollary is that the value function of any linear program
 can be represented by _finitely many cuts_.
-This is a powerful tool when proving the convergence
-of algorithms that approximate linear programs by cuts.
+This is a powerful tool when proving the convergence of cutting plane algorithms for linear programs.
 
 Let's now switch our focus towards _mixed integer programs_ (MIP):
 optimization problems with both real and integer decision variables.
@@ -206,10 +210,10 @@ $$
   \end{array}
 $$
 
-Our first step in the analysis of MIP is to isolate the continuous and integer variables
+Our first step in the analysis of a MIP is to isolate the continuous and integer variables
 into a two-stage program.
-To do that, we have to rewrite $f$ into an equivalent form.
-We begin by separating the control variable $u$ into
+To do that, we have to rewrite $f$ into an equivalent but more verbose form.
+We begin by separating the decision variable $u$ into
 a continuous part $u_C$ and an integer part $u_I$.
 The trick is to change how we enforce the integrality of $u_I$.
 Let's allow the entire control --- including $u_I$ --- to be continuous
@@ -252,9 +256,9 @@ Furthermore, since the minimum in $z$ is discrete, continuity implies
 that we must have whole connected ranges of $x$ for which it will choose the same $z$.
 
 <figure class="diagram-container">
+  <caption>You can hove the graph below to highlight each of its convex components.</caption>
   <svg id="figure-ovf-cip" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <caption>Graph of Mixed Convex Program.</caption>
 </figure>
 
 For example, in the case of a _mixed integer linear program_,
@@ -265,7 +269,6 @@ See the paper by @ralphs_hassanzadeh_2014 for an in-depth study of such value fu
 <figure class="diagram-container">
   <svg id="figure-ovf-milp" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <caption>Graph of MILP.</caption>
 </figure>
 
 All this discussion indicates that convex problems with integer variables tend to look like convex, at least locally.
@@ -334,7 +337,7 @@ $$f(x) \ge \cont{f}(x).$$
 <figure class="diagram-container">
   <caption>
     Below, you can see a piecewise convex function,
-    representing optimal value of of MIP, and its relaxation.
+    representing the optimal value of an MIP, and its relaxation.
   </caption>
   <svg id="figure-benders-relaxation" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
@@ -351,10 +354,14 @@ $$ f(x) \ge \cont{f}(x_0) + \inner<\lambda, x - x_0>.$$
 :::
 
 <figure id="figure-benders-cut" class="diagram-container">
+  <caption>
+    You can click in the diagram below to add a Benders cut at the selected point.
+    Notice how they are, in general, nowhere tight.
+  </caption>
   <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
   <label>
-    <input type="checkbox" name="show-continuous-relaxation" />
+    <input type="checkbox" class="toggle" name="show-continuous-relaxation" />
     Show continuous relaxation?
   </label>
 </figure>
@@ -443,10 +450,15 @@ $$ f(x) \ge L(x_0; \lambda) + \inner<\lambda, x - x_0>.$$
 :::
 
 <figure id="figure-strenghtened-benders-cut" class="diagram-container">
+  <caption>
+    Whenever you click the diagram below, it calculates a Benders cut
+    and then strengthens it.
+    Notice that these cuts are always tight but, in general, not at the point of choice.
+  </caption>
   <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
   <label>
-    <input type="checkbox" name="show-continuous-relaxation" />
+    <input type="checkbox" class="toggle" name="show-continuous-relaxation" />
     Show continuous relaxation?
   </label>
 </figure>
@@ -515,7 +527,7 @@ $$f(x) \ge \cvx{f}(x_0) + \inner<\lambda, x - x_0>.$$
   <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
   <label>
-    <input type="checkbox" name="show-dual-relaxation" />
+    <input type="checkbox" class="toggle" name="show-dual-relaxation" />
     Show Lagrangian dual?
   </label>
 </figure>
@@ -530,15 +542,15 @@ This is a limiting factor in their usefulness.
 Conclusion
 ==========
 
-<figure class="diagram-container">
-  <svg id="" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+<figure id="figure-cuts" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
   <label>
-    <input type="checkbox" name="show-continuous-relaxation" />
+    <input type="checkbox" class="toggle" name="show-continuous-relaxation" />
     Show continuous relaxation?
   </label>
   <label>
-    <input type="checkbox" name="show-dual-relaxation" />
+    <input type="checkbox" class="toggle" name="show-dual-relaxation" />
     Show Lagrangian dual?
   </label>
 </figure>
@@ -560,21 +572,29 @@ Conclusion
 
   const cvxs    = [x => 4*(x+1)**4, x => 1*(x-1.5)**2 + 0.5, x => Math.max(1, (x-1)+2)];
   const lps     = [x => Math.abs(x+1), x => Math.abs(x-1)+1];
-  const mip     = x => Math.min(...lps.map(f => f(x)));
-  const cip     = x => Math.min( 4*(x+1)**4, 1*(x-1.5)**2 + 0.5, Math.max(1, (x-1)+2));
-  const benders = x => Math.max(-0.9*x -1.3, 0.5*x, 0.9*x -0.5);
+
   const convex  = x => Math.max(Math.exp(-x-1.2), x, (0.7*x)**4) - 0.5;
+  const lp      = x => Math.max(-0.9*x -1.3, -0.2, 0.5*x, 0.9*x -0.5) + 0.2;
+
+  const cip     = x => Math.min(...cvxs.map(f => f(x)));
+  const mip     = x => Math.min(...lps.map(f => f(x)));
+  // Convex everywhere below cip
+  const benders = x => x < 0 ? 0.05*x**4 - 0.12 : -0.12 + 0.15*x**2;
+
 
   figures.figureOVF("#figure-ovf-convex", convex, -2, 2);
-  figures.figureOVF("#figure-ovf-lp", benders, -2, 2);
+
+  figures.figureOVF("#figure-ovf-lp", lp, -2, 2);
+
   figures.figureMinOVF("#figure-ovf-cip", cvxs, -2, 2);
+
   figures.figureMinOVF("#figure-ovf-milp", lps, -2, 2);
 
-  figures.figureContinuousRelaxation("#figure-benders-relaxation", mip, benders, -2, 2);
+  figures.figureContinuousRelaxation("#figure-benders-relaxation", cip, benders, -2, 2);
 
-  figures.figureCutBenders("#figure-benders-cut", mip, benders, -2, 2);
+  figures.figureCutBenders("#figure-benders-cut", cip, benders, -2, 2);
 
-  figures.figureCutStrenghtenedBenders("#figure-strenghtened-benders-cut", mip, benders, -2, 2);
+  figures.figureCutStrenghtenedBenders("#figure-strenghtened-benders-cut", cip, benders, -2, 2);
 
   figures.figureCutLagrangian("#figure-lagrangian-cut", cip, -2, 2);
 </script>
