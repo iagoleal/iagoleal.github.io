@@ -73,8 +73,8 @@ svg.diagram {
 }
 
 .relaxation-dual {
-  stroke: yellow;
-  stroke-width: 2px;
+  stroke: hsl(12 50% 39%);
+  stroke-width: 2pt;
   fill: none;
 }
 
@@ -297,9 +297,25 @@ and corresponding computational cost.
 We follow the cut families defined by @sddip_2019
 while generalizing the ideas for a simpler context.
 
+Do keep in mind that not all MIP value functions accept cuts,
+because their epigraph could have the entire space as its convex hull.[^mip-no-cuts]
+Nevertheless, in the real world you rarely stumble into one of these.
+Thus, knowing how approximate MIPs can prove to be a useful tool to keep in your utility belt
+
+[^mip-no-cuts]: As an example, consider $h(x) = -|x|$.
+  This function accepts no cuts and is representable as the MIP:
+  $$
+    \begin{array}{rl}
+      h(x) = \min\limits_{t,z} & t \\
+      \textrm{s.t.}   & t \ge zx, \\
+                      & t \in \R,\, z \in \{-1, +1\}.
+    \end{array}
+  $$
+
 Throughout this section,
 we will only consider optimization problems that are "convex except for integer variables",
 that is, problems having a convex objective and convex feasible set,
+but with non-convexity arising from part of the decision variables being integer.
 
 $$
   \begin{array}{rl}
@@ -309,15 +325,13 @@ $$
   \end{array}
 $$
 
-All non-convexity arises from some of the decision variables being integer.
-
 Benders Cuts
 ------------
 
 Let's start with the simplest kind of cut for a mixed integer program.
 Given a value function $f$,
 we define its _continuous relaxation_ as the value of the same optimization problem,
-but with the integer variables relaxed to be continuous.
+but with the integer variables relaxed to be continuous.[^lp-relaxation]
 
 $$
   \begin{array}{rl}
@@ -326,6 +340,9 @@ $$
                     & u \in \R^n \times \textcolor{red}{\R^k}.
   \end{array}
 $$
+
+[^lp-relaxation]: In the context of Linear Programming, you will probably find it
+with the name "LP relaxation" because it turns a MILP into a LP.
 
 Based on our previous discussions,
 the relaxation $\cont{f}$ is a convex function.
@@ -343,7 +360,7 @@ $$f(x) \ge \cont{f}(x).$$
   </svg>
 </figure>
 
-From this relation and the convexity of $f$,
+From this inequality and the convexity of $f$,
 we can calculate (not necessarily tight) cuts at any point.
 
 :::Definition
@@ -355,14 +372,15 @@ $$ f(x) \ge \cont{f}(x_0) + \inner<\lambda, x - x_0>.$$
 
 <figure id="figure-benders-cut" class="diagram-container">
   <caption>
-    You can click in the diagram below to add a Benders cut at the selected point.
+    By moving your mouse in the diagram below,
+    you can visualize the Benders cut at the selected position.
     Notice how they are, in general, nowhere tight.
   </caption>
   <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
   <label>
     <input type="checkbox" class="toggle" name="show-continuous-relaxation" />
-    Show continuous relaxation?
+    Show continuous relaxation
   </label>
 </figure>
 
@@ -370,15 +388,15 @@ Since $\cont{f}$ is convex,
 Benders cuts exist at each point by Lagrangian duality.
 They are also cheap to calculate, because,
 after all, you only have to solve a convex program to find them.
-Also, in the particular case where $F$ is a MILP,
-its relaxation will be a Linear Program.
+Also, in the particular case where $f$ is a MILP,
+its relaxation will be a Linear Program --- which are even faster to solve.
 The name Benders comes from the [Benders decomposition](https://en.wikipedia.org/wiki/Benders_decomposition)
 for stochastic linear programming,
 for which this family of cuts was invented in the 60s.
 
 In terms of implementation,
-calculating a Benders cut amounts to relaxing the parameterized optimization problem
-and finding a cut for it.
+calculating a Benders cut amounts to
+relaxing the parameterized optimization problem and finding a cut for it.
 We illustrate the procedure below, in Julia code.
 
 ```julia
@@ -395,9 +413,63 @@ Everything has been well and good, so you might be asking:
 what are the disadvantages of Benders cuts?
 The answer is that, in general, they are far away from tight.
 The continuous relaxation $\cont{f}$ is _a convex underapproximation_ of $f$,
-but there is not guarantee that it is a good underapproximation --- It can be too low.
-It also depends on the representation used for the optimization problem.
-Writing an optimal value function in different ways may yield different relaxations.
+but there is no guarantee that it is a good underapproximation --- It can be too low.
+Another question is that the continuous relaxation is _representation dependent_.
+Equivalent optimization problems have the same optimal value function
+but may yield different continuous relaxations.
+
+Lagrangian Cuts
+---------------
+
+Even though it does not come for free, as in the convex case,
+Lagrangian duality still works for mixed integer programs.
+The difference is that you have to explicitly solve the dual formulation.
+As a prize for your effort, you will gain the tightest cut possible at a chosen point.
+
+Recall from the previous post,
+that the convex relaxation of a function is represented as the
+[the Lagrangian dual problem](/posts/cuts#lagrangian-duality).
+For our MIP, it has the following form:
+
+$$
+  \begin{array}{rl}
+    \cvx{f}(x) = \max\limits_{\lambda} \min\limits_{u, y} & c(u) + \inner<\lambda, x - y> \\
+    \textrm{s.t.}   & (y, u) \in X \\
+                    & u \in \R^n \times \Z^k.
+  \end{array}
+$$
+
+A cut for the dual value function is called a _Lagrangian cut_,
+because it comes from the Lagrangian dual.
+It is the tightest cut possible at a point.
+
+:::Definition
+A **Lagrangian cut** for $f$ at $x_0$ is a tight cut
+for the dual $\cvx{f}$ at $x_0$,
+
+$$f(x) \ge \cvx{f}(x_0) + \inner<\lambda, x - x_0>.$$
+:::
+
+<figure id="figure-lagrangian-cut" class="diagram-container">
+  <caption>
+    Move your mouse inside the diagram below to visualize the Lagrangian cut at the selected position.
+    This is the tightest cut possible at that position, since it is tight for the epigraph's convex hull.
+  </caption>
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+  <label>
+    <input type="checkbox" class="toggle" name="show-dual-relaxation" />
+    Show Lagrangian dual?
+  </label>
+</figure>
+
+Despite the dual function $\cvx{f}$ being convex,
+it does not come from a convex optimization problem
+and, consequently, is much harder to solver.
+In general, to evaluate $\cvx{f}$, you will need to solve several mixed integer programs
+in order to find the optimal multiplier $\lambda$.
+Thus, despite their precision, Lagrangian cuts are computationally expensive approximations.
+This is a limiting factor in their usefulness.
 
 Strengthened Benders Cuts
 -------------------------
@@ -424,9 +496,9 @@ $$
 $$
 
 This optimization problem is an affine function
-which equals the tightest cut to $f$ with fixed inclination $\lambda$.
+equal to the tightest cut for $f$ with fixed inclination $\lambda$.
 We can use this property to strengthen a loose cut into a tight one.
-The implementation goes something like this:
+The implementation goes like this:
 
 ```julia
 # Returns the tightest cut for `f`
@@ -450,6 +522,10 @@ $$ f(x) \ge L(x_0; \lambda) + \inner<\lambda, x - x_0>.$$
 :::
 
 <figure id="figure-strenghtened-benders-cut" class="diagram-container">
+  <caption>
+    Move your mouse inside the diagram below to visualize the Benders cut at the selected position.
+    You can also click after choosing a position to strengthen the cut.
+  </caption>
   <caption>
     Whenever you click the diagram below, it calculates a Benders cut
     and then strengthens it.
@@ -493,54 +569,32 @@ instead of some representation-dependent relaxation.
 The only problem of strengthened Benders is that they are only guaranteed to be tight _somewhere_.
 They are not necessarily tight at the point of choice.
 
-Lagrangian Cuts
----------------
 
-Sometimes, we really want to find a cut that is the tightest possible
-at a chosen point.
-In this case, we have to directly calculate a cut for the convex relaxation of $f$.
+Parting Thoughts
+================
 
-As you may recall from the previous post,
-calculating the best cut at a point amounts to
-[solving the dual problem](/posts/cuts#lagrangian-duality)
+In the end of the day,
+the right cut for your MIP will depend a lot on the application at hand.
+There is always a trade-off between precision and computational effort,
+as you can see in the following table.
 
-$$
-  \begin{array}{rl}
-    \cvx{f}(x) = \max\limits_{\lambda} \min\limits_{u, y} & c(u) + \inner<\lambda, x - y> \\
-    \textrm{s.t.}   & (x, u) \in X \\
-                    & u \in \R^n \times \Z^k.
-  \end{array}
-$$
++--------------+----------------------+------------------------+
+| Cut          | Tightness            | Effort                 |
++:============:+:====================:+:======================:+
+| Benders      | Loose                | Convex                 |
++--------------+----------------------+------------------------+
+| Strengthened | Tight                | Convex + MIP           |
+| Benders      | somewhere            |                        |
++--------------+----------------------+------------------------+
+| Lagrangian   | As tight as possible | Many MIPs              |
++--------------+----------------------+------------------------+
 
-A cut for the dual value function is called a _Lagrangian cut_,
-because it comes from the Lagrangian dual,
-and is the tightest cut possible at a point.
+One thing to keep in mind is that the time necessary to calculate a tighter cut
+could be used to calculate a lot of Benders cuts --- a looser but better-shaped approximation.
+If this Benders approximation stops converging, you can strengthen some cuts to "clean up some area".
+A Lagrangian cut work best as a last resort, and only if you are interested in the area around a very specific point,
+because in the time you are calculating it, you could be getting many strengthened Benders cuts to cover a larger area.
 
-:::Definition
-A **Lagrangian cut** for $f$ at $x_0$ is a tight cut
-for the dual $\cvx{f}$ at $x_0$,
-
-$$f(x) \ge \cvx{f}(x_0) + \inner<\lambda, x - x_0>.$$
-:::
-
-<figure id="figure-lagrangian-cut" class="diagram-container">
-  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
-  </svg>
-  <label>
-    <input type="checkbox" class="toggle" name="show-dual-relaxation" />
-    Show Lagrangian dual?
-  </label>
-</figure>
-
-The dual value function $\cvx{f}$ is always convex,
-since it is the maximum of affine functions (affine in $\lambda$).
-Nevertheless, calculating it is not as simple as solving a convex optimization problem
-because, for each evaluation, it is necessary to solve several mixed integer programs.
-Thus, despite their precision, Lagrangian cuts are computationally expensive approximations.
-This is a limiting factor in their usefulness.
-
-Conclusion
-==========
 
 <figure id="figure-cuts" class="diagram-container">
   <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
@@ -555,26 +609,14 @@ Conclusion
   </label>
 </figure>
 
-
-+--------------+-------------------+------------------------+
-| Cut          | Tightness         | Effort                 |
-+:============:+:=================:+:======================:+
-| Benders      | Loose             | Convex problem         |
-+--------------+-------------------+------------------------+
-| Strengthened | Tight             | Convex problem         |
-| Benders      | somewhere         | +  MIP                 |
-+--------------+-------------------+------------------------+
-| Lagrangian   | Tight             | Many MIP               |
-+--------------+-------------------+------------------------+
-
 <script type="module">
   import * as figures from "./figures.js";
 
+  const convex  = x => Math.max(Math.exp(-x-1.2), x, (0.7*x)**4) - 0.5;
+  const lp      = x => Math.max(-2*(x+0.5) -1.3, -0.2, 0.5*x, 0.9*x -0.5) + 0.2;
+
   const cvxs    = [x => 4*(x+1)**4, x => 1*(x-1.5)**2 + 0.5, x => Math.max(1, (x-1)+2)];
   const lps     = [x => Math.abs(x+1), x => Math.abs(x-1)+1];
-
-  const convex  = x => Math.max(Math.exp(-x-1.2), x, (0.7*x)**4) - 0.5;
-  const lp      = x => Math.max(-0.9*x -1.3, -0.2, 0.5*x, 0.9*x -0.5) + 0.2;
 
   const cip     = x => Math.min(...cvxs.map(f => f(x)));
   const mip     = x => Math.min(...lps.map(f => f(x)));
