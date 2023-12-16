@@ -16,7 +16,8 @@ suppress-bibliography: true
 svg.diagram {
   width: 100%;
   height: 100%;
-  border: 1px solid #ccc;
+  background-color: hsl(147 0% 96%);
+  border-radius: 15px;
   margin-left: auto;
   margin-right: auto;
 }
