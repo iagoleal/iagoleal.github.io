@@ -98,36 +98,49 @@ svg.diagram {
 }
 </style>
 
-For many people, when they hear about optimization, their mind wanders through about continuous variables, gradients and such.
+Some people's mind, upon hearing about optimization, start to wander through continuous variables, gradients and such.
 But there is much more out there.
 Sometimes, for example, we need to deal with variables that act like a _switch_,
 showing some kind of on--off behaviour.
-For modeling this we will need integer variables.
+In that case, continuous variables are not enough:
+we need the full power of integer variables.
 
-<figure class="diagram-container">
-  <svg id="binary-variable-switch" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+<figure id="figure-integer-switch" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <b><caption>Switch between two states with integer variables.</caption></b>
+  <label>
+    <input type="checkbox" class="toggle" name="component" />
+    On-off Switch
+  </label>
 </figure>
 
 Integer variables naturally arise in a variety of situations:
 discrete choices,
-modeling generators that are either off or are on with a minimum output,
-feasibility sets formed as the union of simpler parts.
+problems in combinatorics,
+machines that are either off or are on with a minimum cost,
+feasibility sets formed as the union of simpler parts, etc.
 Despite the richness of the continuous world,
-these are all common cases which are, sometimes, necessary for an accurate modeling.
+these are all common cases requiring only expressible via integrality.
 
 In [a previous post](/posts/cuts), we discussed approximations by cuts
 and how they are a useful tool for representing value functions of parameterized optimization problems.
-Cuts are tightly related to convex functions,
-and, consequently, to continuous optimization.
+Cuts are tightly related to convex functions and, consequently, to continuous optimization.
 Nevertheless, there are techniques to calculate cuts in the presence of integer variables.
 
 Today, we will continue exploring the world of cutting planes
 with a focus on _mixed integer programs_ (MIP)
---- optimization problems that can have both continuous and integer decision variables.
+--- optimization problems containing both continuous and integer decision variables:
+
+$$
+  \begin{array}{rl}
+    f(x) = \min\limits_{u} & c(u) \\
+    \textrm{s.t.}   & (x, u) \in X \\
+                    & u \in \R^n \times \Z^k.
+  \end{array}
+$$
+
 We will investigate how the presence of integer variables affects the graph of value functions,
-and learn how to use cuts to both solve and approximate this kind of function.
+and learn how to use cuts to approximate this kind of function.
 
 The Shape of an Optimal Value Function
 ======================================
@@ -615,6 +628,7 @@ because in the time you are calculating it, you could be getting many strengthen
   // Convex everywhere below cip
   const benders = x => x < 0 ? 0.05*x**4 - 0.12 : -0.12 + 0.15*x**2;
 
+  figures.figureSwitch("#figure-integer-switch", [cvxs[0], x => Math.max(0, -2*x)], -2, 2);
 
   figures.figureOVF("#figure-ovf-convex", convex, -2, 2);
 

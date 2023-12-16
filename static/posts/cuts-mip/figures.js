@@ -248,6 +248,25 @@ export function figureOVF(id, f, minX, maxX) {
   plot(gFunc, f, scale);
 }
 
+export function figureSwitch(id, fs, minX, maxX) {
+  const svg   = d3.select(`${id} svg`);
+  const box   = d3.select(`${id} input[name="component"]`);
+  const scale = new Scale(svg, [minX, maxX], [-0.5, 2]);
+
+  const gComponents = svg.append("g");
+  const gActive     = svg.append("g");
+
+  box.on("input", function() {
+    plotEpigraph(gActive, this.checked ? fs[1] : fs[0], scale)
+      .classed("epigraph-component", true);
+  });
+
+  plotEpigraph(gComponents, fs, scale)
+    .attr("opacity", 0.3);
+  plotEpigraph(gActive, box.property("checked") ? fs[1] : fs[0], scale)
+    .classed("epigraph-component", true);
+}
+
 export function figureMinOVF(id, fs, minX, maxX) {
   const svg   = d3.select(id);
   const scale = new Scale(svg, [minX, maxX], [-0.5, 2]);
