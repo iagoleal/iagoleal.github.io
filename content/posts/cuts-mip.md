@@ -1,10 +1,8 @@
 ---
 title: Cuts for Mixed Integer Programs
 keywords: [math]
-date: 2023-11-24
+date: 2023-12-15
 suppress-bibliography: true
-header-includes:
-- '<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>'
 ---
 
 \def\cont#1{{#1}_C}

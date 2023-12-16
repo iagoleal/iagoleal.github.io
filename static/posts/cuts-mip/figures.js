@@ -40,12 +40,6 @@ class Cut {
 }
 
 // Turn a list of cuts into a polyhedral function.
-function cutApproximation(cuts) {
-  if (cuts !== undefined && cuts.length > 0) {
-    return x => d3.max(cuts, cut => cut.fx + cut.dual*(x - cut.x));
-  }
-}
-
 class Scale {
   constructor(svg, xDomain, yDomain) {
     const viewbox = svg.attr("viewBox").split(" ").map(x => +x);
@@ -97,28 +91,6 @@ function normalize(v) {
   return {x: v.x / n, y: v.y / n};
 }
 
-function intersectionPointCircle(point, circle) {
-  const v = {x: point.x - circle.x, y: point.y - circle.y};
-  return norm(v) <= circle.r;
-}
-
-function intersectionCircleCircle(a, b) {
-  const v = {x: a.x - b.x, y: a.y - b.y};
-
-  return norm(v) <= a.r + b.r
-}
-
-// Find the optimal hyperplane separating two circles
-function circleDisjointSeparator(c1, c2) {
-  const normal = normalize({x: c2.x - c1.x, y: c2.y - c1.y});
-  // Midpoint between circle's boundaries
-  const mid = {
-    x: ((c1.x + normal.x * c1.r) + (c2.x - normal.x * c2.r)) / 2,
-    y: ((c1.y + normal.y * c1.r) + (c2.y - normal.y * c2.r)) / 2,
-  }
-
-  return new Hyperplane({x: mid.x, y: mid.y, normal});
-}
 
 /*
   Drawing figures
@@ -127,16 +99,6 @@ function circleDisjointSeparator(c1, c2) {
 function mouseUnscale(event, scale) {
   const [mx, my] = d3.pointer(event);
   return [scale.x.invert(mx), scale.y.invert(my)]
-}
-
-function updateConvexSets(selector, data) {
-  return selector.selectAll(".convex-set")
-    .data(data)
-    .join("circle")
-    .attr("cx", d => d.x)
-    .attr("cy", d => d.y)
-    .attr("r",  d => d.r)
-    .attr("class", "convex-set");
 }
 
 function updateHyperplanes(selector, pos) {
@@ -198,27 +160,6 @@ function plotEpigraph(elem, fs, scale) {
       .curve(d3.curveLinear)
     );
 
-}
-
-function updatePolyhedral(poly, cuts, scale) {
-  const f = cutApproximation(cuts);
-  const ymin = scale.y.domain()[0]
-  const fData = scale.x.ticks(400).map(x => ({
-    x: x,
-    y: f === undefined ? ymin : f(x),
-  }));
-
-  return poly.selectAll(".polyhedral")
-    .data([fData])
-    .join("path")
-    .attr("class", "function-graph polyhedral")
-    .transition()
-    .duration(200)
-    .ease(d3.easeCubic)
-    .attr("d", d3.line()
-      .x(d => scale.x(d.x))
-      .y(d => scale.y(d.y))
-    );
 }
 
 function numdiff(f) {
