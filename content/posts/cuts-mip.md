@@ -26,26 +26,6 @@ svg.diagram {
   margin-right: auto;
 }
 
-.multi-figure-container {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  justify-content: space-between;
-}
-
-.multi-figure-container > svg {
-  max-width: 100%;
-  height: auto;
-}
-
-.convex-set {
-  fill: hsl(147 42% 64%);
-  stroke: black;
-  opacity: 1;
-  transition: fill 100ms;
-}
-
 .hyperplane {
   stroke: hsl(39 100% 50%);
   stroke-width: 1pt;
@@ -62,11 +42,6 @@ svg.diagram {
 
 .relaxation-continuous {
   stroke: blue;
-  fill: none;
-}
-
-.relaxation-lagrangian {
-  stroke: orange;
   fill: none;
 }
 
@@ -170,8 +145,8 @@ where the objective $c$ is convex and the feasibility set $X$ is jointly convex 
 _is a convex function_.
 :::
 
-<figure class="diagram-container">
-  <svg id="figure-ovf-convex" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+<figure id="figure-ovf-convex"  class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </figure>
 
@@ -201,8 +176,8 @@ $$
 is a _polyhedral function_.
 :::
 
-<figure class="diagram-container">
-  <svg id="figure-ovf-lp" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+<figure id="figure-ovf-lp" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </figure>
 
@@ -266,9 +241,9 @@ For a given $x$, $f$ chooses the best of these functions and then optimizes on i
 Furthermore, since the minimum in $z$ is discrete, continuity implies
 that we must have whole connected ranges of $x$ for which it will choose the same $z$.
 
-<figure class="diagram-container">
+<figure id="figure-ovf-cip" class="diagram-container">
   <caption>You can hover the graph below to highlight each of its convex components.</caption>
-  <svg id="figure-ovf-cip" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </figure>
 
@@ -277,8 +252,8 @@ the optimal value function is a discrete minimum of polyhedral functions,
 meaning that despite not being polyhedral itself, it is nevertheless piecewise-linear.
 See the paper by @ralphs_hassanzadeh_2014 for an in-depth study of such value functions.
 
-<figure class="diagram-container">
-  <svg id="figure-ovf-milp" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+<figure id="figure-ovf-milp" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </figure>
 
@@ -362,12 +337,12 @@ because they have the same objective function but $\cont{f}$ has a larger feasib
 
 $$f(x) \ge \cont{f}(x).$$
 
-<figure class="diagram-container">
+<figure id="figure-benders-relaxation" class="diagram-container">
   <caption>
     Below, you can see a piecewise convex function,
     representing the optimal value of an MIP, and its relaxation.
   </caption>
-  <svg id="figure-benders-relaxation" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </figure>
 

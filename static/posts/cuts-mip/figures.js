@@ -180,7 +180,7 @@ function dualize(f, minX, maxX) {
 */
 
 export function figureOVF(id, f, minX, maxX) {
-  const svg   = d3.select(id);
+  const svg   = d3.select(`${id} svg`);
   const scale = new Scale(svg, [minX, maxX], [-0.5, 2]);
 
   const gFunc = svg.append("g");
@@ -209,7 +209,7 @@ export function figureSwitch(id, fs, minX, maxX) {
 }
 
 export function figureMinOVF(id, fs, minX, maxX) {
-  const svg   = d3.select(id);
+  const svg   = d3.select(`${id} svg`);
   const scale = new Scale(svg, [minX, maxX], [-0.5, 2]);
 
   const cip = x => d3.min(fs.map(f => f(x)));
@@ -236,7 +236,7 @@ export function figureMinOVF(id, fs, minX, maxX) {
 }
 
 export function figureContinuousRelaxation(id, mip, relax, minX, maxX) {
-  const svg   = d3.select(id);
+  const svg   = d3.select(`${id} svg`);
   const scale = new Scale(svg, [minX, maxX], [-0.5, 2]);
 
   const gMip     = svg.append("g");
