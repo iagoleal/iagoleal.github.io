@@ -174,7 +174,7 @@ they are in fact polyhedral.
 
 For simplicity, we will only state the theorem for standard form LPs.
 This is without loss of generality,
-since any linear program can be put into this form.
+since one can put any linear program into this form.
 
 :::{.Theorem data-title="Linear Programming"}
 The optimal value function for a _standard form linear program_
@@ -196,7 +196,7 @@ is a _polyhedral function_.
 </figure>
 
 A direct corollary is that the value function of any linear program
-can be represented by _finitely many cuts_.
+is representable with _finitely many cuts_.
 This is a powerful tool when proving the convergence of cutting plane algorithms for linear programs.
 
 Let's now switch our focus towards _mixed integer programs_ (MIP):
@@ -217,7 +217,7 @@ We begin by separating the decision variable $u$ into
 a continuous part $u_C$ and an integer part $u_I$.
 The trick is to change how we enforce the integrality of $u_I$.
 Let's allow the entire control --- including $u_I$ --- to be continuous
-but add a new integer variable $z$ that is constrained to equal $u_I$.
+but add a new integer variable $z$ constrained to equal $u_I$.
 
 $$
   \begin{array}{rl}
@@ -256,7 +256,7 @@ Furthermore, since the minimum in $z$ is discrete, continuity implies
 that we must have whole connected ranges of $x$ for which it will choose the same $z$.
 
 <figure class="diagram-container">
-  <caption>You can hove the graph below to highlight each of its convex components.</caption>
+  <caption>You can hover the graph below to highlight each of its convex components.</caption>
   <svg id="figure-ovf-cip" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </figure>
@@ -281,11 +281,11 @@ Different Flavours of Cuts
 ==========================
 
 For a value function defined via a convex optimization problem,
-calculating a Lagrangian dual automatically yields a cut.
+Lagrangian duality yields tight cuts for free.
 In the presence of integer variables, however, life is not so simple
 because the solving methods do not automatically calculate dual multipliers for us.
 
-Calculating a cut for a MIP, however, requires more work.
+Calculating a cut for a MIP requires more work but is still feasible.
 All the strategies that we will show today follow the same idea:
 Find a convex underapproximation for your value function and calculate cuts for it.
 These are also automatically cuts for the original problem.
@@ -459,7 +459,7 @@ $$f(x) \ge \cvx{f}(x_0) + \inner<\lambda, x - x_0>.$$
   </svg>
   <label>
     <input type="checkbox" class="toggle" name="show-dual-relaxation" />
-    Show Lagrangian dual?
+    Show Lagrangian dual
   </label>
 </figure>
 
@@ -474,41 +474,47 @@ This is a limiting factor in their usefulness.
 Strengthened Benders Cuts
 -------------------------
 
-Although their looseness,
-Benders cuts' greatest advantage is being cheap to calculate.
-It wouldn't be great if we could somehow make them tighter?
-Actually we can do that, by paying the price of solving one extra mixed integer program.
-The intuition is that we can calculate a Benders cut and then move it up
-until it hits the function's graph somewhere.
-This way we find a new tight cut with the Benders multiplier.
-But how can we achieve this?
+Until now we've seem two kinds of cuts:
+Benders are cheap but loose while Lagrangian are tight but expensive.
+Is there a middle ground?
+Perhaps there is some way to calculate cuts that are still good,
+even if not the best possible,
+but do not require so many resources to calculate.
 
-Recall from the previous post about cuts,
-that we introduced the [Lagrangian relaxation](/posts/cuts#lagrangian-duality)
-of a value function,
+The idea we will follow is that instead of directly calculating good cut,
+we will take a loose one and improve it.
+As we will shortly see,
+it is possible to turn any valid cut into a tight one
+at the price of solving one extra mixed integer program.
+The intuition is that we can move a cut up until it hits the function's graph.
+
+Recall from the previous post that the [Lagrangian relaxation](/posts/cuts#lagrangian-duality)
+of a value function is an affine underapproximation
+equal to the tightest cut for $f$ with fixed inclination $\lambda$,
+defined as
 
 $$
   \begin{array}{rl}
-    L(x; \lambda) = \min\limits_{u, y} & c(u) + \inner<\lambda, x - y> \\
+    L(f, \lambda)(x) = \min\limits_{u, y} & c(u) + \inner<\lambda, x - y> \\
     \textrm{s.t.}   & (y, u) \in X \\
                     & y \in \R^n \times \Z^k.
   \end{array}
 $$
 
-This optimization problem is an affine function
-equal to the tightest cut for $f$ with fixed inclination $\lambda$.
-We can use this property to strengthen a loose cut into a tight one.
+Thus, the Lagrangian relaxation transforms
+a loose cut into a tight one with the same inclination.
+We call this procedure _strengthening a cut_.
 The implementation goes like this:
 
 ```julia
 # Returns the tightest cut for `f`
 # with the same inclination as the argument cut.
 function strengthen_cut(f, cut)
-  L = lagrangian_relaxation(f, cut.λ)
+  L  = lagrangian_relaxation(f, cut.λ)
   # Find optimal value for Lagrangian relaxation
-  opt = solve_mip(L, cut.point)
+  Lx = solve_mip(L, cut.x)
 
-  return Cut(cut.point, opt, cut.λ)
+  return Cut(cut.x, Lx, cut.λ)
 end
 ```
 
@@ -523,19 +529,19 @@ $$ f(x) \ge L(x_0; \lambda) + \inner<\lambda, x - x_0>.$$
 
 <figure id="figure-strenghtened-benders-cut" class="diagram-container">
   <caption>
-    Move your mouse inside the diagram below to visualize the Benders cut at the selected position.
+    Hover the diagram below to visualize the Benders cut at the selected position.
     You can also click after choosing a position to strengthen the cut.
-  </caption>
-  <caption>
-    Whenever you click the diagram below, it calculates a Benders cut
-    and then strengthens it.
-    Notice that these cuts are always tight but, in general, not at the point of choice.
+    Notice that these cuts are always tight but not necessarily at the chosen point.
   </caption>
   <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
   <label>
     <input type="checkbox" class="toggle" name="show-continuous-relaxation" />
-    Show continuous relaxation?
+    Show continuous relaxation
+  </label>
+  <label>
+    <input type="checkbox" class="toggle" name="show-dual-relaxation" />
+    Show Lagrangian dual
   </label>
 </figure>
 
@@ -562,11 +568,11 @@ end
 ```
 
 Solving a MIP is much more costly than solving a convex program,
-especially if they are linear.
+especially in the linear case.
 Nevertheless, tight cuts tend to be worth the effort,
 since they are directly approximating the best convex underapproximation
 instead of some representation-dependent relaxation.
-The only problem of strengthened Benders is that they are only guaranteed to be tight _somewhere_.
+The main problem with strengthened Benders cuts is that they are only guaranteed to be tight _somewhere_.
 They are not necessarily tight at the point of choice.
 
 
@@ -594,20 +600,6 @@ could be used to calculate a lot of Benders cuts --- a looser but better-shaped 
 If this Benders approximation stops converging, you can strengthen some cuts to "clean up some area".
 A Lagrangian cut work best as a last resort, and only if you are interested in the area around a very specific point,
 because in the time you are calculating it, you could be getting many strengthened Benders cuts to cover a larger area.
-
-
-<figure id="figure-cuts" class="diagram-container">
-  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
-  </svg>
-  <label>
-    <input type="checkbox" class="toggle" name="show-continuous-relaxation" />
-    Show continuous relaxation?
-  </label>
-  <label>
-    <input type="checkbox" class="toggle" name="show-dual-relaxation" />
-    Show Lagrangian dual?
-  </label>
-</figure>
 
 <script type="module">
   import * as figures from "./figures.js";

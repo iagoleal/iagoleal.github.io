@@ -228,6 +228,12 @@ function numdiff(f) {
   }
 }
 
+function dualize(f, minX, maxX) {
+  return x => findMax(d3.range(-6, 1.0, 0.1), lambda =>
+    d3.min(d3.range(minX, maxX, 0.05), u => f(u) - lambda*(u - x))
+  )
+}
+
 /*
   Page figures
 */
@@ -251,22 +257,22 @@ export function figureMinOVF(id, fs, minX, maxX) {
   const gCip     = svg.append("g");
   const gCurrent = svg.append("g");
 
-  function turnOn(x0) {
+  function turnOn(x0, y0) {
     const smallest = d3.minIndex(fs, f => f(x0));
-    plotEpigraph(gCurrent, fs[smallest], scale)
+    plotEpigraph(gCurrent, y0 >= cip(x0) ? fs[smallest] : [], scale)
       .classed("epigraph-component", true);
-    plot(gCurrent, fs[smallest], scale)
+    plot(gCurrent,  y0 >= cip(x0) ? fs[smallest] : [], scale)
       .attr("opacity", 0.3);
   }
 
   svg.on("mousemove", function(event) {
-    const [x0] = mouseUnscale(event, scale);
-    turnOn(x0);
+    const [x0, y0] = mouseUnscale(event, scale);
+    turnOn(x0, y0);
   });
 
   plotEpigraph(gCip, cip, scale);
   plot(gCip, cip, scale);
-  turnOn(maxX);
+  turnOn(maxX, 2);
 }
 
 export function figureContinuousRelaxation(id, mip, relax, minX, maxX) {
@@ -285,7 +291,7 @@ export function figureContinuousRelaxation(id, mip, relax, minX, maxX) {
 
 export function figureCutBenders(id, mip, relax, minX, maxX) {
   const svg   = d3.select(`${id} svg`);
-  const box   = d3.select(`${id} input[name="show-continuous-relaxation"`);
+  const box   = d3.select(`${id} input[name="show-continuous-relaxation"]`);
   const scale = new Scale(svg, [minX, maxX], [-0.5, 2]);
 
   const gBenders = svg.append("g");
@@ -323,78 +329,98 @@ export function figureCutBenders(id, mip, relax, minX, maxX) {
 }
 
 export function figureCutStrenghtenedBenders(id, mip, relax, minX, maxX) {
-  const svg   = d3.select(`${id} svg`);
-  const box   = d3.select(`${id} input[name="show-continuous-relaxation"`);
+  const svg           = d3.select(`${id} svg`);
+  const boxBenders    = d3.select(`${id} input[name="show-continuous-relaxation"]`);
+  const boxLagrangian = d3.select(`${id} input[name="show-dual-relaxation"]`);
   const scale = new Scale(svg, [minX, maxX], [-0.5, 2]);
 
-  const gBenders = svg.append("g");
-  const gMip     = svg.append("g");
-  const gCuts = svg.append("g");
+  const dual = dualize(mip, minX, maxX);
+
+  const gMip        = svg.append("g");
+  const gBenders    = svg.append("g");
+  const gLagrangian = svg.append("g");
+  const gCuts       = svg.append("g");
 
   function Lagrangian(f, lambda) {
     return x => d3.min(d3.range(minX, maxX, 0.1), u => f(u) - lambda*(u-x))
   }
 
-  function placeCut(x0) {
-    const lambda = numdiff(relax)(x0);
+  function placeBenders(x0) {
     const cut = new Cut(x0, relax(x0), numdiff(relax)(x0));
     const hyperplane = cut.toHyperplane(scale);
 
-    const strcut = (new Cut(x0, Lagrangian(mip, lambda)(x0), numdiff(relax)(x0))).toHyperplane(scale);
+    // Show where is the tangent line
+    updateHyperplanes(gCuts, [hyperplane])
+      .interrupt("strenghtened-benders");
+    updateMarks(gCuts, [hyperplane])
+      .interrupt("strenghtened-benders");
+  }
+
+  svg.on("mousemove", function(event) {
+    const [x0] = mouseUnscale(event, scale);
+    placeBenders(x0);
+  });
+
+  svg.on("click", function(event) {
+    const [x0] = mouseUnscale(event, scale);
+
+    const lambda     = numdiff(relax)(x0);
+    const cut        = new Cut(x0, Lagrangian(mip, lambda)(x0), numdiff(relax)(x0));
+    const hyperplane = cut.toHyperplane(scale);
 
     const width     = 800;
     const height    = 400;
     const maxLength = Math.sqrt(width ** 2 + height ** 2);
 
-    // Start with Benders cut and then animate it going up to str Benders
-    updateHyperplanes(gCuts, [hyperplane])
-      .interrupt("strenghtened-benders")
-      .transition('strenghtened-benders')
-        .delay(250)
-        .duration(750)
-        .attr("x1", d => strcut.x - d.tangent.x * maxLength)
-        .attr("y1", d => strcut.y - d.tangent.y * maxLength)
-        .attr("x2", d => strcut.x + d.tangent.x * maxLength)
-        .attr("y2", d => strcut.y + d.tangent.y * maxLength)
+    gCuts.selectAll(".hyperplane")
+      .data([hyperplane])
+      .join("line")
+        .interrupt("strenghtened-benders")
+        .transition('strenghtened-benders')
+          .duration(750)
+          .attr("x1", d => d.x - d.tangent.x * maxLength)
+          .attr("y1", d => d.y - d.tangent.y * maxLength)
+          .attr("x2", d => d.x + d.tangent.x * maxLength)
+          .attr("y2", d => d.y + d.tangent.y * maxLength)
 
-    updateMarks(gCuts, [hyperplane])
-      .interrupt("strenghtened-benders")
-      .transition('strenghtened-benders')
-        .delay(250)
-        .duration(750)
-        .attr("cx", _ => strcut.x)
-        .attr("cy", _ => strcut.y)
-  }
-
-  svg.on("click", function(event) {
-    const [x0] = mouseUnscale(event, scale);
-    placeCut(x0);
+    gCuts.selectAll(".mark")
+      .data([hyperplane])
+      .join("circle")
+        .interrupt("strenghtened-benders")
+        .transition('strenghtened-benders')
+          .duration(750)
+          .attr("cx", d => d.x)
+          .attr("cy", d => d.y)
   });
 
-
-  box.on("input", function() {
+  boxBenders.on("input", function() {
     gBenders.selectAll(".relaxation-continuous")
+      .attr("opacity", this.checked ? 1 : 0);
+  });
+
+  boxLagrangian.on("input", function() {
+    gLagrangian.selectAll(".relaxation-dual")
       .attr("opacity", this.checked ? 1 : 0);
   });
 
   // Initial plots
   plotEpigraph(gMip, mip, scale);
   plot(gMip, mip, scale);
+
   plot(gBenders, relax, scale)
     .attr("class", "relaxation-continuous")
-    .attr("opacity", box.property("checked") ? 1 : 0);
-  placeCut(1);
-}
+    .attr("opacity", boxBenders.property("checked") ? 1 : 0);
 
-function dualize(f, minX, maxX) {
-  return x => findMax(d3.range(-6, 1.0, 0.1), lambda =>
-    d3.min(d3.range(minX, maxX, 0.05), u => f(u) - lambda*(u - x))
-  )
+  plot(gLagrangian, x => dual(x).value, scale)
+    .attr("class", "relaxation-dual")
+    .attr("opacity", boxLagrangian.property("checked") ? 1 : 0);
+
+  placeBenders(1);
 }
 
 export function figureCutLagrangian(id, f, minX, maxX) {
   const svg   = d3.select(`${id} svg`);
-  const box   = d3.select(`${id} input[name="show-dual-relaxation"`);
+  const box   = d3.select(`${id} input[name="show-dual-relaxation"]`);
   const scale = new Scale(svg, [minX, maxX], [-0.5, 2]);
 
   const gFunc       = svg.append("g");

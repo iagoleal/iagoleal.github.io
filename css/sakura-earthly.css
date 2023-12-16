@@ -200,6 +200,5 @@ input[type="checkbox"]:focus {
   outline: 1px dotted #008b6a; }
 
 label, legend, fieldset {
-  display: block;
   margin-bottom: .5rem;
   font-weight: 600; }
