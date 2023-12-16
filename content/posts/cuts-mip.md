@@ -593,7 +593,7 @@ because in the time you are calculating it, you could be getting many strengthen
   const convex  = x => Math.max(Math.exp(-x-1.2), x, (0.7*x)**4) - 0.5;
   const lp      = x => Math.max(-2*(x+0.5) -1.3, -0.2, 0.5*x, 0.9*x -0.5) + 0.2;
 
-  const cvxs    = [x => 4*(x+1)**4, x => 1*(x-1.5)**2 + 0.5, x => Math.max(1, (x-1)+2)];
+  const cvxs    = [x => 4*(x+1)**4, x => 1*(x-1.5)**2 + 0.5, x => Math.max((x+0.7)**2, 1, (x-1)+2)];
   const lps     = [x => Math.abs(x+1), x => Math.abs(x-1)+1];
 
   const cip     = x => Math.min(...cvxs.map(f => f(x)));
