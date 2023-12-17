@@ -274,10 +274,12 @@ Create the shared tmux session
 
 We will store the shared session in a temporary file
 that can be accessed both by your and your friend's user.
-First create the session with a special socket file:
+Create the session with a special socket file
+and grant serve access to the user:
 
 ```sh
 tmux -S /tmp/sharedtmux new-session -s gamemaking -d
+tmux -S /tmp/sharedtmux server-access -a frienduser
 ```
 
 Here I am calling the session `gamemaking`
@@ -405,6 +407,7 @@ fi
 
 # Create shared tmux session
 tmux -S "$tmux_file" new-session -s "$tmux_session" -d
+tmux -S "$tmux_file" server-access -a "$frienduser"
 # Assign right permissions to group
 chgrp $tmux_group "$tmux_file"
 chmod g+rw "$tmux_file"
