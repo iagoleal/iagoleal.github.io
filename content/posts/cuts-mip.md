@@ -83,7 +83,7 @@ we need the full power of integer variables.
   </svg>
   <label>
     <input type="checkbox" class="toggle" name="component" />
-    On-off Switch
+    Toggle
   </label>
 </figure>
 

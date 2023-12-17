@@ -880,7 +880,7 @@ you already have some cuts lying around for free!
 I am also planning some further posts
 were we will explore how to combine cuts with value and policy iteration
 to extend dynamic programming to infinite dimensional state spaces,
-and how to put to good use the various available ways to calculate cuts for mixed integer programs.
+and how to put to good use the various available ways to [calculate cuts for mixed integer programs](/posts/cuts-mip).
 
 Good convergence for y'all and stay tuned!
 
