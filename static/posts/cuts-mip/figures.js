@@ -163,7 +163,7 @@ function plotEpigraph(elem, fs, scale) {
 }
 
 function numdiff(f) {
-  return function(x) {
+  return x => {
     const eps = 0.01
     return (f(x+eps) - f(x-eps)) / (2*eps)
   }
@@ -238,10 +238,10 @@ class Diagram {
 
   // Plot a function subject to a checkbox toggle
   plotToggleable(f, name, kind) {
-    const box   = d3.select(`${this.id} input[name="${name}"]`);
-    const g     = this.svg.append("g");
+    const box = d3.select(`${this.id} input[name="${name}"]`);
+    const g   = this.svg.append("g");
 
-    box.on("input.toggle", function() {
+    box.on("input.toggle", () => {
       g.selectAll(`.${kind}`)
         .attr("opacity", box.property("checked") ? 1 : 0);
     });
@@ -257,18 +257,16 @@ class Diagram {
   // Add a cut on hover
   cut(factory) {
     const g = this.svg.append("g");
-    const scale = this.scale;
 
     const placeCut = (x0) => {
       const cut = factory(x0).toHyperplane(this.scale);
 
       updateHyperplanes(g, [cut]);
       updateMarks(g, [cut]);
-    }
+    };
 
-    this.svg.on("mousemove.cut", function(event) {
-      const [x0] = mouseUnscale(event, scale);
-      placeCut(x0);
+    this.svg.on("mousemove.cut", e => {
+      placeCut(...mouseUnscale(e, this.scale));
     });
 
     placeCut(1);
@@ -281,13 +279,13 @@ class Diagram {
     const scale = this.scale;
 
     // Stop cut lifting animation whenever the user chooses another position
-    this.svg.on("mousemove.strenghtened", event => {
+    this.svg.on("mousemove.strenghtened", () => {
       this.svg.selectAll(".hyperplane, .mark").interrupt("strenghtened-cut");
     });
 
     // By clicking in the diagram, the user can change the current cut position.
-    this.svg.on("click.strenghtened", event => {
-      const [x0] = mouseUnscale(event, scale);
+    this.svg.on("click.strenghtened", e => {
+      const [x0] = mouseUnscale(e, scale);
 
       const cut = factory(x0).toHyperplane(this.scale);
 
@@ -313,6 +311,24 @@ class Diagram {
     });
 
     return this;
+  }
+
+  components(fs) {
+    const g = this.svg.append("g");
+    const cip = x => d3.min(fs.map(f => f(x)));
+
+    const turnOn = (x0, y0) => {
+      const smallest = d3.minIndex(fs, f => f(x0));
+
+      plotEpigraph(g, y0 >= cip(x0) ? fs[smallest] : [], this.scale)
+        .classed("epigraph-component", true);
+    };
+
+    this.svg.on("mousemove.components", e => {
+      turnOn(...mouseUnscale(e, this.scale));
+    });
+
+    turnOn(this.maxX, 2);
   }
 }
 
@@ -355,6 +371,14 @@ export function figureCutStrenghtenedBenders(id, mip, relax, minX, maxX) {
     .cutStrenghten(cutStrBenders(mip, benders, minX, maxX));
 }
 
+export function figureMinOVF(id, fs, minX, maxX) {
+  const cip = x => d3.min(fs.map(f => f(x)));
+
+  return new Diagram(id, minX, maxX)
+    .epigraph(cip)
+    .components(fs)
+}
+
 export function figureSwitch(id, fs, minX, maxX) {
   const svg   = d3.select(`${id} svg`);
   const box   = d3.select(`${id} input[name="component"]`);
@@ -372,31 +396,4 @@ export function figureSwitch(id, fs, minX, maxX) {
     .attr("opacity", 0.3);
   plotEpigraph(gActive, box.property("checked") ? fs[1] : fs[0], scale)
     .classed("epigraph-component", true);
-}
-
-export function figureMinOVF(id, fs, minX, maxX) {
-  const svg   = d3.select(`${id} svg`);
-  const scale = new Scale(svg, [minX, maxX], [-0.5, 2]);
-
-  const cip = x => d3.min(fs.map(f => f(x)));
-
-  const gCip     = svg.append("g");
-  const gCurrent = svg.append("g");
-
-  function turnOn(x0, y0) {
-    const smallest = d3.minIndex(fs, f => f(x0));
-    plotEpigraph(gCurrent, y0 >= cip(x0) ? fs[smallest] : [], scale)
-      .classed("epigraph-component", true);
-    plot(gCurrent,  y0 >= cip(x0) ? fs[smallest] : [], scale)
-      .attr("opacity", 0.3);
-  }
-
-  svg.on("mousemove", function(event) {
-    const [x0, y0] = mouseUnscale(event, scale);
-    turnOn(x0, y0);
-  });
-
-  plotEpigraph(gCip, cip, scale);
-  plot(gCip, cip, scale);
-  turnOn(maxX, 2);
 }

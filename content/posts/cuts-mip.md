@@ -597,7 +597,6 @@ because in the time you are calculating it, you could be getting many strengthen
   const lps     = [x => Math.abs(x+1), x => Math.abs(x-1)+1];
 
   const cip     = x => Math.min(...cvxs.map(f => f(x)));
-  const mip     = x => Math.min(...lps.map(f => f(x)));
   // Convex everywhere below cip
   const benders = x => x < 0 ? 0.05*x**4 - 0.12 : -0.12 + 0.15*x**2;
 
