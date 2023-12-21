@@ -3,6 +3,10 @@ title: Algebraic Path Finding
 keywords: [math, dynamic-programming, haskell]
 date: 2023-03-21
 suppress-bibliography: true
+description:
+  By doing dynamic programming in an abstract Semiring,
+  we discover that many classical algorithms
+  are, in fact, calculating shortest paths.
 ---
 
 \def\States{\mathcal{S}}

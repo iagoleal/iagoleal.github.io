@@ -2,6 +2,10 @@
 title: Pair Programming in the Pandemic
 keywords: [linux, tmux, ssh]
 date: 2021-08-03
+description:
+  Ever had to program together with someone via ssh?
+  It can be confusing...
+  unless you use tmux to painlessly share a terminal!
 ---
 
 I gotta say that this pandemic has been really harsh where I live.

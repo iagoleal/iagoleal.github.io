@@ -2,6 +2,10 @@
 title: A Fistful of Automata
 keywords: [haskell, automata]
 date: 2023-10-20
+description:
+  There are many kinds of finite automata.
+  We can, however, write all of them as variations on the same definition,
+  by making the transition monadic.
 ---
 
 \def\powset{\mathcal{P}}

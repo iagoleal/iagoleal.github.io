@@ -2,6 +2,10 @@
 title: Memoization via Representables
 keywords: [haskell, functional-programming]
 date: 2022-09-18
+description: >
+  By delving into the realm of abstraction,
+  we can uncover practical applications.
+  For example: memoizing functions with Representable Functors.
 ---
 
 What is the most basic container type a language can have?
@@ -22,11 +26,9 @@ the same value whenever it is called,
 we instead store the already calculated value somewhere
 and just do a lookup instead of redoing the entire calculation.
 
-
 What I like the most in this post's code is that
 we're going to delve deeply into the realm of abstraction
 to then emerge with a concept with clear and practical applications!
-
 
 > {-# LANGUAGE DeriveFunctor,       TypeFamilies        #-}
 > {-# LANGUAGE ScopedTypeVariables, RankNTypes          #-}

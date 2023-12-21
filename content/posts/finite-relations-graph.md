@@ -2,6 +2,8 @@
 title: Picturing Finite Relations as Graphs
 keywords: [math, theory]
 date: 2023-08-24
+description:
+  A mostly visual post illustrating the graphs for many common kinds of relations.
 ---
 
 On the previous post about [Algebraic Path Finding](/posts/algebraic-path),

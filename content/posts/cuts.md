@@ -3,6 +3,10 @@ title: Approximation by a Thousand Cuts
 subtitle: An interactive guide to polyhedral representations
 keywords: [math]
 date: 2023-09-22
+description:
+  An exploration of cutting-plane approximations,
+  a technique for representing functions via polyhedra
+  that nicely fits into optimization problems.
 suppress-bibliography: true
 ---
 

@@ -2,6 +2,9 @@
 title: The Lazy Way to Solve Differential Equations
 keywords: [haskell, functional-programming]
 date: 2022-07-17
+description:
+ Looking at Taylor series as streams of real numbers,
+ solving differential equations becomes as easy as writing them.
 ---
 
 Back at college I took some classes on solving differential equation.
@@ -19,7 +22,7 @@ and then solve the recurrence relations to find Taylor series for the solution.
 Well, some days ago [João Paixão](https://www.joaopaixao.com/)
 sent me a link to a paper from @calcStreams1998 called "Calculus in Coinductive Form".
 In it the authors show that if we look at Taylor series as streams of real numbers,
-then solving these differential equations become _as easy as writing them_!
+then solving these differential equations becomes _as easy as writing them_!
 
 Of course, I got really excited with the idea and had to turn it into code.
 After all, that is the epitome of declarative programming!
