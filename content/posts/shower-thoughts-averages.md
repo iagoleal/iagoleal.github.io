@@ -2,7 +2,7 @@
 title: Shower Thoughts about Averages
 keywords: [math, statistics]
 date: 2021-12-29
-description: >
+description:
   The standard definition of average can be rather opaque.
   Nevertheless, looking at it from the perspective of minimizing a square error,
   sheds light on how natural the definition actually is.

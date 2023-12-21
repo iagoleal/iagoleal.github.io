@@ -18,9 +18,6 @@
     $endif$
     <title>$if(pagetitle)$$if(title-prefix)$$title-prefix$ – $endif$$pagetitle$ | $endif$$author-meta$</title>
 
-    <!--Twitter Social Tags-->
-    <meta name="twitter:card"   content="summary_large_image" />
-    <meta name="twitter:domain" content="$site$">
     <!--Open Graph protocol-->
     <meta property="og:url"   content="$url$" />
     <meta property="og:type"  content="article" />
@@ -30,9 +27,19 @@
     $if(description-meta)$
     <meta property="og:description" content="$description-meta$" />
     $endif$
-    <meta property="og:image"        content="$url$/banner.png" />
+    <meta property="og:image"        content="$site$/img/banner.png" />
     <meta property="og:image:width"  content="1200" />
-    <meta property="og:image:height" content="600" />
+    <meta property="og:image:height" content="630" />
+    <!--Twitter Social Tags-->
+    <meta name="twitter:card"   content="summary_large_image" />
+    <meta name="twitter:domain" content="$site$">
+    <meta name="twitter:url"    content="$url$" />
+    $if(pagetitle)$
+    <meta name="twitter:title"  content="$pagetitle$" />
+    $endif$
+    $if(description-meta)$
+    <meta name="twitter:description" content="$description-meta$" />
+    $endif$
 
     <!--Establish a canonical page-->
     <link rel="canonical" href="$url$" />
