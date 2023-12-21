@@ -369,7 +369,7 @@ $$ f(x) \ge \cont{f}(x_0) + \inner<\lambda, x - x_0>.$$
   </svg>
   <label>
     <input type="checkbox" class="toggle" name="show-relaxation-continuous" />
-    Show continuous relaxation
+    Continuous relaxation
   </label>
 </figure>
 
@@ -448,7 +448,7 @@ $$f(x) \ge \cvx{f}(x_0) + \inner<\lambda, x - x_0>.$$
   </svg>
   <label>
     <input type="checkbox" class="toggle" name="show-relaxation-dual" />
-    Show Lagrangian dual
+    Lagrangian dual
   </label>
 </figure>
 
@@ -526,11 +526,11 @@ $$ f(x) \ge L(x_0; \lambda) + \inner<\lambda, x - x_0>.$$
   </svg>
   <label>
     <input type="checkbox" class="toggle" name="show-relaxation-continuous" />
-    Show continuous relaxation
+    Continuous relaxation
   </label>
   <label>
     <input type="checkbox" class="toggle" name="show-relaxation-dual" />
-    Show Lagrangian dual
+    Lagrangian dual
   </label>
 </figure>
 
