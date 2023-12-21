@@ -12,7 +12,7 @@ metadata:
 
 variables:
   github:    https://github.com/iagoleal
-  site:      https://iagoleal.com
+  site-url:  https://iagoleal.com
   site-repo: https://github.com/iagoleal/iagoleal.github.io
 
 citeproc: true
