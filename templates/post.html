@@ -1,115 +1,35 @@
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="$lang$" xml:lang="$lang$"$if(dir)$ dir="$dir$"$endif$>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="generator" content="pandoc" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-    $for(author-meta)$
-    <meta name="author" content="$author-meta$" />
-    $endfor$
-    $if(date-meta)$
-    <meta name="dcterms.date" content="$date-meta$" />
+$if(title)$
+<header id="title-block-header">
+  <div class="subheading">
+    $if(title)$<h1 class="title">$title$</h1>$endif$
+    $if(subtitle)$
+    <p class="subtitle">$subtitle$</p>
     $endif$
-    $if(keywords)$
-    <meta name="keywords" content="$for(keywords)$$keywords$$sep$, $endfor$" />
-    $endif$
-    $if(description-meta)$
-    <meta name="description" content="$description-meta$" />
-    $endif$
-    <title>$if(pagetitle)$$if(title-prefix)$$title-prefix$ – $endif$$pagetitle$ | $endif$$author-meta$</title>
+  </div>
 
-    <!--Open Graph protocol-->
-    <meta property="og:site_name" content="Iago Leal" />
-    <meta property="og:url"       content="$url$" />
-    <meta property="og:type"      content="article" />
-    $if(date-meta)$
-    <meta property="og:article:published_time" content="$date-meta$" />
-    $endif$
-    $if(pagetitle)$
-    <meta property="og:title" content="$pagetitle$" />
-    $endif$
-    $if(description-meta)$
-    <meta property="og:description" content="$description-meta$" />
-    $endif$
-    <meta property="og:image"        content="$site-url$/img/banner.png" />
-    <meta property="og:image:width"  content="1200" />
-    <meta property="og:image:height" content="630" />
+  $for(author)$
+  <p class="author">$author$</p>
+  $endfor$
 
-    <!--Twitter Social Tags-->
-    <meta name="twitter:card"   content="summary_large_image" />
-    <meta name="twitter:domain" content="$site-url$">
-    <meta name="twitter:url"    content="$url$" />
-    $if(pagetitle)$
-    <meta name="twitter:title"  content="$pagetitle$" />
-    $endif$
-    $if(description-meta)$
-    <meta name="twitter:description" content="$description-meta$" />
-    $endif$
-    <meta name="twitter:image"        content="$site-url$/img/banner.png" />
-    <meta name="twitter:image:width"  content="1200" />
-    <meta name="twitter:image:height" content="630" />
+  $if(date)$
+  <p class="date">$date$</p>
+  $endif$
 
-    <!--Establish a canonical page-->
-    <link rel="canonical" href="$url$" />
-    <!--Feeds-->
-    <link rel="alternate" type="application/rss+xml" href="$site-url$/rss.xml" title="Iago Leal's blog RSS feed" />
+</header>
+$endif$
 
-    <style>
-    $styles.html()$
-    </style>
-    <link rel="stylesheet" href="/css/sakura-earthly.css" />
-    <link rel="stylesheet" href="/css/krkis.css" />
-    <link rel="stylesheet" href="/css/theorems.css" />
-    <link rel="stylesheet" href="/css/portfolio.css" />
-    $for(css)$
-    <link rel="stylesheet" href="$css$" />
-    $endfor$
-    $if(math)$
-    $math$
-    $endif$
-    <!--[if lt IE 9]>
-<script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
-<![endif]-->
-    $for(header-includes)$
-    $header-includes$
-    $endfor$
-  </head>
-  <body>
-    $ header.html() $
-    $for(include-before)$
-    $include-before$
-    $endfor$
-    $if(title)$
-    <header id="title-block-header">
-      <div class="subheading">
-        $if(title)$<h1 class="title">$title$</h1>$endif$
-        $if(subtitle)$
-        <p class="subtitle">$subtitle$</p>
-        $endif$
-      </div>
-      $for(author)$
-      <p class="author">$author$</p>
-      $endfor$
-      $if(date)$
-      <p class="date">$date$</p>
-      $endif$
-    </header>
-    $endif$
-    $if(toc)$
-    <nav id="$idprefix$TOC" role="doc-toc">
-      $if(toc-title)$
-      <h2 id="$idprefix$toc-title">$toc-title$</h2>
-      $endif$
-      $table-of-contents$
-    </nav>
-    $endif$
-    <article>
+$if(toc)$
+<nav id="$idprefix$TOC" role="doc-toc">
+  $if(toc-title)$
+  <h2 id="$idprefix$toc-title">$toc-title$</h2>
+  $endif$
+
+  $table-of-contents$
+</nav>
+$endif$
+
+<article>
 $body$
-    </article>
-    $post-share.html()$
-    $for(include-after)$
-    $include-after$
-    $endfor$
-    $footer.html()$
-  </body>
-</html>
+</article>
+
+$post-share.html()$

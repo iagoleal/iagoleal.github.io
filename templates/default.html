@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="$lang$" xml:lang="$lang$"$if(dir)$ dir="$dir$"$endif$>
-  <head>
+  <head prefix="og: https://ogp.me/ns#">
     <meta charset="utf-8" />
     <meta name="generator" content="pandoc" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
@@ -13,36 +13,18 @@
   $if(keywords)$
     <meta name="keywords" content="$for(keywords)$$keywords$$sep$, $endfor$" />
   $endif$
-
-    <!--Open Graph protocol-->
-    <meta property="og:url"   content="$url$" />
-    <meta property="og:type"  content="website" />
-    $if(pagetitle)$
-    <meta property="og:title" content="$pagetitle$" />
-    $endif$
-    $if(description-meta)$
-    <meta property="og:description" content="$description-meta$" />
-    $endif$
-    <meta property="og:image"        content="$site-url$/img/banner.png" />
-    <meta property="og:image:width"  content="1200" />
-    <meta property="og:image:height" content="630" />
-    <!--Twitter Social Tags-->
-    <meta name="twitter:card"   content="summary_large_image" />
-    <meta name="twitter:domain" content="$site-url$">
-    <meta name="twitter:url"    content="$url$" />
-    $if(pagetitle)$
-    <meta name="twitter:title"  content="$pagetitle$" />
-    $endif$
-    $if(description-meta)$
-    <meta name="twitter:description" content="$description-meta$" />
-    $endif$
+  $if(description-meta)$
+    <meta name="description" content="$description-meta$" />
+  $endif$
+    <title>$if(pagetitle)$$if(title-prefix)$$title-prefix$ – $endif$$pagetitle$ | $endif$$author-meta$</title>
 
     <!--Establish a canonical page-->
     <link rel="canonical" href="$url$" />
     <!--Feeds-->
     <link rel="alternate" type="application/rss+xml" href="$site-url$/rss.xml" title="Iago Leal's blog RSS feed" />
 
-    <title>$if(pagetitle)$$if(title-prefix)$$title-prefix$ – $endif$$pagetitle$ | $endif$$author-meta$</title>
+    ${ open-graph.html() }
+
     <style>
       $styles.html()$
     </style>
@@ -65,13 +47,21 @@
   </head>
   <body>
     $ header.html() $
+
     $for(include-before)$
     $include-before$
     $endfor$
-    $body$
+
+    $if(post)$
+      $ post.html() $
+    $else$
+      $body$
+    $endif$
+
     $for(include-after)$
     $include-after$
     $endfor$
+
     $ footer.html() $
   </body>
 </html>

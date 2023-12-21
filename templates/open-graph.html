@@ -1,0 +1,41 @@
+<!--Open Graph protocol-->
+<meta property="og:site_name" content="Iago Leal" />
+<meta property="og:url"       content="$url$" />
+
+$if(post)$
+  <meta property="og:type"      content="article" />
+  $if(date-meta)$
+    <meta property="og:article:published_time" content="$date-meta$" />
+  $endif$
+$else$
+  <meta property="og:type"      content="website" />
+$endif$
+
+$if(pagetitle)$
+  <meta property="og:title" content="$pagetitle$" />
+$endif$
+
+$if(description-meta)$
+  <meta property="og:description" content="$description-meta$" />
+$endif$
+
+<meta property="og:image"        content="$site-url$/img/banner.png" />
+<meta property="og:image:width"  content="1200" />
+<meta property="og:image:height" content="630" />
+
+<!--Twitter Social Tags-->
+<meta name="twitter:card"   content="summary_large_image" />
+<meta name="twitter:domain" content="$site-url$">
+<meta name="twitter:url"    content="$url$" />
+
+$if(pagetitle)$
+  <meta name="twitter:title"  content="$pagetitle$" />
+$endif$
+
+$if(description-meta)$
+  <meta name="twitter:description" content="$description-meta$" />
+$endif$
+
+<meta name="twitter:image"        content="$site-url$/img/banner.png" />
+<meta name="twitter:image:width"  content="1200" />
+<meta name="twitter:image:height" content="630" />
