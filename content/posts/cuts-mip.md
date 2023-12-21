@@ -587,7 +587,7 @@ as you can see in the following table.
 One thing to keep in mind is that the time necessary to calculate a tighter cut
 could be used to calculate a lot of Benders cuts --- a looser but better-shaped approximation.
 If this Benders approximation stops converging, you can strengthen some cuts to "clean up some area".
-A Lagrangian cut work best as a last resort, and only if you are interested in the area around a very specific point,
+A Lagrangian cut works best as a last resort, and only if you are interested in the area around a very specific point,
 because in the time you are calculating it, you could be getting many strengthened Benders cuts to cover a larger area.
 
 <script type="module">
