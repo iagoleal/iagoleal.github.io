@@ -10,14 +10,28 @@ The font in use is [Montserrat](https://github.com/JulietaUla/Montserrat).
 
 The math is rendered using [katex](https://katex.org/).
 
-Building and deploying should be as simple as running
+Build should be as simple as running
 
 ```
-$ make site && make deploy
+$ make site
 ```
 
-## Dependencies
-- pandoc 2.9.2.1
-- make 4.3
-- latex (texlive pdftex 3.14) (including tikz)
-- dvisvgm 2.9.1
+Deployment to GitHub Pages happens automatically on push to `master`.
+
+
+## Features and Non-features
+
+### Social Media sharing
+
+I may not be the biggest fan of social media, but I know it is here to stay.
+Hence, it is useful to keep in mind how my pages interact with any of these sites.
+
+Sharing a post should show its title, its description,
+and a general (site-wide) banner.
+We achieve this via the (Open Graph protocol)[https://ogp.me/].
+For customizing any tags,
+edit the file <templates/open-graph.html>.
+
+Every post also ends with buttons for easily sharing it
+on some instant message apps or social media sites.
+You can find them in the file <templates/post-share.html>.
