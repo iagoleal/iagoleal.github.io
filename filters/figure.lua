@@ -16,10 +16,6 @@ local path   = require "pandoc.path"
 
 local fmt = string.format
 
--- State for remembering all raw tex code
--- that comes before the code block in the post.
-local tex_snippets = {}
-
 local illustrators = {}
 
 -----------------------------
@@ -149,6 +145,9 @@ local template_tikz = [[
 \end{document}
 ]]
 
+-- State for remembering all raw tex code
+-- that comes before the code block in the post.
+local tex_snippets = {}
 
 illustrators.tikz = {
   match = function(class)
@@ -175,6 +174,14 @@ illustrators.tikz = {
   -- Turn a string containing Latex code into a SVG image.
   convert = function(target, code)
     return pandoc.pipe("scripts/tex2svg", {"-", target}, code)
+  end,
+
+  -- Store all raw blocks of tex code.
+  -- These will be inserted as part of the preamble for all figures.
+  snippet = function(raw_block)
+    if raw_block.format == "tex" then
+      table.insert(tex_snippets, raw_block.text)
+    end
   end
 }
 
@@ -204,12 +211,16 @@ return {
   {
     traverse = "topdown",
 
+    -- Some environments are configurable via raw blocks in their adequate language.
     RawBlock = function(block)
-      if block.format == "tex" then
-        table.insert(tex_snippets, block.text)
+      for _, illustrator in pairs(illustrators) do
+        if illustrator.snippet then
+          illustrator.snippet(block)
+        end
       end
     end,
 
+    -- Convert matching code blocks to figures
     CodeBlock = function(block)
       for _, illustrator in pairs(illustrators) do
         if illustrator.match(block.classes[1]) then
