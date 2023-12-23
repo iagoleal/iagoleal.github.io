@@ -1,14 +1,12 @@
-# Personal site's source code
+# Personal Site's Source Code
 
 My own [personal website](https://iagoleal.com/).
-There is also a [RSS feed](https://iagoleal.com/rss.xml) for the posts in case you're interested.
+There is also a [RSS feed](https://iagoleal.com/rss.xml) for the posts---in case you're interested.
 
 The site theme is built upon oxalorg's
 [sakura-earthly](https://github.com/oxalorg/sakura) theme.
 
 The font in use is [Montserrat](https://github.com/JulietaUla/Montserrat).
-
-The math is rendered using [katex](https://katex.org/).
 
 Build should be as simple as running
 
@@ -18,8 +16,43 @@ $ make site
 
 Deployment to GitHub Pages happens automatically on push to `master`.
 
-
 ## Features and Non-features
+
+### TeX Notation for Math
+
+This site uses (katex)[katex.org] to render equations.
+Anything between `$...$` or `$$...$$` is interpreted as mathematics
+and properly converted.
+
+### Compile LaTeX to SVG
+
+Files in the <static/> folder with extension `.tex`
+are interpreted as images (usually used for TiKZ graphics),
+thus we com compile them to SVG.
+
+If there is both `path/to/bla.svg` and `path/to/bla.tex`,
+the former has priority.
+Eventually, I shall turn it into an error.
+
+### Compile Code Blocks to Figures
+
+Some special Markdown code blocks are converted into their output figure
+during compilation to HTML.
+The external dependencies for the backends are already pulled with Nix.
+Right now, the following environments are supported:
+
+- `tikz`
+- `tikzcd`
+- `dot` (graphviz)
+
+Some of these environments also accept additional configurations
+via the code block's attributes.
+Check the code for each of them at <filters/figure.lua>
+to check the accepted attributes.
+
+
+To add a new backend, edit the Pandoc filter at <filters/figure.lua>
+and add the necessary dependencies to <shell.nix>.
 
 ### Social Media sharing
 

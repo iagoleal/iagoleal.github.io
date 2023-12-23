@@ -133,16 +133,16 @@ $(build)/css/%: css/%
 
 static: $(static-result)
 
-# Convert tikz images to svg
-$(build)/%.svg: static/%.tex
-	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
-	scripts/tex2svg "$<" "$@"
-
 # Minimize svg files
 $(build)/%.svg: static/%.svg
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
 	@echo Minifying file "$<"
 	scripts/svg-minify "$<" "$@"
+
+# Convert tikz images to svg
+$(build)/%.svg: static/%.tex
+	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
+	scripts/tex2svg "$<" "$@"
 
 # For {img,video,font,data}
 $(build)/%: static/%
