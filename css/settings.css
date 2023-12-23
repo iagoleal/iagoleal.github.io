@@ -1,0 +1,6 @@
+:root {
+  --color-background: #fdfdfd;
+  --color-typography: #222222;
+  --color-accent:     hsl(139 52% 50%);
+  --color-faded:      hsl(0 0% 58%);
+}

@@ -46,7 +46,7 @@
 }
 
 .portfolio-item .caption {
-  color: #222222;
+  color: var(--color-typography);
   font-size: 1.7rem;
   line-height: 1.1;
   font-weight: 700;

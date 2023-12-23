@@ -165,13 +165,13 @@ hr {
 
 #top-bar a {
   text-decoration: none;
-  color:           #959595;
+  color:           var(--color-faded);
   transition: color 0.3s ease-in;
 }
 
 #top-bar a:hover, #top-bar a:active {
   border: none;
-  color:  #222222;
+  color:  var(--color-typography);
   transition: color 0.3s ease-out;
 }
 
@@ -185,7 +185,7 @@ body {
 
 #bottom-bar {
   font-size:     1.2rem;
-  color:         #313531;
+  color:         var(--color-typography);
   text-align:    center;
   position:      absolute;
   left:          0;
@@ -197,7 +197,7 @@ body {
   max-width:     500px;
   overflow:      hidden;
   padding-top:   1rem;
-  border-top:    1px solid #d2d2d2;
+  border-top:    1px solid var(--color-faded);
 }
 
 /*
@@ -209,7 +209,7 @@ body {
 }
 
 .subheading p {
-  color:       #666;
+  color:       var(--color-faded);
   font-style:  italic;
   margin-top:  7px;
   text-indent: 1.5em;
@@ -231,7 +231,7 @@ body {
 }
 
 .post-list a {
-  color:           #222222;
+  color:           var(--color-typography);
   font-weight:     500;
   display:         flex;
   flex-direction:  row;
@@ -243,13 +243,14 @@ body {
 }
 
 .post-list a:hover {
+/* TODO: custom property */
   background-color: #008b6a23;
   transition:       background 0.3s ease-in-out;
 }
 
 .post-list .date {
   font-family: monospace;
-  color:       #959595;
+  color:       var(--color-faded);
   margin-left: 2rem;
 }
 
@@ -259,7 +260,7 @@ body {
 
 .date {
   text-align: center;
-  color:      #868686;
+  color:      var(--color-faded);
 }
 
 #share-this-page {
@@ -275,7 +276,7 @@ body {
     display:        flex;
     align-items:    center;
     text-align:     center;
-    color:          #d2d2d2;
+    color:          var(--color-faded);
     font-size:      1.6rem;
     font-variant:   small-caps;
     letter-spacing: 0.05em;
@@ -284,7 +285,7 @@ body {
 .hr-text::before, .hr-text::after {
     content:       '';
     flex:          1;
-    border-bottom: 1px solid #d2d2d2;
+    border-bottom: 1px solid var(--color-faded);
 }
 
 .hr-text::before {
@@ -313,17 +314,16 @@ body {
   ~*~ Toggle Button for Checkbox ~*~
 */
 
-.toggle {
-  position: relative;
-  width: 4em;
-  height: 2em;
-  background-color: #ccc;
-  border-radius: 1em;
-  cursor: pointer;
-  transition: background-color 0.4s;
+input[type="checkbox"] {
+  position:       relative;
+  width:          4em;
+  height:         2em;
+  border-radius:  1em;
+  cursor:         pointer;
+  transition:     background-color 0.4s;
   vertical-align: middle;
 }
 
-.toggle:checked {
-  background-color: #2196F3;
+input[type="checkbox"]:checked {
+  background-color: black;
 }
