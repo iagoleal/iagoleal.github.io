@@ -22,6 +22,32 @@ body {
   word-wrap:        break-word;
   word-break:       break-word;
   hyphens:          auto;
+  text-rendering:   optimizeLegibility;
+  font-kerning:     normal;
+
+  /* This should only be active for posts */
+  max-width:        36em;
+}
+
+@media print {
+  html {
+    background-color: white;
+  }
+
+  body {
+    background-color: transparent;
+    color:            black;
+    font-size:        12pt;
+  }
+
+  p, h2, h3 {
+    orphans:          3;
+    widows:           3;
+  }
+
+  h2, h3, h4 {
+    page-break-after: avoid;
+  }
 }
 
 ::selection {
@@ -85,7 +111,7 @@ small, sub, sup {
 /* Illustrations */
 
 figure {
-  margin: auto;
+  margin:    auto;
 }
 
 img, video, object {
@@ -96,12 +122,18 @@ img, video, object {
   align:     middle;
 }
 
-ul {
-  list-style-type: square;
+svg {
+  height:    auto;
+  max-width: 100%;
 }
 
 
 /* Verbatim Code */
+
+.sourceCode {
+ background-color:  transparent;
+ overflow:          visible;
+}
 
 pre {
   display:          block;
@@ -115,20 +147,30 @@ code {
   font-size:        1rem;
   padding:          0 0.5rem;
   white-space:      pre-wrap;
+  hyphens:          manual;
 }
 
 pre > code {
   padding:          0;
   white-space:      pre;
+  overflow:         visible;
+  overflow-wrap:    normal;
 }
 
 /* Decorations */
 
 hr {
-  border:        0;
-  border-bottom: 1px solid #d2d2d2;
-  width:         100%;
+  width:            100%;
+  background-color: var(--color-typography);
+  border:           none;
+  height:           1px;
+  margin:           1em 0;
 }
+
+ul {
+  list-style-type: square;
+}
+
 
 /*
   ~*~ Class-dependent ~*~

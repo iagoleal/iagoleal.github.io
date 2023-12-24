@@ -26,7 +26,16 @@
     ${ open-graph.html() }
 
     <style>
-      $styles.html()$
+      $if(displaymath-css)$
+      .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+      $endif$
+      $if(highlighting-css)$
+      /* CSS for syntax highlighting */
+      $highlighting-css$
+      $endif$
+      $if(csl-css)$
+      $styles.citations.html()$
+      $endif$
     </style>
     <link rel="stylesheet" href="/css/sakura-earthly.css" />
     <link rel="stylesheet" href="/css/krkis.css" />
