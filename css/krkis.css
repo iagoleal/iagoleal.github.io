@@ -324,15 +324,41 @@ body {
 */
 
 input[type="checkbox"] {
+  appearance:     none;              /* https://developer.mozilla.org/en-US/docs/Learn/Forms/Advanced_form_styling */
   position:       relative;
-  width:          4em;
-  height:         2em;
-  border-radius:  1em;
+  width:          1.5rem;
+  height:         1.5rem;
+  border:         1px solid var(--color-typography);
+  border-radius:  3px;
   cursor:         pointer;
-  transition:     background-color 0.4s;
+  transition:     background-color 0.3s;
   vertical-align: middle;
+  display:        inline-grid;
+  place-content:  center;
+}
+
+input[type="checkbox"]::before {
+  content:       "";
+  width:         1rem;
+  height:        1rem;
+  border-radius: 3px;
+  transform:     scale(0);
+  box-shadow:    inset 1rem 1rem var(--color-accent);
+  transition:    0.3s transform ease-in-out;
+}
+
+input[type="checkbox"]:checked::before {
+  transform: scale(1);
 }
 
 input[type="checkbox"]:checked {
-  background-color: black;
+  border:  1px solid var(--color-accent);
+}
+
+input[type="checkbox"]:focus {
+  border: 2px solid currentColor;
+}
+
+input[type="checkbox"]:hover {
+  box-shadow: inset 0px 0px 2px var(--color-typography);
 }
