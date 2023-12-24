@@ -4,65 +4,31 @@
  * Project: https://github.com/oxalorg/sakura/
  */
 /* Body */
-html {
-  font-size: 62.5%;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; }
 
+/* @media (max-width: 684px) { */
+/*   body { */
+/*     font-size: 1.53rem; } } */
 
-h1 {
-  font-size: 2.0em; }
+/* @media (max-width: 382px) { */
+/*   body { */
+/*     font-size: 1.35rem; } */
+/*   h1 { */
+/*     font-size: 2.1em; } */
+/*   h2 { */
+/*     font-size: 1.70em; } */
 
-h2 {
-  font-size: 1.5em; }
+/*   h3 { */
+/*     font-size: 1.50em; } */
 
-h3 {
-  font-size: 1.3em; }
+/*   h4 { */
+/*     font-size: 1.34em; } */
 
-h4 {
-  font-size: 1.2em; }
+/*   h5 { */
+/*     font-size: 1.25em; } */
 
-h5 {
-  font-size: 1.15em; }
-
-h6 {
-  font-size: 1em; }
-
-@media (max-width: 684px) {
-  body {
-    font-size: 1.53rem; } }
-
-@media (max-width: 382px) {
-  body {
-    font-size: 1.35rem; }
-  h1 {
-    font-size: 2.1em; }
-  h2 {
-    font-size: 1.70em; }
-
-  h3 {
-    font-size: 1.50em; }
-
-  h4 {
-    font-size: 1.34em; }
-
-  h5 {
-    font-size: 1.25em; }
-
-  h6 {
-    font-size: 1em; }
-}
-
-
-
-p {
-  margin-top: 0px;
-  margin-bottom: 2.5rem; }
-
-small, sub, sup {
-  font-size: 75%; }
-
-hr {
-  border-color: #008b6a; }
+/*   h6 { */
+/*     font-size: 1em; } */
+/* } */
 
 a, a:visited {
   text-decoration: none;
@@ -93,9 +59,6 @@ blockquote {
 
 blockquote p {
   margin-bottom: 0; }
-
-
-/* Pre and Code */
 
 
 /* Tables */
@@ -151,9 +114,6 @@ textarea, select, input[type] {
   textarea:focus, select:focus, input[type]:focus {
     border: 1px solid #008b6a;
     outline: 0; }
-
-input[type="checkbox"]:focus {
-  outline: 1px dotted #008b6a; }
 
 label, legend, fieldset {
   margin-bottom: .5rem;

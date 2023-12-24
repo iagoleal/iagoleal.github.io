@@ -1,6 +1,32 @@
+
+/*
+  ~*~ Color palette ~*~
+*/
+
 :root {
   --color-background: #fdfdfd;
   --color-typography: #222222;
   --color-accent:     hsl(139 52% 50%);
   --color-faded:      hsl(0 0% 58%);
 }
+
+/*
+  ~*~ Custom fonts ~*~
+*/
+
+@font-face {
+  font-family:  'Montserrat';
+  src:          url('/font/Montserrat-VF.woff2') format('woff2-variations');
+  font-weight:  125 900;
+  font-stretch: 75% 125%;
+  font-style:   normal;
+}
+
+@font-face {
+  font-family:  'Montserrat';
+  src:          url('/font/Montserrat-Italic-VF.woff2') format('woff2-variations');
+  font-weight:  125 900;
+  font-stretch: 75% 125%;
+  font-style:   italic;
+}
+
