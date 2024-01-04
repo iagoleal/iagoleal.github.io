@@ -267,40 +267,12 @@ body {
 }
 
 /*
-  ~*~ Post List ~*~
+  ~*~ Post Typography ~*~
 */
 
-.post-list ul {
-  margin:          0;
-  padding:         0;
-  list-style-type: none;
-}
 
-.post-list li {
-  display: block;
-  margin:  0;
-}
 
-.post-list a {
-  color:           var(--color-typography);
-  font-weight:     500;
-  display:         flex;
-  flex-direction:  row;
-  justify-content: space-between;
-  align-content:   center;
-  padding:         0.6rem 0.6rem;
-  border-radius:   10px;
-  transition:      background 0.3s ease-in-out;
-}
 
-.post-list a:hover {
-/* TODO: custom property */
-  background-color: #008b6a23;
-  transition:       background 0.3s ease-in-out;
-}
-
-.post-list .date {
-  font-family: monospace;
   color:       var(--color-faded);
   margin-left: 2rem;
 }
@@ -346,6 +318,50 @@ body {
 .hr-text::after {
     margin-left: .25rem;
 }
+
+/*
+  ~*~ Post List ~*~
+*/
+
+.post-list ul {
+  max-width:       var(--article-width);
+  margin:          0 auto;
+  padding:         0;
+  list-style-type: none;
+}
+
+.post-list li {
+  display: block;
+  margin:  0;
+}
+
+.post-list a {
+  color:           var(--color-typography);
+  font-weight:     500;
+  display:         flex;
+  flex-direction:  row;
+  justify-content: space-between;
+  align-content:   center;
+  align-items:     center;
+  padding:         0.6rem 0.6rem;
+  border-radius:   10px;
+  transition:      background 0.3s ease-in-out;
+}
+
+.post-list a:hover {
+/* TODO: custom property */
+  background-color: #008b6a23;
+  transition:       background 0.3s ease-in-out;
+}
+
+.post-list .date {
+  font-family: monospace;
+  color:       var(--color-faded);
+  margin-left: 2rem;
+  text-align:  center;
+  white-space: nowrap;
+}
+
 
 /*
   ~*~ About Me Page ~*~
