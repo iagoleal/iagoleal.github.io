@@ -389,7 +389,7 @@ relaxing the parameterized optimization problem and finding a cut for it.
 We illustrate the procedure below, in Julia code.
 
 ```julia
-funtion benders_cut(f, a)
+function benders_cut(f, a)
   fc = continuous_relaxation(f)
 
   # Find optimal value and dual multiplier
@@ -544,7 +544,7 @@ followed by a mixed integer program for the constant.
 Below is some Julia some illustrating the procedure.
 
 ```julia
-funtion strenghtened_benders_cut(f, a)
+function strenghtened_benders_cut(f, a)
   # Calculate Benders cut to find dual multiplier
   # Cost: Solve 1 convex program
   cut_b = benders_cut(f, a)
