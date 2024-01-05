@@ -7,7 +7,9 @@
   --color-background: #fdfdfd;
   --color-typography: #222222;
   --color-accent:     hsl(139 52% 50%);
+  --color-attention:  #4ed0eb;
   --color-faded:      hsl(0 0% 58%);
+  --base-padding:     16px;
   --article-width:    40rem;
 }
 

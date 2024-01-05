@@ -55,22 +55,24 @@
   $endfor$
   </head>
   <body>
-    $ header.html() $
+    <div id="layout-grid">
+      $ header.html() $
 
-    $for(include-before)$
-    $include-before$
-    $endfor$
+      $for(include-before)$
+      $include-before$
+      $endfor$
 
-    $if(post)$
-      $ post.html() $
-    $else$
-      $body$
-    $endif$
+      $if(post)$
+        $ post.html() $
+      $else$
+        $body$
+      $endif$
 
-    $for(include-after)$
-    $include-after$
-    $endfor$
+      $for(include-after)$
+      $include-after$
+      $endfor$
 
-    $ footer.html() $
+      $ footer.html() $
+    </div>
   </body>
 </html>

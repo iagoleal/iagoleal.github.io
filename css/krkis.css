@@ -18,7 +18,6 @@ body {
   margin:           auto;
   font-size:        1rem;
   line-height:      1.618;
-  padding:          16px;
   overflow-wrap:    break-word;
   word-wrap:        break-word;
   word-break:       break-word;
@@ -189,8 +188,7 @@ ul {
 /* ~*~ Header ~*~ */
 
 #top-bar {
-  max-width: max(var(--article-width), 60%);
-  margin: 0 auto 3rem;
+  margin: 16px 0 3rem;
 }
 
 #top-bar ul {
@@ -249,7 +247,7 @@ body {
   max-width:      500px;
   overflow:       hidden;
   padding-top:    1rem;
-  padding-bottom: 1.2rem;
+  padding-bottom: 16px;
   border-top:     1px solid var(--color-faded);
 }
 
@@ -259,21 +257,20 @@ body {
 */
 
 article {
-  max-width: var(--article-width);
-  margin: 0 auto 40px;
+  margin-bottom: 40px;
 }
 
 #title-block-header {
   padding: 15vh 20px 15vh;
-  /* border: solid 1px black; */
+  grid-column: full-bleed !important;
 }
 
-#title-block-header h1.title {
-  font-size: calc(1rem + 3vw);
+h1.title {
+  font-size: max(2rem, calc(1rem + 3vw));
   margin-bottom: 20px;
 }
 
-#title-block-header .subtitle {
+h2.subtitle {
   color:       var(--color-faded);
   font-style:  italic;
   margin-top:     3rem;
@@ -288,11 +285,8 @@ article {
   color:      var(--color-faded);
 }
 
-
-
 #share-this-page {
   max-width:  var(--article-width);
-  margin:     auto;
   text-align: right;
 }
 
@@ -302,27 +296,27 @@ article {
 }
 
 .hr-text {
-    display:        flex;
-    align-items:    center;
-    text-align:     center;
-    color:          var(--color-faded);
-    font-size:      1rem;
-    font-variant:   small-caps;
-    letter-spacing: 0.05rem;
+  display:        flex;
+  align-items:    center;
+  text-align:     center;
+  color:          var(--color-faded);
+  font-size:      1rem;
+  font-variant:   small-caps;
+  letter-spacing: 0.05rem;
 }
 
 .hr-text::before, .hr-text::after {
-    content:       '';
-    flex:          1;
-    border-bottom: 1px solid var(--color-faded);
+  content:       '';
+  flex:          1;
+  border-bottom: 1px solid var(--color-faded);
 }
 
 .hr-text::before {
-    margin-right: .25rem;
+  margin-right: .25rem;
 }
 
 .hr-text::after {
-    margin-left: .25rem;
+  margin-left: .25rem;
 }
 
 /*
@@ -426,3 +420,17 @@ input[type="checkbox"]:focus {
 input[type="checkbox"]:hover {
   box-shadow: inset 0px 0px 2px var(--color-typography);
 }
+
+#layout-grid {
+  display: grid;
+  grid-template-columns: [full-bleed-start] 16px 1fr [main-start] min(var(--article-width), calc(100% - 32px)) [main-end] 1fr 16px [full-bleed-end];
+}
+
+#layout-grid > * {
+  grid-column: main;
+}
+
+.full-bleed {
+  grid-column: 1 / -1 !important;
+}
+
