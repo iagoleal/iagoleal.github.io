@@ -5,40 +5,6 @@
  */
 /* Body */
 
-/* @media (max-width: 684px) { */
-/*   body { */
-/*     font-size: 1.53rem; } } */
-
-/* @media (max-width: 382px) { */
-/*   body { */
-/*     font-size: 1.35rem; } */
-/*   h1 { */
-/*     font-size: 2.1em; } */
-/*   h2 { */
-/*     font-size: 1.70em; } */
-
-/*   h3 { */
-/*     font-size: 1.50em; } */
-
-/*   h4 { */
-/*     font-size: 1.34em; } */
-
-/*   h5 { */
-/*     font-size: 1.25em; } */
-
-/*   h6 { */
-/*     font-size: 1em; } */
-/* } */
-
-a, a:visited {
-  text-decoration: none;
-  color: #008b6a;
-}
-a:hover {
-  color: #4ed0eb;
-}
-
-
 /* pandoc */
 ol, ul {
   padding-left: 1.7em;

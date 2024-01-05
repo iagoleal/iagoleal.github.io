@@ -104,6 +104,16 @@ small, sub, sup {
   font-size: 75%;
 }
 
+/* Links */
+
+a, a:visited {
+  text-decoration: none;
+  color: var(--color-accent);
+}
+a:hover {
+  color: var(--color-attention);
+}
+
 
 /* Illustrations */
 
@@ -178,11 +188,6 @@ ul {
   margin:    0 auto;
   height:    auto;
   max-width: 100%;
-}
-
-/* make equations scrollable */
-.katex-display {
-  overflow: scroll hidden;
 }
 
 /* ~*~ Header ~*~ */
@@ -432,5 +437,14 @@ input[type="checkbox"]:hover {
 
 .full-bleed {
   grid-column: 1 / -1 !important;
+}
+
+/*
+  ~*~ Vendored ~*~
+*/
+
+/* make equations scrollable */
+.katex-display {
+  overflow: auto hidden;
 }
 
