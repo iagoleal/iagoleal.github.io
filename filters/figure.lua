@@ -79,7 +79,7 @@ local function make_absolute(fname)
 end
 
 -------------------------
--- Source File Templates
+-- Output Tag Template
 -------------------------
 
 local template_tag = [[

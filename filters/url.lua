@@ -1,5 +1,5 @@
 local function postfile(fname)
-  return string.match(fname, "^.*/(.*)/index.html$")
+  return string.match(fname, "^build/(.*)/index.html$")
 end
 
 local function template_variable(k)
@@ -21,10 +21,10 @@ end
 
 function Meta(m)
   if m.url == nil then
-    local fname    = postfile(PANDOC_STATE.output_file)
+    local relative = postfile(PANDOC_STATE.output_file)
     local sitebase = template_variable("site-url")
 
-    m.url = pandoc.path.join {sitebase, "posts", fname}
+    m.url = pandoc.path.join {sitebase, relative} .. "/"
   else
     error "Non-canonical url set on metadata"
   end
