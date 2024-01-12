@@ -1,5 +1,12 @@
 @import "settings.css";
 
+/* These are the blog's main styles.
+*
+* Originally, it was based on sakura-earthly.css v1.3.1
+* (https://github.com/oxalorg/sakura/)
+* but eventually converged to something different.
+* Check Sakura out if you are interested in something more polished,
+* and less specific to this site.
 /*
   ~*~ General Styles ~*~
 */
@@ -104,6 +111,11 @@ small, sub, sup {
   font-size: 75%;
 }
 
+label, legend, fieldset {
+  margin-bottom: 0.5rem;
+  font-weight:   600;
+}
+
 /* Links */
 
 a, a:visited {
@@ -175,9 +187,75 @@ hr {
 }
 
 ul {
+  padding-left:    1.4rem;
+  margin-top:      0;
+  margin-bottom:   2.5rem;
   list-style-type: square;
 }
 
+ol {
+  padding-left: 1.7rem;
+  margin-top:   1rem;
+}
+
+li {
+  margin-bottom: 0.4rem;
+}
+
+/* Nested lists */
+li > ol, li > ul {
+  margin-top: 0;
+}
+
+/* Quotes */
+
+blockquote {
+  margin-left:      0;
+  margin-right:     0;
+  margin-bottom:    2.5rem;
+
+  padding-left:     1.0rem;
+  padding-top:      0.8rem;
+  padding-bottom:   0.8rem;
+  padding-right:    0.8rem;
+
+  border-left:      5px solid var(--color-accent);
+}
+
+blockquote p {
+  margin-bottom: 0;
+}
+
+/* Tables -- PANDOC + Sakura */
+table {
+  margin:               1rem auto;
+  border-collapse:      collapse;
+  width:                100%;
+  overflow-x:           auto;
+  display:              block;
+  font-variant-numeric: lining-nums tabular-nums;
+  text-align:           justify;
+}
+
+table caption {
+  margin-bottom: 0.75rem;
+}
+
+tbody {
+  margin-top:    0.5em;
+  border-top:    1px solid var(--color-typography);
+  border-bottom: 1px solid var(--color-typography);
+}
+
+th {
+  border-top: 1px solid var(--color-typography);
+}
+
+
+td, th {
+  padding: 0.5em;
+  border-bottom: 1px solid var(--color-faded);
+}
 
 /*
   ~*~ Class-dependent ~*~
@@ -274,12 +352,12 @@ h1.title {
   margin-bottom: 20px;
 }
 
-h2.subtitle {
-  color:       var(--color-faded);
-  font-style:  italic;
-  margin-top:     3rem;
-  margin-bottom:  0.5rem;
-  text-indent: 1.5rem;
+.subtitle {
+  display:       block;
+  color:         var(--color-faded);
+  font-style:    italic;
+  margin-bottom: 0.5rem;
+  text-indent:   1.5rem;
 }
 
 
