@@ -1,31 +1,31 @@
-$if(title)$
-<header id="title-block-header" class="full-bleed">
-  <div class="subheading">
-    $if(title)$<h1 class="title">$title$</h1>$endif$
-    $if(subtitle)$
-    <p class="subtitle">$subtitle$</p>
+<article class="post">
+  $if(title)$
+  <header id="title-block-header" class="full-bleed">
+    <div class="subheading">
+      $if(title)$<h1 class="title">$title$</h1>$endif$
+      $if(subtitle)$
+      <p class="subtitle">$subtitle$</p>
+      $endif$
+    </div>
+
+    $if(date)$
+    <p class="date">$date$</p>
     $endif$
-  </div>
 
-  $if(date)$
-  <p class="date">$date$</p>
+  </header>
   $endif$
 
-</header>
-$endif$
+  $if(toc)$
+  <nav id="$idprefix$TOC" role="doc-toc">
+    $if(toc-title)$
+    <h2 id="$idprefix$toc-title">$toc-title$</h2>
+    $endif$
 
-$if(toc)$
-<nav id="$idprefix$TOC" role="doc-toc">
-  $if(toc-title)$
-  <h2 id="$idprefix$toc-title">$toc-title$</h2>
+    $table-of-contents$
+  </nav>
   $endif$
 
-  $table-of-contents$
-</nav>
-$endif$
-
-<article>
-$body$
+  $body$
 </article>
 
 $post-share.html()$
