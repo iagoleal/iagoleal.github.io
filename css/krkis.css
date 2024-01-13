@@ -119,13 +119,14 @@ label, legend, fieldset {
 /* Links */
 
 a, a:visited {
+  position:        relative;
   text-decoration: none;
-  color: var(--color-accent);
+  color:           var(--color-accent);
 }
+
 a:hover {
   color: var(--color-attention);
 }
-
 
 /* Illustrations */
 
@@ -432,8 +433,9 @@ h1.title {
 
 .post-list a:hover {
 /* TODO: custom property */
-  background-color: #008b6a23;
+  background-color: var(--color-crystal);
   transition:       background 0.3s ease-in-out;
+
 }
 
 .post-list .date {

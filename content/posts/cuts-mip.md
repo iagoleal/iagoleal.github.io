@@ -16,61 +16,50 @@ suppress-bibliography: true
 <style>
 /* CSS for styling */
 .diagram-container {
-  flex: auto 1 1;
+  flex:      auto 1 1;
   max-width: 100%;
 }
 
 svg.diagram {
-  width: 100%;
-  height: 100%;
+  width:            100%;
+  height:           100%;
   background-color: hsl(147 0% 96%);
-  border-radius: 15px;
-  margin-left: auto;
-  margin-right: auto;
+  border-radius:    15px;
+  margin-left:      auto;
+  margin-right:     auto;
 }
 
 .hyperplane {
-  stroke: hsl(39 100% 50%);
+  stroke:       var(--color-opposite);
   stroke-width: 1pt;
 }
 
 .mark {
-  fill: hsl(39 100% 50%);
+  fill: var(--color-opposite);
 }
 
 .function-graph {
   stroke: black;
-  fill: none;
+  fill:   none;
 }
 
 .relaxation-continuous {
-  stroke: blue;
-  fill: none;
+  stroke: var(--color-attention);
+  fill:   none;
 }
 
 .relaxation-dual {
-  stroke: hsl(12 50% 39%);
+  stroke:       var(--color-attention);
   stroke-width: 2pt;
-  fill: none;
+  fill:         none;
 }
 
 .epigraph {
-  fill: hsl(147 42% 64%);
-  fill-opacity: 0.3;
-  transition: fill-opacity 400ms;
-}
-
-.epigraph:hover {
-  fill-opacity: 0.6;
+  fill: var(--color-crystal, hsl(147 42% 64%));
 }
 
 .epigraph-component {
-  fill: hsl(180 43% 51%);
-  fill-opacity: 1;
-}
-
-.epigraph-component:hover {
-  fill-opacity: 1;
+  fill: var(--color-attention, hsl(180 43% 51%));
 }
 </style>
 
