@@ -85,10 +85,10 @@ deploy:
 posts:   $(posts-result)
 
 $(build)/posts/%/index.html: $(content)/posts/%.md $(DEPENDENCIES)
-	$(call generate_post,"$<","$@",markdown-markdown_in_html_blocks)
+	$(call generate_post,"$<","$@",markdown)
 
 $(build)/posts/%/index.html: $(content)/posts/%.md.lhs $(DEPENDENCIES)
-	$(call generate_post,"$<","$@",markdown+lhs-markdown_in_html_blocks)
+	$(call generate_post,"$<","$@",markdown+lhs)
 
 ###############
 # Other Pages #

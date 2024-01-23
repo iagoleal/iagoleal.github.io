@@ -232,6 +232,13 @@ function updatePolyhedral(poly, cuts, scale) {
     );
 }
 
+function numdiff(f) {
+  return x => {
+    const eps = 0.01
+    return (f(x+eps) - f(x-eps)) / (2*eps)
+  }
+}
+
 /*
   Page figures
 */
@@ -468,6 +475,34 @@ export function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
   });
 
   updateScene();
+}
+
+export function figureCutHeight(id, f, minX, maxX) {
+  const svg   = d3.select(id);
+  const scale = new Scale(svg, [minX, maxX], [-1.5, 2]);
+
+  const gFunc       = svg.append("g");
+  const gLagrangian = svg.append("g");
+
+  const x_0    = 1.35;
+  const lambda = numdiff(f)(x_0);
+
+  function updateLagrangian() {
+    const intercept = +d3.select("#slider-lagrangian-b").property("valueAsNumber");
+
+    const sliderLabel = document.getElementById("slider-b-value");
+    katex.render(`b = ${intercept}`, sliderLabel);
+
+    const affine = x => intercept + lambda*(x-x_0);
+    plot(gLagrangian, affine(x_0) <= f(x_0) ? affine : [], scale)
+
+  }
+  // Allow choosing lambda on the slider
+  d3.select("#slider-lagrangian-b").on("input", updateLagrangian);
+
+  plot(gFunc, f, scale);
+  plotEpigraph(gFunc, f, scale);
+  updateLagrangian();
 }
 
 export function figureLagrangian(id, f, minX, maxX) {

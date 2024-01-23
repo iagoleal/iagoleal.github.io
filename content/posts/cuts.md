@@ -95,6 +95,7 @@ svg.diagram {
 \def\graph{\op{graph}}
 \def\epi{\op{epi}}
 \def\d#1{\op{d}\!{#1}}
+\def\gap{\op{close}}
 
 As the late hours of the night embrace you,
 you find yourself seated at your workbench,
@@ -647,7 +648,7 @@ nonetheless, it should be easy to calculate cuts for them.
 They are made out of linear pieces, after all!
 
 Our focus on this section will be on calculating cuts for _optimal value functions_,
-that is, functions defined as the optimal value of a parameterized optimization,
+that is, functions defined as the optimal value of a parameterized optimization problem,
 such as those one [would encounter, for example, in dynamic programming](/posts/dynamic-programming).
 
 $$
@@ -657,7 +658,7 @@ $$
   \end{array}
 $$
 
-This last definition may, at first, seem to be too restrictive.
+This last definition may, at first, seem too restrictive.
 Perhaps even more than requiring differentiability.
 There is a small trick, however, that lets us write any function
 as an optimal value function:
@@ -682,91 +683,107 @@ has everything to do with cuts.[^duality-refs]
 [^duality-refs]: For an overview of duality, you can (again) check @boyd_convex_2004.
 And for duality in the context of optimal value functions, there is also my M.Sc. thesis. [@leal_de_freitas_convexification_2019]
 
-Lagrangian duality consists of taking a hard constraint such as $(x, u) \in X$
-and substituting it by a linear penalty on how much we divert from the original feasible set.
-We thus go from this optimal value function,
-written with an additional equality for clarity,
+### Best cut given an inclination
+
+Suppose you have a function $f$ and an inclination $\lambda$.
+This inclination defines a whole family of cuts for $f$
+by varying the constant term in
+
+$$ f(x) \ge \underbrace{b}_\text{this term} + \inner<\lambda, x - x_0>.$$
+
+<!-- TODO -->
+<figure class="diagram-container">
+  <svg id="function-cut-height" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+  <input type="range" id="slider-lagrangian-b" min="-1" max="0" step="0.02" value="0" style="width: 100%"/>
+  <label for="slider-lagrangian-lambda"> Multiplier <span id="slider-b-value">$b = 0$</span>.</label>
+</figure>
+
+Of course, as good optimizers that we are, we won't be happy with just any cut.
+We want to find the best constant $b$ possible given the inclination $\lambda$.
+And, just to keep things straight: best in this context means that $b$ makes the cut tight.
+
+Assuming a valid cut, we can quantify how close it is to $f$ by calculating
+the minimum distance between both functions in their entire domain:
+
+$$\min_x f(x) - \big(b + \inner<\lambda, x - x_0>\big).$$
+
+We can drop the absolute value in the distance above because valid cuts are everywhere below $f$,
+making the difference always non-negative.
+Also, for the cut to be tight, it must equal the function at a certain point
+and, consequently, have a zero gap.
+Let's call this optimal $b = L(x_0, \lambda)$ to mark its dependence on the parameters.
+This leaves us with
+
+$$\begin{aligned}
+  0               &= \min_x f(x) - \big(L(x_0; \lambda) + \inner<\lambda, x - x_0>\big) \\
+  L(x_0; \lambda) &= \min_x f(x) - \inner<\lambda, x - x_0>.
+\end{aligned}$$
+
+Recall that we are considering $f$ to be an optimal value function.
+Since $L(x_0, \lambda)$ is also defined by an optimization problem,
+let's unroll its definition into a single minimization.
 
 $$
-  \begin{array}{rl}
-    f(x) = \min\limits_{u} & c(u) \\
-    \textrm{s.t.}   & (y, u) \in X, \\
-                    & y = x, \\
-  \end{array}
+   L(x_0; \lambda) =
+   \begin{array}{rl}
+      \min\limits_{y, u} & c(u) -  \inner<\lambda, y - x_0> \\
+      \textrm{s.t.}   & (y, u) \in X.
+    \end{array}
 $$
 
-To the penalized value function, called its _Lagrangian relaxation_,
+Thus, we can turn an inclination into a tight cut by solving an optimization problem
+that is, in general, not much different from $f$ itself.
+Also, the formula for the optimal constant that we just arrived
+is common enough in the literature to deserve its own definition.
 
+:::Definition
+The **Lagrangian relaxation** of an optimal value function $f$
+is the optimal value function
 $$
   \begin{array}{rl}
     L(x; \lambda) = \min\limits_{u, y} & c(u) + \inner<\lambda, x - y> \\
     \textrm{s.t.}   & (y, u) \in X.
   \end{array}
 $$
-
-While in the original problem $y$ was fixed to whatever argument the function receives,
-in the new problem it can be any feasible value.
-Nonetheless, the cost is augmented by a new penalty term on the difference between $y$ and $x$.
-The factor $\lambda$ is called a _dual variable_ or _Lagrange multiplier_
-and represents how much $y$ is averse to diverting from $x$.
-
-In the original feasible set where $x = y$,
-the term $\inner<\lambda, x - y>$ vanishes and both problems have the same objective function.
-However, the relaxed problem has a larger feasible region to explore in its search for the minimum,
-allowing it the opportunity to achieve lower costs.
-In other words, the Lagrangian is an underapproximation to the primal problem
-whenever it is feasible for $x$:
-
-$$ f(x) \ge L(x; \lambda). $$
-
-Also notice that the optimization procedure is itself no longer dependent on $x$,
-and we can remove it from the objective value.
-
-$$
-  \begin{array}{rl}
-    L(x; \lambda) = \inner<\lambda, x> + \min\limits_{u, y} & c(u) - \inner<\lambda, y> \\
-    \textrm{s.t.}   & (y, u) \in X.
-  \end{array}
-$$
-
-Thus, for each fixed $\lambda$, the relaxation $L(\cdot; \lambda)$ is an affine function.
-So, do affine functions everywhere below $f$ make you think of something?
-
-In general, we are interested in cuts centered around a point, say $x_0$.
-Let's add and subtract $\inner<\lambda, x_0>$ from the relaxation's definition
-to put it in this form.
-
-$$
-  \begin{array}{rl}
-    L(x; \lambda) = \inner<\lambda, x - x_0> + \min\limits_{u, y} & c(u) + \inner<\lambda, x_0 - y> \\
-    \textrm{s.t.}   & (y, u) \in X.
-  \end{array}
-$$
-
-
-Notice that the minimization on the right-hand side
-is precisely the relaxation at the point $x_0$.
-Despite being always true for affine functions,
-it still yields a neat relation for the relaxation,
-
-$$ L(x; \lambda) =  L(x_0; \lambda) + \inner<\lambda, x - x_0>. $$
-
-Using that $L$ is always an underapproximation for $f$,
-we get to the desired cut equation:
-
-$$ f(x) \ge L(x; \lambda) =  L(x_0; \lambda) + \inner<\lambda, x - x_0>. $$
+:::
 
 <figure class="diagram-container">
+  <caption>Below you can view the Lagrangian relaxation for different multipliers $\lambda$.</caption>
   <svg id="function-lagrangian" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
   <input type="range" id="slider-lagrangian-lambda" min="-5" max="5" step="0.1" value="1" style="width: 100%"/>
-  <label for="slider-lagrangian-lambda"> Multiplier <span id="slider-lambda-value">$\lambda = 1$</span>.</label>
+  <label for="slider-lagrangian-lambda"> Multiplier: <span id="slider-lambda-value">$\lambda = 1$</span>.</label>
 </figure>
 
-Notice in the figure above that for many points,
-there is some multiplier $\lambda$ for which the relaxation touches the primal function.
-Unfortunately, we don't have control of where this happens,
-because we first fix the inclination and only then solve the relaxation.
+The previous definition is the basis for _Lagrangian duality_,
+a tool with vast applications in continuous optimization.
+In this context, the inclination $\lambda$ is called the associated _Lagrange multiplier_
+The name "relaxation" comes from interpreting the transition from $f$ to $L$
+as relaxing the hard constraint $(x, u) \in X$ into a linear penalty
+on how much the solution diverts from the original feasible set.
+
+The above means that the relaxation is an underapproximation to $f$ at all points,
+
+$$ f(x) \ge L(x; \lambda). $$
+
+Furthermore, it is itself affine.
+With respect to any point $x_0$, the relaxation is expressible as
+
+$$ L(x; \lambda) =  L(x_0; \lambda) + \inner<\lambda, x - x_0>, $$
+
+Finally, as we already know, the Lagrangian relaxation defines a cut for $f$
+guaranteed to be tight:
+
+$$ \boxed{f(x) \ge L(x_0; \lambda) + \inner<\lambda, x - x_0>.} $$
+
+Notice though that the cut above is not necessarily tight at $x_0$!
+The point of intersection between $L$ and $f$ depends on the multiplier $\lambda$.
+
+### Best cut given a point
+
+By first fixing the inclination and only then solving the Lagrangian relaxation,
+we lose control of where the cut touches the original function.
 Hence, a natural question to ask is, given a parameter $x$,
 what inclination yields the tightest relaxation at this point?
 This is called the _dual value function_ and amounts to a minimax problem:
@@ -790,10 +807,11 @@ it is also a lower approximation, a result known as _weak duality_.
 
 $$ \boxed{f(x) \ge \check{f}(x)}$$
 
-It is also guaranteed to be convex,
-for it is the maximum of affine functions.
-A convex lower approximation made of cuts, it looks like we are getting to something.
-Moreover, one can prove that it is not just some ordinary convex function,
+It is also guaranteed to be convex, for it is the maximum of affine functions.
+Did we just say it is a convex lower approximation constructed from cuts?
+It looks like we are getting to something.
+
+Moreover, one can prove that the dual function is not just some ordinary convex function,
 but the tightest convex function everywhere below $f$.
 So the cuts for $\check{f}$ are also the best ones possible for $f$ at a certain point.
 The best part is that these cuts come for free from solving the optimization problem
@@ -914,6 +932,8 @@ for commenting and proofreading this post's first draft.
   figures.figureFunctionEpigraph("#function-epigraph", f_ncvx, -1.8, 2);
 
   figures.figureFunctionSupportingCut("#function-supporting-cut", f_cvx, df_cvx, -2, 2);
+
+  figures.figureCutHeight("#function-cut-height", f_ncvx, -1.8, 2);
 
   figures.figureLagrangian("#function-lagrangian", f_ncvx, -1.8, 2);
 
