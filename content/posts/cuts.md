@@ -18,19 +18,19 @@ suppress-bibliography: true
 }
 
 svg.diagram {
-  width: 100%;
-  height: 100%;
+  width:            100%;
+  height:           100%;
   background-color: hsl(147 0% 96%);
-  border-radius: 15px;
-  margin-left: auto;
-  margin-right: auto;
+  border-radius:    15px;
+  margin-left:      auto;
+  margin-right:     auto;
 }
 
 .multi-figure-container {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 1.5rem;
+  display:         flex;
+  flex-direction:  row;
+  flex-wrap:       wrap;
+  gap:             1.5rem;
   justify-content: space-between;
 }
 
@@ -40,8 +40,8 @@ svg.diagram {
 }
 
 .convex-set {
-  fill: hsl(147 42% 64%);
-  stroke: black;
+  fill:   var(--color-crystal, hsl(147 42% 64%));
+  stroke: var(--color-typography, #fdfdfd);
   opacity: 1;
   transition: fill 100ms;
 }
@@ -51,31 +51,26 @@ svg.diagram {
 }
 
 .hyperplane {
-  stroke: rgb(255, 165, 0);
+  stroke:       var(--color-opposite);
   stroke-width: 1pt;
 }
 
 .mark {
-  fill: rgb(255, 165, 0);
-}
-
-.half-space {
-  fill: rgba(255, 165, 0, 0.5);
+  fill: var(--color-opposite);
 }
 
 .function-graph {
-  stroke: black;
+  stroke: var(--color-typography, #fdfdfd);
   fill: none;
 }
 
 .epigraph {
-  fill: hsl(147 42% 64%);
-  fill-opacity: 0.3;
-  transition: fill-opacity 400ms;
+  fill: var(--color-crystal, hsl(147 42% 64%));
+  transition: fill 400ms;
 }
 
 .epigraph:hover {
-  fill-opacity: 0.6;
+  fill: var(--color-lightning, hsl(147 42% 64%));
 }
 
 .draggable {
@@ -84,7 +79,13 @@ svg.diagram {
 
 .draggable:hover {
   cursor:move;
-  fill: #ffd700;
+  fill: var(--color-attention, #ffd700);
+}
+
+.relaxation-dual {
+  stroke:       var(--color-attention);
+  stroke-width: 2pt;
+  fill:         none;
 }
 </style>
 
@@ -695,7 +696,7 @@ $$ f(x) \ge \underbrace{b}_\text{this term} + \inner<\lambda, x - x_0>.$$
 <figure class="diagram-container">
   <svg id="function-cut-height" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
-  <input type="range" id="slider-lagrangian-b" min="-1" max="0" step="0.02" value="0" style="width: 100%"/>
+  <input type="range" id="slider-lagrangian-b" min="-1" max="0" step="0.02" value="-0.5" style="width: 100%"/>
   <label for="slider-lagrangian-lambda"> Multiplier <span id="slider-b-value">$b = 0$</span>.</label>
 </figure>
 
@@ -757,8 +758,8 @@ $$
 </figure>
 
 The previous definition is the basis for _Lagrangian duality_,
-a tool with vast applications in continuous optimization.
-In this context, the inclination $\lambda$ is called the associated _Lagrange multiplier_
+a tool known for its applications in continuous optimization.
+In this context, it is customary to call the inclination $\lambda$ a _Lagrange multiplier_
 The name "relaxation" comes from interpreting the transition from $f$ to $L$
 as relaxing the hard constraint $(x, u) \in X$ into a linear penalty
 on how much the solution diverts from the original feasible set.

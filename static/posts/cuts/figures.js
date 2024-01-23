@@ -500,8 +500,8 @@ export function figureCutHeight(id, f, minX, maxX) {
   // Allow choosing lambda on the slider
   d3.select("#slider-lagrangian-b").on("input", updateLagrangian);
 
-  plot(gFunc, f, scale);
   plotEpigraph(gFunc, f, scale);
+  plot(gFunc, f, scale);
   updateLagrangian();
 }
 
@@ -528,8 +528,8 @@ export function figureLagrangian(id, f, minX, maxX) {
   // Allow choosing lambda on the slider
   d3.select("#slider-lagrangian-lambda").on("input", updateLagrangian);
 
-  plot(gFunc, f, scale);
   plotEpigraph(gFunc, f, scale);
+  plot(gFunc, f, scale);
   updateLagrangian();
 }
 
@@ -563,8 +563,9 @@ export function figureLagrangianDual(id, f, minX, maxX) {
     placeCut(x0);
   });
 
-  plot(gFunc, f, scale);
   plotEpigraph(gFunc, f, scale);
-  plot(gLagrangian, x => dual(x).value, scale);
+  plot(gFunc, f, scale);
+  plot(gLagrangian, x => dual(x).value, scale)
+    .attr("class", "relaxation-dual");
   placeCut(1.5);
 }
