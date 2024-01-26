@@ -47,7 +47,7 @@ svg.diagram {
 }
 
 .not-good {
-  fill: #de82a2;
+  fill: #de82a2 !important;
 }
 
 .hyperplane {
@@ -743,7 +743,7 @@ The **Lagrangian relaxation** of an optimal value function $f$
 is the optimal value function
 $$
   \begin{array}{rl}
-    L(x; \lambda) = \min\limits_{u, y} & c(u) + \inner<\lambda, x - y> \\
+    L(x; \lambda) = \min\limits_{y, u} & c(u) - \inner<\lambda, y - x> \\
     \textrm{s.t.}   & (y, u) \in X.
   \end{array}
 $$

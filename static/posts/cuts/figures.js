@@ -208,7 +208,6 @@ function plotEpigraph(elem, fs, scale) {
       .y1(d => scale.y(d.y))   // Function curve
       .curve(d3.curveLinear)
     );
-
 }
 
 function updatePolyhedral(poly, cuts, scale) {
@@ -496,12 +495,14 @@ export function figureCutHeight(id, f, minX, maxX) {
     const affine = x => intercept + lambda*(x-x_0);
     plot(gLagrangian, affine(x_0) <= f(x_0) ? affine : [], scale)
 
+    gFunc.selectAll(".epigraph").classed("not-good", affine(x_0) > f(x_0));
   }
   // Allow choosing lambda on the slider
   d3.select("#slider-lagrangian-b").on("input", updateLagrangian);
 
   plotEpigraph(gFunc, f, scale);
   plot(gFunc, f, scale);
+
   updateLagrangian();
 }
 
