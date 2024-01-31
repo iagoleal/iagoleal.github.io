@@ -707,18 +707,18 @@ And, just to keep things straight: best in this context means that $b$ makes the
 Assuming a valid cut, we can quantify how close it is to $f$ by calculating
 the minimum distance between both functions in their entire domain:
 
-$$\min_x f(x) - \big(b + \inner<\lambda, x - x_0>\big).$$
+$$\min_y \left| f(y) - \big(b + \inner<\lambda, y - x_0>\big) \right|.$$
 
 We can drop the absolute value in the distance above because valid cuts are everywhere below $f$,
 making the difference always non-negative.
 Also, for the cut to be tight, it must equal the function at a certain point
 and, consequently, have a zero gap.
-Let's call this optimal $b = L(x_0, \lambda)$ to mark its dependence on the parameters.
+Let's call this optimal $b = L(x_0; \lambda)$ to mark its dependence on the parameters.
 This leaves us with
 
 $$\begin{aligned}
-  0               &= \min_x f(x) - \big(L(x_0; \lambda) + \inner<\lambda, x - x_0>\big) \\
-  L(x_0; \lambda) &= \min_x f(x) - \inner<\lambda, x - x_0>.
+  0               &= \min_y f(y) - \big(L(x_0; \lambda) + \inner<\lambda, y - x_0>\big) \\
+  L(x_0; \lambda) &= \min_y f(y) + \inner<\lambda, x_0 - y>.
 \end{aligned}$$
 
 Recall that we are considering $f$ to be an optimal value function.
@@ -728,7 +728,7 @@ let's unroll its definition into a single minimization.
 $$
    L(x_0; \lambda) =
    \begin{array}{rl}
-      \min\limits_{y, u} & c(u) -  \inner<\lambda, y - x_0> \\
+      \min\limits_{y, u} & c(u) + \inner<\lambda, x_0 - y> \\
       \textrm{s.t.}   & (y, u) \in X.
     \end{array}
 $$
@@ -743,7 +743,7 @@ The **Lagrangian relaxation** of an optimal value function $f$
 is the optimal value function
 $$
   \begin{array}{rl}
-    L(x; \lambda) = \min\limits_{y, u} & c(u) - \inner<\lambda, y - x> \\
+    L(x; \lambda) = \min\limits_{y, u} & c(u) + \inner<\lambda, x - y> \\
     \textrm{s.t.}   & (y, u) \in X.
   \end{array}
 $$
@@ -773,8 +773,9 @@ With respect to any point $x_0$, the relaxation is expressible as
 
 $$ L(x; \lambda) =  L(x_0; \lambda) + \inner<\lambda, x - x_0>, $$
 
-Finally, as we already know, the Lagrangian relaxation defines a cut for $f$
-guaranteed to be tight:
+From the two properties above,
+we can deduce the already known fact that
+the Lagrangian relaxation defines a cut for $f$ guaranteed to be tight:
 
 $$ \boxed{f(x) \ge L(x_0; \lambda) + \inner<\lambda, x - x_0>.} $$
 
