@@ -548,6 +548,11 @@ or even to finite spaces that are too huge to explore entirely,
 via something called Approximate Dynamic Programming or Reinforcement Learning.
 But this is a story for another night...
 
+Dynamic Programming consists of solving the Bellman Equation,
+and, as with all famous equations, there are many different approaches to solve it.
+In the following sections we will explore the main ones.
+Which to choose will depend on the problem and hardware at hand.
+
 ### Value Iteration
 
 From the previous discussion,
@@ -584,30 +589,90 @@ by keeping track of the $\argmin$ whenever we solve an optimization problem.
 Below we see a Julia implementation of value iteration.
 
 ```julia
-# The dynamics total cost of choosing action a at stage s,
-# given a future cost estimate v.
-function total_cost(v, s, a)
-  cost(s, a) + γ*v[next(s, a)]
+# Turn a decision problem into its respective cost function.
+function total_cost(p)
+  return (v, s, a) -> p.cost(s, a) + p.γ * v[p.next(s, a)]
 end
 
-function value_iteration(v0 ; tol)
-  v  = copy(v0)
-  π  = Policy{States, Actions}()
+function fixed_point(f; v0, tol)
+  err = +Inf
+  v   = f(v0)
+  while distance(v, v0) > tol
+    v0 = v
+    v  = f(v)
+  end
+  return v
+end
+
+function value_iteration(prob; v0, tol)
+  # We use a custom type (`Values`) to represent our storage.
+  # This is usually an Array or a Hash Map, depending on the application.
+  # The function below takes a value function `v` into a new value function.
+  operator(v) = Values(minimum(a -> total_cost(prob)(v, s, a), Actions(s)) for s in States)
+
+  # The optimal value function is the fixed point of the operator above.
+  # We can approximate it within a given tolerance thanks to the Banach Fixed Point Theorem.
+  v_opt  = fixed_point(operator; v0, tol)
+
+  # The optimal policy is the choice of action for the total cost with the optimal value function.
+  π_opt  = Policy{States, Actions}()
+  for s in States
+    π[s] = argmin(a -> total_cost(p)(v_opt, s, a), Actions(s))
+  end
+
+  return π_opt, v_opt
+end
+```
+
+The algorithm above comes from directly implementing the Fixed Point Theorem,
+and, because of this, is guaranteed to [converge linearly](https://en.wikipedia.org/wiki/Rate_of_convergence) to the optimum.
+Furthermore, at each iteration, the minimization procedures happen independently
+for each state, making the update rule $\Bellman(v)$ embarrassingly parallel.
+
+Despite the parallelization opportunities shown by the previous implementation,
+it can feel too sluggish when implemented sequentially,
+because it waits until after traversing all states to update the value function.
+Another approach, better suited for a sequential machine,
+is to update the value function in-place in order to promptly propagate
+the improved information to the other states.
+The trade-off is that this approach is no longer able
+to broadcast the optimization across many processes in parallel.
+
+Algorithmically speaking, the only required change
+is rewriting the fixed point iteration procedure to calculate in-place.
+
+```julia
+function fixed_point_inplace!(f, v; tol)
   maxerr = Inf
   while maxerr > tol
+    # Iteration starts with no error
     maxerr = 0
     for s in States
-      prev = v[s]
-      v[s], π[s] = findmin(a -> total_cost(v, s, a), Actions(s))
+      prev   = v[s]
+      v[s]   = f(v)[s]
+      # Estimate ||f(v) - v||_∞ for this iteration
       maxerr = max(maxerr, abs(v[s] - prev))
     end
   end
-  return π, v
+
+  return v
+end
+
+function value_iteration_inplace!(prob, v0 ; tol)
+  operator(v) = Values(minimum(a -> total_cost(prob)(v, s, a), Actions(s)) for s in States)
+  v_opt  = fixed_point_inplace!(operator, v0 ; tol)
+
+  π_opt  = Policy{States, Actions}()
+  for s in States
+    π[s] = argmin(a -> total_cost(p)(v_opt, s, a), Actions(s))
+  end
+
+  return π_opt, v_opt
 end
 ```
 
 In the animation below,
-we can see value iteration in action for the problem of escaping from a maze.
+we can see in-place value iteration in action for the problem of escaping from a maze.
 In this model, each state is a cell in the grid
 and the actions are the directions one can take at that cell (neighbours without a wall).
 The objective is to reach the right-bottom edge in the minimum amount of steps possible.
@@ -617,32 +682,11 @@ and in the right the associated policy.
 
 ![](labyrinth-value-iteration.webm)
 
-The algorithm above is in fact just one variation of value iteration.
-There are still many problem-dependent improvements one can make.
-For example, we chose to update $v$ in-place,
-already propagating the new value function while traversing the states,
-but we could instead have kept the old value function
-and only updated $v$ after traversing all states.
-Our approach has the advantage of using the improved information
-as soon as it is available but updating in batch may be interesting
-when we're able to broadcast the optimization across many processes in parallel.
-
-Other important choice we have is the initial value function.
-Choosing a good warm start can greatly improve the convergence.
-As an example, whenever there is a terminal state $\blacksquare$,
-it is a good idea to already fill $v(\blacksquare) = 0$.
-Finally, the order that we traverse the states matter.
-There is a reason why dynamic programming is famous for solving problems backwards.
-If we know that a given state is easier to solve,
-we should start the traverse by it.
-A specialization that we will further explore in a bit.
-
-Well, we have a lot of options...
-Nevertheless, as long as we keep visiting all states,
-any of those approaches is guaranteed to converge towards the optimal value function,
-which one is faster being generally problem-dependent.
-This is why I think it is best to think of DP not as an algorithm
-but as a principle that encompasses many similar algorithms.
+The implementations above are, indeed, just variations on the same idea:
+iterating the Bellman operator in order to converge to the optimal value function.
+There are many other tweaks we could make to it which, nevertheless, don't affect the algorithm's essence:
+choosing good warm starts, parallelizing, changing the state traversal order in the in-place version, etc.
+The best approach tends to be problem-dependent.
 
 #### Backward Induction over a Finite Horizon
 
