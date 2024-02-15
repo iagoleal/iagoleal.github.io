@@ -212,12 +212,12 @@ Optimal Decisions
 Having multiple courses of action possible
 prompts us to ask which is the best one possible.
 When programming a robot to escape a labyrinth,
-you want it to take the least amount of time.
+you want it to take the least amount of time;
 When controlling a spaceship towards the moon,
-it is important to guarantee that it will use the least amount of fuel.
+it is important to guarantee that it will use the least amount of fuel;
 When brawling at a bar, you want to knock out your foe
 with the least injuries possible.
-Must of all, the best policy is the one with
+Most of all, the best policy is the one with
 the least cost taking _all time_ into account;
 both the present and its future consequences.
 For example, sometimes a policy that has a higher cost for the first state
@@ -243,7 +243,7 @@ but in fact it contains a lot of structure that we can exploit in order to solve
 This will be the subject of the next section.
 Before we continue,
 let's go over a little tangent on how to formulate some classical problems
-in this decision making framework.
+in this decision-making framework.
 
 ### Example: Shortest Path in a Graph
 
@@ -430,7 +430,7 @@ $$
 \end{array}
 $$
 
-If you are not accustomed with fixed points,
+If you are not accustomed to fixed points,
 the transition above from the Bellman equation to operator may seem strange.
 Hence, let's think about a little story in order to develop some intuition.
 
@@ -439,7 +439,7 @@ You are an absolute monarch and whatever action you decide to take,
 your subjects will follow.
 Lately, the kingdom's reserves are running dry
 and your counselors advised you to define a clear governing policy
-in order to minimize the kingdom's spendings.
+in order to minimize the kingdom's spending.
 Since besides a ruthless ruler you're also a great mathematician
 and a fan of my blog,
 at this point you already know what must be done to save your kingdom from bankruptcy:
@@ -507,7 +507,7 @@ hint that this encompasses the most important spaces
 from a computational perspective.
 
 Since I don't want to depart too much from this post's main topic
-nor dive into mathematical minutiae,,
+nor dive into mathematical minutiae,
 this section only enunciates the important theorem.
 In case you are interested,
 the necessary proofs are in an [appendix](#appendix) for completeness.
@@ -530,7 +530,7 @@ the necessary proofs are in an [appendix](#appendix) for completeness.
 
 Besides the existence and uniqueness guarantees,
 this theorem also spells something with a more practical character.
-No matter with which cost estimative we start,
+No matter with which cost estimate we start,
 we can use the Bellman operator to update our value function
 until it converges towards the optimal.
 This is the next section's topic.
@@ -540,9 +540,8 @@ Solving the Bellman Equation
 
 For this section, let's assume that both
 the state $\States$ and action $\Actions(s)$ spaces are finite.
-This will allow us to focus on exhaustive methods
-exploring the entire state space.
-Keep calm however,
+This allows us to focus on exhaustive methods exploring the entire state space.
+Keep calm, however:
 I am planning to write other posts in the future
 to explain how these ideas generalize to continuous spaces,
 or even to finite spaces that are too huge to explore entirely,
@@ -553,7 +552,7 @@ But this is a story for another night...
 
 From the previous discussion,
 we learned that iterating the Bellman operator
-convergences towards the optimal the optimal value function.
+converges towards the optimal value function.
 Thus, we arrive at our first algorithm: _value iteration_.
 Its main idea is actually quite simple:
 to convert the Bellman equation into an update rule.
@@ -574,10 +573,10 @@ The memoization that people associate with dynamic programming
 lies entirely in this "trick".
 However, it is good to keep in mind that this is only a matter
 of computational representation of functions
-and is totally orthogonal to any algorithm's design.
+and is totally orthogonal to any algorithmic design.
 In a language with first-class functions,
 it is possible to do dynamic programming using only function composition.
-It is just possible that it will not be as fast as one would like.
+It just so happens that it will not be as fast as one would like.
 
 In value iteration,
 we obtain an optimal policy from the value function
@@ -665,7 +664,7 @@ where we can just relax and do nothing for the rest of eternity.
 </object>
 
 
-If you prefer equations over figures,
+If you prefer equations to figures,
 a finite horizon state machine is one where
 the transition function looks like this:
 
