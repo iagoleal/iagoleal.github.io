@@ -13,6 +13,7 @@ suppress-bibliography: true
 \def\R{\mathbb{R}}
 \def\E{\mathbb{E}}
 \def\Bellman{\mathcal{B}}
+\def\CBall{\char"1f52e}
 
 What if I told you that some of the most used algorithms to
 find the shortest path in a graph,
@@ -74,11 +75,10 @@ Before delving into dynamic programming per se, we first have to establish a few
 After all, it's always best to know which problems you intend to solve
 before learning a method to solve them, right?
 
-
 As a matter of motivation, let's start with something I am really fond of:
-old school platformer games.
+old school plataformer games.
 In our hypothetical game which is definitely not about some Italian plumber,
-the character does stand idle doing nothing by default.
+the character stands idle doing nothing by default.
 But with the press of a button in the controller,
 the player may command the character to do a few things:
 shoot, jump or walk.
@@ -100,38 +100,45 @@ There are 4 states in which the character might be and at each one
 there is an available set of actions to take that transitions that state.
 More abstractly,
 an automaton is a system that can be in one of many _states_ $s \in \States$
-and at each state, you can choose among a set of _actions_ $a \in \Actions(s)$
-that transition the system to a new state $s' = T(s, a)$,
-where $T : (s : \States) \times \Actions(s) \to \States$ is called the system's _transition function_.
+and at each state, you can choose among a set of _actions_ $a \in \Actions(s)$.
+Whenever you take an action, the system changes to a new state according to a _transition function_
 
-An important notice: If you come from Computer Science,
-you are probably used to _finite_ state machines.
-Just know that in our context, the states may be any set.
-Some of the algorithms that we will see today
-only work for finite state spaces,
-but there are others that may even require a continuous space!
-An example is Stochastic Dual Dynamic Programming,
-which is based upon linear programming duality
-and thus requires the state space to be a convex subset of $\R^n$.
+$$T : (s : \States) \times \Actions(s) \to \States.$$
+
+Unfortunately life is not known for its free lunches
+and, in most systems, whenever we take action $a$ at state $s$,
+there is a certain cost we must pay,
+properly modeled as another function
+
+$$c : (s : \States) \times \Actions(s) \to \R.$$
+
+Depending on the context this can be, for example,
+a real monetary cost (in economic contexts),
+some total distance (for planning)
+or even a negative cost representing a reward.
+
+Together, the transition and cost functions define
+everything we need to know about our automaton.
 
 The Dynamics of Decision-Making
 -------------------------------
 
 Iterating the transition $T$ establishes a dynamics for our system
-where we start at an initial state $s$ and by taking a sequence of actions
-$a_1, a_2, \ldots$ we walk over the state space.
+where we start at an initial state $s$ and, by taking a sequence of actions
+$a_0, a_1, \ldots$, we walk over the state space.
 
 $$
 \begin{aligned}
-    s_1     &= s, \\
+    s_0     &= s, \\
     s_{t+1} &= T(s_t, a_t).
 \end{aligned}
 $$
 
-This new view makes our state machine somewhat equivalent
-  to a _controllable dynamical system_,
-which is another really cool name in my opinion.
+When viewed in this light,
+our state machines are called _controllable dynamical systems_ or _decision processes_,
+which are yet more cool name for you to recall.
 
+<!-- TODO: Bad paragraph. What does this mean?  -->
 As an example, think of a game of Sudoku.
 The states are the (partially numbered) boards
 and the actions consist of putting a valid number
@@ -143,53 +150,59 @@ where there are no available actions.
 One can argue that a state encapsulates
 all you must know about your system in order to choose an action,
 no matter the previous history nor time step.
-Indeed, if those things affect your choice,
-then you can without loss of generality model
-the problem as a larger system where the state also carries this information.
-Thus controlling a dynamic system amounts to
-a function $\pi : (s : \States) \to \Actions(s)$
-which chooses a valid action for each state.
-In the literature this called a _policy_,
-in analogy to a government taking actions to run its state.
+Indeed, if any other thing affects your choice,
+you can without loss of generality model
+the problem as a larger automaton where the state also carries the additional information.
+Thus, controlling a dynamic system amounts to selecting a valid action for each state,
+that is, a function
 
-Unfortunately life is not known for its free lunches
-and in most systems, whenever we take action $a$ at state $s$,
-there is a certain cost $c(s, a)$ to pay.
-Depending on the context this can be, for example,
-a real monetary cost (for economic problems),
-some total distance (for planning)
-or even a negative cost representing a reward.
+$$\pi : (s : \States) \to \Actions(s).$$
 
-Thus, by following a policy $\pi$,
-we produce a sequence of cost $c(s_t, \pi(s_t))$ for each time step.
+In the literature this is called a _policy_,
+in analogy to a government taking actions to control the state of the nation.
+
+Starting at state $s$ and following a policy $\pi$
+produces a deterministic dynamical system without the need for control:
+
+$$
+\begin{aligned}
+    s_0     &= s, \\
+    s_{t+1} &= T(s_t, \pi(s_t)).
+\end{aligned}
+$$
+
+This dynamics, in counterpart, yields a cost $c(s_t, \pi(s_t))$ for each time step.
 We could define the total cost for $\pi$ as the sum of those costs,
 but there is an additional detail to notice.
-If I gave you something and asked whether you want to pay me today or next year,
-which option would you prefer?
+Suppose that, for any reason, money is short and you had to take a loan in order to pay your bills.
+In those struggling conditions,
+would you prefer to pay the money back today or next year?
+
 Sometimes there are factors such as inflation or interests
-that make costs in the future not have the same actual value
-as the costs we expend right now.
+making future costs have a real value that is different from its nominal value.
 This prompts us to introduce a problem dependent _discount factor_ $\gamma \in [0, 1]$
-such that the total cost for a policy $\pi$ is
+representing how much the cost depreciates over time.
+The total cost of following a certain policy $\pi$
+is the cumulative sum of all properly discounted costs we generate by following it.
+We define the _value function_ $v^\pi : \States \to \R$ associated with $\pi$
+as the total cost of starting at a given state:
 
 $$
 \begin{array}{rl}
- v^\pi(s) = & c(s_1, \pi(s_1)) + \gamma c(s_2, \pi(s_2)) + \gamma^2 c(s_3, \pi(s_3)) + \ldots \\
-  \textrm{where}  & s_1     = s, \\
+ v^\pi(s) = & c(s_0, \pi(s_0)) + \gamma c(s_1, \pi(s_1)) + \gamma^2 c(s_2, \pi(s_2)) + \ldots \\
+  \textrm{where}  & s_0     = s, \\
                   & s_{t+1} = T(s_t, \pi(s_t)), \\
 \end{array}
 $$
 
-The equation above defines the _value function_ $v^\pi : \States \to \R$
-for a given policy $\pi$.
-__Spoiler__: keep an eye on the $v^\pi$,
-because later in this post we will find them to be useful tools
+**Spoiler alert**: keep an eye on the $v^\pi$,
+because later in this post we will find out that they are
 closely related to the memoization techniques
-that people usually identify with dynamic programming.
+which people usually identify with dynamic programming.
 
 Besides its practical interpretation,
 the discount factor $\gamma$ also plays a significant role
-from the mathematical point of view.
+from the analytical point of view.
 If $|\gamma| < 1$ and the costs are uniformly bounded
 (which is the case for a finite action space, for example)
 we can guarantee that the series defining $v^\pi$ converges
@@ -201,7 +214,7 @@ $$\forall s \in \States, a \in \Actions(s),\, |c(s, a)| \le M.$$
 This bounds the total cost by a geometric series that cannot blow up,
 
 $$
-\sum\limits_{t=1}^\infty \gamma^{t-1}|c(s_t, \pi(s_t))| \le \sum\limits_{t=1}^\infty \gamma^{t-1} M \le \frac{M}{1 - \gamma},
+\sum\limits_{t=0}^\infty \gamma^{t}|c(s_t, \pi(s_t))| \le \sum\limits_{t=0}^\infty \gamma^{t} M \le \frac{M}{1 - \gamma},
 $$
 
 thus guaranteeing that the value function is well-defined.
@@ -209,17 +222,16 @@ thus guaranteeing that the value function is well-defined.
 Optimal Decisions
 -----------------
 
-Having multiple courses of action possible
-prompts us to ask which is the best one possible.
+Having multiple possible courses of action
+prompts us to ask which one is the best.
 When programming a robot to escape a labyrinth,
 you want it to take the least amount of time;
 When controlling a spaceship towards the moon,
 it is important to guarantee that it will use the least amount of fuel;
 When brawling at a bar, you want to knock out your foe
-with the least injuries possible.
+while sustaining the least injuries possible.
 Most of all, the best policy is the one with
-the least cost taking _all time_ into account;
-both the present and its future consequences.
+the least cost taking _all time_ into account --- both the present and its future consequences.
 For example, sometimes a policy that has a higher cost for the first state
 is overall better because it puts us into a more favorable state.
 Thus, our problem can be naturally formulated as searching for _optimal policies_:
@@ -231,17 +243,17 @@ Or equivalently in math language:
 $$
 \begin{array}{rl}
 \min\limits_\pi v^\pi(s) =
-  \min\limits_{a_t} & \sum\limits_{t=1}^\infty \gamma^{t-1}c(s_t, a_t) \\
-  \textrm{s.t.}     & s_1     = s, \\
+  \min\limits_{a_t} & \sum\limits_{t=0}^\infty \gamma^{t}c(s_t, a_t) \\
+  \textrm{s.t.}     & s_0     = s, \\
                     & s_{t+1} = T(s_t, a_t), \\
                     & a_t \in \Actions(s_t).
 \end{array}
 $$
 
 Right now, this may seem like a big and scary optimization problem
-but in fact it contains a lot of structure that we can exploit in order to solve it.
-This will be the subject of the next section.
-Before we continue,
+but in fact it contains a lot of structure we're able to exploit.
+That is the subject of the next section.
+But, before we continue,
 let's go over a little tangent on how to formulate some classical problems
 in this decision-making framework.
 
@@ -265,27 +277,27 @@ Going from home to Cuzco amounts to finding the path between those two nodes
 with the smallest total distance.
 
 The translation from this graph description
-to a decision process description is quite straightforward.
+to a decision process is quite straightforward.
 
 * **States**: nodes in the graph.
 * **Actions** at state $s$: edges going from $s$ to another node.
-* **Transition**: The opposite node on the same edge.
+* **Transition**: the opposite node on the same edge.
 That is, given an edge $s \to s'$, $T(s, s \to s') = s'$.
-* **Costs**: $c(s, a)$ is the weight of edge $a$.
+* **Costs**: $c(s, a)$ is the weight of edge $a$ --- the time taken traveling through that edge.
 
-Finding the shortest path from $s$ to node $z$
+Finding the shortest path from $s$ to $z$
 is the same as setting the initial state to $s$ and making $z$
 a terminal state of our dynamics.
 
 Dynamic Programming
 ===================
 
-Alright, it's finally time to solve those decision problems.
-The simplest idea could be to exhaustively search the space of all actions
+Alright, it's finally time to starting optimizing those decision problems.
+The simplest idea would be to exhaustively search the space of all actions
 trying to find the best solution.
 Notice that even for finite states and horizon, this may be prohibitively expensive
 since the possible candidates grow exponentially with the time steps.
-Any practical method will take into account how this class of problems
+Any practical method must take into account how this class of problems
 naturally breaks apart into separate stages.
 
 Our approach will involve the famous _Bellman principle of optimality_,
@@ -302,9 +314,10 @@ What the principle of optimality is telling us
 is that in order to calculate an optimal policy,
 we should turn this iterative process of making actions and calculating costs
 into a recursive procedure.
-That is, taking an action puts us into a new state $s_2 = T(s_1, a_1)$
-where we are again faced with the exact same problem of finding an optimal policy
-but this time starting at $s_2$.
+That is, taking an action $a$ at the initial state $s$
+puts us into a new state $s' = T(s, a)$
+where we are again faced with the exact same problem of finding an optimal policy,
+but this time starting at $s'$.
 Let's see how we can exploit this idea.
 
 Remember that we defined the value function $v^\pi$
@@ -317,8 +330,8 @@ while starting at a certain state $s$.
 $$
 \begin{array}{rl}
  v^\star(s) =
-  \min\limits_{a_t} & \sum\limits_{t=1}^\infty \gamma^{t-1}c(s_t, a_t) \\
-  \textrm{s.t.}     & s_1     = s, \\
+  \min\limits_{a_t} & \sum\limits_{t=0}^\infty \gamma^{t}c(s_t, a_t) \\
+  \textrm{s.t.}     & s_0     = s, \\
                     & s_{t+1} = T(s_t, a_t), \\
                     & a_t \in \Actions(s_t).
 \end{array}
@@ -327,17 +340,17 @@ $$
 Notice in the optimization problem above
 that the initial state is only ever used to choose the first action.
 Later actions do not depend directly on it but only on its consequences.
-This means that we can break the problem into two parts:
-calculating an _immediate cost_ dependent on the initial state
-and calculating a future cost dependent on all next states.
+This means that we can break the problem into two parts:solve the Bellman equation in order to find its optimal policy.
+calculating an _immediate cost_ dependent only on the initial state
+and calculating a _future cost_ dependent on all the next states.
 
 $$
 \begin{array}{rl}
  v^\star(s) =
-  \min\limits_{a,a_t} & c(s, a) + \left(
+  \min\limits_{a,a_t} & {c(s, a)} + \left(
     \begin{array}{rl}
-      \min\limits_{a_t} & \sum\limits_{t=2}^\infty \gamma^{t-1}c(s_t, a_t) \\
-      \textrm{s.t.}     & s_2 = s', \\
+      \min\limits_{a_t} & \sum\limits_{t=1}^\infty \gamma^{t}c(s_t, a_t) \\
+      \textrm{s.t.}     & s_1 = s', \\
                         & s_{t+1} = T(s_t, a_t), \\
                         & a_t \in \Actions(s_t)
     \end{array}
@@ -349,7 +362,7 @@ $$
 
 There's already some recursive structure unfolding in here!
 What is still missing consists of noticing that since the sum in the future cost
-starts at $t =2$, we can factor out $\gamma$.
+starts at $t = 1$, we can factor out $\gamma$.
 By renaming $l = t-1$ we get
 
 $$
@@ -365,8 +378,8 @@ $$
  v^\star(s) =
   \min\limits_{a} & c(s, a) + \gamma\left(
     \begin{array}{rl}
-      \min\limits_{a_l} & \sum\limits_{l=1}^\infty \gamma^{l-1}c(s_l, a_l) \\
-      \textrm{s.t.}     & s_1 = s', \\
+      \min\limits_{a_l} & \sum\limits_{l=0}^\infty \gamma^{l}c(s_l, a_l) \\
+      \textrm{s.t.}     & s_0 = s', \\
                         & s_{l+1} = T(s_l, a_l), \\
                         & a_l \in \Actions(s_l)
     \end{array}
@@ -384,12 +397,14 @@ This way, the principle of optimality express itself mathematically
 as a recursive equation that the value for an optimal policy must satisfy.
 
 $$
-\begin{array}{rl}
- v^\star(s) =
-  \min\limits_{a} & c(s, a) + \gamma v^\star(s') \\
-  \textrm{s.t.}  & s' = T(s, a), \\
-                 & a \in \Actions(s).
-\end{array}
+\boxed{
+  \begin{array}{rl}
+   v^\star(s) =
+    \min\limits_{a} & c(s, a) + \gamma v^\star(s') \\
+    \textrm{s.t.}  & s' = T(s, a), \\
+                   & a \in \Actions(s).
+  \end{array}
+}
 $$
 
 This is called the _Bellman equation_ and all dynamic programming
@@ -409,16 +424,17 @@ Can I trust that it is unique? Does it even exist?
 Surely we mathematicians may seem a bit too anxious with all these questions,
 but they are for good reasons.
 Besides the guarantee that everything works,
-proving the existence of a solution in many cases
-also teaches us how to construct this solution.
-In fact, this will be just the case!
-In the next section we are going to adapt the theorems in here
-into algorithms to solve the Bellman equation.
+in this case proving the existence of a solution also teaches us how to construct it!
+So pay attention, because in the next section
+we're going to adapt the theorems in here into algorithms to solve the Bellman equation.
 
-Recursion has a deep relationship with fixed points.
-For example, we can adapt the Bellman equation as the fixed point of an operator
+Recursion has a deep relationship with fixed points,
+allowing us to use whichever is more practical to our goals.
+To solve a problem with dynamic programming,
+our first step will be to write the Bellman equation
+as the fixed point of an operator
 $\Bellman : (\States \to \R) \to (\States \to \R)$
-called, you can guess, the _Bellman Operator_.
+called --- guess what --- the _Bellman Operator_.
 It takes value functions to value functions and is defined as
 
 $$
@@ -430,56 +446,80 @@ $$
 \end{array}
 $$
 
+Now, the optimal value function $v^*$ is the fixed point
+We thus reduce the question of existence and uniqueness of solutions
+for the Bellman equation to finding fixed points of $\Bellman$:
+
+$$ v^* = \Bellman v^*.$$
+
 If you are not accustomed to fixed points,
 the transition above from the Bellman equation to operator may seem strange.
-Hence, let's think about a little story in order to develop some intuition.
+Hence, let's go through a little story in order to develop some intuition.
 
-Imagine that you are the king/queen of fantastical kingdom.
+Imagine that you are the king/queen of a fantastical kingdom.
 You are an absolute monarch and whatever action you decide to take,
 your subjects will follow.
 Lately, the kingdom's reserves are running dry
 and your counselors advised you to define a clear governing policy
 in order to minimize the kingdom's spending.
 Since besides a ruthless ruler you're also a great mathematician
-and a fan of my blog,
+and a fan of this blog,
 at this point you already know what must be done to save your kingdom from bankruptcy:
-solve the Bellman equation in order to find its optimal policy.
+solve the Bellman equation.
 
 Because at this point of the post you still don't know how to solve it,
 you decide to take advantage of your fantastical world and hire a wizard
 to look into his crystal ball and act as an oracle telling you
-how much each possible state will cost to the kingdom in the future.
-Beware though, that it is not wise to blindly follow advices from a crystal ball.
-The right thing to do in this situation is to use this oracle
-to decide on what to do at each state.
-Now, instead of solving the Bellman equation,
-all you have to do to get a policy is to solve the optimization problem
-with future cost given by the wizard's predictions.
-The processes of going from prediction to decision is precisely the Bellman operator.
-The function $\Bellman v$ is the cost of choosing the best action
-according to the prediction.
+how much each state of affairs will cost to the kingdom in the future.
+After God knows how many rituals and incantations,
+the wizard hands you a shining new value function $\CBall : \States \to \R$.
 
-The optimal value function, furthermore, is the one with the correct prediction,
-and is, thus, kept unchanged by the Bellman operator:
+Since it is never wise to blindly follow the advices from a crystal ball,
+you decide to use it only to predict the future,
+while relying on your discernment for taking immediate decisions.
+In other words, you rule your kingdom by solving the optimization problem
+
+$$
+\begin{array}{rl}
+  (\Bellman \CBall)(s) = \min\limits_{a} & c(s, a) + \gamma \CBall(s') \\
+  \textrm{s.t.}  & s' = T(s, a), \\
+                 & a \in \Actions(s).
+\end{array}
+$$
+
+Thus, the process of going from prediction to decision is precisely the Bellman operator.
+The function $\Bellman v$ is the cost of choosing the best action taking $v$ as your future estimate.
+
+### A Useful Theorem
+
+Alright, we have transformed the problem
+of finding an optimal decision into solving the Bellman equation,
+and then transformed it again into finding a fixed point to the Bellman operator,
 
 $$ \Bellman v^\star = v^\star. $$
 
-We thus reduce the question of existence and uniqueness of solutions
-for the Bellman equation to finding fixed points of $\Bellman$.
-Fortunately there is a theorem that does just that,
-called the _Banach Fixed Point_ theorem!
+If this seems equally complicated --- although more abstract --- as where we started,
+have no fears!
+We just arrived at a point where we can invoke a powerful theorem from Analysis
+to solve all our problems at once.
+Behold the _Banach Fixed Point Theorem_!
 
-:::Theorem
-Let $(M,\mathrm{d})$ be a complete metric space and $f : M \to M$
-a continuous function such there is a $\gamma \in (0,1)$ satisfying
+::: {.Theorem data-title="Banach Fixed Point"}
+In a complete metric space $(M,\mathrm{d})$,
+any continuous $f : M \to M$ that decreases the distance between points:
 
-$$ \mathrm{d}(f(x), f(y)) \le \gamma \mathrm{d}(x, y)$$
+$$ \mathrm{d}(f(x), f(y)) \le \gamma \mathrm{d}(x, y),\; \textrm{for } \gamma \in [0, 1),$$
 
-for any $x, y \in M$.
-Then $f$ has a unique fixed point $x^\star$ and for any initial value $x_0$,
-iterating $f$ will eventually converge towards $x^\star$,
+Has a unique fixed point $x^\star$.
 
-$$ \lim_{n \to \infty} f^n(x_0) = x^\star.$$
+Furthermore, one can arrive at $x^\star$ from any initial value $x_0$
+by iterating $f$:
+
+$$ \lim_{n \to \infty} f^n(x_0) = x^\star,\; \forall x_0 \in M.$$
+
+This procedure converges linearly with the error at each iteration bounded as
+
+$$ \mathrm{d}(x_n, x^*) \le \frac{\gamma^n}{1 - \gamma} \mathrm{d}(x_0, \Bellman x_0).$$
 :::
 
 Proving this theorem is out of scope for this post[^banach].
