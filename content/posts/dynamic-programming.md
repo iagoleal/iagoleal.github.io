@@ -822,8 +822,8 @@ But I digress... This is out of scope for this post.
 
 One issue with value iteration is that all policy calculations are implicit,
 since we just work with value functions.
-It is then possible that we reach an optimal policy and keep iterating
-the algorithm to improve the estimate for the value function.
+It is possible to reach an optimal policy but keep iterating
+the algorithm until the value function converges.
 In this section, let's see how we can directly calculate an optimal policy
 in a finite number of steps.
 
@@ -831,11 +831,11 @@ in a finite number of steps.
 
 Our next question is then how to calculate the cost associated with a policy.
 Let's say somebody gave you a policy $\pi$ and told you nothing more about it.
-How can you find its value function $v^\pi$?
+How could you find its value function $v^\pi$?
 One way is to notice that it satisfies a recursion
 similar to the Bellman equation, but without the minimization step.
 
-$$ v^\pi(s) = c(s, \pi(s)) + \gamma v^\pi(T(s, \pi(s)). $$
+$$ v^\pi(s) = c(s, \pi(s)) + \gamma v^\pi(T(s, \pi(s))). $$
 
 If you follow the same steps we did before transforming this equation
 into a fixed point problem,
@@ -848,24 +848,21 @@ This way, we arrive at an algorithm for evaluating the cost of a policy,
 unimaginatively called _policy evaluation_.
 
 ```julia
-function policy_evaluation(π, v0=zeros(States); tol)
-  v  = copy(v0)
-  maxerr = Inf
-  while maxerr > tol
-    maxerr = 0
-    for s in States
-      prev = v[s]
-      v[s] = total_cost(v, s, π(s))  # same total cost function as defined for value iteration
-      maxerr = max(maxerr, abs(v[s] - prev))
-    end
-  end
-  return v
+function policy_evaluation(prob, π ; v0 = zeros(States), tol)
+  # Define the operator associated with following a policy
+  operator(v) = Values( total_cost(prob)(v, s, π[s]) for s in States )
+
+  # The value function is the fixed point of the operator above.
+  return fixed_point(operator; v0, tol)
 end
 ```
 
 Notice the similarity with value iteration.
-The only difference is on the update rule:
-instead of choosing an optimal action, we just follow along with the policy.
+The only true difference is on which operator we pass to the fixed point:
+instead of choosing an optimal action, it just follows along with the policy.
+Moreover, all the discussion above on the variations of value iteration
+also holds for policy evaluation.
+You can do the same modifications with same effects.
 
 #### Policy Improvement
 
@@ -877,6 +874,11 @@ to an optimal policy.
 The secret lies in locally improving our policy for each state.
 Consider a state $s$. The value $v^\pi(s)$ is the total cost
 of starting at $s$ and following $\pi$ thereafter.
+But what if instead of just following it,
+we optimize the current action while using $v^\pi$ as our future estimate?
+
+$$ \min_{a \in \Actions(s)} c(s, a) + v^\pi(T(s, a)) \le c(s, \pi(s)) + v^\pi(T(s, \pi(s))) = v^\pi(s).$$
+
 What if there is an $a \in \Actions(s)$ such that
 choosing $a$ at the first step and following $\pi$ thereafter
 is _cheaper_ than just following $\pi$?
@@ -900,6 +902,16 @@ $$
 it is always better to follow $\lambda$ then $\pi$,
 because $v^\lambda \le v^\pi$.
 
+```julia
+function policy_improvement(prob, v_π)
+  λ = Policy{States, Actions}()
+  for s in States
+    λ[s] = argmin(a -> total_cost(v_π, s, a), Actions(s))
+  end
+  return λ
+end
+```
+
 We thus arrive at our next algorithm: _policy iteration_.
 It consists of taking a policy $\pi$,
 finding its value function $v^\pi$ through policy evaluation
@@ -910,19 +922,17 @@ this algorithm is guaranteed to converge to an optimal policy
 in a finite amount of steps.
 
 ```julia
-function policy_improvement(π0, v)
-  π = copy(π0)
-  for s in States
-    π[s] = argmin(a -> total_cost(v, s, a), Actions(s))
-  end
-  return π
-end
+function policy_iteration(prob
+                         ; v0 = zeros(States)
+                         , π0 = policy_improvement(v0)
+                         , tol)
+  π = π_0    # Warm start
 
-function policy_iteration(π, v=zeros(States); tol)
   while true
     π0 = π
-    v  = policy_evaluation(π, v; tol=tol)
-    π  = policy_improvement(π, v)
+    v  = policy_evaluation(prob,  π ; v0 = v, tol = tol)
+    π  = policy_improvement(prob, v)
+
     if π == π0 break end
   end
   return π, v
