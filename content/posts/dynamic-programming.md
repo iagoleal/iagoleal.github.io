@@ -14,6 +14,7 @@ suppress-bibliography: true
 \def\E{\mathbb{E}}
 \def\Bellman{\mathcal{B}}
 \def\CBall{\char"1f52e}
+\def\dist{\mathrm{d}}
 
 What if I told you that some of the most used algorithms to
 find the shortest path in a graph,
@@ -305,9 +306,9 @@ which is the cornerstone of dynamic programming.
 Taking @{bellmanDPBook} [ch 3, p. 83]'s own words, it reads as:
 
 > An optimal policy has the property that
-whatever the initial state and initial decision are,
-the remaining decisions must constitute an optimal policy
-with regard to the state resulting from the first decision.
+> whatever the initial state and initial decision are,
+> the remaining decisions must constitute an optimal policy
+> with regard to the state resulting from the first decision.
 
 Alright, what does this mean?
 What the principle of optimality is telling us
@@ -340,9 +341,9 @@ $$
 Notice in the optimization problem above
 that the initial state is only ever used to choose the first action.
 Later actions do not depend directly on it but only on its consequences.
-This means that we can break the problem into two parts:solve the Bellman equation in order to find its optimal policy.
+This means that we can break the problem into two parts:
 calculating an _immediate cost_ dependent only on the initial state
-and calculating a _future cost_ dependent on all the next states.
+and calculating a _future cost_ dependent on all the ensuing states.
 
 $$
 \begin{array}{rl}
@@ -498,85 +499,88 @@ and then transformed it again into finding a fixed point to the Bellman operator
 
 $$ \Bellman v^\star = v^\star. $$
 
-If this seems equally complicated --- although more abstract --- as where we started,
+If this seems as complicated --- although more abstract --- as where we started,
 have no fears!
 We just arrived at a point where we can invoke a powerful theorem from Analysis
-to solve all our problems at once.
+to solve all our issues at once.
 Behold the _Banach Fixed Point Theorem_!
 
 ::: {.Theorem data-title="Banach Fixed Point"}
-In a complete metric space $(M,\mathrm{d})$,
+In a complete metric space $(M,\dist)$,
 any continuous $f : M \to M$ that decreases the distance between points:
 
-$$ \mathrm{d}(f(x), f(y)) \le \gamma \mathrm{d}(x, y),\; \textrm{for } \gamma \in [0, 1),$$
+$$ \dist(f(v), f(w)) \le \gamma \dist(v, w),\; \textrm{for } \gamma \in [0, 1),$$
 
-Has a unique fixed point $x^\star$.
+Has a unique fixed point $v^\star$.
 
-Furthermore, one can arrive at $x^\star$ from any initial value $x_0$
+Furthermore, one can arrive at $v^\star$ from any initial value $v_0$
 by iterating $f$:
 
-$$ \lim_{n \to \infty} f^n(x_0) = x^\star,\; \forall x_0 \in M.$$
+$$ \lim_{n \to \infty} f^n(v_0) = v^\star,\; \forall v_0 \in M.$$
 
 This procedure converges linearly with the error at each iteration bounded as
 
-$$ \mathrm{d}(x_n, x^*) \le \frac{\gamma^n}{1 - \gamma} \mathrm{d}(x_0, \Bellman x_0).$$
+$$ \dist(v_n, v^*) \le \frac{\gamma^n}{1 - \gamma} \dist(v_0, f(v_0)).$$
 :::
 
 Proving this theorem is out of scope for this post[^banach].
 However, we can think of it as saying that if a mapping shrinks all distances,
 then eventually the image of all points will be squeezed into a single point.
 
+<!-- TODO: FIGURE -->
+
 [^banach]: It is out of scope more because it is a tangent to the topic
 than because of any difficulty in the proof.
 If you are interested in analysis, I really recommend you to try proving it.
-The proof consists of using the contraction property
+The main idea is using the contraction property
 to show that the distance between the iterations of $f$ must converge towards zero.
 
+What we care the most about this theorem
+is that it gives us a constructive recipe to find fixed points on metric spaces.
+All we have to do is to interpret the fixed point equation as an update rule,
+
+$$ v \gets f(v),$$
+
+And iterate it until the distance converges to below a certain tolerance.
+It is then straightforward to convert the description above into a computational procedure.
+
+```julia
+function fixed_point(f; v0, tol)
+  v = f(v0)
+  while distance(v, v0) > tol
+    v0 = v
+    v  = f(v)  # Update rule
+  end
+  return v
+end
+```
+
+### A Metric Space of Value Functions
+
 To apply the Banach fixed point theorem on the Bellman operator,
-we need to find a metric space where $\Bellman$ is a contraction.
-The suitable space are the bounded continuous functions over the states,
-$C^0_b(\States, \R)$, imbued with the uniform norm
+we must find a suitable function space where $\Bellman$ is a contraction.
+A fitting choice are the bounded continuous functions over the states,
+$C^0_b(\States, \R)$ with distance given by the uniform norm
 
-$$\|f\|_\infty = \sup_{s \in \States} |f(s)|.$$
+$$ \dist(v, w) = \|v - w\|_\infty = \sup_{s \in \States} |v(s) - w(s)|.$$
 
-This is a complete metric space and is general
-enough for any practical problem we may think of.
-Furthermore, recall that if the state space is discrete,
-then _any function is continuous and bounded_,
-hint that this encompasses the most important spaces
-from a computational perspective.
+In this (complete) metric space, $\Bellman$ turns out to be a contraction with factor $\gamma$
+(yes, the discount factor).
+Furthermore, for finite state spaces, _any function is continuous and bounded_,
+meaning that the above encompasses all algorithms of interest in this post.
 
-Since I don't want to depart too much from this post's main topic
+Since I don't want to depart too much from the post's main topic
 nor dive into mathematical minutiae,
-this section only enunciates the important theorem.
-In case you are interested,
-the necessary proofs are in an [appendix](#appendix) for completeness.
+we are going to relegate the necessary proofs to an [appendix](#appendix).
 
-:::Theorem
-  The Bellman operator is a continuous contraction
-  whenever the discount factor is $\gamma < 1$.
-  Thus, it has a unique fixed point $v^\star$
-  and no matter the initial choice for the value function $v_0$,
-
-  $$ \Bellman^{(n)} v_0 \xrightarrow{n \to \infty} v^\star.$$
-
-  Moreover, we can estimate the distance between the nth iterate $v_n$
-  and the optimum through:
-
-  $$
-    \mathrm{d}(v_n, v^*) \le \frac{\gamma^n}{1 - \gamma} \mathrm{d}(v_0, \Bellman v_0).
-  $$
-:::
-
-Besides the existence and uniqueness guarantees,
-this theorem also spells something with a more practical character.
-No matter with which cost estimate we start,
-we can use the Bellman operator to update our value function
-until it converges towards the optimal.
-This is the next section's topic.
+The above result is what I like to call a "bazooka theorem",
+because besides guaranteeing the existence and uniqueness of an optimal value function
+--- and consequently an optimal policy ---
+it also teaches us how to calculate it for finite states,
+as we will shortly see in the ensuing section.
 
 Solving the Bellman Equation
-----------------------------
+============================
 
 For this section, let's assume that both
 the state $\States$ and action $\Actions(s)$ spaces are finite.
@@ -593,7 +597,8 @@ and, as with all famous equations, there are many different approaches to solve 
 In the following sections we will explore the main ones.
 Which to choose will depend on the problem and hardware at hand.
 
-### Value Iteration
+Value Iteration
+---------------
 
 From the previous discussion,
 we learned that iterating the Bellman operator
@@ -634,17 +639,7 @@ function total_cost(p)
   return (v, s, a) -> p.cost(s, a) + p.γ * v[p.next(s, a)]
 end
 
-function fixed_point(f; v0, tol)
-  err = +Inf
-  v   = f(v0)
-  while distance(v, v0) > tol
-    v0 = v
-    v  = f(v)
-  end
-  return v
-end
-
-function value_iteration(prob; v0, tol)
+function value_iteration(prob; v0 = zeros(States), tol)
   # We use a custom type (`Values`) to represent our storage.
   # This is usually an Array or a Hash Map, depending on the application.
   # The function below takes a value function `v` into a new value function.
@@ -698,7 +693,7 @@ function fixed_point_inplace!(f, v; tol)
   return v
 end
 
-function value_iteration_inplace!(prob, v0 ; tol)
+function value_iteration_inplace!(prob, v0 = zeros(States) ; tol)
   operator(v) = Values(minimum(a -> total_cost(prob)(v, s, a), Actions(s)) for s in States)
   v_opt  = fixed_point_inplace!(operator, v0 ; tol)
 
@@ -728,97 +723,8 @@ There are many other tweaks we could make to it which, nevertheless, don't affec
 choosing good warm starts, parallelizing, changing the state traversal order in the in-place version, etc.
 The best approach tends to be problem-dependent.
 
-#### Backward Induction over a Finite Horizon
-
-Let's take look at a typical scenario where we can exploit
-the state space structure to make value iteration much faster:
-problems with a _fixed finite horizon_.
-
-When the dynamics ends at a certain number $N$ of time steps,
-we say that the problem has a finite horizon.
-In this case, the stage $t$ is part of the state variable,
-(Because how else would we know when to stop?)
-and there is a _terminal state_ $\blacksquare$
-with zero cost and representing anything that happens after the dynamics end.
-Essentially, we work for $N$ stages and then reach $\blacksquare$,
-where we can just relax and do nothing for the rest of eternity.
-
-
-<object data="finite-horizon.svg" type="image/svg+xml" width="100%">
-</object>
-
-
-If you prefer equations to figures,
-a finite horizon state machine is one where
-the transition function looks like this:
-
-$$ \bar{T}((t, s),\, a) = \begin{cases}
-    (t + 1, T(s, a)), & t < N \\
-    \blacksquare, & t = N.
-  \end{cases}
-$$
-
-But what is so special about finite horizons?
-After all, the equation above seems much more confuse than what we had before.
-Well... what we gain is that the state space $\States$
-is clustered into smaller spaces that are visited in sequence:
-$\States_1, \States_2, \ldots, \States_N, \States_{N+1} = \{\blacksquare\}$.
-
-The _backward induction_ algorithm consists of value iteration
-but exploiting the structure we just discussed.
-At the terminal state, the cost is always zero, so we can set $v(\blacksquare) = 0$.
-But this, means that the _future cost_ for all states in $\States_N$ is fixed,
-and the optimal policy for them is just to choose the cheapest action.
-Now that we know which action to choose in $\States_N$,
-the future is fixed for all states in $\States_{N-1}$,
-reducing the problem in them to the routine we just did.
-We repeat this procedure until we reach the first stage.
-This calculates an optimal policy by induction,
-but moving "backwards" in time.
-
-```{=html}
-<object data="backward-induction.svg" type="image/svg+xml" width="100%">
-  <img src="backward-induction.svg"
-       alt=""
-       title="Backward induction algorithm"
-       width="100%" />
-</object>
-```
-
-In Julia code, the algorithm looks like this:
-
-```julia
-function backward_induction()
-  v  = Values{States}()
-  π  = Policy{States, Actions}()
-  for t in N:1
-    for s in States(t)
-      v[s], π[s] = findmin(a -> total_cost(v, s, a), Actions(s))
-    end
-  end
-  return π, v
-end
-```
-
-I recommend you to compare this with the generic value iteration
-in order to see what we gain.
-One thing should be clear:
-backward induction does the exact same operation as value iteration for each state,
-but only requires a single pass over the state space.
-This makes it much more efficient.
-Another more subtle detail is that since we have more structure to exploit
-in the dynamics, the algorithm doesn't have to assume so much about the Bellman operator.
-For example, although hand-wavy, we just gave a proof of convergence above
-that has no dependence on the Banach fixed-point theorem.
-Thus, as a bonus, backward induction works for any discount factor $\gamma$.[^real-bi]
-
-[^real-bi]: In contrast with value iteration, it also has no dependence
-on the costs being real numbers. In this case any ordered ring
-(such as $\mathbb{N}$ or $\mathbb{Z}$) would do.
-But I digress... This is out of scope for this post.
-
-
-### Policy Iteration
+Policy Iteration
+----------------
 
 One issue with value iteration is that all policy calculations are implicit,
 since we just work with value functions.
@@ -827,7 +733,7 @@ the algorithm until the value function converges.
 In this section, let's see how we can directly calculate an optimal policy
 in a finite number of steps.
 
-#### Policy Evaluation
+### Policy Evaluation
 
 Our next question is then how to calculate the cost associated with a policy.
 Let's say somebody gave you a policy $\pi$ and told you nothing more about it.
@@ -864,7 +770,7 @@ Moreover, all the discussion above on the variations of value iteration
 also holds for policy evaluation.
 You can do the same modifications with same effects.
 
-#### Policy Improvement
+### Policy Improvement
 
 After we know a policy and its value function,
 our next question is how to improve it.
@@ -949,6 +855,97 @@ there's also a lot of freedom in how we traverse the states.
 Again it is useful to think of policy iteration more as a principle
 than as an algorithm in itself and adapt the steps to consider
 any problem specific information that may be available.
+
+Backward Induction over a Finite Horizon
+========================================
+
+Let's take look at a typical scenario where we can exploit
+the state space structure to make value iteration much faster:
+problems with a _fixed finite horizon_.
+
+When the dynamics ends at a certain number $N$ of time steps,
+we say that the problem has a finite horizon.
+In this case, the stage $t$ is part of the state variable,
+(Because how else would we know when to stop?)
+and there is a _terminal state_ $\blacksquare$
+with zero cost and representing anything that happens after the dynamics end.
+Essentially, we work for $N$ stages and then reach $\blacksquare$,
+where we can just relax and do nothing for the rest of eternity.
+
+
+<object data="finite-horizon.svg" type="image/svg+xml" width="100%">
+</object>
+
+
+If you prefer equations to figures,
+a finite horizon state machine is one where
+the transition function looks like this:
+
+$$ \bar{T}((t, s),\, a) = \begin{cases}
+    (t + 1, T(s, a)), & t < N \\
+    \blacksquare, & t = N.
+  \end{cases}
+$$
+
+But what is so special about finite horizons?
+After all, the equation above seems much more confuse than what we had before.
+Well... what we gain is that the state space $\States$
+is clustered into smaller spaces that are visited in sequence:
+$\States_1, \States_2, \ldots, \States_N, \States_{N+1} = \{\blacksquare\}$.
+
+The _backward induction_ algorithm consists of value iteration
+but exploiting the structure we just discussed.
+At the terminal state, the cost is always zero, so we can set $v(\blacksquare) = 0$.
+But this, means that the _future cost_ for all states in $\States_N$ is fixed,
+and the optimal policy for them is just to choose the cheapest action.
+Now that we know which action to choose in $\States_N$,
+the future is fixed for all states in $\States_{N-1}$,
+reducing the problem in them to the routine we just did.
+We repeat this procedure until we reach the first stage.
+This calculates an optimal policy by induction,
+but moving "backwards" in time.
+
+```{=html}
+<object data="backward-induction.svg" type="image/svg+xml" width="100%">
+  <img src="backward-induction.svg"
+       alt=""
+       title="Backward induction algorithm"
+       width="100%" />
+</object>
+```
+
+In Julia code, the algorithm looks like this:
+
+```julia
+function backward_induction()
+  v  = Values{States}()
+  π  = Policy{States, Actions}()
+  for t in N:1
+    for s in States(t)
+      v[s], π[s] = findmin(a -> total_cost(v, s, a), Actions(s))
+    end
+  end
+  return π, v
+end
+```
+
+I recommend you to compare this with the generic value iteration
+in order to see what we gain.
+One thing should be clear:
+backward induction does the exact same operation as value iteration for each state,
+but only requires a single pass over the state space.
+This makes it much more efficient.
+Another more subtle detail is that since we have more structure to exploit
+in the dynamics, the algorithm doesn't have to assume so much about the Bellman operator.
+For example, although hand-wavy, we just gave a proof of convergence above
+that has no dependence on the Banach fixed-point theorem.
+Thus, as a bonus, backward induction works for any discount factor $\gamma$.[^real-bi]
+
+[^real-bi]: In contrast with value iteration, it also has no dependence
+on the costs being real numbers. In this case, any closed Semiring would do.
+But I digress... [This is out of scope for this post](/posts/algebraic-path).
+
+
 
 What Can Dynamic Programming solve?
 ===================================
