@@ -32,16 +32,15 @@ whatever the initial state and initial decision are,
 the remaining decisions must constitute an optimal policy
 with regard to the state resulting from the first decision.
 
-I gotta say that I was taught dynamic programming
-in different contexts, but it took me a while
-to finally get the "click" that they were actually the same thing.
+I have to admit that despite encountering dynamic programming in different contexts,
+it took me a while to finally get the "click" that they were actually the same thing.
 When learning algorithms and data structures,
-it was a memoization-based technique where you speed up your algorithm
-by first solving the easier parts and saving them for later use.
-At work, I mostly deal with solving a lot of linear programs
+it was a memoization-based technique where you could speed up some algorithms
+by first solving the easier parts and storing the solution for later use.
+Then, at work, I mostly deal with solving a lot of linear programs
 for long-term scheduling problems.[^sddp]
 The main algorithm we use, called _Stochastic Dual Dynamic Programming_,
-at first didn't seem so much like the programming technique algorithms class.
+at first didn't seem so much like the programming technique from the algorithms class.
 Finally, one of the main methods for model-based reinforcement learning
 is again called dynamic programming,
 and it also didn't seem so much like the other instances.
@@ -107,37 +106,31 @@ Whenever you take an action, the system changes to a new state according to a _t
 $$T : (s : \States) \times \Actions(s) \to \States.$$
 
 Unfortunately life is not known for its free lunches
-and, in most systems, whenever we take action $a$ at state $s$,
-there is a certain cost we must pay,
+and, in general, whenever one takes action $a$ at state $s$,
+it is necessary to pay a certain _cost_,
 properly modeled as another function
 
 $$c : (s : \States) \times \Actions(s) \to \R.$$
 
 Depending on the context this can be, for example,
 a real monetary cost (in economic contexts),
-some total distance (for planning)
+some total distance or elapsed time (for planning)
 or even a negative cost representing a reward.
-
-Together, the transition and cost functions define
-everything we need to know about our automaton.
 
 The Dynamics of Decision-Making
 -------------------------------
 
-Iterating the transition $T$ establishes a dynamics for our system
-where we start at an initial state $s$ and, by taking a sequence of actions
-$a_0, a_1, \ldots$, we walk over the state space.
+Iterating the transition $T$ establishes a dynamics for our system:
+by starting at an initial state $s_0$ and taking a sequence of actions
+$\{a_t\}$, we generate a trajectory over the state space.
 
 $$
-\begin{aligned}
-    s_0     &= s, \\
-    s_{t+1} &= T(s_t, a_t).
-\end{aligned}
+s_{t+1} = T(s_t, a_t).
 $$
 
 When viewed in this light,
 our state machines are called _controllable dynamical systems_ or _decision processes_,
-which are yet more cool name for you to recall.
+which are yet additional cool names for you to memorize.
 
 <!-- TODO: Bad paragraph. What does this mean?  -->
 As an example, think of a game of Sudoku.
@@ -152,8 +145,8 @@ One can argue that a state encapsulates
 all you must know about your system in order to choose an action,
 no matter the previous history nor time step.
 Indeed, if any other thing affects your choice,
-you can without loss of generality model
-the problem as a larger automaton where the state also carries the additional information.
+you can, without loss of generality,
+model the process as a larger automaton where the state also carries the additional information.
 Thus, controlling a dynamic system amounts to selecting a valid action for each state,
 that is, a function
 
@@ -162,14 +155,11 @@ $$\pi : (s : \States) \to \Actions(s).$$
 In the literature this is called a _policy_,
 in analogy to a government taking actions to control the state of the nation.
 
-Starting at state $s$ and following a policy $\pi$
-produces a deterministic dynamical system without the need for control:
+Starting at state $s_0$ and following a policy $\pi$
+produces a deterministic dynamical system without the need for choosing a control:
 
 $$
-\begin{aligned}
-    s_0     &= s, \\
-    s_{t+1} &= T(s_t, \pi(s_t)).
-\end{aligned}
+s_{t+1} = T(s_t, \pi(s_t)).
 $$
 
 This dynamics, in counterpart, yields a cost $c(s_t, \pi(s_t))$ for each time step.
@@ -196,26 +186,21 @@ $$
 \end{array}
 $$
 
-**Spoiler alert**: keep an eye on the $v^\pi$,
-because later in this post we will find out that they are
-closely related to the memoization techniques
-which people usually identify with dynamic programming.
-
-Besides its practical interpretation,
+Besides from its practical interpretation,
 the discount factor $\gamma$ also plays a significant role
 from the analytical point of view.
 If $|\gamma| < 1$ and the costs are uniformly bounded
 (which is the case for a finite action space, for example)
 we can guarantee that the series defining $v^\pi$ converges
-for any policy and initial state.
-That is, suppose that exists $M > 0$ such that
+for any choice of actions and initial state.
+That is, suppose there exists $M > 0$ such that
 
 $$\forall s \in \States, a \in \Actions(s),\, |c(s, a)| \le M.$$
 
 This bounds the total cost by a geometric series that cannot blow up,
 
 $$
-\sum\limits_{t=0}^\infty \gamma^{t}|c(s_t, \pi(s_t))| \le \sum\limits_{t=0}^\infty \gamma^{t} M \le \frac{M}{1 - \gamma},
+\sum\limits_{t=0}^\infty \gamma^{t}|c(s_t, a_t)| \le \sum\limits_{t=0}^\infty \gamma^{t} M \le \frac{M}{1 - \gamma},
 $$
 
 thus guaranteeing that the value function is well-defined.
@@ -293,7 +278,7 @@ a terminal state of our dynamics.
 Dynamic Programming
 ===================
 
-Alright, it's finally time to starting optimizing those decision problems.
+Alright, it's finally time to start optimizing those decision problems.
 The simplest idea would be to exhaustively search the space of all actions
 trying to find the best solution.
 Notice that even for finite states and horizon, this may be prohibitively expensive
@@ -557,7 +542,7 @@ end
 
 ### A Metric Space of Value Functions
 
-To apply the Banach fixed point theorem on the Bellman operator,
+To apply the Banach fixed point theorem to the Bellman operator,
 we must find a suitable function space where $\Bellman$ is a contraction.
 A fitting choice are the bounded continuous functions over the states,
 $C^0_b(\States, \R)$ with distance given by the uniform norm
@@ -573,6 +558,35 @@ Since I don't want to depart too much from the post's main topic
 nor dive into mathematical minutiae,
 we are going to relegate the necessary proofs to an [appendix](#appendix).
 
+::: {.Theorem data-title="Existence and Uniqueness of Solution"}
+Any decision process with discount factor $\gamma < 1$
+has a unique optimal value function $v^\star$ satisfying the Bellman equation
+
+$$
+  \begin{array}{rl}
+   v^\star(s) =
+    \min\limits_{a} & c(s, a) + \gamma v^\star(s') \\
+    \textrm{s.t.}  & s' = T(s, a), \\
+                   & a \in \Actions(s).
+  \end{array}
+$$
+
+Furthermore, you can calculate the (not necessarily unique) optimal policy via
+
+$$
+  \begin{array}{rl}
+   \pi^\star(s) =
+    \argmin\limits_{a} & c(s, a) + \gamma v^\star(s') \\
+    \textrm{s.t.}  & s' = T(s, a), \\
+                   & a \in \Actions(s).
+  \end{array}
+$$
+:::
+
+::: Proof
+It all follows from applying the Banach fixed point theorem to the Bellman operator.
+:::
+
 The above result is what I like to call a "bazooka theorem",
 because besides guaranteeing the existence and uniqueness of an optimal value function
 --- and consequently an optimal policy ---
@@ -582,43 +596,50 @@ as we will shortly see in the ensuing section.
 Solving the Bellman Equation
 ============================
 
-For this section, let's assume that both
-the state $\States$ and action $\Actions(s)$ spaces are finite.
+Dynamic Programming consists of solving the Bellman Equation,
+and, as with all famous equations, there are many possible approaches.
+Which one to choose will depend on the problem and hardware at hand.
+
+From now on, let's assume that both
+the state $\States$ and action $\Actions(s)$ spaces are _finite_.
 This allows us to focus on exhaustive methods exploring the entire state space.
-Keep calm, however:
-I am planning to write other posts in the future
-to explain how these ideas generalize to continuous spaces,
-or even to finite spaces that are too huge to explore entirely,
-via something called Approximate Dynamic Programming or Reinforcement Learning.
+There are other methods, such as Reinforcement Learning or Dual Dynamic Programming,
+which are able to generalize the ideas in here to infinite spaces.
 But this is a story for another night...
 
-Dynamic Programming consists of solving the Bellman Equation,
-and, as with all famous equations, there are many different approaches to solve it.
-In the following sections we will explore the main ones.
-Which to choose will depend on the problem and hardware at hand.
+Before jumping into the algorithms,
+it is worth discussing a couple of technical decisions
+we must make in order to implement them.
 
-Value Iteration
----------------
+This first thing we must notice is
+that although the most straightforward way to represent functions in a programming language
+is through computational procedures[^procedure-function],
+it would be quite inefficient in our case.
+This happens because altering procedures for improvement is computationally expensive.
+Thus, by efficiency reasons,
+it is customary to represent the policy and value function not as functions
+but using some other data structure.
+Since our state space is finite,
+there is a wide range of data structures capable of exactly representing such functions.
+Common choices are arrays or hash maps,
+but you can really use anything capable of storing coefficients.
+Below we see some examples with these types for in-memory storage.
 
-From the previous discussion,
-we learned that iterating the Bellman operator
-converges towards the optimal value function.
-Thus, we arrive at our first algorithm: _value iteration_.
-Its main idea is actually quite simple:
-to convert the Bellman equation into an update rule.
+[^procedure-function]: They are even called _functions_ in most programming languages.
 
-$$ v \gets \Bellman v. $$
+```julia
+# Storage with vector / array
+# WARNING: This requires some method idx : States -> Int for later indexing
+function asarray(f :: Function)
+  return [f(s) for s in States]
+end
 
-We can thus start with an initial value function $v_0$ and iterate the update rule above.
-By the magic of the Banach Fixed Point theorem,
-this will converge towards the optimal value function
-no matter what the initial value function is.
-This procedure repeats until the uniform error $\| v - \Bellman v \|_\infty$
-becomes less than a previously set tolerance (for which we have an estimate of necessary iterations).
+# Storage with hash map / dictionary
+function asdictionary(f :: Function)
+  return Dict(s => f(s) for s in States)
+end
+```
 
-By efficiency reasons,
-it is customary to represent the value function not as a function
-but using some data structure (usually a vector).
 The memoization that people associate with dynamic programming
 lies entirely in this "trick".
 However, it is good to keep in mind that this is only a matter
@@ -628,26 +649,72 @@ In a language with first-class functions,
 it is possible to do dynamic programming using only function composition.
 It just so happens that it will not be as fast as one would like.
 
-In value iteration,
-we obtain an optimal policy from the value function
-by keeping track of the $\argmin$ whenever we solve an optimization problem.
-Below we see a Julia implementation of value iteration.
+In the algorithms, we will write this choice of representation
+as two opaque types `Values{States}` and `Policy{States, Actions}`,
+assumed to deal with all boilerplate as needed.
+
+Another important thing to mention is that
+we will also only interact with a process via its _total cost_,
+never touching its constituent parts separately.
+Hence, let's already build a function that does the conversion for us.
 
 ```julia
 # Turn a decision problem into its respective cost function.
-function total_cost(p)
+function total_cost(p :: Process)
   return (v, s, a) -> p.cost(s, a) + p.γ * v[p.next(s, a)]
 end
+```
 
-function value_iteration(prob; v0 = zeros(States), tol)
-  # We use a custom type (`Values`) to represent our storage.
-  # This is usually an Array or a Hash Map, depending on the application.
-  # The function below takes a value function `v` into a new value function.
-  operator(v) = Values(minimum(a -> total_cost(prob)(v, s, a), Actions(s)) for s in States)
+Notice how we used square brackets to represent that we are accessing a data structure instead of calling a function.
 
-  # The optimal value function is the fixed point of the operator above.
-  # We can approximate it within a given tolerance thanks to the Banach Fixed Point Theorem.
-  v_opt  = fixed_point(operator; v0, tol)
+Value Iteration
+---------------
+
+Thus, we arrive at our first algorithm: _value iteration_.
+Recall from the previous discussion
+that iterating the Bellman operator over any input converges towards the optimal value function.
+The algorithms main idea comes quite straightforwardly from it:
+convert the Bellman equation into an update rule to find its fixed point.
+
+$$ v \gets \Bellman v. $$
+
+We can thus start with any initial value function $v_0$ and iterate the update rule above.
+By the magic of the Banach Fixed Point theorem,
+this will converge towards the optimum.
+This procedure repeats until the uniform error $\| v - \Bellman v \|_\infty$
+becomes less than a previously set tolerance.
+
+Each iteration of our algorithm comes from evaluating
+the Bellman operator in our previously chosen representation.
+Let's thus use our `total_cost` to write it.
+
+```julia
+# The Bellman operator corresponding to a decision process.
+# It uses a storage representation `Values` for the value function.
+function bellman_operator(prob :: Process)
+  return function(v)
+    Bv = Values{States}()  # Empty representation
+    for s in States
+      Bv[s] = minimum(a -> total_cost(prob)(v, s, a), Actions(s))
+    end
+
+    return Bv
+  end
+end
+```
+
+Finally, the algorithm comes directly from finding the fixed point
+the procedure above generates.
+To calculate the policy, we find the `argmin` for the optimal value function at each state.
+The name _value iteration_ is because it only uses the value function in the update process,
+with the calculated policy playing no role.
+
+```julia
+function value_iteration( prob :: Process     # Data for decision process
+                        ; v0 = zeros(States)  # Warm start --- all zeros if you don't know any better
+                        , tol)                # Stopping tolerance
+  # The optimal value function is the fixed point of the Bellman Operator
+  v_opt  = fixed_point(bellman_operator(prob); v0, tol)
 
   # The optimal policy is the choice of action for the total cost with the optimal value function.
   π_opt  = Policy{States, Actions}()
@@ -662,7 +729,10 @@ end
 The algorithm above comes from directly implementing the Fixed Point Theorem,
 and, because of this, is guaranteed to [converge linearly](https://en.wikipedia.org/wiki/Rate_of_convergence) to the optimum.
 Furthermore, at each iteration, the minimization procedures happen independently
-for each state, making the update rule $\Bellman(v)$ embarrassingly parallel.
+for each state, making the evaluation of $\Bellman v$ embarrassingly parallel.
+
+In-place Value Iteration
+------------------------
 
 Despite the parallelization opportunities shown by the previous implementation,
 it can feel too sluggish when implemented sequentially,
@@ -680,12 +750,11 @@ is rewriting the fixed point iteration procedure to calculate in-place.
 function fixed_point_inplace!(f, v; tol)
   maxerr = Inf
   while maxerr > tol
-    # Iteration starts with no error
-    maxerr = 0
+    maxerr = 0  # Start with smallest error possible
     for s in States
-      prev   = v[s]
-      v[s]   = f(v)[s]
-      # Estimate ||f(v) - v||_∞ for this iteration
+      prev = v[s]
+      v[s] = f(v)[s]
+      # Estimate ||f(v) - v||_∞ component by component
       maxerr = max(maxerr, abs(v[s] - prev))
     end
   end
@@ -728,38 +797,71 @@ Policy Iteration
 
 One issue with value iteration is that all policy calculations are implicit,
 since we just work with value functions.
-It is possible to reach an optimal policy but keep iterating
-the algorithm until the value function converges.
-In this section, let's see how we can directly calculate an optimal policy
-in a finite number of steps.
+Therefore, it is possible to reach an optimal policy but keep iterating
+the algorithm because the value function has not converged yet.
+In this section, we will get acquainted with _policy iteration_,
+an algorithm that uses policies to calculate value functions
+and value functions to calculate policies
+until it converges towards the optimal.
+It's selling point is being able to
+directly calculate an optimal policy in a finite number of steps.
 
 ### Policy Evaluation
 
-Our next question is then how to calculate the cost associated with a policy.
 Let's say somebody gave you a policy $\pi$ and told you nothing more about it.
-How could you find its value function $v^\pi$?
+How can you calculate the value function $v^\pi$ associated with it?
 One way is to notice that it satisfies a recursion
 similar to the Bellman equation, but without the minimization step.
 
-$$ v^\pi(s) = c(s, \pi(s)) + \gamma v^\pi(T(s, \pi(s))). $$
+$$
+  \begin{array}{rl}
+   v^\pi(s) =
+     & c(s, a) + \gamma v^\pi(s') \\
+    & \quad\textrm{where}\; s' = T(s, \pi(s)).
+  \end{array}
+$$
 
-If you follow the same steps we did before transforming this equation
-into a fixed point problem,
-you will see that under the same assumptions of continuity
-(always valid for finite state and action spaces)
-it also has a unique solution.
+We can also transform this equation into a fixed point problem
+by defining an operator
+
+$$
+\begin{array}{rl}
+ (\Bellman^\pi v)(s) =
+     & c(s, a) + \gamma v(s') \\
+     & \quad\textrm{where}\; s' = T(s, \pi(s)).
+\end{array}
+$$
+
+The above can be readily written as a computational procedure:
+
+```julia
+function policy_bellman_operator(prob :: Process, pi :: Policy)
+  return function(v)
+    Bv = Values{States}()  # Empty representation
+    for s in States
+      Bv[s] = total_cost(prob)(v, s, pi[s])
+    end
+    return Bv
+  end
+end
+```
+
+Now, we can look at $\Bellman^\pi$ as the cost for a decision process
+where the action set for each state was collapsed into a single option.
+Hence, we know that, under the same assumptions as before,
+it has a unique fixed point.
+
 Moreover, turning it into an update procedure
 converges towards $v^\pi$ for any initial value function.
 This way, we arrive at an algorithm for evaluating the cost of a policy,
 unimaginatively called _policy evaluation_.
 
 ```julia
-function policy_evaluation(prob, π ; v0 = zeros(States), tol)
-  # Define the operator associated with following a policy
-  operator(v) = Values( total_cost(prob)(v, s, π[s]) for s in States )
-
-  # The value function is the fixed point of the operator above.
-  return fixed_point(operator; v0, tol)
+function policy_evaluation(prob :: Process
+                          , π   :: Policy
+                          ; v0 = zeros(States)
+                          , tol)
+  return fixed_point(policy_bellman_operator(prob, pi); v0, tol)
 end
 ```
 
@@ -772,54 +874,64 @@ You can do the same modifications with same effects.
 
 ### Policy Improvement
 
-After we know a policy and its value function,
-our next question is how to improve it.
-That is, how can we use this information to get nearer
-to an optimal policy.
+After we know a policy's value function,
+our next question is how to update it into a better policy.
+That is, how can we use this information to get
+nearer to the optimal.
 
-The secret lies in locally improving our policy for each state.
-Consider a state $s$. The value $v^\pi(s)$ is the total cost
-of starting at $s$ and following $\pi$ thereafter.
-But what if instead of just following it,
-we optimize the current action while using $v^\pi$ as our future estimate?
+Remember from the previous discussions that applying
+the Bellman operator $\Bellman$ to any non-optimal value function
+produces a strictly better result.
+It can, therefore, improve a policy's value function.
 
-$$ \min_{a \in \Actions(s)} c(s, a) + v^\pi(T(s, a)) \le c(s, \pi(s)) + v^\pi(T(s, \pi(s))) = v^\pi(s).$$
+$$ (\Bellman v^\pi)(s) = \min_{a \in \Actions(s)} c(s, a) + v^\pi(T(s, a)) \le c(s, \pi(s)) + v^\pi(T(s, \pi(s))) = v^\pi(s).$$
 
-What if there is an $a \in \Actions(s)$ such that
-choosing $a$ at the first step and following $\pi$ thereafter
-is _cheaper_ than just following $\pi$?
-
-$$ c(s, a) + v^\pi(T(s, a)) < v^\pi(s).$$
-
-Since we have this improvement at the first step
-and our processes are assumed to not depend on anything
-besides what is represented on the state $s$,
-then it must be better to choose $a$ than $\pi(s)$
-whenever we are at state $s$.
-That is, if we define a new policy
+The value function $\Bellman v^\pi$ encodes the cost of choosing the best action right now
+while following $\pi$ on all future steps.
+We can get a policy from it by taking the solution to the optimization problem.
 
 $$
-\lambda(x) = \begin{cases}
-  a,      & x = s \\
-  \pi(x), & \text{otherwise}
-\end{cases}
+\begin{array}{rl}
+ \pi'(s) =
+  \argmin\limits_{a} & c(s, a) + \gamma v^\pi(s') \\
+  \textrm{s.t.}  & s' = T(s, a), \\
+                 & a \in \Actions(s).
+\end{array}
 $$
 
-it is always better to follow $\lambda$ then $\pi$,
-because $v^\lambda \le v^\pi$.
+Since, unless $\pi$ was optimal,
+the equation above generates a strictly better policy.
+From it we can define a procedure, called _policy_improvement_,
+which turns a value function $v$ into a policy $\pi$
+that is better than whatever policy v represented.
 
 ```julia
-function policy_improvement(prob, v_π)
-  λ = Policy{States, Actions}()
+function policy_improvement(prob :: Process, v :: Values)
+  π = Policy{States, Actions}()
   for s in States
-    λ[s] = argmin(a -> total_cost(v_π, s, a), Actions(s))
+    π[s] = argmin(a -> total_cost(v_π, s, a), Actions(s))
   end
-  return λ
+  return π
 end
 ```
 
-We thus arrive at our next algorithm: _policy iteration_.
-It consists of taking a policy $\pi$,
+### Alternating Evaluation and Improvement
+
+By starting from any random policy $\pi_0$,
+and alternatively running policy evaluation and improvement,
+we generate a sequence of policies and value functions
+
+$$
+\pi_0 \xrightarrow{\textrm{evaluation}} v^{\pi_0} \xrightarrow{\textrm{improvement}}
+\pi_1 \xrightarrow{\textrm{evaluation}} v^{\pi_1} \xrightarrow{\textrm{improvement}}
+\ldots
+$$
+
+The value functions are monotonically decreasing
+while the policies strictly improve until converging to the optimum.
+
+We thus arrive at another dynamic programming algorithm: _policy iteration_.
+It consists of iteratively taking a policy $\pi$,
 finding its value function $v^\pi$ through policy evaluation
 and finally using policy improvement to arrive at a better policy.
 Since there are only finitely many policies,
@@ -828,40 +940,39 @@ this algorithm is guaranteed to converge to an optimal policy
 in a finite amount of steps.
 
 ```julia
-function policy_iteration(prob
+function policy_iteration(prob :: Process
                          ; v0 = zeros(States)
-                         , π0 = policy_improvement(v0)
+                         , π0 = rand(Policy{States, Actions)
                          , tol)
-  π = π_0    # Warm start
+  v  = policy_evaluation(prob,  π_0 ; v0 = v_0, tol = tol)
+  π = policy_improvement(prob, v)
 
-  while true
+  while π != π0
     π0 = π
+    # Use previous v as warm start
     v  = policy_evaluation(prob,  π ; v0 = v, tol = tol)
     π  = policy_improvement(prob, v)
-
-    if π == π0 break end
   end
   return π, v
 end
 ```
 
-Did you notice that we iteratively alternate
-between two kinds of passes over the states?
-This is the mother of all backwards-forwards algorithms
-people generally associate with dynamic programming.
-
-Just like with value iteration,
-there's also a lot of freedom in how we traverse the states.
-Again it is useful to think of policy iteration more as a principle
-than as an algorithm in itself and adapt the steps to consider
+Just like value iteration,
+policy iteration also accepts many variations on how we traverse the states.
+The implementation above is close to the theory and is embarrassingly parallel
+on both the evaluation and the improvement step.
+Nevertheless, it is useful to think of policy iteration more as an algorithmic principle
+than as an algorithm itself and adapt the steps to consider
 any problem specific information that may be available.
 
 Backward Induction over a Finite Horizon
-========================================
+----------------------------------------
 
-Let's take look at a typical scenario where we can exploit
-the state space structure to make value iteration much faster:
-problems with a _fixed finite horizon_.
+Until now, we haven't assumed anything about the decision process.
+By exploiting the problem's state space structure,
+we can turn these algorithms into much faster ones.
+In this section we deal with _finite horizon problems_
+and show that, for them, we can make value iteration converge in a single iteration!
 
 When the dynamics ends at a certain number $N$ of time steps,
 we say that the problem has a finite horizon.
@@ -888,7 +999,7 @@ $$ \bar{T}((t, s),\, a) = \begin{cases}
 $$
 
 But what is so special about finite horizons?
-After all, the equation above seems much more confuse than what we had before.
+After all, the equation above seems much more confusing than what we had before.
 Well... what we gain is that the state space $\States$
 is clustered into smaller spaces that are visited in sequence:
 $\States_1, \States_2, \ldots, \States_N, \States_{N+1} = \{\blacksquare\}$.
@@ -944,7 +1055,6 @@ Thus, as a bonus, backward induction works for any discount factor $\gamma$.[^re
 [^real-bi]: In contrast with value iteration, it also has no dependence
 on the costs being real numbers. In this case, any closed Semiring would do.
 But I digress... [This is out of scope for this post](/posts/algebraic-path).
-
 
 
 What Can Dynamic Programming solve?
@@ -1169,58 +1279,92 @@ Sometimes you even learn enough to write a blog post about it.
 I'm also in debt with Ivani Ivanova for being such a great typo hunter.
 If there is any typo left, it is because I'm lazy... She did a marvelous job.
 
-Appendix (Proofs of Convergence)
+Appendix (Convergence in Infinite Horizon) {#appendix}
 ================================
 
 In this appendix we show that the Bellman Operator
 
 $$
 \begin{array}{rl}
- (\Bellman v)(s) =
-  \min\limits_{a} & c(s, a) + \gamma v(s') \\
-  \textrm{s.t.}  & s' = T(s, a), \\
-                 & a \in \Actions(s)
+   (\Bellman v)(s) =
+    \min\limits_{a} & c(s, a) + \gamma v(s') \\
+    \textrm{s.t.}  & s' = T(s, a), \\
+                   & a \in \Actions(s)
 \end{array}
 $$
 
-satisfies all the requisites to be a contraction
-over the space of bounded continuous functions.
+is a _monotone contraction_ over the space of bounded continuous functions.
 
-To prove that $\Bellman$ is a contraction,
-we will start with another of its properties: _monotonicity_.
-Besides this proof, it will also be useful in the future when we talk about policy improvement.
+We begin our proof with _monotonicity_.
+For that, let's introduce a partial order on the space of value function $\States \to \R$
+given via uniform ordering on all states,
 
-:::Theorem
-Suppose that we have two value function $v$ and $w$ such that $v$ estimates costs
-uniformly lower than $w$:
+$$ v \le w \iff \forall s \in \States,\, v(s) \le w(s).$$
 
-$$ v(s) \le w(s),\; \forall s \in \States.$$
+::: {.Theorem data-title="Monotonicity"}
+The Bellman Operator preserves uniform ordering of value functions:
 
-Then the Bellman operator preserves this relationship:
-$$ (\Bellman v)(s) \le (\Bellman w)(s), \; \forall s \in \States.$$
+$$v \le w \implies \Bellman v \le \Bellman w.$$
 :::
 
 :::Proof
-Given a state $s$, we get from $v \le w$
-that the following inequality holds for any action $a \in \Actions(s)$:
+The hypothesis $v \le w$ implies
+for any state $s$ and action $a$ that
 
 $$ c(s, a) + \gamma v(T(s,a)) \le c(s, a) + \gamma w(T(s,a)). $$
 
 Since this is valid for any $a$,
 taking the minimum on both sides preserves the inequality.
-Thus
 
 $$
 \min_{a \in \Actions(s)} c(s, a) + v(T(s,a)) \le \min_{a \in \Actions(s)} c(s, a) + w(T(s, a)) \\
 (\Bellman v)(s) \le (\Bellman w)(s).
 $$
+
+The line above is valid for all states, thus concluding the proof.
 :::
+
+Another important property of $\Bellman$ is that uniform translations
+of the input $v$ also translate the output uniformly.
+
+:::Theorem
+For any constant $k$, $\Bellman(v + k) = \Bellman v + \gamma k$.
+:::
+
+:::Proof
+
+$$ \begin{array}{rlll}
+      \Bellman(v + k)(s) &= &\min\limits_{a} & c(s, a) + \gamma (v(s') + k) \\
+      &&\textrm{s.t.}  & s' = T(s, a), \\
+      &&               & a \in \Actions(s) \\
+      &=&  \min\limits_{a} & c(s, a) + \gamma v(s') + \gamma k\\
+      &&\textrm{s.t.}  & s' = T(s, a), \\
+      &&               & a \in \Actions(s).
+    \end{array}
+$$
+
+Since the term $\gamma k$ does not depend on the action $a$,
+we may take it out of the optimization,
+
+$$ \Bellman(v + k)(s) = \Bellman(v)(s) + \gamma k.$$
+
+This concludes the theorem.
+:::
+
 
 Finally, let's prove that the Bellman operator
 contracts the space of bounded continuous functions by the discount factor.
-What we need to show is that for any value function $v, w$:
+
+::: {.Theorem data-title="Contraction"}
+the Bellman Operator contracts the space of continuous bounded functions
+with Lipschitz constant $\gamma$,
 
 $$ \|\Bellman v - \Bellman w\|_\infty \le \gamma \|v - w\|_\infty.$$
+
+When $\gamma < 1$, it is a contraction.
+:::
+
+:::Proof
 
 From the definition of the uniform norm, we get that for any state $s$,
 
@@ -1234,21 +1378,8 @@ applying $\Bellman$ to both sides preserves this inequality:
 
 $$ (\Bellman v)(s) \le \Bellman(w + \|v - w\|_\infty)(s). $$
 
-Let's show that the constant factor $\|v - w\|_\infty$
-only shifts the new function $\Bellman w$ by uniformly by another constant.
-Calling it $k$ to declutter the notation,
-
-$$ \begin{array}{rlll}
-      (\Bellman(w) + \|v - w\|_\infty)(s) &= &\min\limits_{a} & c(s, a) + \gamma (w(s') + \|v - w\|_\infty) \\
-      &&\textrm{s.t.}  & s' = T(s, a), \\
-      &&               & a \in \Actions(s) \\
-      &= &\min\limits_{a} & c(s, a) + \gamma (w(s')) +  \gamma \|v - w\|_\infty \\
-      &&\textrm{s.t.}  & s' = T(s, a), \\
-      &&               & a \in \Actions(s).
-    \end{array}
-$$
-
-This proves that
+And since the right-hand side above has a uniform translation,
+we can take the constant out:
 
 $$ \begin{aligned}
       (\Bellman v)(s) &\le (\Bellman w)(s) + \gamma \|v - w\|_\infty \\
@@ -1256,9 +1387,10 @@ $$ \begin{aligned}
     \end{aligned}
 $$
 
-By doing the same derivation in the opposite direction (for $w - v$)
-we get an inequality for the absolute value.
-Applying the supremum, it becomes the result we want.
+Using that the norm is symmetric, we can do the same derivation
+in the opposite direction (for $w - v$)
+to get an inequality for the absolute value.
+Finally, applying the supremum, it becomes the result we want.
 
 $$ \begin{aligned}
       |(\Bellman v)(s) - (\Bellman w)(s)| &\le \gamma \|v - w\|_\infty \\
@@ -1266,12 +1398,8 @@ $$ \begin{aligned}
       \|\Bellman v - \Bellman w\|_\infty &\le \gamma \|v - w\|_\infty.
   \end{aligned}
 $$
+:::
 
-
-Since $\Bellman$ is a contraction, the Banach fixed point theorem
-guarantees to us that there exists a unique value function $v^\star$
-satisfying the Bellman equation.
-Furthermore,
-the theorem also points us towards a way to solve this kind of procedure
-with polynomial complexity on the size of the state and action spaces.
-This is the topic we're going to investigate next.
+Finally, from the Banach fixed point theorem
+and the above, we conclude that whenever $\gamma < 1$, the operator $\Bellman$ has a unique fixed point.
+Hence, any decision process with a discount factor is solvable and has a unique optimal value function $v^\star$.
