@@ -15,6 +15,8 @@ suppress-bibliography: true
 \def\Bellman{\mathcal{B}}
 \def\CBall{\char"1f52e}
 \def\dist{\mathrm{d}}
+\def\powerset{\mathcal{P}}
+\def\dummy{\blacklozenge}
 
 What if I told you that some of the most used algorithms to
 find the shortest path in a graph,
@@ -655,7 +657,7 @@ assumed to deal with all boilerplate as needed.
 
 Another important thing to mention is that
 we will also only interact with a process via its _total cost_,
-never touching its constituent parts separately.
+never touching its constituent parts separately[^other-total-cost].
 Hence, let's already build a function that does the conversion for us.
 
 ```julia
@@ -666,6 +668,12 @@ end
 ```
 
 Notice how we used square brackets to represent that we are accessing a data structure instead of calling a function.
+
+[^other-total-cost]: You may wonder if this means that dynamic programming
+also works for decision processes whose costs satisfy other kinds of Bellman equations (non-additive costs, for example)
+and the answer is yes!
+A great place to start is @{bertsekasADP}'s book.
+Just be warned that there are a lot more technicalities to deal with in those cases.
 
 Value Iteration
 ---------------
@@ -1056,9 +1064,8 @@ Thus, as a bonus, backward induction works for any discount factor $\gamma$.[^re
 on the costs being real numbers. In this case, any closed Semiring would do.
 But I digress... [This is out of scope for this post](/posts/algebraic-path).
 
-
-What Can Dynamic Programming solve?
-===================================
+Nondeterminism: One Cannot Know It All
+======================================
 
 Ok, it's time to recapitulate a bit.
 We started our journey looking at automata and controllable dynamics,
@@ -1067,33 +1074,183 @@ as those who fulfill a certain recursive relation on their value functions,
 called the Bellman equation.
 Then, we explored a couple ways of solving this equation
 through methods for finding fixed points.
-Now, a question for the reader:
-how much do you think those methods actually depended on the Bellman equation itself?
+A detail that stands out on all of that, thought,
+is that we always had perfect information about our systems.
 
-If you go back to our algorithms for
-_value iteration_, _backwards induction_, or _policy iteration_,
-you will notice that the Bellman operator itself only appears in a single line.
-Furthermore, this apparition is completely encapsulated.
-The algorithms do not depend on the Bellman operator per se;
-they work because it satisfies a couple reasonable properties!
+In the real world,
+there are no guarantees that taking an action will put you in a determinate state.
+In general, there is a myriad of possible states --- perhaps all of them ---
+that the system could transition to.
+Let's model this by modifying the transition function's type to
 
-Very well, the mathematician inside me sees something like that and starts
-thinking about generalizing.
-Let's see where a bit more abstraction leads us.
+$$ T : (s : \States) \times \Actions(s) \to M \States $$
 
-Value iteration is simply Banach's fixed point in disguise.
-Hence, it is a tool capable of solving any problem
-described by a recursive equation where the operator is a monotone contraction.
-Similarly, we can use policy iteration whenever
-the operator associated with following a policy shows a monotone contraction behavior.
-To be fair, one could go _even further_ and substitute the hypothesis from Banach's theorem
-for any other theorem guaranteeing an attractor among the value functions.
-As this can get rather technical,
-We will not explore this in here, but if you are curious (and a big fan of abstract books),
-a great place to start is @{bertsekasADP}'s book.
+where $M$ converts a type to some uncertain context.[^monads]
+Common examples of such operators are
 
-Alright, this post is becoming too abstract for my taste.
-Let's dive into a couple examples to see why this generalization is cool.
+* $M$ is the power set $\powerset$.
+In this case,
+the transition output enumerates all possible ensuing states,
+defining a [nondeterministic automaton](https://en.wikipedia.org/wiki/Nondeterministic_finite_automaton).
+* $M$ takes sets to probability distributions over them.
+This way, we have stochastic systems with multiple possible futures.
+Differently from the previous example, though,
+in this case there is a notion of how probable is each following state.
+* M is the identity.
+This way, $M \States = \States$.
+This serves to show that the deterministic case is also encompassed the nondeterministic one.
+* $M$ represents actions taken by others.
+In many situations --- such as a game ---
+there are other players besides you who are capable of taking actions
+modifying the states.
+Since their actions also influence on the outcomes,
+the transition can only return a function $\Actions(s) \to \States$.
+
+[^monads]: The technical definition is that $M$ should be a [Monad](https://en.wikipedia.org/wiki/Monad_(category_theory)).
+But discussing those details is out of scope here.
+See [this other post on autamata with contexts](/posts/automata-monads)
+for a discussion of this structure in a similar context.
+
+To deal with nondeterministic transitions,
+we need some way to take a value function
+and aggregate it over all possible costs
+for the uncertain future into a single real number,
+
+$$ \rho : (\States \to \R) \times M \States \to \R. $$
+
+The function $\rho$ depends on which uncertainty context we're dealing with,
+and will shortly see some examples of it.
+Using it, we can define a Bellman operator
+
+$$
+\begin{array}{rl}
+ (\Bellman v)(s) =
+  \min\limits_{a} & c(s, a) + \gamma \rho(v, s') \\
+  \textrm{s.t.}  & s' = T(s, a), \\
+                 & a \in \Actions(s).
+\end{array}
+$$
+
+Quite similar to what we had before, don't you think?
+With some mild conditions over $\rho$,
+all derivations on the [appendix](#appendix)
+for existence and uniqueness of solutions still work in this context.
+Moreover, all our algorithms --- value iteration, policy iteration, backwards induction ---
+only used the system's total cost,
+which is still a deterministic function.
+Thus we can apply them to this context _without any need for modification_.
+How cool is that?
+
+Example: Recurrence Equations and Fibonacci
+-------------------------------------------
+
+What would be of a dynamic programming tutorial
+without calculating the good ol' Fibonacci numbers, right?
+This example is actually pretty simple
+and using the full power we've developed is a real overkill.
+Nevertheless, as it is a rather common first example to encounter
+when learning dynamic programming in Computer Science classes,
+it is worth it to view this kind of problem in the light of the formalism we've developed.
+
+A recurrence relation is any function $\N \to \R$,
+where the nth term is recursively defined through the previous terms.
+
+$$
+f(n) = \begin{cases}
+  c_n,                          & n < k \\
+  g(n, f(n-1), \ldots, f(n-k)),    & n \ge k.
+\end{cases}
+$$
+
+The $c_n$ are constants corresponding to the base case of the recursion
+while other values $f(n)$ depends directly on the previous $k$ terms.
+
+Famous examples with this structure are the factorial and Fibonacci functions:
+
+\def\fib{\mathrm{fib}}
+
+\begin{align*}
+  \mathrm{fat}(n) &= \begin{cases}
+    1,                         & n = 0 \\
+    n \cdot \mathrm{fat}(n-1), & n \ge 1.
+  \end{cases} \\
+
+
+  \fib(n) &= \begin{cases}
+    0,                     & n = 0 \\
+    1,                     & n = 1 \\
+    \fib(n-1) + \fib(n-2), & n \ge 2.
+  \end{cases} \\
+\end{align*}
+
+In general, evaluating $f(n)$ directly via the definition may be exponentially slow.
+But dynamic programming allows you to calculate it time that's linear in $n$.
+
+The idea is to define a nondeterministic decision process
+whose Bellman equation is exactly the recurrence relation.
+Then, the optimal value function will equal $f$
+for all values until the $N$ we want to evaluate.
+The states are the numbers $0,\ldots, N$
+while there is only a single dummy action $\dummy$.
+For the transition, we follow the indices recurrence
+using the power set as our source of nondeterminism.
+Notice that this is a finite horizon process.
+
+$$
+T(s, \dummy) = \begin{cases}
+  \emptyset,                    & s < k \\
+  \{s-1, s-2, \ldots, s-k\},    & s \ge k.
+\end{cases}
+$$
+
+For the immediate cost,
+we use the base cases $c_n$ for the first $k$ stages
+while the others are all zero.
+
+$$
+c(s, \dummy) = \begin{cases}
+  c_s,  & s < k \\
+  0,    & s \ge k.
+\end{cases}
+$$
+
+And to aggregate over the set of future indices,
+what a better choice than using the relation $g$ itself?
+
+$$ \rho(v, s') = g(s, \{ v(n) \mid n \in s' \}). $$
+
+With this setup,
+this system's Bellman equation looks a lot like the original recurrence.
+
+$$
+v(s) = \min_{a \in \{\dummy\}} \begin{cases}
+  c_s,                          & s < k \\
+  g(s, v(s-1), \ldots, v(s-k)), & s \ge k.
+\end{cases}
+$$
+
+Since, there is only a single action, the minimization is redundant
+and its fixed point satisfies the original recurrence.
+Since the problem at hand has a finite horizon,
+we can solve it via Value Iteration or Backwards Induction
+even without a discount factor $\gamma$.
+
+
+As an example, let's calculate the first 15 Fibonacci numbers.
+The following video shows the steps for value iteration.
+
+![](fibonacci-value-iteration.webm)
+
+Since the horizon is finite,
+we can improve it even more by using Backwards Induction!
+The process we've just constructed has a single state per stage
+where we consider the initial state to be $N$
+and the final one $0$
+(which means going backwards, in this case).
+We can, therefore, use backwards induction
+to evaluate the Fibonacci equation in exactly $n$ steps.
+
+![](fibonacci-backward-induction.webm)
 
 Stochastic Dynamic Programming
 ------------------------------
@@ -1172,80 +1329,6 @@ Hence, the tools of value and policy iteration are also readily available to sol
 The optimization problems are harder, because of the expected value,
 but conceptually it is the same.
 
-Solving Recurrence Relations
-----------------------------
-
-This last example is actually pretty simple
-and using the full power we've developed is a real overkill.
-Nevertheless, as it is a rather common first example to encounter
-when learning Dynamic Programming in Computer Science classes,
-it is worth it to view this kind of problem in the light of the formalism we've developed.
-
-A recurrence relation is any function $\N \to \R$,
-where the nth term is recursively defined through the previous terms.
-
-$$
-f(n) = \begin{cases}
-  c_n,                          & n < k \\
-  g(n, f(n-1), \ldots, f(n-k)), & n \ge k.
-\end{cases}
-$$
-
-The $c_n$ are constants which correspond to the base case of the recursion
-the value of $f(n)$ depends directly on the previous $k$ terms.
-
-Famous examples with this structure are the factorial and Fibonacci functions:
-
-\def\fib{\mathrm{fib}}
-
-\begin{align*}
-  \mathrm{fat}(n) &= \begin{cases}
-    1,                         & n = 0 \\
-    n \cdot \mathrm{fat}(n-1), & n \ge 1.
-  \end{cases} \\
-
-
-  \fib(n) &= \begin{cases}
-    0,                     & n = 0 \\
-    1,                     & n = 1 \\
-    \fib(n-1) + \fib(n-2), & n \ge 2.
-  \end{cases} \\
-\end{align*}
-
-In general, evaluating $f(n)$ directly via the definition may be exponentially slow.
-But, in fact, it is always possible to calculate it in linear time using dynamic programming.
-
-To calculate $f(n)$, we consider a state machine where the states
-are the numbers from $0$ to $n$ and where there is only a dummy action $\star$.
-Then, we recast the recursion as an operator
-
-$$
-(\Bellman v)(n) = \min_{a \in \{\star\}} \begin{cases}
-  c_n,                          & n < k \\
-  g(n, v(n-1), \ldots, v(n-k)), & n \ge k.
-\end{cases}
-$$
-
-Since, there is only a single action, the minimization is redundant
-and the optimal value function satisfies the desired recursive equation.
-Thus, under very mild conditions our assumptions hold,
-and we can solve this equation by finding the fixed point of $\Bellman$.
-As an example, the following video shows the first 15 Fibonacci numbers
-being calculated via value iteration.
-
-![](fibonacci-value-iteration.webm)
-
-We can improve this method even more by using Backwards Induction!
-To evaluate $f(n)$, we constructed a finite horizon problem
-where there is only a single state per stage.
-Thus, considering that our initial state is $n$,
-we just have to fill the value function starting from $0$
-(which means going backwards, in this case)
-and we evaluate the recursion in $n$ steps.
-Below there is an example solving the Fibonacci equation,
-but taking into account the order of states.
-
-![](fibonacci-backward-induction.webm)
 
 End of our Journey
 ==================
