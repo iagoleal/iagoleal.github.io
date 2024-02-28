@@ -10,7 +10,7 @@
   http://drz.ac/downloads/code/css/theorems.css
 */
 
-.Theorem, .Lemma, .Definition {
+.Theorem, .Lemma, .Definition, .Aside {
   display:        block;
   margin-top:     12px;
   margin-bottom:  12px;
@@ -38,6 +38,10 @@
 }
 .Definition {
   border-left-color: #26cd00;
+}
+
+.Aside {
+  border-left-color: var(--color-lightning);
 }
 
 .Theorem[data-title]::before {

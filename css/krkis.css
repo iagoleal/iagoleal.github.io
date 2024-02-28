@@ -139,7 +139,6 @@ img, video, object {
   height:    auto;
   margin:    0 auto;
   max-width: 100%;
-  align:     middle;
 }
 
 svg {
@@ -569,4 +568,3 @@ input[type="checkbox"]:hover {
 .katex-display {
   overflow: auto hidden;
 }
-

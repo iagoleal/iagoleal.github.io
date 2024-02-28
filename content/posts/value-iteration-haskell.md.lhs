@@ -1,6 +1,6 @@
 ---
-title: Code Iterations on Value Iteration
-keywords: [dynamic-programming]
+title: Playing with Value Iteration in Haskell
+keywords: [math, dynamic-programming, Haskell]
 date: 2024-02-16
 description:
 suppress-bibliography: true
@@ -12,26 +12,22 @@ as instances of dynamics with context.
 These monadic transitions, though, appear in disguise in many other areas of mathematics.
 
 Today we are going in a similar exploration of _Decision Processes_,
-a close cousin to Finite Automata from the distant field of Optimal Control.
-This post is a mix and match of three older posts on this blog:
-a (theoretical) tutorial on dynamic programming and two explorations in Haskell.
+a close cousin to Finite Automata from the not-so-close field of Optimal Control.
+These are multistage decision problems with the same kind of dynamics as finite automata.
+Furthermore, we can formulate Value Iteration,
+--- one of the usual to optimize them ---
+compactly using the Haskell machinery.
 
-- [A Tale of Dynamic Programming](/posts/dynamic-programming)
-- [Memoization via Representables](/posts/representable-memoize)
-- [A Fistful of Automata](/posts/automata-monads)
+> {-# LANGUAGE GHC2021                              #-}
+> {-# LANGUAGE PackageImports,      RecordWildCards #-}
+> {-# LANGUAGE AllowAmbiguousTypes, TypeFamilies    #-}
+> import              Data.Foldable   (foldlM)
+> import              Data.Kind       (Type)
+> import              Data.Semigroup  (Arg(Arg))
+> import "containers" Data.Map.Strict qualified as M
+> import "vector"     Data.Vector     qualified as V
 
-Hence, I may reference them when in need of any concept.
-
-> {-# LANGUAGE RecordWildCards #-}
-> {-# LANGUAGE TypeFamilies #-}
-> {-# LANGUAGE AllowAmbiguousTypes #-}
-> {-# LANGUAGE PackageImports #-}
-> import Data.Foldable          (foldlM)
-> import Data.List              (unfoldr)
-> import Data.Kind              (Type)
-> import Data.Semigroup
-> import qualified "containers" Data.Map.Strict as M
-> import qualified "vector" Data.Vector as V
+> main = undefined
 
 Decision Processes
 ==================
@@ -70,6 +66,82 @@ which is always feasible for finite sets.
 > class (Eq a, Ord a) => Finite a where
 >   elems :: [a]   -- WARNING: required to be sorted
 
+:::Aside
+
+The Game of War
+---------------
+
+In order to illustrate the concept,
+let's introduce a small decision problem written in the language above.
+As I want to make an impact,
+it will involve the goriest and deadliest among all decisions: whether to wage war.
+
+Suppose you're a happy king running some faraway a country.
+Unfortunately, for historical reasons, your country has terrible relations with the neighbour
+and you keep bouncing between war declarations and peace treaties.
+Considering this context, at the first of each year
+you summon the country's counsel of sages to decide if this will be an year of fighting or truce.
+This defines the available actions for both countries.
+
+> data Choice = Peace | War
+>   deriving (Eq, Ord, Show)
+
+In order to make a choice,
+the counsel recalls the state of affairs for the past year,
+comprised by the choices of both you and the enemy.
+
+> type Affairs = (Choice, Choice)
+> --                /\      /\                --
+> --------------   you    enemy   --------------
+
+We can enumerate both of those,
+since they have a finite number of elements.
+
+> instance Finite Choice where
+>   elems = [Peace, War]
+>
+> instance (Finite a, Finite b) => Finite (a, b) where
+>  elems = [(a, b) | a <- elems, b <- elems]
+
+The transition of states from one year to the next
+ignores the previous state of affairs and construct a new one
+from both parties choice of action.
+
+> nextGame :: Affairs -> Choice -> Choice -> Affairs
+> nextGame _ a b = (a, b)
+
+From the above,
+we see that the monadic context is a function type `m s = Choice -> s`
+representing the actions available to the adversary.
+
+Now, the most delicate part: the costs of war.
+Since this is just for illustrative purposes,
+let's just fabricate some numbers to represent it.
+The current cost will depend on the cumulative cost from past year's
+plus a possible action cost for raising a military in order to wage war.
+
+> costGame :: Affairs -> Choice -> Double
+> costGame s a = costPast s + costDecision a
+>  where
+>   costPast (Peace, Peace) =  -50  -- No fighting, the land prospers
+>   costPast (Peace, War)   =  100  -- Being attacked unarmed destroys your country
+>   costPast (War,   Peace) =  -80  -- Negative cost = reward from looting the other country
+>   costPast (War,   War)   =   50  -- Keeping war has a cost to everyone
+>   costDecision Peace =  0   -- You don't need to do anything
+>   costDecision War   = 25   -- Raising a military, training etc.
+
+From this data we can define a decision process
+representing the game of war which will accompany us throughout the post.
+
+> gameOfWar :: Process ((->) Choice) Affairs Choice
+> gameOfWar = Process { next = nextGame, cost = costGame, discount = 0.75}
+
+:::
+
+
+A Policy to Follow
+------------------
+
 In formal languages,
 the equivalent to the action set is an alphabet `a`
 and the way to control the dynamics is to read a list of tokens in `[a]`.
@@ -92,7 +164,7 @@ it is customary to have probability distributions over actions,
 in order to better model navigating in an uncertain world.
 Another example are stochastic games,
 where the monad represents actions inaccessible to you,
-but that your adversaries can execute (`m̀ = Reader Enemy`).
+but that your adversaries can execute (`m = Reader Enemy`).
 Then, it is useful to model policies taking into account what the enemy.
 
 With a policy at hand,
@@ -113,6 +185,34 @@ what to do, generating an infinite walk over the state space.
 >  where
 >   iterateM f x = x : iterateM f (f =<< x)
 
+:::Aside
+
+For our example game,
+a policy is a function `Affairs -> Choice -> Choice`
+indicating that you take into account both the past
+and your enemy's choice in order to choose what to do.
+Some examples of policies consist of:
+- Always keep peace or wage war, no matter what is happening.
+- Ignore the past and copy whatever the enemy does right now.
+- Try to keep peace but retaliate whenever someone declares war,
+now or in the past.
+
+> polPeace _ _ = Peace
+> polWar   _ _ = War
+> polCopy  _ a = a
+> polRetaliate _        War = War
+> polRetaliate (_, War) _   = War
+> polRetaliate _        _   = Peace
+
+We can them follow along a policy for `n` steps
+by simulating the game and mapping the enemy's actions to a list of possible futures.
+
+> simulGame pol initial n = take n (map possibilities steps)
+>  where
+>   steps = simulate gameOfWar pol initial
+>   possibilities f = map f elems
+
+:::
 
 Every policy has a cost
 -----------------------
@@ -175,6 +275,18 @@ so you can calculate an appropriate `n` for your tolerance.
 The procedure above will give you the right answer,
 although it can be considerably slow for certain kinds of non-determinism.
 
+:::Aside
+
+What should be the `Observable` instance for the game monad `(->) Choice`?
+The common idea in game theory is to assume the worst:
+prepare for a future where the enemy takes the action incurring the greatest cost to us.
+
+> instance Ord r => Observable ((->) Choice) r where
+>  collapse v f = maximize (v . f)
+
+We define the `maximization` function above some paragraphs below.
+:::
+
 
 Best policies and value functions
 =================================
@@ -226,9 +338,9 @@ We can use the ultra practical `Arg` type from `Data.Semigroup`
 to minimize while keeping track of the optimal point.
 
 > extract :: (Observable m r, Finite a, r ~ Double)
->         => Process m s a -> (s -> r) -> (s -> a)
+>         => Process m s a -> (s -> r) -> (s -> m a)
 > extract p v s = let (Arg vs a) = minimum [ Arg (totalCost p v s a) a | a <- elems ]
->                 in a
+>                 in pure a
 
 Value Iteration
 ---------------
@@ -302,11 +414,20 @@ it converges to the optimal whenever
 the discount factor is less than 1.
 
 > valueIteration :: (Observable m r, Finite s, Finite a, r ~ Double)
->                => Double -> Process m s a -> (s -> r)
-> valueIteration tol p = fixBanach tol (const 0) (bellman p)
+>                => Double -> Process m s a -> (s -> m a, s -> r)
+> valueIteration tol p =
+>   let ovf = fixBanach tol (const 0) (bellman p)
+>   in (extract p ovf, ovf)
 
 Ok folks, we've solved our problem. Good night for everyone.
 Although, think about it... the method above feels painfully slow.
+
+:::Aside
+Try to run `valueIteration 1e-6 gameofWar` and see what happens.
+Go there, I am waiting --- and, in fact, I will keep waiting,
+because after running the algorithm for hours on my notebook,
+there as still no sign of convergence.
+:::
 
 Where is the tabulation?
 ------------------------
@@ -344,8 +465,8 @@ whenever one is more appropriate than the other.
 The trick to memoization in Haskell is to instead of evaluating a function,
 we create a new function that indexes a data structure tabulating it.
 
-> rep :: forall f r. Representable f
->     => ((Key f -> r) -> (Key f -> r)) -> (Key f -> r) -> (Key f -> r)
+> rep :: forall f r s. (Representable f, s ~ Key f)
+>     => ((s -> r) -> (s -> r)) -> (s -> r) -> (s -> r)
 > rep g = index @f . tabulate . g
 
 Notice that, by the class laws, `rep g` is semantically equivalent to `g`.
@@ -355,15 +476,47 @@ With this method, we can rewrite `valueIteration` to use a representation instea
 > valueIterationRep :: forall f m s a r
 >                   .  (Representable f, s ~ Key f
 >                   ,   Observable m r, Finite s, Finite a, r ~ Double)
->                   => Double -> Process m s a -> (s -> r)
-> valueIterationRep tol p = fixBanach tol (const 0) op
->  where op = rep @f (bellman p)
+>                   => Double -> Process m s a -> (s -> m a, s -> r)
+> valueIterationRep tol p =
+>   let ovf = fixBanach tol (const 0) op
+>   in (extract p ovf, ovf)
+>  where op = rep @f (bellman p)    -- Only change
 
 What I like the most about the implementation above
 is that the data structure used to tabulate
 is completely orthogonal to the algorithm per se.
 We can choose it based on the problem at hand
 without having to change any of the algorithm's internals.
+
+:::Aside
+With a proper representation, value iteration finally converges for the game of war.
+Since there are only 4 possible states, we can represent  `Affairs -> r` by a tuple.
+
+> data GameRep r = GameRep r r r r
+>   deriving (Show, Functor)
+
+The `Representable` instance is pure and simple bookkeeping.
+
+> instance Representable GameRep where
+>  type Key GameRep = Affairs
+>  tabulate f = GameRep (f (Peace, Peace))
+>                       (f (Peace, War))
+>                       (f (War,   Peace))
+>                       (f (War,   War))
+>  index (GameRep a _ _ _) (Peace, Peace) = a
+>  index (GameRep _ b _ _) (Peace, War)   = b
+>  index (GameRep _ _ c _) (War,   Peace) = c
+>  index (GameRep _ _ _ d) (War,   War)   = d
+
+By running `valueIterationRep @GameRep 1e-6 gameofWar`,
+you can see that the optimal solution for the game of war
+is to pursue peace no matter what! Now that's inspiring! [^ignore-me]
+
+[^ignore-me]: Inspiring until you realize that it becomes war at all costs
+by doing a small tweak in the cost function.
+I guess I was luck with my choice of weights... Well, it costs nothing to dream.
+
+:::
 
 Can't we just use vectors?
 --------------------------
@@ -384,7 +537,7 @@ Fortunately for us, it is always possible to represent functions over finite dom
 Let's construct a wrapper type for this representation.
 
 > newtype AsVec (s :: Type) r = AsVec (V.Vector r)
->   deriving (Show, Functor, Foldable, Traversable)
+>   deriving (Show, Functor)
 
 The representable instance is basically bookkeeping.
 Since `elems` orders the states, it implicitly defines a (partial) mapping
@@ -423,7 +576,7 @@ which, no matter the decision process, represents the value function with vector
 
 > valueIterationVec :: forall m s a r
 >                   .  (Observable m r, Finite a, Finite s, r ~ Double)
->                   => Double -> Process m s a r -> (s -> r)
+>                   => Double -> Process m s a -> (s -> m a, s -> r)
 > valueIterationVec = valueIterationRep @(AsVec s)
 
 Although vectors are a natural choice for their constant indexing,
@@ -432,9 +585,19 @@ Since we already have most of the structure done,
 another reasonable default would be to use a `Map` directly.
 
 > newtype AsMap (s :: Type) r = AsMap (M.Map s r)
->   deriving (Show, Functor, Foldable, Traversable)
+>   deriving (Show, Functor)
 >
 > instance Finite s => Representable (AsMap s) where
 >  type Key (AsMap s) = s
 >  tabulate f = AsMap $ M.fromList [(s, f s) | s <- elems]
 >  index (AsMap xs) s = xs M.! s
+
+Adieu
+=====
+
+We thus conclude today's exploration.
+Although the code above for Value Iteration isn't the fastest in the west,
+it has its merits on separating the algorithms concerns.
+From it, you could start improving the parts separately by adding stuff such as
+parallelism, unboxed storage, or using `ST` to reduce allocations.
+Nevertheless, the spirit of the algorithm is already entirely in here!
