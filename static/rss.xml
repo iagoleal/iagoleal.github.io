@@ -16,7 +16,15 @@
     <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
 
     <item>
-      <guid isPermaLink="false">1176588864</guid>
+      <guid isPermaLink="false">1176588866</guid>
+      <title>Playing with Value Iteration in Haskell</title>
+      <link>https://iagoleal.com/posts/value-iteration-haskell/</link>
+      <dc:creator>Iago Leal</dc:creator>
+      <category>Blog</category>
+      <pubDate> 29 Feb 2024 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <guid isPermaLink="false">1176588865</guid>
       <title>Cuts for Mixed Integer Programs</title>
       <link>https://iagoleal.com/posts/cuts-mip/</link>
       <dc:creator>Iago Leal</dc:creator>

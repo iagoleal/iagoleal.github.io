@@ -1,7 +1,7 @@
 ---
 title: Playing with Value Iteration in Haskell
 keywords: [math, dynamic-programming, Haskell]
-date: 2024-02-16
+date: 2024-02-29
 description:
 suppress-bibliography: true
 ---
@@ -14,9 +14,13 @@ These monadic transitions, though, appear in disguise in many other areas of mat
 Today we are going in a similar exploration of _Decision Processes_,
 a close cousin to Finite Automata from the not-so-close field of Optimal Control.
 These are multistage decision problems with the same kind of dynamics as finite automata.
-Furthermore, we can formulate Value Iteration,
+Furthermore, we can formulate Value Iteration
 --- one of the usual to optimize them ---
 compactly using the Haskell machinery.
+
+Value Iteration is among my favorite algorithms
+and I have used it to solve a lot of real-world problems.
+Therefore, let's use Haskell to play with it and see what we can get.
 
 > {-# LANGUAGE GHC2021                              #-}
 > {-# LANGUAGE PackageImports,      RecordWildCards #-}
@@ -26,8 +30,6 @@ compactly using the Haskell machinery.
 > import              Data.Semigroup  (Arg(Arg))
 > import "containers" Data.Map.Strict qualified as M
 > import "vector"     Data.Vector     qualified as V
-
-> main = undefined
 
 Decision Processes
 ==================
@@ -74,13 +76,16 @@ The Game of War
 In order to illustrate the concept,
 let's introduce a small decision problem written in the language above.
 As I want to make an impact,
-it will involve the goriest and deadliest among all decisions: whether to wage war.
+it will involve the goriest and deadliest among all decisions: whether to wage war.[^war]
+
+[^war]: Please do not take these examples as a basis for any serious business.
+Also, please don't start any war.
 
 Suppose you're a happy king running some faraway a country.
-Unfortunately, for historical reasons, your country has terrible relations with the neighbour
+Unfortunately, for historical reasons, your country has terrible relations with the neighbour,
 and you keep bouncing between war declarations and peace treaties.
 Considering this context, at the first of each year
-you summon the country's counsel of sages to decide if this will be an year of fighting or truce.
+you summon the country's counsel of sages to decide if this will be a year of fighting or truce.
 This defines the available actions for both countries.
 
 > data Choice = Peace | War
@@ -123,15 +128,17 @@ plus a possible action cost for raising a military in order to wage war.
 > costGame :: Affairs -> Choice -> Double
 > costGame s a = costPast s + costDecision a
 >  where
->   costPast (Peace, Peace) =  -50  -- No fighting, the land prospers
->   costPast (Peace, War)   =  100  -- Being attacked unarmed destroys your country
->   costPast (War,   Peace) =  -80  -- Negative cost = reward from looting the other country
->   costPast (War,   War)   =   50  -- Keeping war has a cost to everyone
->   costDecision Peace =  0   -- You don't need to do anything
->   costDecision War   = 25   -- Raising a military, training etc.
+>   costPast (Peace, Peace) =   0  -- No fighting, no costs
+>   costPast (Peace, War)   =   2  -- Being attacked unarmed destroys your country
+>   costPast (War,   Peace) =  -2  -- Negative cost = reward from looting the other country
+>   costPast (War,   War)   =   1  -- Keeping war has a cost to everyone
+>   costDecision Peace =    0  -- You don't need to do anything
+>   costDecision War   =    1  -- Raising a military, training etc.
 
 From this data we can define a decision process
 representing the game of war which will accompany us throughout the post.
+We choose a discount of `0.75` to indicate that the kingdom cares more about today
+than with the future.
 
 > gameOfWar :: Process ((->) Choice) Affairs Choice
 > gameOfWar = Process { next = nextGame, cost = costGame, discount = 0.75}
@@ -212,6 +219,23 @@ by simulating the game and mapping the enemy's actions to a list of possible fut
 >   steps = simulate gameOfWar pol initial
 >   possibilities f = map f elems
 
+As an example, let's go on ghci and follow the retaliating policy for a couple steps.
+We will start at a state where our country declared war while the adversary wants to remain in peace.
+As you can see, after the initial step, this policy only traverses states where both sides agree.
+
+```ghci
+ghci> :{
+ghci| let states = simulGame polRetaliate (War, Peace) 5
+ghci| in for_ (zip [0..] states) $ \ (i, s) ->
+ghci|   putStrLn $ show i ++ ": " ++ show s
+ghci| :}
+0: [(War,Peace),(War,Peace)]
+1: [(Peace,Peace),(War,War)]
+2: [(Peace,Peace),(War,War)]
+3: [(Peace,Peace),(War,War)]
+4: [(Peace,Peace),(War,War)]
+```
+
 :::
 
 Every policy has a cost
@@ -237,8 +261,8 @@ The above is similar to the `Context` class
 just parameterized in `r` instead of `Bool` (We will only use `r ~ Double` today).
 Perhaps there is something more profound in all of this,
 but I personally don't know.
-I have also just noticed that `flip collapse`
-can be seem as an arrow from `m` to the continuation monad `(s -> r) -> r`.
+I have also just noticed we can view `flip collapse`
+as an arrow from `m` to the continuation monad `(s -> r) -> r`.
 Again, I have no idea if there is something deeper going on,
 but I am curious.
 If you have any insights, please send them!
@@ -268,9 +292,7 @@ so you can calculate an appropriate `n` for your tolerance.
 > policyCost 0 _ _ _ = 0
 > policyCost n p policy s =
 >   let v = policyCost (n-1) p policy
->   in collapse id $ do
->     a <- policy s
->     pure (totalCost p v s a)
+>   in collapse id $ fmap (totalCost p v s) (policy s)
 
 The procedure above will give you the right answer,
 although it can be considerably slow for certain kinds of non-determinism.
@@ -284,7 +306,16 @@ prepare for a future where the enemy takes the action incurring the greatest cos
 > instance Ord r => Observable ((->) Choice) r where
 >  collapse v f = maximize (v . f)
 
-We define the `maximization` function above some paragraphs below.
+We define the `maximization` function some paragraphs below.
+
+By taking one of our previously defined policies,
+we can see how much we expected following it will cost the reign.
+
+```ghci
+ghci> policyCost 10 gameOfWar polRetaliate (Peace, Peace)
+6.549491882324219
+```
+
 :::
 
 
@@ -397,7 +428,7 @@ $$ x_{n + 1} = f(x_n). $$
 Similarly to `fix`,
 this will build a chain of compositions $f \circ f \circ f \circ f ...$.
 The main difference is that Banach's theorem
-lets us stop it as soon as the results become close enough.
+lets us stop as soon as the results become close enough.
 
 > fixBanach :: Metric x => Double -> x -> (x -> x) -> x
 > fixBanach tol v0 f =
