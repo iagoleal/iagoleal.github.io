@@ -308,8 +308,8 @@ With some type-level magic,
 we can write a generalized memoization procedure.
 It has a scarier type signure, since we're striving for genericity,
 but the idea remains the same: precompose with tabulate and index before fixing.
-The function is essentially the same we wrote before for Streams for parameterized
-on our Representable Functor of choice.
+The function is essentially the same we wrote before for Streams
+but parameterized on our Representable Functor of choice.
 
 > -- | Memoize a recursive procedure using a Representable container of your choice.
 > memoize :: forall f a. Representable f => ((Key f -> a) -> (Key f -> a)) -> (Key f -> a)

@@ -20,8 +20,8 @@ suppress-bibliography: true
 svg.diagram {
   width:            100%;
   height:           100%;
-  background-color: hsl(147 0% 96%);
-  border-radius:    15px;
+  border-radius:    5px;
+  box-shadow:       rgba(0, 0, 0, 0.1) 0px 4px 12px;
   margin-left:      auto;
   margin-right:     auto;
 }
@@ -51,7 +51,7 @@ svg.diagram {
 }
 
 .hyperplane {
-  stroke:       var(--color-opposite);
+  stroke:       var(--color-opposite) !important;
   stroke-width: 1pt;
 }
 

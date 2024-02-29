@@ -18,13 +18,15 @@ suppress-bibliography: true
 .diagram-container {
   flex:      auto 1 1;
   max-width: 100%;
+  margin-top: 16px;
+  margin-bottom: 16px;
 }
 
 svg.diagram {
   width:            100%;
   height:           100%;
-  background-color: hsl(147 0% 96%);
-  border-radius:    15px;
+  border-radius:    5px;
+  box-shadow:       rgba(0, 0, 0, 0.1) 0px 4px 12px;
   margin-left:      auto;
   margin-right:     auto;
 }
