@@ -20,6 +20,7 @@ suppress-bibliography: true
 \def\powerset{\mathcal{P}}
 \def\dummy{\blacklozenge}
 \def\bigO{\mathrm{O}}
+\def\terminal\blacksquare
 
 What if I told you that some of the most used algorithms to
 find the shortest path in a graph,
@@ -135,15 +136,6 @@ $$
 When viewed in this light,
 our state machines are called _controllable dynamical systems_ or _decision processes_,
 which are yet additional cool names for you to memorize.
-
-<!-- TODO: Bad paragraph. What does this mean?  -->
-As an example, think of a game of Sudoku.
-The states are the (partially numbered) boards
-and the actions consist of putting a valid number
-in a certain coordinate.
-You start with some random board and repeatedly
-place numbers until you reach a terminal state
-where there are no available actions.
 
 One can argue that a state encapsulates
 all you must know about your system in order to choose an action,
@@ -775,8 +767,7 @@ function fixed_point_inplace!(f, v; tol)
 end
 
 function value_iteration_inplace!(prob, v0 = zeros(States) ; tol)
-  operator(v) = Values(minimum(a -> total_cost(prob)(v, s, a), Actions(s)) for s in States)
-  v_opt  = fixed_point_inplace!(operator, v0 ; tol)
+  v_opt  = fixed_point_inplace!(bellman_operator(prob), v0 ; tol)
 
   π_opt  = Policy{States, Actions}()
   for s in States
