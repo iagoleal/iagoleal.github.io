@@ -77,8 +77,7 @@
                   begin = 0.5s,
                   begin on = {end, of next = "apocalypse", delay = 1s},
                 }
-        [terminal] (T) at (3*\nStages-1.5, 0) {} edge [in = 340, out=20, loop, action] ();
-        % [terminal] (T) at (3*\nStages-1.5, 1.5) {};
+    [terminal, opacity = 0] (T) {};
 
   \foreach \t in {\nStages,...,1} {
     \pgfmathsetmacro{\nStates}{\states[\t-1]}
@@ -112,8 +111,6 @@
                   [action] (q\t\s) -- (q\next\ny);
             \fi
         }
-      \else
-        \draw [animate={pulse={0s}}, action] (q\t\s) -- (T);
       \fi
     }
   }

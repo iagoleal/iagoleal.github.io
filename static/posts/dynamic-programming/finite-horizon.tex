@@ -43,8 +43,6 @@
 
   \pgfmathsetseed{5671243}
 
-  \node [terminal] (T) at (3*\nStages-1.5, 0) {} edge [in = 340, out=20, loop, action] ();
-
   \foreach \t in {\nStages,...,1} {
     \pgfmathsetmacro{\nStates}{\states[\t-1]}
 
@@ -59,8 +57,6 @@
 
         \foreach \ny in {1,...,\nStatesNext}
           \draw [action] (q\t\s) -- (q\next\ny);
-      \else
-        \draw [action] (q\t\s) -- (T);
       \fi
     }
 

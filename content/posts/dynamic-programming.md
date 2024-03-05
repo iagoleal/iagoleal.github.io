@@ -971,85 +971,243 @@ any problem specific information that may be available.
 Backward Induction over a Finite Horizon
 ----------------------------------------
 
-Until now, we haven't assumed anything about the decision process.
-By exploiting the problem's state space structure,
-we can turn these algorithms into much faster ones.
+Until now, we've always worked with general decision processes that run indefinitely.
+Nevertheless, there are processes with more structure than that.
+Let's look further into an instance where we can exploit the problem's state space structure
+to tune these algorithms into much faster ones.
 In this section we deal with _finite horizon problems_
 and show that, for them, we can make value iteration converge in a single iteration!
 
-When the dynamics ends at a certain number $N$ of time steps,
-we say that the problem has a finite horizon.
-In this case, the stage $t$ is part of the state variable,
-(Because how else would we know when to stop?)
-and there is a _terminal state_ $\blacksquare$
-with zero cost and representing anything that happens after the dynamics end.
-Essentially, we work for $N$ stages and then reach $\blacksquare$,
+:::Definition
+A state $\terminal$ in a decision process is **terminal**
+if all actions one can take on it have zero cost and do not transition to another state.
+
+$$ \forall a \in \Actions(s),\,c(\terminal, a) = 0\,\text{ and }\, T(\terminal, a) = \terminal.$$
+:::
+
+The dynamics effectively ends whenever the process reachs a terminal state.
+Essentially, there is work to do until arriving at $\blacksquare$,
 where we can just relax and do nothing for the rest of eternity.
+Hence its name.
+Also, since all its actions are dull, it is customary to draw it without arrows.
+
+```dot
+digraph "Terminal State" {
+  rankdir=LR;
+  size="8,5"
+
+  T [label = "" style=filled, color = black, fillcolor = black, shape = square];
+
+  node [fontsize=20 color = "#00000000" fillcolor= "#00000000" label = ". . ."];
 
 
-![](finite-horizon.svg){png=true}
+  {A B C} -> T;
+  B -> T;
+}
+```
 
+When it is guaranteed that, for any policy,
+the dynamics will reach a terminal state after a finite number of steps,
+we say that it has a _finite horizon_.
+In this case, the state machine underlying graph is acyclic.
+That is, any trajectory visits a non-terminal state at most once.
 
-If you prefer equations to figures,
-a finite horizon state machine is one where
-the transition function looks like this:
+```dot
+digraph "Finite Horizon Automaton" {
+  rankdir=LR;
+  size="8,5"
 
-$$ \bar{T}((t, s),\, a) = \begin{cases}
-    (t + 1, T(s, a)), & t < N \\
-    \blacksquare, & t = N.
-  \end{cases}
+  node [shape     = circle
+        style     = "solid,filled"
+        width     = 0.7
+        color     = black
+        fixedsize = shape
+        fillcolor = "#fdfdfd"
+        label     = ""];
+
+  {A C} -> B;
+  C -> B;
+  C -> A -> D;
+  A -> E -> F -> G;
+  {F B} -> D;
+  E -> F [shape=curved];
+  H -> {A C E};
+}
+```
+
+### Backwards Induction
+
+We can improve the algorithms for Dynamic Programming with a clever traversal of the states.
+On all algorithms we've seem,
+there was no assumption on which order we traversed the state space at each iteration
+--- We even noticed that many of them could run in parallel ---
+and, consequently, there where also no guarantees arising from this order.
+Nevertheless, in the in-place algorithm distinct orderings produce distinct flows of information.
+
+In a finite horizon problem we can exploit the graph being acyclic
+to get an optimal ordering that makes value iteration converge in a single iteration!
+It is the graph's [topological ordering](https://en.wikipedia.org/wiki/Topological_sorting)
+and consists of sorting natural number labels for the states
+such that $s$ comes before all states that can transition to it.
+Although this seems like a hard task,
+there are standard methods to calculate it linearly in the size of the automaton,
+i.e., taking $\bigO(|\States| + |\Actions|)$ steps.
+
+```dot
+digraph "Finite Horizon Automaton" {
+  rankdir=LR;
+  size="8,5"
+
+  node [shape     = circle
+        style     = "solid,filled"
+        width     = 0.7
+        color     = black
+        fixedsize = shape
+        fillcolor = "#fdfdfd"];
+
+  {5 6} -> 4;
+  6 -> 4;
+  6 -> 5 -> 0;
+  5 -> 3 -> 2 -> 1;
+  {2 4} -> 0;
+  3 -> 2 [shape=curved];
+  7 -> {5 6 3};
+}
+```
+
+The figure above exemplifies a topological sort for our example automaton.
+Notice that the earliest indices go to the terminal states
+and then get distributed "backwards" through the arrows.
+This is the origin of our next algorithm's name: _Backwards Induction_.
+
+Backwards Induction is a variation of Value Iteration
+that uses a topological sort to better traverse the state space.
+It is the same as the in-place algorithm but has exact convergence in a single iteration.
+What about an improvement!
+The following animation illustrates how it converges to the optimum one state at a time.
+
+<!-- TODO: Animate the figure below -->
+```dot
+digraph "Backwards Induction" {
+  rankdir=LR;
+  size="8,5"
+
+  node [shape     = circle
+        style     = "solid,filled"
+        width     = 0.7
+        color     = black
+        fixedsize = shape
+        fillcolor = "#fdfdfd"];
+
+  {5 6} -> 4;
+  6 -> 4;
+  6 -> 5 -> 0;
+  5 -> 3 -> 2 -> 1;
+  {2 4} -> 0;
+  3 -> 2 [shape=curved];
+  7 -> {5 6 3};
+}
+```
+
+We can prove by induction that this indeed converges in a single pass.
+The base case consists of terminal states:
+their cost is zero and the automaton never leaves them,
+implying that the optimal value function is $v^\star(\terminal) = (\Bellman v^\star)(\terminal) = 0$.
+
+On a non-terminal state $s$, assume by induction that our calculated value function $v$
+is optimal for any lower-indexed state.
+Consequently, since we only transition from $s$ to a state with a lower index,
+the current estimate $v(T(s, a))$ is already optimal.
+Then, the local assignment $v(s) \gets (\Bellman v)(s)$
+is well-defined and produces the optimal at this state.
+
+$$
+\begin{array}{rl}
+ v(v) \gets (\Bellman v)(s) =
+  \min\limits_{a} & c(s, a) + \gamma v(s') \\
+  \textrm{s.t.}  & s' = T(s, a)\quad \color{red}{\Longleftarrow \text{ already solved}} \\
+                 & a \in \Actions(s).
+\end{array}
 $$
 
-But what is so special about finite horizons?
-After all, the equation above seems much more confusing than what we had before.
-Well... what we gain is that the state space $\States$
-is clustered into smaller spaces that are visited in sequence:
-$\States_1, \States_2, \ldots, \States_N, \States_{N+1} = \{\blacksquare\}$.
-
-The _backward induction_ algorithm consists of value iteration
-but exploiting the structure we just discussed.
-At the terminal state, the cost is always zero, so we can set $v(\blacksquare) = 0$.
-But this, means that the _future cost_ for all states in $\States_N$ is fixed,
-and the optimal policy for them is just to choose the cheapest action.
-Now that we know which action to choose in $\States_N$,
-the future is fixed for all states in $\States_{N-1}$,
-reducing the problem in them to the routine we just did.
-We repeat this procedure until we reach the first stage.
-This calculates an optimal policy by induction,
-but moving "backwards" in time.
-
-![](backward-induction.svg "Backward induction algorithm")
-
-In Julia code, the algorithm looks like this:
+The previous discussion proves that we can get convergence in a single pass.
+Now, all that is left is to arrange the proof into an algorithm.
+It works the same as value iteration except that it it first sorts the states
+and only performs a single pass.
 
 ```julia
-function backward_induction()
+# Value Iteration tuned for a DAG
+function backward_induction(p :: Process)
   v  = Values{States}()
   π  = Policy{States, Actions}()
-  for t in N:1
-    for s in States(t)
-      v[s], π[s] = findmin(a -> total_cost(v, s, a), Actions(s))
-    end
+
+  # Traverse from terminal to initial states
+  for s in topological_sort(States, Actions)
+    v[s], π[s] = minimize(a -> total_cost(p)(v, s, a), Actions(s))
   end
+
   return π, v
 end
 ```
 
-I recommend you to compare this with the generic value iteration
-in order to see what we gain.
+I recommend you to compare this with generic value iteration to see what we've gained.
 One thing should be clear:
 backward induction does the exact same operation as value iteration for each state,
 but only requires a single pass over the state space.
 This makes it much more efficient.
-Another more subtle detail is that since we have more structure to exploit
-in the dynamics, the algorithm doesn't have to assume so much about the Bellman operator.
-For example, although hand-wavy, we just gave a proof of convergence above
-that has no dependence on the Banach fixed-point theorem.
-Thus, as a bonus, backward induction works for any discount factor $\gamma$.[^real-bi]
+Another more subtle detail is that since there is more structure to exploit in the dynamics,
+the algorithm doesn't have to assume so much about the Bellman operator.
+For example, our proof of convergence had no dependence on the Banach fixed-point theorem,
+meaning that we need no assumption whatsoever about the discount factor $\gamma$.
+In particular, backwards induction works for undiscounted processes![^real-semiring]
 
-[^real-bi]: In contrast with value iteration, it also has no dependence
-on the costs being real numbers. In this case, any closed Semiring would do.
+[^real-semiring]: In contrast with value iteration, it also has no dependence
+on the costs being real numbers --- any Semiring would do.
 But I digress... [This is out of scope for this post](/posts/algebraic-path).
+
+### Stagewise states
+
+There is an instance of finite horizon processes that is so common
+that it deserves its own section.
+It consists of states and actions that progress sequentially over time.
+In this case, there is a fixed horizon with $N$ steps
+and the state space is segmented according to the step $t$.
+
+![](finite-horizon.svg){png=true}
+
+The state space for such a process is highly structure and,
+in particular, always acyclic.
+We can topologically sort it by visiting each cluster backwards in time.
+The figure below illustrates backwards induction running for this kind of process.
+
+![](backward-induction.svg "Backward induction algorithm")
+
+When this stagewise structure is available to us,
+we can back it into the algorithm to spare the trouble of sorting the states.
+
+```julia
+function backward_induction_in_time(p :: Process)
+  v  = Values{States}()
+  π  = Policy{States, Actions}()
+
+  for t in N:1         # <-- Equivalent to a topological sort
+    for s in States(t)
+      v[s], π[s] = minimize(a -> total_cost(p)(v, s, a), Actions(s))
+    end
+  end
+
+  return π, v
+end
+```
+
+The above is no more than a specialized version of our previous algorithms.
+Its computational effort is $\bigO(|\States|\cdot|\Actions|)$,
+because it consists of a Value Iteration with a single pass and no need for preprocessing.
+Different from ordinary backwards induction,
+the above is also embarrassingly parallel on the inner loop,
+because there are no intra-stage dependencies.
+You can exploit this to get a further speedup.
+
 
 Nondeterminism: One Cannot Know It All
 ======================================
