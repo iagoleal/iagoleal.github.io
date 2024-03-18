@@ -106,7 +106,7 @@ We get more cuts to improve it, of course!
 By using what we discussed in the previous section,
 we can calculate tight cuts for $\E{Q}$.
 Whenever we solve the first stage, it gives us a solution $x \in X$
-that is feasible to the real problem.
+that is feasible in the real problem.
 We can use it as the parameter to solve
 the _deterministic_ optimization problem corresponding to each scenario,
 
@@ -120,7 +120,7 @@ $$
 This will produce an optimal value $Q^s(x)$, solution $y^s$, and dual $\lambda^s$.
 The average of those defines a tight cut for $\E{Q}$,
 which we include into $\Cuts$.
-In code, the procedure for a new cut looks like this.
+In code, the procedures for calculating and adding a new cut looks like this.
 
 ```julia
 function average_cut(prog, x)
@@ -171,9 +171,9 @@ $$z(\Cuts) \le z^\star.$$
 thus their cost must be above the true minimum:
 $$ c_1(x) + \E{c_2(y)} \ge  z^\star.$$
 
-When these bounds are closer than our required tolerance,
-we know that we have sandwiched the true solution
-and can consider our approximation good enough.
+These bounds "sandwich" the true solution and,
+when they're closer than a required tolerance,
+we can consider our approximation good enough.
 The whole procedure is summarized in the code snippet below.
 
 ```julia
@@ -185,7 +185,7 @@ function solve_single_cut(stage1, stage2; tol = 1e-8)
     # First stage
     v1, x = solve(stage1)
     # Second stage
-    for s in prog.Scenarios
+    for s in stage2.Scenarios
       v2[s], y[s], λ[s] = solve(stage2[s], x)
     end
     # Update approximation for E[Q]
@@ -200,16 +200,165 @@ end
 ```
 
 
+### A Note on Parallelism
 
+Notice on the algorithm above that the second-stage scenarios are independent of each other.
+Since solving optimization problems is no simple task,
+one use this to distribute the work over multiple processors.
 
+```dot
+digraph "Parallel Single Cut" {
+  rankdir=LR;
+  size="8,5";
 
+  node [shape     = circle
+        style     = "solid,filled"
+        width     = 0.7
+        color     = black
+        fixedsize = shape
+        label     = ""
+        fillcolor = "#fdfdfd"];
+
+  1 -> m -> {21, 22, 23, 24};
+}
+```
+
+The algorithm is not completely parallel though,
+because the processors must synchronize their work to calculate the average cut.
+While you can solve $|\Scenarios|$ optimization problems in parallel
+in the second stage,
+the process of gathering their results to produce a cut,
+updating the first-stage problem and solving it to get a new solution is synchronous.
+While only one processor runs this part, all others must wait.
+
+In the next section we will learn a more flexible representation for the cost-to-go
+that, at the cost of more memory usage, overcomes this limitation.
 
 
 Multicut Approach
 -----------------
 
-Non-Convex Is Always More Complicated
-=====================================
+In the single cut approach,
+we calculate one cut per iteration to directly approximate the cost-to-go $\E{Q}$.
+Thus, in a sense, approximating the average is the second stage's job:
+the first stage never sees any information regarding the different scenarios,
+it already comes aggregated to it.
+
+Another possibility is to use a __multicut approximation__
+where we keep a bag of cuts $\Cuts^s$ for each scenario
+and construct separate approximations
+
+$$ \Qfrak^s(x) = \max\limits_{(b, \lambda) \in \Cuts^s} b + \inner<\lambda, x>.$$
+
+Now it is the first stage's job to take these approximations
+and convert into an approximation to $\E{Q}$.
+We do this by noticing that
+
+$$ \Qfrak^s \le Q^s \implies \sum_{s \in \Scenarios} p_s \Qfrak^s \le \E{Q}$$
+
+And plugging this whole average expression into our first stage approximation.
+
+$$
+  \begin{array}{rrl}
+    z(\Cuts) &= \min\limits_{x}   & c_1(x) + \sum_{s \in \Scenarios} p_s \Qfrak^s(x) \\
+      &\textrm{s.t.}  & x \in X \\
+      &= \min\limits_{x,t} & c_1(x) + \sum_{s \in \Scenarios} p_s t_s \\
+      &\textrm{s.t.}  & x \in X, \\
+      &               & t_s \ge b + \inner<\lambda, x>,\; \forall s \in \Scenarios, (\lambda, b) \in \Cuts^s.
+  \end{array}
+$$
+
+The multicut approach defines a larger optimization problem
+than the one we had for the single cut,
+because it unlinks the cost-to-go for each scenario.
+
+```dot
+digraph "MultiCut" {
+  rankdir=LR;
+  size="8,5";
+
+  node [shape     = circle
+        style     = "solid,filled"
+        width     = 0.7
+        color     = black
+        fixedsize = shape
+        label     = ""
+        fillcolor = "#fdfdfd"];
+
+  1 -> {m1, m2, m3, m4};
+  m1 -> 21;
+  m2 -> 22;
+  m3 -> 23;
+  m4 -> 24;
+}
+```
+
+We can use this structure to build a similar algorithm to our previous one.
+The main difference is that the multicut solver adds the cuts immediately after completing each scenario.
+
+```julia
+function solve_multicut(stage1, stage2; tol = 1e-8)
+  v2, y, λ = [], [], []   # Value, solution, multiplier
+  ub, lb   = +Inf, -Inf
+
+  while ub - lb > tol
+    # First stage
+    v1, x = solve(stage1)
+    # Second stage
+    for s in stage2.Scenarios
+      v2[s], y[s], λ[s] = solve(stage2[s], x)
+      # Update approximation for E[Q[s]]
+      addcut!(stage1, s, Cut(v2[s], λ[s], x))
+    end
+    # Check the bounds
+    lb = opt1
+    ub = stage1.cost(x) + mean(v2)
+  end
+
+  return x, y   # Calculated optima
+end
+```
+
+### Flexibility and parallelism
+
+The advantage of representing each scenario separately in the first-stage is the flexibility it gains us.
+Suppose, for example, that there is a scenario with a value function that's more complicated than the others.
+In the single cut approach we have to solve all scenarios to obtain an average cut,
+and, therefore, cannot focus on the problematic one.
+With separate cut bags, on the other hand, it is possible to adapt the algorithm
+to sample more often the scenarios known to be harder.
+
+This idea is particularly useful when parallelizing the algorithm
+because it doesn't require a synchronicity bottleneck for calculating average cuts.
+We could, for example, assign some scenarios for each worker
+and a processor responsible for solving the first stage from time to time.
+As soon as a worker produces a cut, it can send it over to the first stage
+to improve its approximation.
+
+```dot
+digraph "Parallel Multicut" {
+  rankdir=LR;
+  size="8,5";
+
+  node [shape     = circle
+        style     = "solid,filled"
+        width     = 0.7
+        color     = black
+        fixedsize = shape
+        label     = ""
+        fillcolor = "#fdfdfd"];
+
+  1 -> {m1, m2, m3, m4};
+  m1 -> 21;
+  m2 -> 22;
+  m3 -> 23;
+  m4 -> 24;
+}
+```
+
+
+Non-Convexity and its Complications
+===================================
 
 :::Theorem
 The average of convexifications is less than the average's convexification.
