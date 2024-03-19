@@ -6,11 +6,27 @@ description:
 suppress-bibliography: true
 ---
 
+<style>
+.Missing {
+  text-align: center;
+  width:  100%;
+  height: 300px;
+  background-color: gray;
+  border: black 1px;
+}
+</style>
+
 \def\E#1{\mathbb{E}\left[ #1 \right]}
 \def\inner<#1,#2>{\left\langle#1,\,#2\right\rangle}
 \def\Scenarios{\mathcal{S}}
 \def\Cuts{\mathcal{C}}
 \def\Qfrak{\mathfrak{Q}}
+
+
+
+By the way, some of the content about [non-convex functions](#ncvx)
+comes directly from my [Master's thesis](/masters/), called _Convexification by Averages_.
+
 
 # Stochastic OVF
 
@@ -22,6 +38,10 @@ $$
     \textrm{s.t.}   & (x, y) \in Y.
   \end{array}
 $$
+
+:::Theorem
+The average of a convex random function is also convex.
+:::
 
 Convex Stochastic Programs
 ==========================
@@ -43,6 +63,10 @@ This produces the cut we want:
 
 $$ Q(x) \ge Q(x_0) + \inner<\Lambda, x - x_0>.$$
 
+:::Missing
+Figure of cuts for random functions
+:::
+
 Since expected values preserve inequalities,
 this equation is all we need to approximate $\E{Q}$ by cuts.
 
@@ -50,6 +74,10 @@ this equation is all we need to approximate $\E{Q}$ by cuts.
 The average of tight cuts for a convex random function $Q$ is tight for the average $\E{Q}$.
 
 $$ \E{Q(x)} \ge \E{Q(x_0)} + \inner<\E{\Lambda}, x - x_0>.$$
+:::
+
+:::Missing
+Average cut + many faded cuts
 :::
 
 The theorem above is the key for solving two-stage stochastic programs using cuts.
@@ -120,7 +148,7 @@ $$
 This will produce an optimal value $Q^s(x)$, solution $y^s$, and dual $\lambda^s$.
 The average of those defines a tight cut for $\E{Q}$,
 which we include into $\Cuts$.
-In code, the procedures for calculating and adding a new cut looks like this.
+In code, the procedures for calculating a new cut looks like this.
 
 ```julia
 function average_cut(prog, x)
@@ -357,13 +385,51 @@ digraph "Parallel Multicut" {
 ```
 
 
-Non-Convexity and its Complications
-===================================
+Non-Convexity under Uncertainty {#ncvx}
+=======================================
+
+It is time to leave the peaceful and colorful land of convexity
+to enter the dark and haunted land of general, not necessarily convex, functions.
+Recall from the [previous post](/posts/cuts) that for an arbitrary deterministic function,
+the best we can get is a tight cut for its convex relaxation (dual function).
+Since the expected cost-to-go $\E{Q}$ is deterministic,
+we must accept that the best we can do approximate its relaxation $\E{Q}$,
+
+$$\E{Q}(x) \ge \widecheck{\E{Q}}(x_0) + \inner<\lambda, x - x_0>.$$
+
+Nevertheless,
+our current strategy of solving $Q$ for each scenarios and, only in the end, constructing the average cut
+from all results is, in general, worse than we expect, because it has no guarantee of being tight for $\widecheck{\E{Q}}$.
+The problem is that the random cut is only tight for $\check{Q}$[^dual-random]
+
+$$Q(x) \ge \check{Q}(x_0) + \inner<\Lambda, x - x_0>$$
+
+And by taking the average we get a cut that is tight for the _average of convexifications_ $\E{\check{Q}}$.
+Our central theorem in this section is that $\mathbb{E}$ and $\widecheck{(\cdot)}$ do not necessarily commute.
+
+
+[^dual-random]: The random convexification $\check{Q}$ is defined as the convexification for each sample: $(\check{Q})^s = \widecheck{(Q^s)}$.
+This is just a notation to make everything cleaner.
 
 :::Theorem
 The average of convexifications is less than the average's convexification.
 
 $$ \E{\check{Q}} \le \widecheck{\E{Q}} \le \E{Q}.$$
+:::
+
+:::Proof
+$\E{\check{Q}}$ is a convex underapproximation of $\E{Q}$ because
+the expected value preserves inequalities and convexity:
+
+- **Convex**: Each $\check{Q}$ is convex, and their average $\E{\check{Q}}$ is a non-negative linear combination of them;
+- **Underapproximation:** $\check{Q} \le Q \implies \E{\check{Q}} \le \E{Q}$.
+
+However, the convex relaxation is defined as uniformly the _largest_ convex underapproximation of $Q$.
+Thus, it must be everywhere above $\E{\check{Q}}$.
+:::
+
+:::Missing
+Compare EQ and convs
 :::
 
 ## Linked formulation
