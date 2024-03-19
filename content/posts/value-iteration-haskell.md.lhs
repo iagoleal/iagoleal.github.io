@@ -16,9 +16,9 @@ These monadic transitions, though, appear in disguise in many other areas of mat
 Today we are going in a similar exploration of _Decision Processes_,
 a close cousin to Finite Automata from the not-so-close field of Optimal Control.
 These are multistage decision problems with the same kind of dynamics as finite automata.
-Furthermore, we can formulate Value Iteration
---- one of the usual to optimize them ---
-compactly using the Haskell machinery.
+Furthermore, Value Iteration
+--- one of the usual algorithms to optimize them ---
+admits a compact using fixed points in Haskell.
 
 Value Iteration is among my favorite algorithms
 and I have used it to solve a lot of real-world problems.
@@ -130,12 +130,12 @@ plus a possible action cost for raising a military in order to wage war.
 > costGame :: Affairs -> Choice -> Double
 > costGame s a = costPast s + costDecision a
 >  where
->   costPast (Peace, Peace) =   0  -- No fighting, no costs
->   costPast (Peace, War)   =   2  -- Being attacked unarmed destroys your country
->   costPast (War,   Peace) =  -2  -- Negative cost = reward from looting the other country
->   costPast (War,   War)   =   1  -- Keeping war has a cost to everyone
->   costDecision Peace =    0  -- You don't need to do anything
->   costDecision War   =    1  -- Raising a military, training etc.
+>   costPast (Peace, Peace) =  0  -- No fighting, no costs
+>   costPast (Peace, War)   =  2  -- Being attacked unarmed destroys your country
+>   costPast (War,   Peace) = -2  -- Negative cost = reward from looting the other country
+>   costPast (War,   War)   =  1  -- Keeping war has a cost to everyone
+>   costDecision Peace = 0  -- You don't need to do anything
+>   costDecision War   = 1  -- Raising a military, training etc.
 
 From this data we can define a decision process
 representing the game of war which will accompany us throughout the post.
@@ -143,7 +143,7 @@ We choose a discount of `0.75` to indicate that the kingdom cares more about tod
 than with the future.
 
 > gameOfWar :: Process ((->) Choice) Affairs Choice
-> gameOfWar = Process { next = nextGame, cost = costGame, discount = 0.75}
+> gameOfWar = Process {next = nextGame, cost = costGame, discount = 0.75}
 
 :::
 

@@ -167,14 +167,14 @@ let's first present tonight's star.
 A **cut** for $f : \R^n \to \R$ is an affine function everywhere below $x$.
 That is,
 
-$$  f(x) \ge \inner<a, x> + b. $$
+$$ f(x) \ge b + \inner<\lambda, x>. $$
 :::
 
 In particular, we say that a cut is _tight_ at $x_0$
 if it equals the function at this point.
-In this case, it is common to denote the cut as centered around $x_0$:
+In this case, it is usual to denote the cut as centered around $x_0$:
 
-$$  f(x) \ge f(x_0) + \inner<a, x - x_0>. $$
+$$ f(x) \ge f(x_0) + \inner<\lambda, x - x_0>. $$
 
 
 ```tikz {name="function-tight-cuts"}
@@ -198,10 +198,10 @@ $$  f(x) \ge f(x_0) + \inner<a, x - x_0>. $$
 In general, a single cut is a terrible approximation.
 But it is not its fault, after all, it is just a first order polynomial!
 The magic begins when you combine many cuts to represent $f$ as a _polyhedral function_.
-Taking an approximation of $f$ by cuts $C = \{\inner<a,\hole> + b\}$
+Taking an approximation of $f$ by cuts $C = \{b + \inner<\lambda,\hole>\}$
 amounts to choosing the largest cut at each given point:
 
-$$ f(x) \approx \max\limits_{(a,b) \in C} \inner<a_,x> + b. $$
+$$ f(x) \approx \max\limits_{(\lambda, b) \in C} b + \inner<\lambda,x>. $$
 
 This formula also explains why we refer to affine functions as "cuts".
 Think about the graph of $f$.
@@ -264,12 +264,12 @@ Let's go through some of the reasons.
     \begin{aligned}
     \min_x f(x) &\ge
       \begin{array}{rl}
-        \min\limits_{x} &\max\limits_{(a,b) \in C} \inner<a_,x> + b  \\
+        \min\limits_{x} &\max\limits_{(\lambda,b) \in C} b + \inner<\lambda, x>  \\
       \end{array} \\
       &=
       \begin{array}{rl}
         \min\limits_{x, t} & t \\
-        \textrm{s.t.}  & \inner<a_,x> + b \le t,\, \forall (a,b) \in C  \\
+        \textrm{s.t.}  & b + \inner<\lambda,x>  \le t,\, \forall (\lambda,b) \in C  \\
       \end{array}
     \end{aligned}
     $$
@@ -279,7 +279,7 @@ which is a necessity for any optimizer that "sandwiches" the optimal value
 between two bounds.
 Let's now put all these properties to good use.
 
-### Example: Kelley's cutting planes algorithm {#example-sandwich-algorithm}
+### Example: Kelley's cutting planes algorithm {#example-kelley-cutting-planes}
 
 Imagine that you must minimize a convex function,
 but, unfortunately,
@@ -611,7 +611,7 @@ Therefore
 $$\boxed{\forall x,\, f(x) \ge f(x_0) + \inner<\d{f}(x_0),x - x_0>.}$$
 
 Now that's a formula!
-Recall our [sandwich algorithm](example-sandwich-algorithm).
+Recall our [sandwich algorithm](#example-kelley-cutting-planes)
 There I asked you to take in good faith my words about our oracle,
 and now
 It's finally time to pay my debt and turn that black box into a simple procedure.
