@@ -290,7 +290,7 @@ $$
   \begin{array}{rrl}
     z(\Cuts) &= \min\limits_{x}   & c_1(x) + \sum_{s \in \Scenarios} p_s \Qfrak^s(x) \\
       &\textrm{s.t.}  & x \in X \\
-      &= \min\limits_{x,t} & c_1(x) + \sum_{s \in \Scenarios} p_s t_s \\
+      &= \min\limits_{x,t_s} & c_1(x) + \sum_{s \in \Scenarios} p_s t_s \\
       &\textrm{s.t.}  & x \in X, \\
       &               & t_s \ge b + \inner<\lambda, x>,\; \forall s \in \Scenarios, (\lambda, b) \in \Cuts^s.
   \end{array}
@@ -391,27 +391,35 @@ Non-Convexity under Uncertainty {#ncvx}
 It is time to leave the peaceful and colorful land of convexity
 to enter the dark and haunted land of general, not necessarily convex, functions.
 Recall from the [previous post](/posts/cuts) that for an arbitrary deterministic function,
-the best we can get is a tight cut for its convex relaxation (dual function).
-Since the expected cost-to-go $\E{Q}$ is deterministic,
-we must accept that the best we can do approximate its relaxation $\E{Q}$,
+the best cut we can get is only tight for its convex relaxation (dual function).
+As will see, this makes the story a bit more complicated.
 
-$$\E{Q}(x) \ge \widecheck{\E{Q}}(x_0) + \inner<\lambda, x - x_0>.$$
+First and foremost, we must modify our random cut inequality
+to take the convexification into account:[^dual-random]
 
-Nevertheless,
-our current strategy of solving $Q$ for each scenarios and, only in the end, constructing the average cut
-from all results is, in general, worse than we expect, because it has no guarantee of being tight for $\widecheck{\E{Q}}$.
-The problem is that the random cut is only tight for $\check{Q}$[^dual-random]
+$$ Q(x) \ge \check{Q}(x_0) + \inner<\Lambda, x - x_0>.$$
 
-$$Q(x) \ge \check{Q}(x_0) + \inner<\Lambda, x - x_0>$$
-
-And by taking the average we get a cut that is tight for the _average of convexifications_ $\E{\check{Q}}$.
-Our central theorem in this section is that $\mathbb{E}$ and $\widecheck{(\cdot)}$ do not necessarily commute.
-
-
-[^dual-random]: The random convexification $\check{Q}$ is defined as the convexification for each sample: $(\check{Q})^s = \widecheck{(Q^s)}$.
+[^dual-random]: We define the convexification $\check{Q}$ of a random function $Q$
+as its convexification for each scenario: $(\check{Q})^s = \widecheck{(Q^s)}$.
 This is just a notation to make everything cleaner.
 
-:::Theorem
+By using the previous section's approach, we decompose $Q(x_0)$ in scenarios
+and calculate the average cut, which is an underapproximation for the expected function,
+
+$$ \E{Q}(x) \ge \E{\check{Q}}(x_0) + \inner<\E{\Lambda}, x - x_0>.$$
+
+:::Missing
+Cuts of $\E{\check{Q}}$
+:::
+
+Despite being a valid cut, it generally _is not tight_.
+As a matter of fact, it is not even the best possible cut
+because by decomposing $Q$, we ended losing information about how the non-convexities interact.
+The problem is that we end up calculating cuts for the average of duals $\E{\check{Q}}$
+while the cuts we really want are for the dual of the averages $\widecheck{\E{Q}}$.
+This remark important enough to deserve its own lemma.
+
+:::{.Lemma data-title="Convexification by Averages"}
 The average of convexifications is less than the average's convexification.
 
 $$ \E{\check{Q}} \le \widecheck{\E{Q}} \le \E{Q}.$$
@@ -424,15 +432,240 @@ the expected value preserves inequalities and convexity:
 - **Convex**: Each $\check{Q}$ is convex, and their average $\E{\check{Q}}$ is a non-negative linear combination of them;
 - **Underapproximation:** $\check{Q} \le Q \implies \E{\check{Q}} \le \E{Q}$.
 
-However, the convex relaxation is defined as uniformly the _largest_ convex underapproximation of $Q$.
-Thus, it must be everywhere above $\E{\check{Q}}$.
+However, the convex relaxation $\widecheck{\E{Q}}$ is defined as the _largest_ convex underapproximation of $Q$.
+Therefore, it is everywhere above $\E{\check{Q}}$.
 :::
 
 :::Missing
 Compare EQ and convs
 :::
 
-## Linked formulation
+Despite being short,
+there is a lot to unpack in the theorem above.[^jensen]
+One interpretation of it --- which we already remarked ---
+is that each non-convex $Q^s$ has rims and bumps in different points.
+By taking the average, these corners may cancel out
+leaving $\E{Q}$ closer to being convex than it would appear by looking at each scenario separately.
+In fact, in some special situations, the average could even be convex!
 
-# Other risk-measures
+
+```tikz
+{ [yscale = 1.5]
+  \coordinate (A) at (0,0);
+
+  \draw (A) -- ++(2,-2) -- ++(1,1) -- ++(1,-1) -- ++(2,2);
+  \draw[color=blue] ([xshift=1cm]A) -- ++(2,-2) -- ++(1,1) -- ++(1,-1) -- ++(2,2);
+
+  \draw ([xshift=8cm]A)++(0.5, 0) -- ++(1.5,-1.5) -- ++(3,0) -- ++ (1.5,1.5);
+
+  \draw[->, bend right] (6.5, -1) to[out=30, in=150] node[above] {$\mathbb{E}$} ++(2.5,0);
+}
+```
+
+[^jensen]: An abstract view of this theorem
+is that at each point $x$, the mapping $f \mapsto \check{f}(x)$
+is a concave function.
+What we just proved is the pointwise Jensen's inequality for it.
+
+<!-- Another view is that the operators $Q \mapsto \check{Q}$ and $\mathbb{E}$ do not commute -->
+
+For solving optimization problems,
+the important part is the theorem's consequence for cuts.
+To approximate the expected cost-to-go as tightly as possible,
+we need a way to directly approximate its convex relaxation.
+
+Linked formulation
+------------------
+
+Both the single and multicut approaches,
+when applied to a non-convex second stage
+only yield cuts for $\E{\check{Q}}$,
+because they calculate an average cut by decomposing the problem into scenarios.
+To get tighter cuts,
+we need an approach that takes into account all cuts at the same time.
+
+The idea is to build one huge optimization problem representing the entirety of $\E{Q}$.
+We do this by linking all $Q^s$ together.
+Start by recalling the definition of the problem for each scenario,
+
+$$
+  \begin{array}{rl}
+    Q^s(x) = \min\limits_{y^s} & c_2^s(y^s) \\
+    \textrm{s.t.}   & (x, y^s) \in Y^s,
+  \end{array}
+$$
+
+Where we purposefully write $y^s$ for the decision variable
+to mark its dependence on the scenario.
+The expected cost-to-go is
+
+$$ \begin{aligned}
+  \E{Q}(x) &= \sum_{s \in \Scenarios} p_s Q^s(x) \\
+  & = \begin{array}{rl}
+    \sum\limits_{s \in \Scenarios} p_s \min\limits_{y^s} & c_2^s(y^s) \\
+    \textrm{s.t.}   & (x, y^s) \in Y^s.
+  \end{array}
+\end{aligned}
+$$
+
+Since the constants $p_i$ are non-negative and independent from the minimization,
+we can effectively "commute" the expectation with the minimum to arrive at an optimal value function.
+
+$$
+\boxed{
+\begin{array}{rl}
+  \E{Q}(x) = \min\limits_{y^s} & \sum\limits_{s \in \Scenarios} p_s c_2^s(y^s) \\
+    \textrm{s.t.}   & (x, y^s) \in Y^s.
+\end{array}
+}
+$$
+
+This is the __linked formulation__ for the expected value of an optimal value function.
+Since it is a huge non-convex program, rest assured that it can be slow as hell to solve.
+Nevertheless, one can use this formulation's dual to calculate the tightest cut possible for $\E{Q},
+i.e., any standard method for tight cuts will return a multiplier $\lambda$ satisfying[^lagrangian]
+
+$$ \E{Q}(x) \ge \widecheck{\E{Q}}(x_0) + \inner<\lambda, x - x_0>.$$
+
+[^lagrangian]: If the non-convexities arise from integer variables, you can use, for example, [Lagrangian or Strengthened Benders cuts](/posts/cuts-mip).
+
+
+We can, therefore, use this cost-to-go formulation
+to build a stochastic programming algorithm.
+In comparison to the previous decomposed formulations,
+in this case we represent the second stage as a single node.
+
+```dot
+digraph "Linked cut" {
+  rankdir=LR;
+  size="8,5";
+  compound=true;
+
+  node [shape     = circle
+        style     = "solid,filled"
+        width     = 0.7
+        color     = black
+        fixedsize = shape
+        label     = ""
+        fillcolor = "#fdfdfd"];
+
+  subgraph cluster_2 {
+    21, 22, 23, 24;
+  }
+
+  1 -> m -> 22 [lhead = "cluster_2"];
+}
+```
+
+From the first stage's point of view,
+this is indistinguishable from a single cut calculation,
+because at each iteration we produce only one cut.
+We also need to adapt the stopping criterion
+because, for non-convex problems, there is no guarantee of convergence.
+There is hope to find a good solution after enough iterations, nonetheless.
+
+```julia
+function solve_linked(stage1, stage2; tol = 1e-8, max_iterations :: Int)
+  ub, lb   = +Inf, -Inf
+  iter     = 1
+
+  while ub - lb > tol || iter > max_iterations
+    # First stage
+    v1, x = solve(stage1)
+    # Second stage
+    v2, ys, λ = solve(linked(stage2), x)   # Solve linked formulation for 2nd stage
+    # Update approximation for E[Q]
+    addcut!(stage1, Cut(v2, λ, x))
+    # Convergence criteria
+    lb    = opt1
+    ub    = stage1.cost(x) + v2
+    iter += 1
+  end
+
+  return x, ys  # Calculated optima
+end
+```
+
+Notice from this code that we lost the embarrassingly parallel nature of the second stage.
+Although the linked formulation could gain from parallelism in the solver,
+there is no room for parallelizing directly in the scenarios.
+The second stage becomes a big opaque block.
+
+Mixing and matching approaches
+------------------------------
+
+Before we close this section,
+it is worth comparing the linked versus the decomposed approach.
+As is common in optimization, when the problem at hand is not convex,
+we end up in a dilemma of speed against accuracy.[^mip-cuts]
+Fortunately, methods never get jealous and one does not need to commit to any single one.
+
+[^mip-cuts]: Much rather the decision of [Benders vs Lagrangian cuts for MIP](/posts/cuts-mip).
+
+Let's take a high-level look into how to combine our many approaches.
+First, remember that we aren't really interested in the cuts themselves.
+They are only a tool towards our real objective: an (approximately) optimal solution $(x, y)$.
+So, we can play a bit with how to represent the cost-to-go.
+An idea, thus, is to solve using a decomposed formulation but,
+once in a while --- when the solution stagnates, for example ---
+calculate a linked cut to improve our overall search space.
+
+Another more sophisticated approach would be to take advantage of a parallel machine
+to calculate linked and decomposed cuts at the same time.
+It will need at least three workers:
+one for the first stage, one for the linked second stage,
+and the others for the scenarios.
+
+First, notice that we can write the first stage in a way that accepts both single and multicuts.
+By denoting $\Cuts^s$ the cut bag for scenario $s$ and $\Cuts^\mathbb{E}$ the bag of aggregated cuts,
+we represent the first stage as
+
+$$
+\begin{array}{rl}
+   \min\limits_{x,t, t_s} & c_1(x) + t \\
+   \textrm{s.t.}  & x \in X, \\
+                  & t = \sum_{s \in \Scenarios} p_s t_s \\
+                  & t \ge b + \inner<\lambda, x>,\; \forall (\lambda, b)\in \Cuts^\mathbb{E} \\
+                  & t_s \ge b_s + \inner<\lambda_s, x>,\; \forall s \in \Scenarios, (\lambda_s, b_s) \in \Cuts^s.
+\end{array}
+$$
+
+The variable $t$ represents the expected cost-to-go
+and has the constraint to equal the average of the cost-to-go for each scenario.
+Since the second stage decisions do not communicate among themselves,
+the graph for this mixed approach can have separate nodes representing the cut methods.
+In the figure, we illustrate an approach that concurrently calculates linked and multicuts.
+
+```dot
+digraph "Parallel Mixed Approach" {
+  rankdir=LR;
+  size="8,5";
+  compound=true;
+
+  node [shape     = circle
+        style     = "solid,filled"
+        width     = 0.7
+        color     = black
+        fixedsize = shape
+        label     = ""
+        fillcolor = "#fdfdfd"];
+
+  subgraph cluster_linked {
+    l1, l2, l3, l4;
+  }
+
+  1;
+
+  subgraph cluster_decomp {
+    style = invisible;
+    d1, d2, d3, d4;
+  }
+
+  1 -> {d1, d2, d3, d4};
+  1 -> l2 [lhead = "cluster_linked"];
+}
+```
+
+Risk-Averse Optimization
+========================
 
