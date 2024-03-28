@@ -16,38 +16,249 @@ suppress-bibliography: true
 }
 </style>
 
+<style>
+/* CSS for styling */
+.diagram-container {
+  flex:      auto 1 1;
+  max-width: 100%;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+svg.diagram {
+  width:            100%;
+  height:           100%;
+  border-radius:    5px;
+  box-shadow:       rgba(0, 0, 0, 0.1) 0px 4px 12px;
+  margin-left:      auto;
+  margin-right:     auto;
+}
+
+.hyperplane {
+  stroke:       var(--color-opposite);
+  stroke-width: 1pt;
+}
+
+.mark {
+  fill: var(--color-opposite);
+}
+
+.function-graph {
+  stroke: var(--color-accent, hsl(147 42% 64%));
+  fill:   none;
+}
+
+.stochastic {
+  opacity: 0.4;
+  stroke-width: 1pt;
+  transition: 200ms;
+}
+
+.stochastic:hover {
+  opacity: 0.8;
+  stroke-width: 1.5pt;
+}
+
+.deterministic {
+  opacity: 1.0;
+  stroke-width: 2pt;
+}
+
+
+.epigraph {
+  fill: var(--color-crystal, hsl(147 42% 64%));
+}
+
+</style>
+
 \def\E#1{\mathbb{E}\left[ #1 \right]}
 \def\inner<#1,#2>{\left\langle#1,\,#2\right\rangle}
 \def\Scenarios{\mathcal{S}}
 \def\Cuts{\mathcal{C}}
 \def\Qfrak{\mathfrak{Q}}
 
+Life is full of uncertainties and so are its problems.
 
 
 By the way, some of the content about [non-convex functions](#ncvx)
 comes directly from my [Master's thesis](/masters/), called _Convexification by Averages_.
 
+Optimizing under an Uncertain Future
+====================================
 
-# Stochastic OVF
+In many real-world problems,
+it's necessary to take a decision incurring an immediate cost plus future consequences.
+Think about buying a car, for example: there is the payment at the buying time
+plus future costs such as maintenance, fuel or even purchase installments.
+
+$$
+  \begin{array}{rl}
+    \min\limits_{x} & c_{\text{now}}(x) + c_{\text{future}}(x) \\
+    \textrm{s.t.}  & x \in X \\
+  \end{array}
+$$
+
+Since the future is uncertain, you cannot be sure of how much it will cost,
+and all you can do is to estimate it as a random variable.
+Or even better: considering the decision-maker you are,
+let's allow, besides this random cost $c_{\text{future}}$,
+for a future decision variable $y$ whose possibilities are random and dependent of $x$.
+
+$$
+  \begin{array}{rl}
+    \min\limits_{x, y} & c_{\text{now}}(x) + c_{\text{future}}(x, y) \\
+    \text rm{s.t.}   & x \in X \\
+                    & (x, y) \in Y.
+  \end{array}
+$$
+
+Thanks to our temporal considerations,
+the program above has a particular structure we can exploit.
+Notice that the present only depends on $x$ while the future depends on both variables.
+
+```tikz
+\path [fill = orange] (0,0) rectangle +(2,4);
+\path [fill = green!40] (2,0) rectangle +(2,2);
+```
+
+It is, therefore, possible to break it into two interacting parts:
+
+* _First stage_ is deterministic but its total cost depends on the ensuing stage's cost.
+* _Second stage_ is stochastic and its parameters depend on the previous stage's decision.
+
+```tikz
+{ [stage/.style = {circle, minimum width = 1.3cm, draw = black}]
+  \node[stage] (fst)    {present};
+  \node[stage] (snd) [right = 3cm of fst]  {future};
+
+  \path[->] (fst) edge[bend left] node [above] {decision} (snd)
+            (snd) edge[bend left] node [below] {cost}     (fst);
+}
+```
+
+Notice that one needs to solve both stages together,
+because of their mutual dependence.
+By introducing a (random) optimal value function $Q$ for the second stage,
+called its __cost-to-go__, our decision problem becomes
+
+$$
+  \begin{array}{rl}
+    \min\limits_{x} & c_{\text{now}}(x) + Q(x) \\
+    \textrm{s.t.}  & x \in X, \\
+    Q(x) = \min\limits_{y} & c_{\text{future}}(x, y) \\
+    \textrm{s.t.}   & (x, y) \in Y.
+  \end{array}
+$$
+
+There is still one detail to sort out in this formulation.
+Since $Q$ is stochastic, the total cost is also random.
+This is terrible for analysis,
+because we must take a deterministic decision right now.
+Therefore, it is necessary to aggregate the second stage's cost into a number
+to solve the optimization problem.
+Since [the best constant representing a random variable is its expected value](/posts/shower-thoughts-averages),
+we take the average of all possible future outcomes to represent its cost.[^future-risk-averse]
+
+[^future-risk-averse]: In a following section, we'll study other aggregation possibilities
+that may better represent our risk-aversion towards the future.
+
+$$
+  \begin{array}{rl}
+    \min\limits_{x} & c_{\text{now}}(x) + \E{Q(x)} \\
+    \textrm{s.t.}  & x \in X. \\
+  \end{array}
+$$
+
+This setup configures a (two-stage) stochastic program
+and appears in a lot of industrial problems.
+Since it is the main subject we're going to explore today,
+I think it deserves its own definition.
+
+:::Definition
+A __stochastic program__ is a two-stage optimization problem
+with random future.
 
 $$
   \begin{array}{rl}
     \min\limits_{x} & c_1(x) + \E{Q(x)} \\
     \textrm{s.t.}  & x \in X \\
-    Q(x) = \min\limits_{y} & c_2(y) \\
+    Q(x) = \min\limits_{y} & c_2(x, y) \\
     \textrm{s.t.}   & (x, y) \in Y.
   \end{array}
 $$
+:::
+
+
+Stochastic Optimal Value Functions
+----------------------------------
+
+Stochastic optimal value functions allow us to talk about, and solve,
+optimization problems with uncertain components.
+They take the form
+
+$$
+  \begin{array}{rl}
+    Q(x) = \min\limits_{y} & c(y) \\
+    \textrm{s.t.}   & (x, y) \in Y
+  \end{array}
+$$
+
+Where the objective $c$ and the feasibility set $Y$ are _random_.
+Leaving aside any concerns about measurability [^finite-sto],
+this defines a random variable for each input $x$
+and is, thus, what one calls a _random function_.
+
+<figure id="figure-random-function" class="diagram-container">
+  <caption>
+    For finite uncertainty, a good intuition is to think of
+    a random function as a collection of functions defined for each scenario.
+  </caption>
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+</figure>
+
+[^finite-sto]: We will only work with finite uncertainties,
+so there shouldn't be any difficulties.
+
+As usual in probability,
+we treat random functions as a normal function but whose output
+may depend on some stochastic external state.
+Taking this view, we say that a random function has some property,
+such as being non-negative, linear, convex, monotone etc.
+whenever it has this property whatever the outcome.
+
+For example, consider $Q(x) = D_{6}x^2$,
+where $D_6$ corresponds to throwing a 6-sided die.
+It is a convex, non-negative random function
+because no matter the scenario, it has these properties.
+
+
+To make our notation more functional, we're going to write $\E{Q}$ for the deterministic function
+defined pointwisely as the average of $Q$,
+
+$$\E{Q}(x) = \E{Q(x)}.$$
+
+These averages will appear a lot throughout this post,
+so it is good to get acquainted with them soon.
+For optimization, there is an important result --- which we will use a lot --- regarding the average: it preserves convexity.
 
 :::Theorem
-The average of a convex random function is also convex.
+The average $\E{Q}$ of a convex random function $Q$ is also convex.
 :::
+
+<figure id="figure-random-average" class="diagram-container">
+  <caption>
+    In the figure below you can see a convex random function (faded) and its average (with a bold graph).
+  </caption>
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+</figure>
 
 Convex Stochastic Programs
 ==========================
 
 To start delving into the world of stochastic programs,
-let's consider the _convex_ case.
+let's begin by the _convex_ case.
 Hence, throughout this section we will always assume
 that the second stage is a random convex optimization problem.
 We need to put no restrictions on the first stage,
@@ -63,22 +274,28 @@ This produces the cut we want:
 
 $$ Q(x) \ge Q(x_0) + \inner<\Lambda, x - x_0>.$$
 
-:::Missing
-Figure of cuts for random functions
-:::
+<figure id="figure-random-cuts" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+</figure>
 
 Since expected values preserve inequalities,
 this equation is all we need to approximate $\E{Q}$ by cuts.
 
 :::Theorem
-The average of tight cuts for a convex random function $Q$ is tight for the average $\E{Q}$.
+If a random cut is tight at $x_0$ for $Q$,
+then its average is tight for the expected function $\E{Q}$,
 
-$$ \E{Q(x)} \ge \E{Q(x_0)} + \inner<\E{\Lambda}, x - x_0>.$$
+$$ \E{Q}(x) \ge \E{Q}(x_0) + \inner<\E{\Lambda}, x - x_0>.$$
 :::
 
-:::Missing
-Average cut + many faded cuts
-:::
+<figure id="figure-average-cuts" class="diagram-container">
+  <caption>
+    Hover the figure below to calculate a cut for each scenario and an average cut.
+  </caption>
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+</figure>
 
 The theorem above is the key for solving two-stage stochastic programs using cuts.
 When the uncertainty has a finite amount of scenarios,
@@ -395,12 +612,12 @@ the best cut we can get is only tight for its convex relaxation (dual function).
 As will see, this makes the story a bit more complicated.
 
 First and foremost, we must modify our random cut inequality
-to take the convexification into account:[^dual-random]
+to take the dualization into account:[^dual-random]
 
 $$ Q(x) \ge \check{Q}(x_0) + \inner<\Lambda, x - x_0>.$$
 
-[^dual-random]: We define the convexification $\check{Q}$ of a random function $Q$
-as its convexification for each scenario: $(\check{Q})^s = \widecheck{(Q^s)}$.
+[^dual-random]: We define the dual $\check{Q}$ of a random function $Q$
+as its dual for each scenario: $(\check{Q})^s = \widecheck{(Q^s)}$.
 This is just a notation to make everything cleaner.
 
 By using the previous section's approach, we decompose $Q(x_0)$ in scenarios
@@ -420,7 +637,7 @@ while the cuts we really want are for the dual of the averages $\widecheck{\E{Q}
 This remark important enough to deserve its own lemma.
 
 :::{.Lemma data-title="Convexification by Averages"}
-The average of convexifications is less than the average's convexification.
+The average of convex relaxations is less than the average's relaxation.
 
 $$ \E{\check{Q}} \le \widecheck{\E{Q}} \le \E{Q}.$$
 :::
@@ -591,7 +808,7 @@ Although the linked formulation could gain from parallelism in the solver,
 there is no room for parallelizing directly in the scenarios.
 The second stage becomes a big opaque block.
 
-Mixing and matching approaches
+Mixing and Matching Approaches
 ------------------------------
 
 Before we close this section,
@@ -611,7 +828,7 @@ once in a while --- when the solution stagnates, for example ---
 calculate a linked cut to improve our overall search space.
 
 Another more sophisticated approach would be to take advantage of a parallel machine
-to calculate linked and decomposed cuts at the same time.
+to calculate linked and decomposed cuts concurrently.
 It will need at least three workers:
 one for the first stage, one for the linked second stage,
 and the others for the scenarios.
@@ -631,9 +848,9 @@ $$
 $$
 
 The variable $t$ represents the expected cost-to-go
-and has the constraint to equal the average of the cost-to-go for each scenario.
+and, for consistency, is constrained to equal the average of the scenariowise cost-to-go.
 Since the second stage decisions do not communicate among themselves,
-the graph for this mixed approach can have separate nodes representing the cut methods.
+the graph for this mixed approach can have separate nodes representing each cut method.
 In the figure, we illustrate an approach that concurrently calculates linked and multicuts.
 
 ```dot
@@ -669,3 +886,25 @@ digraph "Parallel Mixed Approach" {
 Risk-Averse Optimization
 ========================
 
+
+
+
+
+
+
+<script type="module">
+  import * as figures from "./figures.js";
+
+  const convex  = x => Math.max(Math.exp(-x-1.2), x, (0.7*x)**4) - 0.5;
+
+  const cvxs    = [x => 4*(x+1)**4, x => 1*(x-1.5)**2 + 0.5, x => Math.max((x+0.7)**2, 1, (x-1)+2)];
+
+  const cip     = x => Math.min(...cvxs.map(f => f(x)));
+
+  figures.fig_randomFunction("#figure-random-function");
+
+  // figures.figureSwitch("#figure-integer-switch", [cvxs[0], x => Math.max(0, -2*x)], -2, 2);
+
+  // figures.figureOVF("#figure-ovf-convex", convex, -2, 2);
+
+</script>
