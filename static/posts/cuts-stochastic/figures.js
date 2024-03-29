@@ -1,5 +1,7 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 
+const minX = -2, maxX = 2;
+
 /*
  Types
 */
@@ -123,6 +125,7 @@ function updateMarks(selector, pos) {
     .attr("cx", d => d.x)
     .attr("cy", d => d.y)
     .attr("r", 4)
+    .attr("fill", "currentColor")
     .attr("class", "mark");
 }
 
@@ -140,27 +143,6 @@ function plot(elem, fs, scale) {
     );
 }
 
-function plotEpigraph(elem, fs, scale) {
-  fs = Array.isArray(fs) ? fs : [fs]
-  const ymin  = scale.y.domain()[0]
-  const fData = fs.map(f => scale.x.ticks(400).map(x => ({
-    x: x,
-    y: (f === undefined) ? ymin : f(x),
-  })));
-
-  return elem.selectAll(".epigraph")
-    .data(fData)
-    .join("path")
-    .attr("class", "epigraph")
-    .attr("d", d3.area()
-      .x(d => scale.x(d.x))
-      .y0(scale.y.range()[1])  // Top of the plot
-      .y1(d => scale.y(d.y))   // Function curve
-      .curve(d3.curveLinear)
-    );
-
-}
-
 /*
  * Good ol' Math
 */
@@ -173,7 +155,7 @@ function numdiff(f) {
 }
 
 function dualize(f, minX, maxX) {
-  return x => findMax(d3.range(-6, 1.0, 0.1), lambda =>
+  return x => findMax(d3.range(-12, 8.0, 0.1), lambda =>
     d3.min(d3.range(minX, maxX, 0.05), u => f(u) - lambda*(u - x))
   )
 }
@@ -182,65 +164,122 @@ function mean(xs) {
   return xs.reduce((a, b) => a + b, 0) / xs.length;
 }
 
+function meanf(fs) {
+  return x => mean(fs.map(f => f(x)));
+}
+
 
 /*
  * Helpers
 */
 
+class StoFunc extends Array {
+  constructor(fs) {
+    if (Array.isArray(fs)) {
+      super(...fs);
+    } else {
+      super(fs);
+    }
+  }
 
-function cutConvex(f) {
-  const df = numdiff(f);
+  get mean() {
+    return x => mean(this.map(f => f(x)));
+  }
 
-  return x => new Cut(x, f(x), df(x));
+  get linked() {
+    return x => dualize(this.mean, -2, 2)(x).value;
+  }
+
+  get decomp() {
+    return meanf(this.map(f => x => dualize(f, -2, 2)(x).value));
+  }
 }
 
+
+function cutsConvex(fs, x) {
+  function cutConvex(f, x) {
+    const df = numdiff(f);
+
+    return new Cut(x, f(x), df(x));
+  }
+
+  return fs.map(f => cutConvex(f, x));
+}
+
+function cutsLagrangian(fs, x) {
+  function cutLagrangian(f, x) {
+    const dx = dualize(f, minX, maxX)(x);
+
+    return new Cut(x, dx.value, dx.argument);
+  }
+
+  return fs.map(f => cutLagrangian(f, x));
+}
+
+function cutAverage(fs, x) {
+  const cuts = cutsConvex(fs, x);
+  const fx   = mean(cuts.map(c => c.fx));
+  const l    = mean(cuts.map(c => c.dual));
+
+  return [new Cut(x, fx, l)];
+}
+
+function cutDecomposed(fs, x) {
+  const cuts = cutsLagrangian(fs, x);
+  const fx   = mean(cuts.map(c => c.fx));
+  const l    = mean(cuts.map(c => c.dual));
+
+  return [new Cut(x, fx, l)];
+}
 
 /*
   Page figures
 */
 
 class Diagram {
-  constructor(id) {
+  constructor(id, f) {
     this.id    = id;
     this.svg   = d3.select(`${id} svg`);
     this.scale = new Scale(this.svg, [-2, 2], [-0.5, 2]);
+
+    this.f = f;
   }
 
   // Plot a function's graph
-  plot(f, kind) {
+  plot(f, ...classes) {
     const g = this.svg.append("g");
 
-    plot(g, f, this.scale)
-      .classed(kind, true);
+    const p = plot(g, f, this.scale);
+    for (const c of classes) {
+      p.classed(c, true);
+    }
 
     return this;
   }
 
-  samples(fs) {
-    this.fs = fs;
-    const g = this.svg.append("g");
-
-    plot(g, fs, this.scale)
-      .classed("stochastic", true);
-
-    return this;
+  samples() {
+    return this.plot(this.f, "stochastic");
   }
 
   // Add a cut for each sample on hover
-  withCuts(factory) {
+  // factory gets a `StoFunc` and a point and returns an array of cuts for it
+  cuts(fs, factory, ...classes) {
     const g = this.svg.append("g");
-    const fcuts = this.fs.map(f => factory(f));
 
     const placeCut = (x0) => {
-      const cuts = fcuts.map(f => f(x0).toHyperplane(this.scale));
+      const cuts = factory(fs, x0).map(c => c.toHyperplane(this.scale));
 
-      updateHyperplanes(g, cuts)
+      const p = updateHyperplanes(g, cuts)
         .attr("opacity", 0.2);
-      // updateMarks(g, cuts)
-      //   .classed("stochastic", true);
+      const m = updateMarks(g, cuts);
+
+      for (const c of classes) {
+        p.classed(c, true);
+        m.classed(c, true);
+      }
     };
 
-    this.svg.on("mousemove.cut", e => {
+    this.svg.node().addEventListener("mousemove", e => {
       placeCut(...mouseUnscale(e, this.scale));
     });
 
@@ -272,7 +311,7 @@ class Diagram {
 
 export function fig_randomFunction(id) {
   const g =  x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5) + 0.4;
-  const fs =
+  const fs = new StoFunc(
     [ x => g(x)
     , x => g(x - 0.5)
     , x => g(x + 0.5)
@@ -280,31 +319,49 @@ export function fig_randomFunction(id) {
     , x => g(x + 0.1) - 0.5
     , x => g(x) - 0.3
     , x => g(x) + 0.3
-    ]
+  ]);
 
-  const cvxs = [
+  const cvxs = new StoFunc([
     x => 0.2*(x+0.5)**2,
-    x => 0.2*(x)**2,
     x => 0.4*(x-0.5)**2,
     x => 0.3*(x-0.3)**2,
-  ];
+  ]);
 
-  const cavg = x => mean(cvxs.map(f => f(x)));
+  // const cavg = meanf(cvxs);
 
-  new Diagram("#figure-random-function")
-    .samples(fs);
+  // const W = x => 2*Math.min(Math.abs(x + 1), Math.abs(x - 1));
+  const W    = x => 0.3 + 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5);
+  const Wsto = new StoFunc([-0.5, 0, 0.5].map(z => x => W(x - z)));
 
-  new Diagram("#figure-random-average")
-    .samples(cvxs)
-    .plot(cavg, "deterministic");
+  // Stochastic OVF
+  new Diagram("#figure-random-function", fs)
+    .samples();
 
-  new Diagram("#figure-random-cuts")
-    .samples(cvxs)
-    .withCuts(cutConvex);
+  new Diagram("#figure-random-average", cvxs)
+    .samples()
+    .plot(cvxs.mean, "deterministic");
 
-  new Diagram("#figure-average-cuts")
-    .samples(cvxs)
-    .withCuts(cutConvex)
-    .plot(cavg, "deterministic")
-    .withAverageCut(cavg, cutConvex);
+  new Diagram("#figure-random-cuts", cvxs)
+    .samples()
+    .cuts(cvxs, cutsConvex);
+
+  // Convex SP
+  new Diagram("#figure-average-cuts", cvxs)
+    .samples()
+    .cuts(cvxs, cutsConvex, "stochastic")
+    .plot(cvxs.mean, "deterministic")
+    .cuts(cvxs, cutAverage, "deterministic");
+
+  // Linked
+  new Diagram("#figure-cuts-conv", Wsto)
+    .samples()
+    .cuts(Wsto, cutsLagrangian, "stochastic")
+    .plot(Wsto.mean, "deterministic")
+    .cuts(Wsto, cutDecomposed, "deterministic", "decomposed");
+
+  new Diagram("#figure-econv", Wsto)
+    .samples()
+    .plot(Wsto.mean,   "deterministic")
+    .plot(Wsto.decomp, "deterministic", "decomposed")
+    .plot(Wsto.linked, "deterministic", "linked");
 }

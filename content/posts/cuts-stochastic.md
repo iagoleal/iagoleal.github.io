@@ -51,7 +51,7 @@ svg.diagram {
 .stochastic {
   opacity: 0.4;
   stroke-width: 1pt;
-  transition: 200ms;
+  transition: all 0ms, opacity 200ms;
 }
 
 .stochastic:hover {
@@ -64,6 +64,14 @@ svg.diagram {
   stroke-width: 2pt;
 }
 
+.decomposed {
+  stroke: var(--color-attention);
+}
+
+.linked {
+  stroke:       var(--color-opposite);
+  stroke-width: 2pt;
+}
 
 .epigraph {
   fill: var(--color-crystal, hsl(147 42% 64%));
@@ -113,12 +121,28 @@ $$
 $$
 
 Thanks to our temporal considerations,
-the program above has a particular structure we can exploit.
+the program above has a particular structure we're able to exploit.
 Notice that the present only depends on $x$ while the future depends on both variables.
 
-```tikz
-\path [fill = orange] (0,0) rectangle +(2,4);
-\path [fill = green!40] (2,0) rectangle +(2,2);
+```tikz {tikzlibrary="matrix,shadows"}
+% Block matrix
+\matrix [matrix of nodes,
+         minimum size = 2cm,
+         column sep = 1mm,
+         row    sep = 1mm,
+         left  delimiter = {[},
+         right delimiter = {]},
+         every node/.style = {rectangle, rounded corners = 1mm},
+  ] (m) {
+  |[fill=orange]| & {} \\
+  |[fill=orange]| & |[minimum width = 3cm, fill=green!40]| \\
+};
+
+% Labels
+\node [above = 0.2cm of m-1-1] {$x$};
+\node [above = 0.2cm of m-1-2] {$y$};
+\node [left  = 0.4cm of m-1-1] {present};
+\node [left  = 0.4cm of m-2-1] {future};
 ```
 
 It is, therefore, possible to break it into two interacting parts:
@@ -625,9 +649,10 @@ and calculate the average cut, which is an underapproximation for the expected f
 
 $$ \E{Q}(x) \ge \E{\check{Q}}(x_0) + \inner<\E{\Lambda}, x - x_0>.$$
 
-:::Missing
-Cuts of $\E{\check{Q}}$
-:::
+<figure id="figure-cuts-conv" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+</figure>
 
 Despite being a valid cut, it generally _is not tight_.
 As a matter of fact, it is not even the best possible cut
@@ -653,9 +678,14 @@ However, the convex relaxation $\widecheck{\E{Q}}$ is defined as the _largest_ c
 Therefore, it is everywhere above $\E{\check{Q}}$.
 :::
 
-:::Missing
-Compare EQ and convs
-:::
+<figure id="figure-econv" class="diagram-container">
+  <caption>
+    We illustrate this theorem in the figure below,
+    where you can see the ordering among the functions.
+  </caption>
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  </svg>
+</figure>
 
 Despite being short,
 there is a lot to unpack in the theorem above.[^jensen]
@@ -671,7 +701,7 @@ In fact, in some special situations, the average could even be convex!
   \coordinate (A) at (0,0);
 
   \draw (A) -- ++(2,-2) -- ++(1,1) -- ++(1,-1) -- ++(2,2);
-  \draw[color=blue] ([xshift=1cm]A) -- ++(2,-2) -- ++(1,1) -- ++(1,-1) -- ++(2,2);
+  \draw[color=green!80] ([xshift=1cm]A) -- ++(2,-2) -- ++(1,1) -- ++(1,-1) -- ++(2,2);
 
   \draw ([xshift=8cm]A)++(0.5, 0) -- ++(1.5,-1.5) -- ++(3,0) -- ++ (1.5,1.5);
 
