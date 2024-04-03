@@ -61,7 +61,8 @@ svg.diagram {
 
 .deterministic {
   opacity: 1.0;
-  stroke-width: 2pt;
+  stroke-width: 1pt;
+  /* filter: url("#glow"); */
 }
 
 .decomposed {
@@ -124,7 +125,7 @@ Thanks to our temporal considerations,
 the program above has a particular structure we're able to exploit.
 Notice that the present only depends on $x$ while the future depends on both variables.
 
-```tikz {tikzlibrary="matrix,shadows"}
+```tikz {tikzlibrary="matrix"}
 % Block matrix
 \matrix [matrix of nodes,
          minimum size = 2cm,
@@ -145,13 +146,18 @@ Notice that the present only depends on $x$ while the future depends on both var
 \node [left  = 0.4cm of m-2-1] {future};
 ```
 
-It is, therefore, possible to break it into two interacting parts:
+Whenever the variable dependencies have this particular "L-shape",
+it is possible to break the program into two interacting parts:
+a 
 
-* _First stage_ is deterministic but its total cost depends on the ensuing stage's cost.
-* _Second stage_ is stochastic and its parameters depend on the previous stage's decision.
+* A _first stage_ that is deterministic but whose total cost depends on the ensuing stage's cost;
+* A _second stage_ that is stochastic and whose parameters depend on the previous stage's decision.
 
 ```tikz
-{ [stage/.style = {circle, minimum width = 1.3cm, draw = black}]
+{ [every edge/.style = {{Round Cap}-Kite, draw},
+   every loop/.style = {{Round Cap}-Kite, draw},
+   stage/.style = {circle, minimum width = 1.3cm, draw = black},
+  ]
   \node[stage] (fst)    {present};
   \node[stage] (snd) [right = 3cm of fst]  {future};
 
@@ -409,20 +415,30 @@ which corresponds to how the information propagates between the stages:
 - Solve the first stage and propagate the primal solution $x$ _forwards_ to the second stage;
 - Solve the second stage for each scenario and propagate the average cut _backwards_ to the first stage.
 
-```dot
-digraph "Single Cut" {
-  rankdir=LR;
-  size="8,5";
+```tikz {tikzlibrary="matrix,graphs"}
+{ [opt/.style = {draw=black, circle, minimum size=1cm},
+   clink/.style = {draw=black, circle, thick, inner sep = 0.5mm, minimum size = 0.1mm},
+  ]
 
-  node [shape     = circle
-        style     = "solid,filled"
-        width     = 0.7
-        color     = black
-        fixedsize = shape
-        label     = ""
-        fillcolor = "#fdfdfd"];
+  % First stage
+  \node[opt]   (t1) {};
 
-  1 -> m -> {21, 22, 23, 24};
+  % Cut pool
+  \node[clink] (m) [right = 0.2cm of t1] {};
+
+  % Second Stage
+  \matrix [matrix of nodes,
+           nodes in empty cells,
+           every node/.style = {opt},
+           row sep = 3mm,
+          ] (t2) [right = 1cm of m] {
+      \\  \\  \\  \\
+  };
+
+  % Connectivity
+  \graph {
+    (t1) -- (m) -- {(t2-1-1), (t2-2-1), (t2-3-1), (t2-4-1)}
+  };
 }
 ```
 
@@ -541,24 +557,38 @@ The multicut approach defines a larger optimization problem
 than the one we had for the single cut,
 because it unlinks the cost-to-go for each scenario.
 
-```dot
-digraph "MultiCut" {
-  rankdir=LR;
-  size="8,5";
 
-  node [shape     = circle
-        style     = "solid,filled"
-        width     = 0.7
-        color     = black
-        fixedsize = shape
-        label     = ""
-        fillcolor = "#fdfdfd"];
+```tikz {tikzlibrary="matrix,graphs"}
+{ [opt/.style   = {draw=black, circle, minimum size=1cm},
+   clink/.style = {draw=black, circle, thick, inner sep = 0.5mm, minimum size = 0.1mm},
+  ]
 
-  1 -> {m1, m2, m3, m4};
-  m1 -> 21;
-  m2 -> 22;
-  m3 -> 23;
-  m4 -> 24;
+  % First stage
+  \node[opt]   (t1) {};
+
+  % Second Stage
+  \matrix [matrix of nodes,
+           nodes in empty cells,
+           every node/.style = {opt},
+           row sep = 3mm,
+          ] (t2) [right = 1.2cm of t1] {
+      \\  \\  \\  \\
+  };
+
+  % Connectivity
+  \path (t1) -- (t2-1-1) node[clink, midway] (m1) {}
+        (t1) -- (t2-2-1) node[clink, midway] (m2) {}
+        (t1) -- (t2-3-1) node[clink, midway] (m3) {}
+        (t1) -- (t2-4-1) node[clink, midway] (m4) {};
+
+  \graph {
+    (t1) -- {
+      (m1) -- (t2-1-1),
+      (m2) -- (t2-2-1),
+      (m3) -- (t2-3-1),
+      (m4) -- (t2-4-1),
+    }
+  };
 }
 ```
 
@@ -604,30 +634,43 @@ and a processor responsible for solving the first stage from time to time.
 As soon as a worker produces a cut, it can send it over to the first stage
 to improve its approximation.
 
-```dot
-digraph "Parallel Multicut" {
-  rankdir=LR;
-  size="8,5";
+```tikz {tikzlibrary="matrix,graphs"}
+{ [opt/.style   = {draw=black, circle, minimum size=1cm},
+   clink/.style = {draw=black, circle, thick, inner sep = 0.5mm, minimum size = 0.1mm},
+  ]
 
-  node [shape     = circle
-        style     = "solid,filled"
-        width     = 0.7
-        color     = black
-        fixedsize = shape
-        label     = ""
-        fillcolor = "#fdfdfd"];
+  % First stage
+  \node[opt]   (t1) {};
 
-  1 -> {m1, m2, m3, m4};
-  m1 -> 21;
-  m2 -> 22;
-  m3 -> 23;
-  m4 -> 24;
+  % Second Stage
+  \matrix [matrix of nodes,
+           nodes in empty cells,
+           every node/.style = {opt},
+           row sep = 3mm,
+          ] (t2) [right = 1.2cm of t1] {
+      \\  \\  \\  \\
+  };
+
+  % Connectivity
+  \path (t1) -- (t2-1-1) node[clink, midway] (m1) {}
+        (t1) -- (t2-2-1) node[clink, midway] (m2) {}
+        (t1) -- (t2-3-1) node[clink, midway] (m3) {}
+        (t1) -- (t2-4-1) node[clink, midway] (m4) {};
+
+  \graph {
+    (t1) -- {
+      (m1) -- (t2-1-1),
+      (m2) -- (t2-2-1),
+      (m3) -- (t2-3-1),
+      (m4) -- (t2-4-1),
+    }
+  };
 }
 ```
 
 
-Non-Convexity under Uncertainty {#ncvx}
-=======================================
+A Non-Convex Future {#ncvx}
+===================
 
 It is time to leave the peaceful and colorful land of convexity
 to enter the dark and haunted land of general, not necessarily convex, functions.
@@ -654,12 +697,12 @@ $$ \E{Q}(x) \ge \E{\check{Q}}(x_0) + \inner<\E{\Lambda}, x - x_0>.$$
   </svg>
 </figure>
 
-Despite being a valid cut, it generally _is not tight_.
-As a matter of fact, it is not even the best possible cut
-because by decomposing $Q$, we ended losing information about how the non-convexities interact.
+Despite being a valid cut, it is, in general, _not tight_ --- not even for the dual.
+As a matter of fact, it is not the best possible cut
+because by decomposing $Q$ in scenarios, we ended losing information about how the non-convexities interact.
 The problem is that we end up calculating cuts for the average of duals $\E{\check{Q}}$
 while the cuts we really want are for the dual of the averages $\widecheck{\E{Q}}$.
-This remark important enough to deserve its own lemma.
+This remark is important enough to deserve its own lemma.
 
 :::{.Lemma data-title="Convexification by Averages"}
 The average of convex relaxations is less than the average's relaxation.
@@ -769,7 +812,7 @@ $$
 
 This is the __linked formulation__ for the expected value of an optimal value function.
 Since it is a huge non-convex program, rest assured that it can be slow as hell to solve.
-Nevertheless, one can use this formulation's dual to calculate the tightest cut possible for $\E{Q},
+Nevertheless, one can use this formulation's dual to calculate the tightest cut possible for $\E{Q}$,
 i.e., any standard method for tight cuts will return a multiplier $\lambda$ satisfying[^lagrangian]
 
 $$ \E{Q}(x) \ge \widecheck{\E{Q}}(x_0) + \inner<\lambda, x - x_0>.$$
@@ -780,27 +823,32 @@ $$ \E{Q}(x) \ge \widecheck{\E{Q}}(x_0) + \inner<\lambda, x - x_0>.$$
 We can, therefore, use this cost-to-go formulation
 to build a stochastic programming algorithm.
 In comparison to the previous decomposed formulations,
-in this case we represent the second stage as a single node.
+in this case we represent the second stage as a single node containing all scenarios.
 
-```dot
-digraph "Linked cut" {
-  rankdir=LR;
-  size="8,5";
-  compound=true;
+<!-- Linked Cut -->
+```tikz {tikzlibrary="matrix,graphs"}
+{ [opt/.style = {draw=black, circle, minimum size=1cm},
+   clink/.style = {draw=black, circle, thick, inner sep = 0.5mm, minimum size = 0.1mm},
+  ]
 
-  node [shape     = circle
-        style     = "solid,filled"
-        width     = 0.7
-        color     = black
-        fixedsize = shape
-        label     = ""
-        fillcolor = "#fdfdfd"];
+  % First stage
+  \node[opt]   (t1) {};
 
-  subgraph cluster_2 {
-    21, 22, 23, 24;
-  }
+  % Cut pool
+  \node[clink] (m) [right = 0.2cm of t1] {};
 
-  1 -> m -> 22 [lhead = "cluster_2"];
+  % Second Stage
+  \matrix [matrix of nodes,
+           nodes in empty cells,
+           draw, rectangle,
+           every node/.style = {opt},
+           row sep = 1mm,
+          ] (t2) [right = 1cm of m] {
+      \\  \\  \\  \\
+  };
+
+  % Connectivity
+  \draw (t1) -- (m) -- (t2);
 }
 ```
 
@@ -883,33 +931,52 @@ Since the second stage decisions do not communicate among themselves,
 the graph for this mixed approach can have separate nodes representing each cut method.
 In the figure, we illustrate an approach that concurrently calculates linked and multicuts.
 
-```dot
-digraph "Parallel Mixed Approach" {
-  rankdir=LR;
-  size="8,5";
-  compound=true;
+<!-- Parallel Mixed Approach -->
+```tikz {tikzlibrary="matrix,graphs"}
+{ [opt/.style   = {draw=black, circle, minimum size=1cm},
+   clink/.style = {draw=black, circle, thick, inner sep = 0.5mm, minimum size = 0.1mm},
+  ]
 
-  node [shape     = circle
-        style     = "solid,filled"
-        width     = 0.7
-        color     = black
-        fixedsize = shape
-        label     = ""
-        fillcolor = "#fdfdfd"];
+  % First stage
+  \node[opt]   (t1) {};
+  \node[clink]   (m) [right = 0.2cm of t1] {};
 
-  subgraph cluster_linked {
-    l1, l2, l3, l4;
-  }
+  % Decomposed
+  \matrix [matrix of nodes,
+           nodes in empty cells,
+           every node/.style = {opt},
+           row sep = 3mm,
+          ] (t2) [right = 1.4cm of m] {
+      \\  \\  \\  \\
+  };
 
-  1;
+  % Linked
+  \matrix [matrix of nodes,
+           nodes in empty cells,
+           draw, rectangle,
+           every node/.style = {opt},
+           column sep = 1mm,
+          ] (linked) [below = 1.4cm of t1] {
+      & & & \\
+  };
 
-  subgraph cluster_decomp {
-    style = invisible;
-    d1, d2, d3, d4;
-  }
+  % Connectivity
+  \path (m) -- (t2-1-1) node[clink, midway] (m1) {}
+        (m) -- (t2-2-1) node[clink, midway] (m2) {}
+        (m) -- (t2-3-1) node[clink, midway] (m3) {}
+        (m) -- (t2-4-1) node[clink, midway] (m4) {};
 
-  1 -> {d1, d2, d3, d4};
-  1 -> l2 [lhead = "cluster_linked"];
+  \graph {
+    (t1) -- (m) -- {
+      (m1) -- (t2-1-1),
+      (m2) -- (t2-2-1),
+      (m3) -- (t2-3-1),
+      (m4) -- (t2-4-1),
+    }
+  };
+
+  \node (aux) [below = of m] {};
+  \draw (m.south) -| (aux.center) -| (linked.north);
 }
 ```
 

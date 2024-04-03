@@ -83,15 +83,19 @@ end
 -------------------------
 
 local template_tag = [[
-<figure class="illustration">
-  <object data="%s" type="image/svg+xml">
-    <img src="%s">
-  </object>
-</figure>
+<object data="%s" type="image/svg+xml">
+  Browser lacks SVG support.
+</object>
 ]]
 
-local function format_tag(fname)
-  return template_tag:format(fname, fname)
+local function format_tag(fname, block)
+  local classes = {'class=\"', "illustration", '\"'}
+
+  return pandoc.Figure(
+     pandoc.RawBlock("html", template_tag:format(fname, fname))
+    , {}
+    , block.attr
+    )
 end
 
 -------------------------
@@ -128,7 +132,7 @@ local template_tikz = [[
 \usepackage{%s}
 
 %% Libraries for tikz: tikzlibrary
-\usetikzlibrary{scopes,quotes,positioning,arrows.meta}
+\usetikzlibrary{scopes,quotes,positioning,matrix,calc,arrows.meta}
 \usetikzlibrary{%s}
 
 %% Raw TeX blocks
@@ -189,7 +193,7 @@ illustrators.tikz = {
 -- Actual figure making
 ------------------------------------------
 
-local function make_figure(svg_maker, content, name)
+local function make_figure(svg_maker, content, name, block)
   -- Assumes all outputs are of the form 'build/path/to/page/index.html'
   local page_path = path.make_relative(path.directory(PANDOC_STATE.output_file), "build")
   local hashed    = pandoc.sha1(content) .. ".svg"
@@ -204,7 +208,7 @@ local function make_figure(svg_maker, content, name)
 
   copy(cachefile, buildfile)
 
-  return pandoc.RawBlock("html", format_tag(outname))
+  return format_tag(outname, block) -- pandoc.RawBlock("html", format_tag(outname))
 end
 
 return {
@@ -225,7 +229,7 @@ return {
       for _, illustrator in pairs(illustrators) do
         if illustrator.match(block.classes[1]) then
           local text = illustrator.format(block)
-          return make_figure(illustrator.convert, text, block.attributes.name)
+          return make_figure(illustrator.convert, text, block.attributes.name, block)
         end
       end
     end,
