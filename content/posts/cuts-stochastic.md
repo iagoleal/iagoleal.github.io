@@ -86,6 +86,15 @@ svg.diagram {
 \def\Cuts{\mathcal{C}}
 \def\Qfrak{\mathfrak{Q}}
 
+```{=tex}
+\usetikzlibrary{graphs}
+
+\tikzset{
+  opt/.style   = {draw=black, circle, minimum size=1cm},
+  clink/.style = {draw=black, circle, thick, inner sep = 0.5mm, minimum size = 0.1mm},
+}
+```
+
 Life is full of uncertainties and so are its problems.
 
 
@@ -125,7 +134,7 @@ Thanks to our temporal considerations,
 the program above has a particular structure we're able to exploit.
 Notice that the present only depends on $x$ while the future depends on both variables.
 
-```tikz {tikzlibrary="matrix"}
+```tikz
 % Block matrix
 \matrix [matrix of nodes,
          minimum size = 2cm,
@@ -415,31 +424,27 @@ which corresponds to how the information propagates between the stages:
 - Solve the first stage and propagate the primal solution $x$ _forwards_ to the second stage;
 - Solve the second stage for each scenario and propagate the average cut _backwards_ to the first stage.
 
-```tikz {tikzlibrary="matrix,graphs"}
-{ [opt/.style = {draw=black, circle, minimum size=1cm},
-   clink/.style = {draw=black, circle, thick, inner sep = 0.5mm, minimum size = 0.1mm},
-  ]
 
-  % First stage
-  \node[opt]   (t1) {};
+```tikz {id="figure-tree-singlecut"}
+% First stage
+\node[opt]   (t1) {};
 
-  % Cut pool
-  \node[clink] (m) [right = 0.2cm of t1] {};
+% Cut pool
+\node[clink] (m) [right = 0.2cm of t1] {};
 
-  % Second Stage
-  \matrix [matrix of nodes,
-           nodes in empty cells,
-           every node/.style = {opt},
-           row sep = 3mm,
-          ] (t2) [right = 1cm of m] {
-      \\  \\  \\  \\
-  };
+% Second Stage
+\matrix [matrix of nodes,
+         nodes in empty cells,
+         every node/.style = {opt},
+         row sep = 3mm,
+        ] (t2) [right = 1cm of m] {
+    \\  \\  \\  \\
+};
 
-  % Connectivity
-  \graph {
-    (t1) -- (m) -- {(t2-1-1), (t2-2-1), (t2-3-1), (t2-4-1)}
-  };
-}
+% Connectivity
+\graph {
+  (t1) -- (m) -- {(t2-1-1), (t2-2-1), (t2-3-1), (t2-4-1)}
+};
 ```
 
 We repeat these forwards-backwards steps until the algorithm converges
@@ -491,21 +496,26 @@ Notice on the algorithm above that the second-stage scenarios are independent of
 Since solving optimization problems is no simple task,
 one use this to distribute the work over multiple processors.
 
-```dot
-digraph "Parallel Single Cut" {
-  rankdir=LR;
-  size="8,5";
+```tikz {id="figure-tree-singlecut-parallel"}
+% First stage
+\node[opt]   (t1) {};
 
-  node [shape     = circle
-        style     = "solid,filled"
-        width     = 0.7
-        color     = black
-        fixedsize = shape
-        label     = ""
-        fillcolor = "#fdfdfd"];
+% Cut pool
+\node[clink] (m) [right = 0.2cm of t1] {};
 
-  1 -> m -> {21, 22, 23, 24};
-}
+% Second Stage
+\matrix [matrix of nodes,
+         nodes in empty cells,
+         every node/.style = {opt},
+         row sep = 3mm,
+        ] (t2) [right = 1cm of m] {
+    \\  \\  \\  \\
+};
+
+% Connectivity
+\graph {
+  (t1) -- (m) -- {(t2-1-1), (t2-2-1), (t2-3-1), (t2-4-1)}
+};
 ```
 
 The algorithm is not completely parallel though,
@@ -558,38 +568,33 @@ than the one we had for the single cut,
 because it unlinks the cost-to-go for each scenario.
 
 
-```tikz {tikzlibrary="matrix,graphs"}
-{ [opt/.style   = {draw=black, circle, minimum size=1cm},
-   clink/.style = {draw=black, circle, thick, inner sep = 0.5mm, minimum size = 0.1mm},
-  ]
+```tikz
+% First stage
+\node[opt] (t1) {};
 
-  % First stage
-  \node[opt]   (t1) {};
+% Second Stage
+\matrix [matrix of nodes,
+         nodes in empty cells,
+         every node/.style = {opt},
+         row sep = 3mm,
+        ] (t2) [right = 1.2cm of t1] {
+    \\  \\  \\  \\
+};
 
-  % Second Stage
-  \matrix [matrix of nodes,
-           nodes in empty cells,
-           every node/.style = {opt},
-           row sep = 3mm,
-          ] (t2) [right = 1.2cm of t1] {
-      \\  \\  \\  \\
-  };
+% Connectivity
+\path (t1) -- (t2-1-1) node[clink, midway] (m1) {}
+      (t1) -- (t2-2-1) node[clink, midway] (m2) {}
+      (t1) -- (t2-3-1) node[clink, midway] (m3) {}
+      (t1) -- (t2-4-1) node[clink, midway] (m4) {};
 
-  % Connectivity
-  \path (t1) -- (t2-1-1) node[clink, midway] (m1) {}
-        (t1) -- (t2-2-1) node[clink, midway] (m2) {}
-        (t1) -- (t2-3-1) node[clink, midway] (m3) {}
-        (t1) -- (t2-4-1) node[clink, midway] (m4) {};
-
-  \graph {
-    (t1) -- {
-      (m1) -- (t2-1-1),
-      (m2) -- (t2-2-1),
-      (m3) -- (t2-3-1),
-      (m4) -- (t2-4-1),
-    }
-  };
-}
+\graph {
+  (t1) -- {
+    (m1) -- (t2-1-1),
+    (m2) -- (t2-2-1),
+    (m3) -- (t2-3-1),
+    (m4) -- (t2-4-1),
+  }
+};
 ```
 
 We can use this structure to build a similar algorithm to our previous one.
@@ -634,38 +639,33 @@ and a processor responsible for solving the first stage from time to time.
 As soon as a worker produces a cut, it can send it over to the first stage
 to improve its approximation.
 
-```tikz {tikzlibrary="matrix,graphs"}
-{ [opt/.style   = {draw=black, circle, minimum size=1cm},
-   clink/.style = {draw=black, circle, thick, inner sep = 0.5mm, minimum size = 0.1mm},
-  ]
+```tikz
+% First stage
+\node[opt]   (t1) {};
 
-  % First stage
-  \node[opt]   (t1) {};
+% Second Stage
+\matrix [matrix of nodes,
+         nodes in empty cells,
+         every node/.style = {opt},
+         row sep = 3mm,
+        ] (t2) [right = 1.2cm of t1] {
+    \\  \\  \\  \\
+};
 
-  % Second Stage
-  \matrix [matrix of nodes,
-           nodes in empty cells,
-           every node/.style = {opt},
-           row sep = 3mm,
-          ] (t2) [right = 1.2cm of t1] {
-      \\  \\  \\  \\
-  };
+% Connectivity
+\path (t1) -- (t2-1-1) node[clink, midway] (m1) {}
+      (t1) -- (t2-2-1) node[clink, midway] (m2) {}
+      (t1) -- (t2-3-1) node[clink, midway] (m3) {}
+      (t1) -- (t2-4-1) node[clink, midway] (m4) {};
 
-  % Connectivity
-  \path (t1) -- (t2-1-1) node[clink, midway] (m1) {}
-        (t1) -- (t2-2-1) node[clink, midway] (m2) {}
-        (t1) -- (t2-3-1) node[clink, midway] (m3) {}
-        (t1) -- (t2-4-1) node[clink, midway] (m4) {};
-
-  \graph {
-    (t1) -- {
-      (m1) -- (t2-1-1),
-      (m2) -- (t2-2-1),
-      (m3) -- (t2-3-1),
-      (m4) -- (t2-4-1),
-    }
-  };
-}
+\graph {
+  (t1) -- {
+    (m1) -- (t2-1-1),
+    (m2) -- (t2-2-1),
+    (m3) -- (t2-3-1),
+    (m4) -- (t2-4-1),
+  }
+};
 ```
 
 
@@ -826,30 +826,25 @@ In comparison to the previous decomposed formulations,
 in this case we represent the second stage as a single node containing all scenarios.
 
 <!-- Linked Cut -->
-```tikz {tikzlibrary="matrix,graphs"}
-{ [opt/.style = {draw=black, circle, minimum size=1cm},
-   clink/.style = {draw=black, circle, thick, inner sep = 0.5mm, minimum size = 0.1mm},
-  ]
+```tikz
+% First stage
+\node[opt]   (t1) {};
 
-  % First stage
-  \node[opt]   (t1) {};
+% Cut pool
+\node[clink] (m) [right = 0.2cm of t1] {};
 
-  % Cut pool
-  \node[clink] (m) [right = 0.2cm of t1] {};
+% Second Stage
+\matrix [matrix of nodes,
+         nodes in empty cells,
+         draw, rectangle,
+         every node/.style = {opt},
+         row sep = 1mm,
+        ] (t2) [right = 1cm of m] {
+    \\  \\  \\  \\
+};
 
-  % Second Stage
-  \matrix [matrix of nodes,
-           nodes in empty cells,
-           draw, rectangle,
-           every node/.style = {opt},
-           row sep = 1mm,
-          ] (t2) [right = 1cm of m] {
-      \\  \\  \\  \\
-  };
-
-  % Connectivity
-  \draw (t1) -- (m) -- (t2);
-}
+% Connectivity
+\draw (t1) -- (m) -- (t2);
 ```
 
 From the first stage's point of view,
@@ -932,52 +927,47 @@ the graph for this mixed approach can have separate nodes representing each cut 
 In the figure, we illustrate an approach that concurrently calculates linked and multicuts.
 
 <!-- Parallel Mixed Approach -->
-```tikz {tikzlibrary="matrix,graphs"}
-{ [opt/.style   = {draw=black, circle, minimum size=1cm},
-   clink/.style = {draw=black, circle, thick, inner sep = 0.5mm, minimum size = 0.1mm},
-  ]
+```tikz
+% First stage
+\node[opt]   (t1) {};
+\node[clink]   (m) [right = 0.2cm of t1] {};
 
-  % First stage
-  \node[opt]   (t1) {};
-  \node[clink]   (m) [right = 0.2cm of t1] {};
+% Decomposed
+\matrix [matrix of nodes,
+         nodes in empty cells,
+         every node/.style = {opt},
+         row sep = 3mm,
+        ] (t2) [right = 1.4cm of m] {
+    \\  \\  \\  \\
+};
 
-  % Decomposed
-  \matrix [matrix of nodes,
-           nodes in empty cells,
-           every node/.style = {opt},
-           row sep = 3mm,
-          ] (t2) [right = 1.4cm of m] {
-      \\  \\  \\  \\
-  };
+% Linked
+\matrix [matrix of nodes,
+         nodes in empty cells,
+         draw, rectangle,
+         every node/.style = {opt},
+         column sep = 1mm,
+        ] (linked) [below = 1.4cm of t1] {
+    & & & \\
+};
 
-  % Linked
-  \matrix [matrix of nodes,
-           nodes in empty cells,
-           draw, rectangle,
-           every node/.style = {opt},
-           column sep = 1mm,
-          ] (linked) [below = 1.4cm of t1] {
-      & & & \\
-  };
+% Connectivity
+\path (m) -- (t2-1-1) node[clink, midway] (m1) {}
+      (m) -- (t2-2-1) node[clink, midway] (m2) {}
+      (m) -- (t2-3-1) node[clink, midway] (m3) {}
+      (m) -- (t2-4-1) node[clink, midway] (m4) {};
 
-  % Connectivity
-  \path (m) -- (t2-1-1) node[clink, midway] (m1) {}
-        (m) -- (t2-2-1) node[clink, midway] (m2) {}
-        (m) -- (t2-3-1) node[clink, midway] (m3) {}
-        (m) -- (t2-4-1) node[clink, midway] (m4) {};
+\graph {
+  (t1) -- (m) -- {
+    (m1) -- (t2-1-1),
+    (m2) -- (t2-2-1),
+    (m3) -- (t2-3-1),
+    (m4) -- (t2-4-1),
+  }
+};
 
-  \graph {
-    (t1) -- (m) -- {
-      (m1) -- (t2-1-1),
-      (m2) -- (t2-2-1),
-      (m3) -- (t2-3-1),
-      (m4) -- (t2-4-1),
-    }
-  };
-
-  \node (aux) [below = of m] {};
-  \draw (m.south) -| (aux.center) -| (linked.north);
-}
+\node (aux) [below = of m] {};
+\draw (m.south) -| (aux.center) -| (linked.north);
 ```
 
 Risk-Averse Optimization
