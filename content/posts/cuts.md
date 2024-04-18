@@ -216,8 +216,8 @@ You start with no cut and, as you click, the polyhedral approximation
 improves until the function's graph become recognizable.
 A fun game is to try to do this with the least amount of cuts possible.
 
-<figure class="diagram-container">
-  <svg id="function-epigraph-carving" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+<figure id="function-epigraph-carving" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
   <button id="reset-epigraph-carving" type="button">Clear cuts</button>
 </figure>
@@ -452,8 +452,8 @@ Have fun trying to drag the sets below to a position with no separating hyperpla
 [^hahn-banach]: For the Functional Analysts lurking around: in infinite dimension,
 it is equivalent to the Hahn-Banach Theorem.
 
-<figure class="diagram-container">
-  <svg id="set-separating-hyperplane" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+<figure id="set-separating-hyperplane" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </figure>
 
@@ -465,8 +465,8 @@ It is really similar to a cut, but for a set.
 For example, in the image below, you can choose a separating hyperplane between
 your mouse and the convex set in the middle.
 
-<figure class="diagram-container">
-  <svg id="set-point-hyperplane" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+<figure id="set-point-hyperplane" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </figure>
 
@@ -504,8 +504,8 @@ and we can take this subspace as our hyperplane.
 Notice that this theorem has the equivalent formulation as
 $$\forall x \in X,\, \inner<a,x> \ge \inner<a,x_0>.$$
 
-<figure class="diagram-container">
-  <svg id="set-supporting-hyperplane" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+<figure id="set-supporting-hyperplane" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </figure>
 
@@ -548,8 +548,8 @@ to denote the set of all points _above the graph_.
 
 $$ \epi(f) = \left\{ (x, y) \in \R^{n+1} \mid f(x) \le y \right\}. $$
 
-<figure class="diagram-container">
-  <svg id="function-epigraph" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+<figure id="function-epigraph" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </figure>
 
@@ -564,8 +564,8 @@ A convex function $f$ has a tight cut at any point in its domain.
 Visually this theorem looks like the figure below.
 You can hover it to view the cut for each point.
 
-<figure class="diagram-container">
-  <svg id="function-supporting-cut" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+<figure id="function-supporting-cut" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </figure>
 
@@ -693,8 +693,8 @@ by varying the constant term in
 $$ f(x) \ge \underbrace{b}_\text{this term} + \inner<\lambda, x - x_0>.$$
 
 <!-- TODO -->
-<figure class="diagram-container">
-  <svg id="function-cut-height" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+<figure id="function-cut-height" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
   <input type="range" id="slider-lagrangian-b" min="-1" max="0" step="0.02" value="-0.5" style="width: 100%"/>
   <label for="slider-lagrangian-lambda"> Multiplier <span id="slider-b-value">$b = 0$</span>.</label>
@@ -749,9 +749,9 @@ $$
 $$
 :::
 
-<figure class="diagram-container">
+<figure id="function-lagrangian" class="diagram-container">
   <caption>Below you can view the Lagrangian relaxation for different multipliers $\lambda$.</caption>
-  <svg id="function-lagrangian" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
   <input type="range" id="slider-lagrangian-lambda" min="-5" max="5" step="0.1" value="1" style="width: 100%"/>
   <label for="slider-lagrangian-lambda"> Multiplier: <span id="slider-lambda-value">$\lambda = 1$</span>.</label>
@@ -821,8 +821,8 @@ because they are formed by the dual value $\check{f}(x)$ and its associated mult
 
 [^market-opt]: And consequently all free or commercial solvers in the market.
 
-<figure class="diagram-container">
-  <svg id="function-lagrangian-dual" class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
+<figure id="function-lagrangian-dual" class="diagram-container">
+  <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
 </figure>
 

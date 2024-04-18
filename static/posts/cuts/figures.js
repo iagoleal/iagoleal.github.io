@@ -248,6 +248,10 @@ function dual(f, minX, maxX) {
   return x => dualize(f, minX, maxX)(x).value;
 }
 
+function Lagrangian(f, lambda, minX, maxX) {
+  return x => d3.min(d3.range(minX, maxX, 0.1), u => f(u) - lambda*(u - x))
+}
+
 /*
  * Cut factories
 */
@@ -276,35 +280,34 @@ function cutLagrangian(f, minX, maxX) {
 class Diagram {
   constructor(id, minX, maxX, minY, maxY) {
     this.id    = id;
-    this.svg   = d3.select(id);
+    this.svg   = d3.select(`${id} svg`);
     this.minX  = minX;
     this.maxX  = maxX;
     this.scale = new Scale(this.svg, [minX, maxX], [minY, maxY]);
-
-    this.pool = {cuts: [], hyperplanes: []};
   }
 
 
+  #pool = {cuts: [], hyperplanes: []};
   #cutListeners = [];
 
   #pushCut(cut) {
-    // Update Pool
-    this.pool.cuts.push(cut);
-    this.pool.hyperplanes.push(cut.toHyperplane(this.scale));
+    // Update pool
+    this.#pool.cuts.push(cut);
+    this.#pool.hyperplanes.push(cut.toHyperplane(this.scale));
 
     // Tell everybody about it (simulate reactivity)
-    this.#cutListeners.forEach(l => l(cut));
+    this.#cutListeners.forEach(l => l(this.#pool));
 
     return this;
   }
 
   #resetCuts() {
-    // Update Pool
-    this.pool.cuts        = [];
-    this.pool.hyperplanes = [];
+    // Clean up pool
+    this.#pool.cuts        = [];
+    this.#pool.hyperplanes = [];
 
     // Tell everybody about it (simulate reactivity)
-    this.#cutListeners.forEach(l => l());
+    this.#cutListeners.forEach(l => l(this.#pool));
 
     return this;
   }
@@ -365,10 +368,10 @@ class Diagram {
 
     this.#cutListeners.push(() => {
       // Append the path for the tangent line
-      updateHyperplanes(g, this.pool.hyperplanes)
+      updateHyperplanes(g, this.#pool.hyperplanes)
         .style("opacity", 0.2);
       // Append a dot at the mouse's x position
-      updateMarks(g, this.pool.hyperplanes);
+      updateMarks(g, this.#pool.hyperplanes);
     });
 
     return this;
@@ -378,8 +381,8 @@ class Diagram {
     const g = this.svg.append("g");
 
     const update = () => {
-      plotEpigraph(g, cutApproximation(this.pool.cuts), this.scale);
-      updatePolyhedral(g, this.pool.cuts, this.scale);
+      plotEpigraph(g, cutApproximation(this.#pool.cuts), this.scale);
+      updatePolyhedral(g, this.#pool.cuts, this.scale);
     }
 
     this.#cutListeners.push(update);
@@ -400,7 +403,7 @@ class Diagram {
 
 
 export function figureSetPointHyperplane(id) {
-  const svg = d3.select(id);
+  const svg = d3.select(`${id} svg`);
   const circle = { x: 0, y: 0, r: 100 };
 
   // Our convex set
@@ -428,7 +431,7 @@ export function figureSetPointHyperplane(id) {
 }
 
 export function figureSetSupportingHyperplane(id) {
-  const svg = d3.select(id);
+  const svg = d3.select(`${id} svg`);
   const circle = { x: 0, y: 0, r: 100 };
 
   // Our convex set
@@ -458,7 +461,7 @@ export function figureSetSupportingHyperplane(id) {
 }
 
 export function figureSetSeparatingHyperplane(id) {
-  const svg  = d3.select(id);
+  const svg = d3.select(`${id} svg`);
   const [minX, minY, width, height] = svg.attr("viewBox").split(" ").map(x => +x);
 
   // data for convex bodies
@@ -517,6 +520,64 @@ export function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
     .polyhedral()
     .cuts(cutExactAt(f, df))
     .buttonReset("#reset-epigraph-carving");
+}
+
+export function figureLagrangian(id, f, minX, maxX) {
+  const svg   = d3.select(`${id} svg`);
+  const scale = new Scale(svg, [minX, maxX], [-1.5, 2]);
+
+  const gFunc       = svg.append("g");
+  const gLagrangian = svg.append("g");
+
+  function Lagrangian(f, lambda) {
+    return x => d3.min(d3.range(minX, maxX, 0.1), u => f(u) - lambda*(u-x))
+  }
+
+  function updateLagrangian() {
+    const lambda = +d3.select("#slider-lagrangian-lambda").property("valueAsNumber");
+
+    const sliderLabel = document.getElementById("slider-lambda-value");
+    katex.render(`\\lambda = ${lambda}`, sliderLabel);
+
+    plot(gLagrangian, Lagrangian(f, lambda), scale);
+  }
+
+  // Allow choosing lambda on the slider
+  d3.select("#slider-lagrangian-lambda").on("input", updateLagrangian);
+
+  plotEpigraph(gFunc, f, scale);
+  plot(gFunc, f, scale);
+  updateLagrangian();
+}
+
+export function figureCutHeight(id, f, minX, maxX) {
+  const svg   = d3.select(`${id} svg`);
+  const scale = new Scale(svg, [minX, maxX], [-1.5, 2]);
+
+  const gFunc       = svg.append("g");
+  const gLagrangian = svg.append("g");
+
+  const x_0    = 1.35;
+  const lambda = numdiff(f)(x_0);
+
+  function updateLagrangian() {
+    const intercept = +d3.select("#slider-lagrangian-b").property("valueAsNumber");
+
+    const sliderLabel = document.getElementById("slider-b-value");
+    katex.render(`b = ${intercept}`, sliderLabel);
+
+    const affine = x => intercept + lambda*(x-x_0);
+    plot(gLagrangian, affine(x_0) <= f(x_0) ? affine : [], scale)
+
+    gFunc.selectAll(".epigraph").classed("not-good", affine(x_0) > f(x_0));
+  }
+  // Allow choosing lambda on the slider
+  d3.select("#slider-lagrangian-b").on("input", updateLagrangian);
+
+  plotEpigraph(gFunc, f, scale);
+  plot(gFunc, f, scale);
+
+  updateLagrangian();
 }
 
 
@@ -578,62 +639,4 @@ export function figureFunctionCuts(id, f, df, minX, maxX) {
 
   plot(gFunc, f, scale);
   updateScene(cuts, hyperplanes);
-}
-
-export function figureCutHeight(id, f, minX, maxX) {
-  const svg   = d3.select(id);
-  const scale = new Scale(svg, [minX, maxX], [-1.5, 2]);
-
-  const gFunc       = svg.append("g");
-  const gLagrangian = svg.append("g");
-
-  const x_0    = 1.35;
-  const lambda = numdiff(f)(x_0);
-
-  function updateLagrangian() {
-    const intercept = +d3.select("#slider-lagrangian-b").property("valueAsNumber");
-
-    const sliderLabel = document.getElementById("slider-b-value");
-    katex.render(`b = ${intercept}`, sliderLabel);
-
-    const affine = x => intercept + lambda*(x-x_0);
-    plot(gLagrangian, affine(x_0) <= f(x_0) ? affine : [], scale)
-
-    gFunc.selectAll(".epigraph").classed("not-good", affine(x_0) > f(x_0));
-  }
-  // Allow choosing lambda on the slider
-  d3.select("#slider-lagrangian-b").on("input", updateLagrangian);
-
-  plotEpigraph(gFunc, f, scale);
-  plot(gFunc, f, scale);
-
-  updateLagrangian();
-}
-
-export function figureLagrangian(id, f, minX, maxX) {
-  const svg   = d3.select(id);
-  const scale = new Scale(svg, [minX, maxX], [-1.5, 2]);
-
-  const gFunc       = svg.append("g");
-  const gLagrangian = svg.append("g");
-
-  function Lagrangian(f, lambda) {
-    return x => d3.min(d3.range(minX, maxX, 0.1), u => f(u) - lambda*(u-x))
-  }
-
-  function updateLagrangian() {
-    const lambda = +d3.select("#slider-lagrangian-lambda").property("valueAsNumber");
-
-    const sliderLabel = document.getElementById("slider-lambda-value");
-    katex.render(`\\lambda = ${lambda}`, sliderLabel);
-
-    plot(gLagrangian, Lagrangian(f, lambda), scale);
-  }
-
-  // Allow choosing lambda on the slider
-  d3.select("#slider-lagrangian-lambda").on("input", updateLagrangian);
-
-  plotEpigraph(gFunc, f, scale);
-  plot(gFunc, f, scale);
-  updateLagrangian();
 }
