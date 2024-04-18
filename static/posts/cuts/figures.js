@@ -238,9 +238,166 @@ function numdiff(f) {
   }
 }
 
+function dualize(f, minX, maxX) {
+  return x => findMax(d3.range(-12, 8.0, 0.1), lambda =>
+    d3.min(d3.range(minX, maxX, 0.05), u => f(u) - lambda*(u - x))
+  )
+}
+
+function dual(f, minX, maxX) {
+  return x => dualize(f, minX, maxX)(x).value;
+}
+
+/*
+ * Cut factories
+*/
+
+function cutExact(f, df) {
+  return x => new Cut(x, f(x), df(x));
+}
+
+function cutExactAt(f, df) {
+  return (x, y) => new Cut(x, Math.min(f(x), y), df(x));
+}
+
+function cutLagrangian(f, minX, maxX) {
+  const dual = dualize(f, minX, maxX);
+
+  return x => {
+    const dx = dual(x);
+    return new Cut(x, dx.value, dx.argument);
+  }
+}
+
 /*
   Page figures
 */
+
+class Diagram {
+  constructor(id, minX, maxX, minY, maxY) {
+    this.id    = id;
+    this.svg   = d3.select(id);
+    this.minX  = minX;
+    this.maxX  = maxX;
+    this.scale = new Scale(this.svg, [minX, maxX], [minY, maxY]);
+
+    this.pool = {cuts: [], hyperplanes: []};
+  }
+
+
+  #cutListeners = [];
+
+  #pushCut(cut) {
+    // Update Pool
+    this.pool.cuts.push(cut);
+    this.pool.hyperplanes.push(cut.toHyperplane(this.scale));
+
+    // Tell everybody about it (simulate reactivity)
+    this.#cutListeners.forEach(l => l(cut));
+
+    return this;
+  }
+
+  #resetCuts() {
+    // Update Pool
+    this.pool.cuts        = [];
+    this.pool.hyperplanes = [];
+
+    // Tell everybody about it (simulate reactivity)
+    this.#cutListeners.forEach(l => l());
+
+    return this;
+  }
+
+  // Plot a function's graph
+  plot(f, ...classes) {
+    const g = this.svg.append("g");
+
+    const p = plot(g, f, this.scale);
+    for (const c of classes) {
+      p.classed(c, true);
+    }
+
+    return this;
+  }
+
+  // Plot a function and its epigraph
+  epigraph(f) {
+    const g = this.svg.append("g");
+
+    plotEpigraph(g, f, this.scale);
+    plot(g, f, this.scale);
+
+    return this;
+  }
+
+  // Add a cut on hover
+  cut(factory) {
+    const g = this.svg.append("g");
+
+    const placeCut = (x0) => {
+      const cut = factory(x0).toHyperplane(this.scale);
+
+      updateHyperplanes(g, [cut]);
+      updateMarks(g, [cut]);
+    };
+
+    this.svg.node().addEventListener("mousemove", e => {
+      placeCut(...mouseUnscale(e, this.scale));
+    });
+
+    placeCut(1);
+
+    return this;
+  }
+
+  cuts(factory) {
+    const g = this.svg.append("g");
+
+    const placeCut = (x0, y0) => {
+      if (x0 && y0) {
+        const cut = factory(x0, y0);
+        this.#pushCut(cut);
+      }
+    }
+
+    this.svg.on("click", e => placeCut(...mouseUnscale(e, this.scale)));
+
+    this.#cutListeners.push(() => {
+      // Append the path for the tangent line
+      updateHyperplanes(g, this.pool.hyperplanes)
+        .style("opacity", 0.2);
+      // Append a dot at the mouse's x position
+      updateMarks(g, this.pool.hyperplanes);
+    });
+
+    return this;
+  }
+
+  polyhedral() {
+    const g = this.svg.append("g");
+
+    const update = () => {
+      plotEpigraph(g, cutApproximation(this.pool.cuts), this.scale);
+      updatePolyhedral(g, this.pool.cuts, this.scale);
+    }
+
+    this.#cutListeners.push(update);
+
+    update();
+
+    return this;
+  }
+
+  buttonReset(id) {
+    document.querySelector(id).addEventListener("click", () => {
+      this.#resetCuts();
+    });
+
+    return this;
+  }
+}
+
 
 export function figureSetPointHyperplane(id) {
   const svg = d3.select(id);
@@ -338,42 +495,30 @@ export function figureSetSeparatingHyperplane(id) {
 }
 
 export function figureFunctionEpigraph(id, f, minX, maxX) {
-  const svg   = d3.select(id);
-  const scale = new Scale(svg, [minX, maxX], [-1, 2]);
-
-  const g = svg.append("g");
-
-  plotEpigraph(g, f, scale);
-  plot(g, f, scale);
+  return new Diagram(id, minX, maxX, -1, 2)
+    .epigraph(f);
 }
-
 
 export function figureFunctionSupportingCut(id, f, df, minX, maxX) {
-  const svg   = d3.select(id);
-  const scale = new Scale(svg, [minX, maxX], [0, 5]);
-
-  const gFunc = svg.append("g");
-  const gCuts = svg.append("g");
-
-  function placeCut(x0) {
-    const cut = new Cut(x0, f(x0), df(x0));
-    const hyperplane = cut.toHyperplane(scale);
-
-    // Show where is the tangent line
-    updateHyperplanes(gCuts, [hyperplane]);
-    updateMarks(gCuts, [hyperplane]);
-  }
-
-  // Display cut for mouse x position
-  svg.on("mousemove", function(event) {
-    const [x0] = mouseUnscale(event, scale);
-    placeCut(x0);
-  });
-
-  plotEpigraph(gFunc, f, scale);
-  plot(gFunc, f, scale);
-  placeCut(1);
+  return new Diagram(id, minX, maxX, 0, 5)
+    .epigraph(f)
+    .cut(cutExact(f, df));
 }
+
+export function figureLagrangianDual(id, f, minX, maxX) {
+  return new Diagram(id, minX, maxX, -1.5, 2)
+    .epigraph(f)
+    .plot(dual(f, minX, maxX), "relaxation-dual")
+    .cut(cutLagrangian(f, minX, maxX));
+}
+
+export function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
+  return new Diagram(id, minX, maxX, 0, 5)
+    .polyhedral()
+    .cuts(cutExactAt(f, df))
+    .buttonReset("#reset-epigraph-carving");
+}
+
 
 
 export function figureFunctionCuts(id, f, df, minX, maxX) {
@@ -435,47 +580,6 @@ export function figureFunctionCuts(id, f, df, minX, maxX) {
   updateScene(cuts, hyperplanes);
 }
 
-export function figureFunctionEpigraphCarving(id, f, df, minX, maxX) {
-  const svg   = d3.select(id);
-  const scale = new Scale(svg, [minX, maxX], [0, 5]);
-
-  const planes = svg.append("g");
-  const poly   = svg.append("g");
-  const marks  = svg.append("g");
-
-  let cuts        = [];
-  let hyperplanes = [];
-
-  function updateScene(x0, y0) {
-    if (x0 && y0) {
-      const cut = new Cut(x0, Math.min(f(x0), y0), df(x0));
-      cuts.push(cut);
-      hyperplanes.push(cut.toHyperplane(scale));
-    }
-
-    plotEpigraph(poly, cutApproximation(cuts), scale);
-    updatePolyhedral(poly, cuts, scale);
-    // Append the path for the tangent line
-    updateHyperplanes(planes, hyperplanes)
-      .style("opacity", 0.2);
-    // Append a dot at the mouse's x position
-    updateMarks(marks, hyperplanes);
-  }
-
-  svg.on("click", function(event) {
-    updateScene(...mouseUnscale(event, scale));
-  });
-
-  d3.select("#reset-epigraph-carving").on("click", function(_event) {
-    cuts        = [];
-    hyperplanes = [];
-
-    updateScene()
-  });
-
-  updateScene();
-}
-
 export function figureCutHeight(id, f, minX, maxX) {
   const svg   = d3.select(id);
   const scale = new Scale(svg, [minX, maxX], [-1.5, 2]);
@@ -532,41 +636,4 @@ export function figureLagrangian(id, f, minX, maxX) {
   plotEpigraph(gFunc, f, scale);
   plot(gFunc, f, scale);
   updateLagrangian();
-}
-
-export function figureLagrangianDual(id, f, minX, maxX) {
-  const svg   = d3.select(id);
-  const scale = new Scale(svg, [minX, maxX], [-1.5, 2]);
-
-  const gFunc       = svg.append("g");
-  const gLagrangian = svg.append("g");
-  const gCuts       = svg.append("g");
-
-  function dual(x) {
-    return findMax(d3.range(-12, 8.0, 0.1), lambda =>
-      d3.min(d3.range(minX, maxX, 0.05), u => f(u) - lambda*(u - x))
-    )
-  }
-
-  function placeCut(x0) {
-    const d0  = dual(x0);
-    const cut = new Cut(x0, d0.value, d0.argument);
-    const hyperplane = cut.toHyperplane(scale);
-
-    // Show where is the tangent line
-    updateHyperplanes(gCuts, [hyperplane]);
-    updateMarks(gCuts, [hyperplane]);
-  }
-
-  // Display cut for mouse x position
-  svg.on("mousemove", function(event) {
-    const [x0] = mouseUnscale(event, scale);
-    placeCut(x0);
-  });
-
-  plotEpigraph(gFunc, f, scale);
-  plot(gFunc, f, scale);
-  plot(gLagrangian, x => dual(x).value, scale)
-    .attr("class", "relaxation-dual");
-  placeCut(1.5);
 }
