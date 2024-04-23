@@ -17,8 +17,6 @@ Common Properties
 =================
 
 ```{=tex}
-\usetikzlibrary{graphs}
-
 \tikzset{
   every node/.style = {circle, draw=black, thin, outer sep=1mm, minimum size=2mm},
   every edge/.style = {{Round Cap}-Kite, draw},

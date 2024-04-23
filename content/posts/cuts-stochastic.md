@@ -95,11 +95,19 @@ svg.diagram {
 }
 ```
 
-Life is full of uncertainties and so are its problems.
+Life is full of uncertainties and so are the problems one must face.
+When solving optimization problems with stochastic components,
+it is necessary to adapt your solution methods to prevent an explosion on the model's size.
 
+Let's continue today with this blog series on _cutting planes_
+by taking them as our tool of choice for stochastic optimization.
+Since these problems can get huge pretty easily,
+we focus on the possible ways to represent the cuts during the solve
+and their consequences for parallelization.
 
-By the way, some of the content about [non-convex functions](#ncvx)
+By the way, the content about [non-convex stochastic programs](#ncvx)
 comes directly from my [Master's thesis](/masters/), called _Convexification by Averages_.
+
 
 Optimizing under an Uncertain Future
 ====================================
@@ -134,30 +142,49 @@ Thanks to our temporal considerations,
 the program above has a particular structure we're able to exploit.
 Notice that the present only depends on $x$ while the future depends on both variables.
 
-```tikz
+```tikz {tikzlibrary="fit"}
 % Block matrix
-\matrix [matrix of nodes,
-         minimum size = 2cm,
-         column sep = 1mm,
-         row    sep = 1mm,
-         left  delimiter = {[},
-         right delimiter = {]},
-         every node/.style = {rectangle, rounded corners = 1mm},
+\matrix [
+    matrix of nodes,
+    minimum width  = 0.9cm,
+    minimum height = 0.6cm,
+    column sep = 0.5mm,
+    row    sep = 0.5mm,
+    left  delimiter = {[},
+    right delimiter = {]},
+    column 1/.style = {
+      minimum width  = 2cm,
+    },
+    row 1/.style = {
+      minimum height = 2cm,
+    },
+    row 1 column 1/.style = {
+      minimum size = 2cm,
+    },
   ] (m) {
-  |[fill=orange]| & {} \\
-  |[fill=orange]| & |[minimum width = 3cm, fill=green!40]| \\
+  {} &[0.5mm] {} & {} & {} \\[0.5mm]
+  {} & {} & {} & {} \\
+  {} & {} & {} & {} \\
+  {} & {} & {} & {} \\
 };
+
+{ [rectangle, rounded corners = 1mm, inner sep = 0pt]
+  \node[fill=orange!70, fit=(m-1-1)]          {};
+  \node[fill=orange!70, fit=(m-2-1)(m-4-1)]   {};
+
+  % Scenarios for 2nd stage
+  \node[fill=green!40, fit=(m-2-2) (m-4-4)]   {};
+}
 
 % Labels
 \node [above = 0.2cm of m-1-1] {$x$};
-\node [above = 0.2cm of m-1-2] {$y$};
+\node [above = 0.2cm of m-1-3] {$y$};
 \node [left  = 0.4cm of m-1-1] {present};
-\node [left  = 0.4cm of m-2-1] {future};
+\node [left  = 0.4cm of m-3-1] {future};
 ```
 
 Whenever the variable dependencies have this particular "L-shape",
 it is possible to break the program into two interacting parts:
-a 
 
 * A _first stage_ that is deterministic but whose total cost depends on the ensuing stage's cost;
 * A _second stage_ that is stochastic and whose parameters depend on the previous stage's decision.
@@ -189,17 +216,73 @@ $$
   \end{array}
 $$
 
-There is still one detail to sort out in this formulation.
-Since $Q$ is stochastic, the total cost is also random.
+Also, the stochastic second stage is equivalent
+to a family of deterministic value functions `Q^s`,
+each with its decision variables `y^s`
+and with any kind of interaction the distinct scenarios.
+Thus, besides the L-shape, the future program dependencies break even more
+into a block structure.
+This will be important when we solve stochastic programs in the ensuing sections.
+
+```tikz {tikzlibrary="fit"}
+% Block matrix
+\matrix [
+    matrix of nodes,
+    minimum width  = 0.9cm,
+    minimum height = 0.6cm,
+    column sep = 0.5mm,
+    row    sep = 0.5mm,
+    left  delimiter = {[},
+    right delimiter = {]},
+    column 1/.style = {
+      minimum width  = 2cm,
+    },
+    row 1/.style = {
+      minimum height = 2cm,
+    },
+    row 1 column 1/.style = {
+      minimum size = 2cm,
+    },
+  ] (m) {
+  {} &[0.5mm] {} & {} & {} \\[0.5mm]
+  {} & {} & {} & {} \\
+  {} & {} & {} & {} \\
+  {} & {} & {} & {} \\
+};
+
+{ [rectangle, rounded corners = 1mm, inner sep = 0pt]
+  \node[fill=orange!70, fit=(m-1-1)]          {};
+  \node[fill=orange!70, fit=(m-2-1)(m-4-1)]   {};
+
+  % Scenarios for 2nd stage
+  \node[fill=green!40, fit=(m-2-2)]   {};
+  \node[fill=green!40, fit=(m-3-3)]   {};
+  \node[fill=green!40, fit=(m-4-4)]   {};
+}
+
+% Labels
+\node [above = 0.2cm of m-1-1] {$x$};
+\node [above = 0.2cm of m-1-3] {$y$};
+\node [left  = 0.4cm of m-1-1] {present};
+\node [left  = 0.4cm of m-3-1] {future};
+```
+
+
+There is still one detail to sort out in this formulation:
+since the cost-to-go $Q$ is stochastic, the total cost is also random.
 This is terrible for analysis,
-because we must take a deterministic decision right now.
-Therefore, it is necessary to aggregate the second stage's cost into a number
-to solve the optimization problem.
+because, commonly, one wishes the final decision the model spits out to be bold and deterministic.
+Therefore, to properly solve the optimization problem,
+we need a way to aggregate the second stage's cost into a single number.
 Since [the best constant representing a random variable is its expected value](/posts/shower-thoughts-averages),
 we take the average of all possible future outcomes to represent its cost.[^future-risk-averse]
 
-[^future-risk-averse]: In a following section, we'll study other aggregation possibilities
-that may better represent our risk-aversion towards the future.
+[^future-risk-averse]: This choice of aggregating with the expected value
+  is called a _risk-neutral formulation_ for a stochastic program and is, by far,
+  the simplest and most common formulation you'll find.
+  Nevertheless, it is possible to use a _risk-averse formulation_ by substituting the mean by any [coherent risk measure](https://en.wikipedia.org/wiki/Coherent_risk_measure).
+  Everything we do in this post works the same for both formulations.
+  We're only sticking to the average because it is simpler to understand.
 
 $$
   \begin{array}{rl}
@@ -266,7 +349,7 @@ Taking this view, we say that a random function has some property,
 such as being non-negative, linear, convex, monotone etc.
 whenever it has this property whatever the outcome.
 
-For example, consider $Q(x) = D_{6}x^2$,
+For example, consider $Q(x) = D_{6}\cdot x^2$,
 where $D_6$ corresponds to throwing a 6-sided die.
 It is a convex, non-negative random function
 because no matter the scenario, it has these properties.
@@ -287,7 +370,7 @@ The average $\E{Q}$ of a convex random function $Q$ is also convex.
 
 <figure id="figure-random-average" class="diagram-container">
   <caption>
-    In the figure below you can see a convex random function (faded) and its average (with a bold graph).
+    In the figure below you can see a convex random function (faded) together with its average (bold graph).
   </caption>
   <svg class="diagram" viewBox="-400 -200 800 400" width="100%" height="100%">
   </svg>
@@ -464,7 +547,7 @@ $$ c_1(x) + \E{c_2(y)} \ge  z^\star.$$
 These bounds "sandwich" the true solution and,
 when they're closer than a required tolerance,
 we can consider our approximation good enough.
-The whole procedure is summarized in the code snippet below.
+The code snippet below summarizes this whole procedure.
 
 ```julia
 function solve_single_cut(stage1, stage2; tol = 1e-8)
@@ -817,8 +900,7 @@ i.e., any standard method for tight cuts will return a multiplier $\lambda$ sati
 
 $$ \E{Q}(x) \ge \widecheck{\E{Q}}(x_0) + \inner<\lambda, x - x_0>.$$
 
-[^lagrangian]: If the non-convexities arise from integer variables, you can use, for example, [Lagrangian or Strengthened Benders cuts](/posts/cuts-mip).
-
+[^lagrangian]: For example, when the non-convexities arise from integer variables, you can use [Lagrangian or Strengthened Benders cuts](/posts/cuts-mip).
 
 We can, therefore, use this cost-to-go formulation
 to build a stochastic programming algorithm.
@@ -969,15 +1051,6 @@ In the figure, we illustrate an approach that concurrently calculates linked and
 \node (aux) [below = of m] {};
 \draw (m.south) -| (aux.center) -| (linked.north);
 ```
-
-Risk-Averse Optimization
-========================
-
-
-
-
-
-
 
 <script type="module">
   import * as figures from "./figures.js";
