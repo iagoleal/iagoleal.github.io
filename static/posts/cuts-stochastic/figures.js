@@ -338,6 +338,21 @@ function strokeZap(path, speed, color, reverse = false) {
   return path.animate(kf, len / speed);
 }
 
+function blink(node, time, color) {
+  const style = ({
+    fill:        [color, "var(--color-attention, hsl(188 49% 55%))"],
+    fillOpacity: [1, 0],
+    easing:      "ease-in",
+  });
+
+  return node.animate(style, time).finished;
+}
+
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
 class DiagramExec {
   constructor(id) {
     // Make illustration inline
@@ -365,14 +380,14 @@ class DiagramExec {
     const frame_time = 1400;
     const speed      = 80 / (frame_time / 3);
 
-    const blink = {
-      fill: [cAccent, cAttention],
+    const blink = c => ({
+      fill:        [c, cAttention],
       fillOpacity: [1, 0],
-      easing: "ease-in",
-    };
+      easing:      "ease-in",
+    });
 
     while (true) {
-      await stage1.animate(blink, frame_time).finished;
+      await stage1.animate(blink(cOpposite), frame_time).finished;
 
       await strokeZap(edgesState, speed, cOpposite).finished;
 
@@ -380,37 +395,74 @@ class DiagramExec {
         strokeZap(path, speed, cOpposite).finished
       ));
 
-      await new Promise(r => setTimeout(r, frame_time * 0.3));
+      await sleep(frame_time * 0.3);
 
       for (const [s, node] of stage2s.entries()) {
-        await node.animate(blink, frame_time * 0.5).finished;
+        await node.animate(blink(cAccent), frame_time * 0.5).finished;
         await strokeZap(edgesCut[s], speed, cAccent, true).finished;
 
-        await cpool.animate(blink, frame_time * 0.2).finished;
+        await cpool.animate(blink(cAccent), frame_time * 0.2).finished;
 
-        await new Promise(r => setTimeout(r, frame_time * 0.2));
+        await sleep(frame_time * 0.2);
       }
 
-      await new Promise(r => setTimeout(r, frame_time * 0.3));
+      await sleep(frame_time * 0.3);
     }
   }
 
-  _singleCutTree() {
-    this.svg.select(".stage1 path")
-      .attr("fill", "green")
-      .attr("fill-opacity", 0)
-      .transition()
-        .duration(2500)
-        .on("start", function repeat() {
-          d3.active(this)
-            .attr("fill-opacity", 1)
-            .transition()
-              .attr("fill-opacity", 0)
-            .transition()
-              .on("start", repeat);
-        });
+  async singleCutTreeParallel() {
+    const svg = this.svg.node();
+    const stage1     = svg.querySelector(".stage1 path");
+    const cpool      = svg.querySelector(".cut-pool path");
+    const stage2s    = Array.from(svg.querySelectorAll(".stage2 path"));
+    const edgesCut   = svg.querySelectorAll(".send-cut path");
+    const edgesState = svg.querySelector(".send-state path");
 
-    return this;
+    const cAccent     = "var(--color-accent, hsl(147 42% 64%))";
+    const cAttention  = "var(--color-attention, hsl(188 49% 55%))";
+    const cOpposite   = "var(--color-opposite)";
+    const frame_time = 1400;
+    const speed      = 80 / (frame_time / 3);
+    const ncores = 2;
+
+    // First stage animations
+    const anim1st = async () => {
+      await blink(stage1, frame_time, cOpposite);
+
+      await strokeZap(edgesState, speed, cOpposite).finished;
+
+      await Promise.all(Array.from(edgesCut).map(path =>
+        strokeZap(path, speed, cOpposite).finished
+      ));
+
+      await sleep(frame_time * 0.3);
+    }
+    // Second stage animations
+    const anims2nd = stage2s.map((node, s) => async () => {
+      const minTime = frame_time * 0.5;
+      const maxTime = frame_time;
+      const solveTime = Math.random() * (maxTime - minTime) + minTime;
+
+      await blink(node, solveTime, cAccent);
+      await strokeZap(edgesCut[s], speed, cAccent, true).finished;
+      await blink(cpool, frame_time * 0.2, cAccent);
+
+      await sleep(frame_time * 0.2);
+    });
+
+    while (true) {
+      // First Stage
+      await anim1st();
+      // Second stage
+
+      await Promise.all([0, 1].map(c => {
+        const inUse = anims2nd.slice(c * ncores, Math.min((c + 1) * ncores, stage2s.length));
+
+        return inUse.reduce((prev, cur) => prev.then(cur), Promise.resolve());
+      }));
+
+      await sleep(frame_time * 0.3);
+    }
   }
 }
 
@@ -477,4 +529,5 @@ export function fig_randomFunction(id) {
     .singleCutTree();
 
   new DiagramExec("#figure-tree-singlecut-parallel")
+    .singleCutTreeParallel();
 }

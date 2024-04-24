@@ -88,6 +88,7 @@ svg.diagram {
 
 ```{=tex}
 \usetikzlibrary{graphs,shapes.geometric}
+\usetikzlibrary{fit}
 
 \tikzset{
   opt/.style   = {draw=black, circle, minimum size=1cm},
@@ -616,7 +617,7 @@ one use this to distribute the work over multiple processors.
 % Cut pool
 
 { [svgclass=cut-pool]
-  \node[clink] (m) [right = 0.2cm of t1] {};
+  \node[clink] (m) [right = 0.5cm of t1] {};
 }
 
 % Second Stage
@@ -624,16 +625,36 @@ one use this to distribute the work over multiple processors.
   \matrix [matrix of nodes,
            nodes in empty cells,
            every node/.style = {opt},
-           row sep = 3mm,
-          ] (t2) [right = 1cm of m] {
+           row sep = 4mm,
+          ] (t2) [right = 2cm of m] {
       \\  \\  \\  \\
   };
 }
 
 % Connectivity
-\graph {
-  (t1) -- (m)  -- {(t2-1-1), (t2-2-1), (t2-3-1), (t2-4-1)}
-};
+\draw (t1) -- (m)
+      (m)  -- (t2-1-1)
+      (m)  -- (t2-2-1)
+      (m)  -- (t2-3-1)
+      (m)  -- (t2-4-1);
+
+% Overlays for animations
+{ [svgclass=send-cut]
+  \draw (m) -- (t2-1-1);
+  \draw (m) -- (t2-2-1);
+  \draw (m) -- (t2-3-1);
+  \draw (m) -- (t2-4-1);
+}
+
+{ [svgclass=send-state]
+\draw (t1) -- (m);
+}
+
+% Processors
+{ [opacity = 0.6]
+  \node[draw, dashed, rectangle, fit=(t2-1-1) (t2-2-1)] {};
+  \node[draw, dashed, rectangle, fit=(t2-3-1) (t2-4-1)] {};
+}
 ```
 
 The algorithm is not completely parallel though,
