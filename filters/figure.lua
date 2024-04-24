@@ -89,8 +89,6 @@ local template_tag = [[
 ]]
 
 local function format_tag(fname, block)
-  local classes = {'class=\"', "illustration", '\"'}
-
   return pandoc.Figure(
      pandoc.RawBlock("html", template_tag:format(fname, fname))
     , {}
@@ -161,6 +159,7 @@ illustrators.tikz = {
   format = function(block)
     local pkgs     = block.attributes["usepackage"]  or ""
     local libs     = block.attributes["tikzlibrary"] or ""
+    local gdlibs   = block.attributes["gdlibrary"]   or ""
     local preamble = block.attributes["preamble"]    or ""
     local rawtex   = table.concat(tex_snippets, "\n\n")
 
@@ -197,7 +196,7 @@ local function make_figure(svg_maker, content, name, block)
   -- Assumes all outputs are of the form 'build/path/to/page/index.html'
   local page_path = path.make_relative(path.directory(PANDOC_STATE.output_file), "build")
   local hashed    = pandoc.sha1(content) .. ".svg"
-  local outname   = name and (name .. ".svg") or hashed
+  local outname   = block.identifier ~= "" and (block.identifier .. ".svg") or hashed
   local cachefile = path.join {"cache", page_path, hashed}
   local buildfile = path.join {"build", page_path, outname}
 

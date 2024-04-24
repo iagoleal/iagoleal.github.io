@@ -232,11 +232,41 @@ function cutDecomposed(fs, x) {
   return [new Cut(x, fx, l)];
 }
 
+function svgObjectToInline(svg) {
+  const inner = svg.contentDocument.getElementsByTagName("svg")[0];
+  const parent = svg.parentNode;
+
+  // Hello inline
+  parent.appendChild(inner);
+  // Goodbye external
+  parent.removeChild(svg);
+}
+
+// Based on https://www.visualcinnamon.com/2016/06/glow-filter-d3-visualization/
+function addGlowFilter(svg) {
+  //Container for the gradients
+  const defs = svg.append("defs");
+
+  //Filter for the outside glow
+  const filter = defs.append("filter")
+    .attr("id","glow");
+
+  filter.append("feGaussianBlur")
+    .attr("stdDeviation","3.5")
+    .attr("result","coloredBlur");
+
+  const feMerge = filter.append("feMerge");
+  feMerge.append("feMergeNode")
+    .attr("in","coloredBlur");
+  feMerge.append("feMergeNode")
+    .attr("in","SourceGraphic");
+}
+
 /*
   Page figures
 */
 
-class Diagram {
+class DiagramPlot {
   constructor(id, f) {
     this.id    = id;
     this.svg   = d3.select(`${id} svg`);
@@ -287,23 +317,98 @@ class Diagram {
 
     return this;
   }
+}
 
-  withAverageCut(f, factory) {
-    const g = this.svg.append("g");
 
-    const placeCut = (x0) => {
-      const cuts = factory(f)(x0).toHyperplane(this.scale);
+/* Tree animation */
 
-      updateHyperplanes(g, [cuts])
-        .classed("deterministic", true);
-      updateMarks(g, [cuts]);
+// Make the stroke glow and then collapse to a point
+function strokeZap(path, speed, color, reverse = false) {
+  const len = path.getTotalLength();
+  const sign = reverse ? 1 : -1;
+
+  const kf = {
+    strokeDashoffset: [0, sign * len],
+    strokeDasharray:  [len, len],
+    stroke:           [color, color],
+    strokeWidth:      ["2pt", "2pt"],
+    strokeOpacity:    [0.5, 0.5],
+  };
+
+  return path.animate(kf, len / speed);
+}
+
+class DiagramExec {
+  constructor(id) {
+    // Make illustration inline
+    document.querySelectorAll(`${id} object`)
+      .forEach(svgObjectToInline);
+
+    // Storage
+    this.id    = id;
+    this.svg   = d3.select(`${id} svg`);
+
+    // Alignment
+    this.svg.classed("illustration", true);
+  }
+
+  async singleCutTree() {
+    const stage1     = this.svg.node().querySelector(".stage1 path");
+    const cpool      = this.svg.node().querySelector(".cut-pool path");
+    const stage2s    = this.svg.node().querySelectorAll(".stage2 path");
+    const edgesCut   = this.svg.node().querySelectorAll(".send-cut path");
+    const edgesState = this.svg.node().querySelector(".send-state path");
+
+    const cAccent     = "var(--color-accent, hsl(147 42% 64%))";
+    const cAttention  = "var(--color-attention, hsl(188 49% 55%))";
+    const cOpposite   = "var(--color-opposite)";
+    const frame_time = 1400;
+    const speed      = 80 / (frame_time / 3);
+
+    const blink = {
+      fill: [cAccent, cAttention],
+      fillOpacity: [1, 0],
+      easing: "ease-in",
     };
 
-    this.svg.on("mousemove.cutAvg", e => {
-      placeCut(...mouseUnscale(e, this.scale));
-    });
+    while (true) {
+      await stage1.animate(blink, frame_time).finished;
 
-    placeCut(1);
+      await strokeZap(edgesState, speed, cOpposite).finished;
+
+      await Promise.all(Array.from(edgesCut).map(path =>
+        strokeZap(path, speed, cOpposite).finished
+      ));
+
+      await new Promise(r => setTimeout(r, frame_time * 0.3));
+
+      for (const [s, node] of stage2s.entries()) {
+        await node.animate(blink, frame_time * 0.5).finished;
+        await strokeZap(edgesCut[s], speed, cAccent, true).finished;
+
+        await cpool.animate(blink, frame_time * 0.2).finished;
+
+        await new Promise(r => setTimeout(r, frame_time * 0.2));
+      }
+
+      await new Promise(r => setTimeout(r, frame_time * 0.3));
+    }
+  }
+
+  _singleCutTree() {
+    this.svg.select(".stage1 path")
+      .attr("fill", "green")
+      .attr("fill-opacity", 0)
+      .transition()
+        .duration(2500)
+        .on("start", function repeat() {
+          d3.active(this)
+            .attr("fill-opacity", 1)
+            .transition()
+              .attr("fill-opacity", 0)
+            .transition()
+              .on("start", repeat);
+        });
 
     return this;
   }
@@ -334,34 +439,42 @@ export function fig_randomFunction(id) {
   const Wsto = new StoFunc([-0.5, 0, 0.5].map(z => x => W(x - z)));
 
   // Stochastic OVF
-  new Diagram("#figure-random-function", fs)
-    .samples();
+  new DiagramPlot("#figure-random-function", fs)
+    .plot(fs, "stochastic")
 
-  new Diagram("#figure-random-average", cvxs)
-    .samples()
+  new DiagramPlot("#figure-random-average", cvxs)
+    .plot(cvxs, "stochastic")
     .plot(cvxs.mean, "deterministic");
 
-  new Diagram("#figure-random-cuts", cvxs)
-    .samples()
+  new DiagramPlot("#figure-random-cuts", cvxs)
+    .plot(cvxs, "stochastic")
     .cuts(cvxs, cutsConvex);
 
-  // Convex SP
-  new Diagram("#figure-average-cuts", cvxs)
-    .samples()
-    .cuts(cvxs, cutsConvex, "stochastic")
-    .plot(cvxs.mean, "deterministic")
-    .cuts(cvxs, cutAverage, "deterministic");
+  // // Convex SP
+  // new DiagramPlot("#figure-average-cuts", cvxs)
+  //   .plot(cvxs, "stochastic")
+  //   .cuts(cvxs, cutsConvex, "stochastic")
+  //   .plot(cvxs.mean, "deterministic")
+  //   .cuts(cvxs, cutAverage, "deterministic");
 
-  // Linked
-  new Diagram("#figure-cuts-conv", Wsto)
-    .samples()
-    .cuts(Wsto, cutsLagrangian, "stochastic")
-    .plot(Wsto.mean, "deterministic")
-    .cuts(Wsto, cutDecomposed, "deterministic", "decomposed");
+  // // Linked
+  // new DiagramPlot("#figure-cuts-conv", Wsto)
+  //   .plot(Wsto, "stochastic")
+  //   .cuts(Wsto, cutsLagrangian, "stochastic")
+  //   .plot(Wsto.mean, "deterministic")
+  //   .cuts(Wsto, cutDecomposed, "deterministic", "decomposed");
 
-  new Diagram("#figure-econv", Wsto)
-    .samples()
-    .plot(Wsto.mean,   "deterministic")
-    .plot(Wsto.decomp, "deterministic", "decomposed")
-    .plot(Wsto.linked, "deterministic", "linked");
+  // new DiagramPlot("#figure-econv", Wsto)
+  //   .plot(Wsto, "stochastic")
+  //   .plot(Wsto.mean,   "deterministic")
+  //   .plot(Wsto.decomp, "deterministic", "decomposed")
+  //   .plot(Wsto.linked, "deterministic", "linked");
+
+
+  /* ~*~ Tikz animations ~*~ */
+
+  new DiagramExec("#figure-tree-singlecut")
+    .singleCutTree();
+
+  new DiagramExec("#figure-tree-singlecut-parallel")
 }

@@ -87,11 +87,18 @@ svg.diagram {
 \def\Qfrak{\mathfrak{Q}}
 
 ```{=tex}
-\usetikzlibrary{graphs}
+\usetikzlibrary{graphs,shapes.geometric}
 
 \tikzset{
   opt/.style   = {draw=black, circle, minimum size=1cm},
-  clink/.style = {draw=black, circle, thick, inner sep = 0.5mm, minimum size = 0.1mm},
+  clink/.style = {draw=black, shape=diamond, thick, inner sep = 0.5mm, minimum size = 0.1mm},
+}
+
+\tikzset{
+  svgclass/.style={
+    execute at begin scope={\special{dvisvgm:raw <g class="#1">}},
+    execute at end scope={\special{dvisvgm:raw </g>}},
+  }
 }
 ```
 
@@ -484,7 +491,7 @@ $$
   \end{array}
 $$
 
-This will produce an optimal value $Q^s(x)$, solution $y^s$, and dual $\lambda^s$.
+This produces an optimal value $Q^s(x)$, solution $y^s$, and dual $\lambda^s$.
 The average of those defines a tight cut for $\E{Q}$,
 which we include into $\Cuts$.
 In code, the procedures for calculating a new cut looks like this.
@@ -510,24 +517,45 @@ which corresponds to how the information propagates between the stages:
 
 ```tikz {id="figure-tree-singlecut"}
 % First stage
-\node[opt]   (t1) {};
+{ [svgclass=stage1]
+  \node[opt]   (t1) {};
+}
 
 % Cut pool
-\node[clink] (m) [right = 0.2cm of t1] {};
+
+{ [svgclass=cut-pool]
+  \node[clink] (m) [right = 0.5cm of t1] {};
+}
 
 % Second Stage
-\matrix [matrix of nodes,
-         nodes in empty cells,
-         every node/.style = {opt},
-         row sep = 3mm,
-        ] (t2) [right = 1cm of m] {
-    \\  \\  \\  \\
-};
+{ [svgclass=stage2]
+  \matrix [matrix of nodes,
+           nodes in empty cells,
+           every node/.style = {opt},
+           row sep = 3mm,
+          ] (t2) [right = 2cm of m] {
+      \\  \\  \\  \\
+  };
+}
 
 % Connectivity
-\graph {
-  (t1) -- (m) -- {(t2-1-1), (t2-2-1), (t2-3-1), (t2-4-1)}
-};
+\draw (t1) -- (m)
+      (m)  -- (t2-1-1)
+      (m)  -- (t2-2-1)
+      (m)  -- (t2-3-1)
+      (m)  -- (t2-4-1);
+
+% Overlays for animations
+{ [svgclass=send-cut]
+  \draw (m) -- (t2-1-1);
+  \draw (m) -- (t2-2-1);
+  \draw (m) -- (t2-3-1);
+  \draw (m) -- (t2-4-1);
+}
+
+{ [svgclass=send-state]
+\draw (t1) -- (m);
+}
 ```
 
 We repeat these forwards-backwards steps until the algorithm converges
@@ -581,23 +609,30 @@ one use this to distribute the work over multiple processors.
 
 ```tikz {id="figure-tree-singlecut-parallel"}
 % First stage
-\node[opt]   (t1) {};
+{ [svgclass=stage1]
+  \node[opt]   (t1) {};
+}
 
 % Cut pool
-\node[clink] (m) [right = 0.2cm of t1] {};
+
+{ [svgclass=cut-pool]
+  \node[clink] (m) [right = 0.2cm of t1] {};
+}
 
 % Second Stage
-\matrix [matrix of nodes,
-         nodes in empty cells,
-         every node/.style = {opt},
-         row sep = 3mm,
-        ] (t2) [right = 1cm of m] {
-    \\  \\  \\  \\
-};
+{ [svgclass=stage2]
+  \matrix [matrix of nodes,
+           nodes in empty cells,
+           every node/.style = {opt},
+           row sep = 3mm,
+          ] (t2) [right = 1cm of m] {
+      \\  \\  \\  \\
+  };
+}
 
 % Connectivity
 \graph {
-  (t1) -- (m) -- {(t2-1-1), (t2-2-1), (t2-3-1), (t2-4-1)}
+  (t1) -- (m)  -- {(t2-1-1), (t2-2-1), (t2-3-1), (t2-4-1)}
 };
 ```
 
