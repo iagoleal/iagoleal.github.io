@@ -322,6 +322,10 @@ class DiagramPlot {
 
 /* Tree animation */
 
+function randomR(lo, up) {
+  return Math.random() * (up - lo) + lo;
+}
+
 // Make the stroke glow and then collapse to a point
 function strokeZap(path, speed, color, reverse = false) {
   const len = path.getTotalLength();
@@ -335,7 +339,7 @@ function strokeZap(path, speed, color, reverse = false) {
     strokeOpacity:    [0.5, 0.5],
   };
 
-  return path.animate(kf, len / speed);
+  return path.animate(kf, len / speed).finished;
 }
 
 function blink(node, time, color) {
@@ -389,17 +393,17 @@ class DiagramExec {
     while (true) {
       await stage1.animate(blink(cOpposite), frame_time).finished;
 
-      await strokeZap(edgesState, speed, cOpposite).finished;
+      await strokeZap(edgesState, speed, cOpposite);
 
       await Promise.all(Array.from(edgesCut).map(path =>
-        strokeZap(path, speed, cOpposite).finished
+        strokeZap(path, speed, cOpposite)
       ));
 
       await sleep(frame_time * 0.3);
 
       for (const [s, node] of stage2s.entries()) {
         await node.animate(blink(cAccent), frame_time * 0.5).finished;
-        await strokeZap(edgesCut[s], speed, cAccent, true).finished;
+        await strokeZap(edgesCut[s], speed, cAccent, true);
 
         await cpool.animate(blink(cAccent), frame_time * 0.2).finished;
 
@@ -426,25 +430,23 @@ class DiagramExec {
     const ncores = 2;
 
     // First stage animations
-    const anim1st = async () => {
-      await blink(stage1, frame_time, cOpposite);
+    const anim1st = async (speed, color) => {
+      await blink(stage1, frame_time, color);
 
-      await strokeZap(edgesState, speed, cOpposite).finished;
+      await strokeZap(edgesState, speed, color);
 
       await Promise.all(Array.from(edgesCut).map(path =>
-        strokeZap(path, speed, cOpposite).finished
+        strokeZap(path, speed, color)
       ));
 
       await sleep(frame_time * 0.3);
     }
     // Second stage animations
     const anims2nd = stage2s.map((node, s) => async () => {
-      const minTime = frame_time * 0.5;
-      const maxTime = frame_time;
-      const solveTime = Math.random() * (maxTime - minTime) + minTime;
+      const solveTime = randomR(frame_time * 0.5, frame_time);
 
       await blink(node, solveTime, cAccent);
-      await strokeZap(edgesCut[s], speed, cAccent, true).finished;
+      await strokeZap(edgesCut[s], speed, cAccent, true);
       await blink(cpool, frame_time * 0.2, cAccent);
 
       await sleep(frame_time * 0.2);
@@ -452,10 +454,10 @@ class DiagramExec {
 
     while (true) {
       // First Stage
-      await anim1st();
+      await anim1st(speed, cOpposite);
       // Second stage
 
-      await Promise.all([0, 1].map(c => {
+      await Promise.all([0, 1, 2].map(c => {
         const inUse = anims2nd.slice(c * ncores, Math.min((c + 1) * ncores, stage2s.length));
 
         return inUse.reduce((prev, cur) => prev.then(cur), Promise.resolve());
@@ -464,6 +466,47 @@ class DiagramExec {
       await sleep(frame_time * 0.3);
     }
   }
+
+  async linkedCutTree() {
+    const svg = this.svg.node();
+    const stage1     = svg.querySelector(".stage1 path");
+    const cpool      = svg.querySelector(".cut-pool path");
+    const stage2s    = Array.from(svg.querySelectorAll(".stage2 g path"));
+    const edgeCut    = svg.querySelector(".send-cut path");
+    const edgeState  = svg.querySelector(".send-state path");
+
+    const cAccent     = "var(--color-accent, hsl(147 42% 64%))";
+    const cAttention  = "var(--color-attention, hsl(188 49% 55%))";
+    const cOpposite   = "var(--color-opposite)";
+    const frame_time = 1400;
+    const speed      = 80 / (frame_time / 3);
+    const ncores = 2;
+
+    // First stage animations
+    const anim1st = async (speed, color) => {
+      await blink(stage1, frame_time, color);
+      await strokeZap(edgeState, speed, color);
+      await strokeZap(edgeCut, speed, color);
+
+      await sleep(frame_time * 0.3);
+    }
+
+    while (true) {
+      // First Stage
+      await anim1st(speed, cOpposite);
+      // Second stage
+      const solveTime = randomR(frame_time * .5, frame_time);
+      await Promise.all(stage2s.map(async (node, s) => {
+        await blink(node, solveTime, cAccent);
+      }));
+
+      await strokeZap(edgeCut, speed, cAccent, true);
+      await blink(cpool, frame_time * 0.2, cAccent);
+
+      await sleep(frame_time * 0.3);
+    }
+  }
+
 }
 
 export function fig_randomFunction(id) {
@@ -530,4 +573,7 @@ export function fig_randomFunction(id) {
 
   new DiagramExec("#figure-tree-singlecut-parallel")
     .singleCutTreeParallel();
+
+  new DiagramExec("#figure-tree-linked")
+    .linkedCutTree();
 }

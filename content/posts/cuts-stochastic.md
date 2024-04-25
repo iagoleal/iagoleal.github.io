@@ -101,6 +101,9 @@ svg.diagram {
     execute at end scope={\special{dvisvgm:raw </g>}},
   }
 }
+
+\pgfdeclarelayer{background}
+\pgfsetlayers{background,main}
 ```
 
 Life is full of uncertainties and so are the problems one must face.
@@ -509,8 +512,8 @@ function average_cut(prog, x)
 end
 ```
 
-Until now, our algorithm has two steps,
-which corresponds to how the information propagates between the stages:
+Our algorithm alternates between two steps,
+which correspond to how the information propagates between the stages:
 
 - Solve the first stage and propagate the primal solution $x$ _forwards_ to the second stage;
 - Solve the second stage for each scenario and propagate the average cut _backwards_ to the first stage.
@@ -608,6 +611,8 @@ Notice on the algorithm above that the second-stage scenarios are independent of
 Since solving optimization problems is no simple task,
 one use this to distribute the work over multiple processors.
 
+\def\ncores{4}
+
 ```tikz {id="figure-tree-singlecut-parallel"}
 % First stage
 { [svgclass=stage1]
@@ -615,7 +620,6 @@ one use this to distribute the work over multiple processors.
 }
 
 % Cut pool
-
 { [svgclass=cut-pool]
   \node[clink] (m) [right = 0.5cm of t1] {};
 }
@@ -633,17 +637,14 @@ one use this to distribute the work over multiple processors.
 
 % Connectivity
 \draw (t1) -- (m)
-      (m)  -- (t2-1-1)
-      (m)  -- (t2-2-1)
-      (m)  -- (t2-3-1)
-      (m)  -- (t2-4-1);
+  \foreach \i in {1,...,\ncores} {
+    (m) -- (t2-\i-1)
+  };
 
 % Overlays for animations
 { [svgclass=send-cut]
-  \draw (m) -- (t2-1-1);
-  \draw (m) -- (t2-2-1);
-  \draw (m) -- (t2-3-1);
-  \draw (m) -- (t2-4-1);
+  \foreach \i in {1,...,\ncores}
+    \draw (m) -- (t2-\i-1);
 }
 
 { [svgclass=send-state]
@@ -651,10 +652,10 @@ one use this to distribute the work over multiple processors.
 }
 
 % Processors
-{ [opacity = 0.6]
-  \node[draw, dashed, rectangle, fit=(t2-1-1) (t2-2-1)] {};
-  \node[draw, dashed, rectangle, fit=(t2-3-1) (t2-4-1)] {};
-}
+\pgfonlayer{background}
+    \node[draw, dotted, rectangle, rounded corners, opacity=0.8, fit=(t2-1-1) (t2-2-1)] {};
+    \node[draw, dotted, rectangle, rounded corners, opacity=0.8, fit=(t2-3-1) (t2-4-1)] {};
+\endpgfonlayer
 ```
 
 The algorithm is not completely parallel though,
@@ -707,18 +708,22 @@ than the one we had for the single cut,
 because it unlinks the cost-to-go for each scenario.
 
 
-```tikz
+```tikz {id="figure-tree-multicut"}
 % First stage
-\node[opt] (t1) {};
+{ [svgclass=stage1]
+  \node[opt]   (t1) {};
+}
 
 % Second Stage
-\matrix [matrix of nodes,
-         nodes in empty cells,
-         every node/.style = {opt},
-         row sep = 3mm,
-        ] (t2) [right = 1.2cm of t1] {
-    \\  \\  \\  \\
-};
+{ [svgclass=stage2]
+  \matrix [matrix of nodes,
+           nodes in empty cells,
+           every node/.style = {opt},
+           row sep = 3mm,
+          ] (t2) [right = 2.5cm of t1] {
+      \\  \\  \\  \\
+  };
+}
 
 % Connectivity
 \path (t1) -- (t2-1-1) node[clink, midway] (m1) {}
@@ -964,25 +969,38 @@ In comparison to the previous decomposed formulations,
 in this case we represent the second stage as a single node containing all scenarios.
 
 <!-- Linked Cut -->
-```tikz
+```tikz {id="figure-tree-linked"}
 % First stage
-\node[opt]   (t1) {};
+{ [svgclass=stage1]
+  \node[opt]   (t1) {};
+}
 
 % Cut pool
-\node[clink] (m) [right = 0.2cm of t1] {};
+{ [svgclass=cut-pool]
+  \node[clink] (m) [right = 0.5cm of t1] {};
+}
 
 % Second Stage
-\matrix [matrix of nodes,
-         nodes in empty cells,
-         draw, rectangle,
-         every node/.style = {opt},
-         row sep = 1mm,
-        ] (t2) [right = 1cm of m] {
-    \\  \\  \\  \\
-};
+{ [svgclass=stage2]
+  \matrix [matrix of nodes,
+           nodes in empty cells,
+           draw, rectangle, rounded corners,
+           every node/.style = {opt},
+           row sep = 1mm,
+          ] (t2) [right = 2cm of m] {
+      \\  \\  \\  \\
+  };
+}
 
 % Connectivity
 \draw (t1) -- (m) -- (t2);
+
+{ [svgclass=send-state]
+  \draw (t1) -- (m);
+}
+{ [svgclass=send-cut]
+  \draw (m) -- (t2);
+}
 ```
 
 From the first stage's point of view,
