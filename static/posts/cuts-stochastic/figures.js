@@ -343,8 +343,9 @@ function strokeZap(path, speed, color, reverse = false) {
 }
 
 function blink(node, time, color) {
+  const cAttention = "var(--color-attention, hsl(188 49% 55%))";
   const style = ({
-    fill:        [color, "var(--color-attention, hsl(188 49% 55%))"],
+    fill:        [color, cAttention],
     fillOpacity: [1, 0],
     easing:      "ease-in",
   });
@@ -372,40 +373,39 @@ class DiagramExec {
   }
 
   async singleCutTree() {
-    const stage1     = this.svg.node().querySelector(".stage1 path");
-    const cpool      = this.svg.node().querySelector(".cut-pool path");
-    const stage2s    = this.svg.node().querySelectorAll(".stage2 path");
-    const edgesCut   = this.svg.node().querySelectorAll(".send-cut path");
-    const edgesState = this.svg.node().querySelector(".send-state path");
+    const svg = this.svg.node();
+    const stage1     = svg.querySelector(".stage1 path");
+    const cpool      = svg.querySelector(".cut-pool path");
+    const stage2s    = svg.querySelectorAll(".stage2 path");
+    const edgesCut   = svg.querySelectorAll(".send-cut path");
+    const edgesState = svg.querySelector(".send-state path");
 
-    const cAccent     = "var(--color-accent, hsl(147 42% 64%))";
-    const cAttention  = "var(--color-attention, hsl(188 49% 55%))";
-    const cOpposite   = "var(--color-opposite)";
+    const cAccent    = "var(--color-accent, hsl(147 42% 64%))";
+    const cOpposite  = "var(--color-opposite)";
     const frame_time = 1400;
     const speed      = 80 / (frame_time / 3);
 
-    const blink = c => ({
-      fill:        [c, cAttention],
-      fillOpacity: [1, 0],
-      easing:      "ease-in",
-    });
+    // First stage animations
+    const anim1st = async (speed, color) => {
+      await blink(stage1, frame_time, color);
 
-    while (true) {
-      await stage1.animate(blink(cOpposite), frame_time).finished;
-
-      await strokeZap(edgesState, speed, cOpposite);
+      await strokeZap(edgesState, speed, color);
 
       await Promise.all(Array.from(edgesCut).map(path =>
-        strokeZap(path, speed, cOpposite)
+        strokeZap(path, speed, color)
       ));
 
       await sleep(frame_time * 0.3);
+    }
+
+    while (true) {
+      await anim1st(speed, cOpposite);
 
       for (const [s, node] of stage2s.entries()) {
-        await node.animate(blink(cAccent), frame_time * 0.5).finished;
+        await blink(node, frame_time * 0.5, cAccent);
         await strokeZap(edgesCut[s], speed, cAccent, true);
 
-        await cpool.animate(blink(cAccent), frame_time * 0.2).finished;
+        await blink(cpool, frame_time * 0.2, cAccent);
 
         await sleep(frame_time * 0.2);
       }
@@ -467,6 +467,108 @@ class DiagramExec {
     }
   }
 
+  async multiCutTree() {
+    const svg = this.svg.node();
+    const stage1     = svg.querySelector(".stage1 path");
+    const cpool      = svg.querySelectorAll(".cut-pool path");
+    const stage2s    = svg.querySelectorAll(".stage2 path");
+    const edgesCut   = svg.querySelectorAll(".send-cut path");
+    const edgesState = svg.querySelectorAll(".send-state path");
+
+    const cAccent    = "var(--color-accent, hsl(147 42% 64%))";
+    const cOpposite  = "var(--color-opposite)";
+    const frame_time = 1400;
+    const speed      = 80 / (frame_time / 3);
+
+
+    // First stage animations
+    const anim1st = async (speed, color) => {
+      await blink(stage1, frame_time, color);
+
+      await Promise.all(Array.from(edgesState).map(path =>
+        strokeZap(path, speed, color)
+      ));
+
+      await Promise.all(Array.from(edgesCut).map(path =>
+        strokeZap(path, speed, color)
+      ));
+
+      await sleep(frame_time * 0.3);
+    }
+
+    while (true) {
+      await anim1st(speed, cOpposite);
+
+      for (const [s, node] of stage2s.entries()) {
+        await blink(node, frame_time * 0.5, cAccent);
+        await strokeZap(edgesCut[s], speed, cAccent, true);
+
+        await blink(cpool[s], frame_time * 0.2, cAccent);
+
+        await sleep(frame_time * 0.2);
+      }
+
+      await sleep(frame_time * 0.3);
+    }
+  }
+
+  async multiCutTreeParallel() {
+    const svg = this.svg.node();
+    const stage1     = svg.querySelector(".stage1 path");
+    const cpool      = svg.querySelectorAll(".cut-pool path");
+    const stage2s    = Array.from(svg.querySelectorAll(".stage2 path"));
+    const edgesCut   = Array.from(svg.querySelectorAll(".send-cut path"));
+    const edgesState = Array.from(svg.querySelectorAll(".send-state path"));
+
+    const cAccent    = "var(--color-accent, hsl(147 42% 64%))";
+    const cOpposite  = "var(--color-opposite)";
+    const frame_time = 2000;
+    const speed      = 80 / (frame_time / 3);
+    const ncores = 2;
+
+
+    // First stage animations
+    const anim1st = async (speed, color) => {
+      await blink(stage1, frame_time, color);
+
+      await Promise.all(edgesState.map(path =>
+        strokeZap(path, speed, color)
+      ));
+
+      await Promise.all(edgesCut.map(path =>
+        strokeZap(path, speed, color)
+      ));
+
+      await sleep(frame_time * 0.3);
+    }
+    // Second stage animations
+    const anims2nd = stage2s.map((node, s) => async () => {
+      const solveTime = randomR(frame_time * 0.5, frame_time);
+
+      await blink(node, solveTime, cAccent);
+      await strokeZap(edgesCut[s], speed, cAccent, true);
+      await blink(cpool[s], frame_time * 0.2, cAccent);
+
+      await sleep(frame_time * 0.2);
+    });
+
+    (async () =>{
+      while (true)
+        await anim1st(speed, cOpposite);
+    })();
+
+    for (let c = 0; c < ncores; c++) {
+      const inUse = anims2nd.slice(c * ncores, Math.min((c + 1) * ncores, stage2s.length));
+
+      (async () => {
+        while (true) {
+            await inUse.reduce((prev, cur) => prev.then(cur), Promise.resolve());
+          }
+        }
+      )();
+    }
+  }
+
   async linkedCutTree() {
     const svg = this.svg.node();
     const stage1     = svg.querySelector(".stage1 path");
@@ -476,7 +578,6 @@ class DiagramExec {
     const edgeState  = svg.querySelector(".send-state path");
 
     const cAccent     = "var(--color-accent, hsl(147 42% 64%))";
-    const cAttention  = "var(--color-attention, hsl(188 49% 55%))";
     const cOpposite   = "var(--color-opposite)";
     const frame_time = 1400;
     const speed      = 80 / (frame_time / 3);
@@ -490,6 +591,7 @@ class DiagramExec {
 
       await sleep(frame_time * 0.3);
     }
+    // Second stage animations
 
     while (true) {
       // First Stage
@@ -573,6 +675,12 @@ export function fig_randomFunction(id) {
 
   new DiagramExec("#figure-tree-singlecut-parallel")
     .singleCutTreeParallel();
+
+  new DiagramExec("#figure-tree-multicut")
+    .multiCutTree();
+
+  new DiagramExec("#figure-tree-multicut-parallel")
+    .multiCutTreeParallel();
 
   new DiagramExec("#figure-tree-linked")
     .linkedCutTree();

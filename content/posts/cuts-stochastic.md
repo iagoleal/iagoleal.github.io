@@ -536,7 +536,7 @@ which correspond to how the information propagates between the stages:
   \matrix [matrix of nodes,
            nodes in empty cells,
            every node/.style = {opt},
-           row sep = 3mm,
+           row sep = 4mm,
           ] (t2) [right = 2cm of m] {
       \\  \\  \\  \\
   };
@@ -719,18 +719,20 @@ because it unlinks the cost-to-go for each scenario.
   \matrix [matrix of nodes,
            nodes in empty cells,
            every node/.style = {opt},
-           row sep = 3mm,
+           row sep = 4mm,
           ] (t2) [right = 2.5cm of t1] {
       \\  \\  \\  \\
   };
 }
 
-% Connectivity
-\path (t1) -- (t2-1-1) node[clink, midway] (m1) {}
-      (t1) -- (t2-2-1) node[clink, midway] (m2) {}
-      (t1) -- (t2-3-1) node[clink, midway] (m3) {}
-      (t1) -- (t2-4-1) node[clink, midway] (m4) {};
+{ [svgclass=cut-pool]
+  \path (t1) -- (t2-1-1) node[clink, midway] (m1) {}
+        (t1) -- (t2-2-1) node[clink, midway] (m2) {}
+        (t1) -- (t2-3-1) node[clink, midway] (m3) {}
+        (t1) -- (t2-4-1) node[clink, midway] (m4) {};
+}
 
+% Connectivity
 \graph {
   (t1) -- {
     (m1) -- (t2-1-1),
@@ -739,6 +741,19 @@ because it unlinks the cost-to-go for each scenario.
     (m4) -- (t2-4-1),
   }
 };
+
+% Overlays for animations
+{ [svgclass=send-state]
+  \foreach \c in {1,...,\ncores} {
+    \draw (t1) -- (m\c);
+  }
+}
+
+{ [svgclass=send-cut]
+  \foreach \c in {1,...,\ncores} {
+    \draw (m\c) -- (t2-\c-1);
+  }
+}
 ```
 
 We can use this structure to build a similar algorithm to our previous one.
@@ -769,39 +784,45 @@ end
 
 ### Flexibility and parallelism
 
-The advantage of representing each scenario separately in the first-stage is the flexibility it gains us.
+An advantage of representing each scenario separately in the first-stage is the flexibility it gains us.
 Suppose, for example, that there is a scenario with a value function that's more complicated than the others.
 In the single cut approach we have to solve all scenarios to obtain an average cut,
 and, therefore, cannot focus on the problematic one.
-With separate cut bags, on the other hand, it is possible to adapt the algorithm
+With separate cut pools, on the other hand, it is possible to adapt the algorithm
 to sample more often the scenarios known to be harder.
 
 This idea is particularly useful when parallelizing the algorithm
-because it doesn't require a synchronicity bottleneck for calculating average cuts.
+because it doesn't generate a synchronicity bottleneck for calculating average cuts.
 We could, for example, assign some scenarios for each worker
 and a processor responsible for solving the first stage from time to time.
 As soon as a worker produces a cut, it can send it over to the first stage
-to improve its approximation.
+to improve its approximation without affecting the other processors.
 
-```tikz
+```tikz {id="figure-tree-multicut-parallel"}
 % First stage
-\node[opt]   (t1) {};
+{ [svgclass=stage1]
+  \node[opt]   (t1) {};
+}
 
 % Second Stage
-\matrix [matrix of nodes,
-         nodes in empty cells,
-         every node/.style = {opt},
-         row sep = 3mm,
-        ] (t2) [right = 1.2cm of t1] {
-    \\  \\  \\  \\
-};
+{ [svgclass=stage2]
+  \matrix [matrix of nodes,
+           nodes in empty cells,
+           every node/.style = {opt},
+           row sep = 4mm,
+          ] (t2) [right = 2.5cm of t1] {
+      \\  \\  \\  \\
+  };
+}
+
+{ [svgclass=cut-pool]
+  \path (t1) -- (t2-1-1) node[clink, midway] (m1) {}
+        (t1) -- (t2-2-1) node[clink, midway] (m2) {}
+        (t1) -- (t2-3-1) node[clink, midway] (m3) {}
+        (t1) -- (t2-4-1) node[clink, midway] (m4) {};
+}
 
 % Connectivity
-\path (t1) -- (t2-1-1) node[clink, midway] (m1) {}
-      (t1) -- (t2-2-1) node[clink, midway] (m2) {}
-      (t1) -- (t2-3-1) node[clink, midway] (m3) {}
-      (t1) -- (t2-4-1) node[clink, midway] (m4) {};
-
 \graph {
   (t1) -- {
     (m1) -- (t2-1-1),
@@ -810,6 +831,25 @@ to improve its approximation.
     (m4) -- (t2-4-1),
   }
 };
+
+% Overlays for animations
+{ [svgclass=send-state]
+  \foreach \c in {1,...,\ncores} {
+    \draw (t1) -- (m\c);
+  }
+}
+
+{ [svgclass=send-cut]
+  \foreach \c in {1,...,\ncores} {
+    \draw (m\c) -- (t2-\c-1);
+  }
+}
+
+% Processors
+\pgfonlayer{background}
+    \node[draw, dotted, rectangle, rounded corners, opacity=0.8, fit=(t2-1-1) (t2-2-1)] {};
+    \node[draw, dotted, rectangle, rounded corners, opacity=0.8, fit=(t2-3-1) (t2-4-1)] {};
+\endpgfonlayer
 ```
 
 
