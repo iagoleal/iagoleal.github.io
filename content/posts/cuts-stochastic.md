@@ -1168,17 +1168,5 @@ In the figure, we illustrate an approach that concurrently calculates linked and
 
 <script type="module">
   import * as figures from "./figures.js";
-
-  const convex  = x => Math.max(Math.exp(-x-1.2), x, (0.7*x)**4) - 0.5;
-
-  const cvxs    = [x => 4*(x+1)**4, x => 1*(x-1.5)**2 + 0.5, x => Math.max((x+0.7)**2, 1, (x-1)+2)];
-
-  const cip     = x => Math.min(...cvxs.map(f => f(x)));
-
   figures.fig_randomFunction("#figure-random-function");
-
-  // figures.figureSwitch("#figure-integer-switch", [cvxs[0], x => Math.max(0, -2*x)], -2, 2);
-
-  // figures.figureOVF("#figure-ovf-convex", convex, -2, 2);
-
 </script>

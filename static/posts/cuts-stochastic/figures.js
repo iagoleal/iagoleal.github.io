@@ -358,6 +358,17 @@ function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
+function asyncForever(p) {
+  (async () =>{
+    while (true)
+      await p();
+  })();
+}
+
+function sequentially(as) {
+  return as.reduce((prev, cur) => prev.then(cur), Promise.resolve());
+}
+
 class DiagramExec {
   constructor(id) {
     // Make illustration inline
@@ -366,250 +377,138 @@ class DiagramExec {
 
     // Storage
     this.id    = id;
-    this.svg   = d3.select(`${id} svg`);
+    this.svg   = document.querySelector(`${id} svg`);
 
     // Alignment
-    this.svg.classed("illustration", true);
+    this.svg.classList.add("illustration");
+
+    this.frame_time = 2000;
+    this.speed      = 80 / (this.frame_time / 3);
+    this.ncores     = 2;
+
+    this.stage1     = this.svg.querySelector(".stage1 path");
+    this.edgesCut   = Array.from(this.svg.querySelectorAll(".send-cut path"));
+    this.edgesState = Array.from(this.svg.querySelectorAll(".send-state path"));
+    this.cpool      = Array.from(this.svg.querySelectorAll(".cut-pool path"));
+    this.stage2s    = Array.from(this.svg.querySelectorAll(".stage2 path"));
+    this.edgesCut   = Array.from(this.svg.querySelectorAll(".send-cut path"));
+  }
+
+
+  get nscen() {
+    return this.stage2s.length;
+  }
+
+  // Animations for first stage solution + send
+  async anim1st() {
+    const cOpposite  = "var(--color-opposite)";
+    const es = this.edgesState;
+    const ec = this.edgesCut;
+
+    await blink(this.stage1, this.frame_time, cOpposite);
+    await Promise.all(es.map(path => strokeZap(path, this.speed, cOpposite)));
+    await Promise.all(ec.map(path => strokeZap(path, this.speed, cOpposite)));
+
+    await sleep(this.frame_time * 0.3);
+  }
+
+  // Animations for 2nd stage node solution + send cut
+  async anim2nd(s, linked) {
+    const solveTime = randomR(this.frame_time * 0.5, this.frame_time);
+    const cAccent   = "var(--color-accent, hsl(147 42% 64%))";
+
+    if (linked) {
+      await Promise.all(this.stage2s.map(node => {
+        blink(node, solveTime, cAccent);
+      }));
+    } else {
+      await blink(this.stage2s[s], solveTime, cAccent);
+    }
+    await strokeZap(this.edgesCut[s], this.speed, cAccent, true);
+    await blink(this.cpool[s], this.frame_time * 0.3, cAccent);
+
+    await sleep(this.frame_time * 0.2);
   }
 
   async singleCutTree() {
-    const svg = this.svg.node();
-    const stage1     = svg.querySelector(".stage1 path");
-    const cpool      = svg.querySelector(".cut-pool path");
-    const stage2s    = svg.querySelectorAll(".stage2 path");
-    const edgesCut   = svg.querySelectorAll(".send-cut path");
-    const edgesState = svg.querySelector(".send-state path");
-
-    const cAccent    = "var(--color-accent, hsl(147 42% 64%))";
-    const cOpposite  = "var(--color-opposite)";
-    const frame_time = 1400;
-    const speed      = 80 / (frame_time / 3);
-
-    // First stage animations
-    const anim1st = async (speed, color) => {
-      await blink(stage1, frame_time, color);
-
-      await strokeZap(edgesState, speed, color);
-
-      await Promise.all(Array.from(edgesCut).map(path =>
-        strokeZap(path, speed, color)
-      ));
-
-      await sleep(frame_time * 0.3);
-    }
+    // Single cut only has one pool, so we repeat it
+    const cpool = this.svg.querySelector(".cut-pool path");
+    this.cpool  = Array(this.stage2s.length).fill(cpool);
 
     while (true) {
-      await anim1st(speed, cOpposite);
+      await this.anim1st();
 
-      for (const [s, node] of stage2s.entries()) {
-        await blink(node, frame_time * 0.5, cAccent);
-        await strokeZap(edgesCut[s], speed, cAccent, true);
-
-        await blink(cpool, frame_time * 0.2, cAccent);
-
-        await sleep(frame_time * 0.2);
+      for (let s = 0; s < this.nscen; s++) {
+        await this.anim2nd(s);
       }
 
-      await sleep(frame_time * 0.3);
+      await sleep(this.frame_time * 0.3);
     }
   }
 
   async singleCutTreeParallel() {
-    const svg = this.svg.node();
-    const stage1     = svg.querySelector(".stage1 path");
-    const cpool      = svg.querySelector(".cut-pool path");
-    const stage2s    = Array.from(svg.querySelectorAll(".stage2 path"));
-    const edgesCut   = svg.querySelectorAll(".send-cut path");
-    const edgesState = svg.querySelector(".send-state path");
+    // Single cut only has one pool, so we repeat it
+    const cpool = this.svg.querySelector(".cut-pool path");
+    this.cpool  = Array(this.stage2s.length).fill(cpool);
 
-    const cAccent     = "var(--color-accent, hsl(147 42% 64%))";
-    const cAttention  = "var(--color-attention, hsl(188 49% 55%))";
-    const cOpposite   = "var(--color-opposite)";
-    const frame_time = 1400;
-    const speed      = 80 / (frame_time / 3);
-    const ncores = 2;
-
-    // First stage animations
-    const anim1st = async (speed, color) => {
-      await blink(stage1, frame_time, color);
-
-      await strokeZap(edgesState, speed, color);
-
-      await Promise.all(Array.from(edgesCut).map(path =>
-        strokeZap(path, speed, color)
-      ));
-
-      await sleep(frame_time * 0.3);
-    }
     // Second stage animations
-    const anims2nd = stage2s.map((node, s) => async () => {
-      const solveTime = randomR(frame_time * 0.5, frame_time);
-
-      await blink(node, solveTime, cAccent);
-      await strokeZap(edgesCut[s], speed, cAccent, true);
-      await blink(cpool, frame_time * 0.2, cAccent);
-
-      await sleep(frame_time * 0.2);
-    });
+    const anims2nd = this.stage2s.map((_, s) => () => this.anim2nd(s));
 
     while (true) {
       // First Stage
-      await anim1st(speed, cOpposite);
+      await this.anim1st();
+
       // Second stage
-
-      await Promise.all([0, 1, 2].map(c => {
-        const inUse = anims2nd.slice(c * ncores, Math.min((c + 1) * ncores, stage2s.length));
-
-        return inUse.reduce((prev, cur) => prev.then(cur), Promise.resolve());
+      await Promise.all([0, 1].map(c => {
+        const inUse = anims2nd.slice(c * this.ncores, Math.min((c + 1) * this.ncores, this.nscen));
+        return sequentially(inUse);
       }));
 
-      await sleep(frame_time * 0.3);
+      await sleep(this.frame_time * 0.3);
     }
   }
 
   async multiCutTree() {
-    const svg = this.svg.node();
-    const stage1     = svg.querySelector(".stage1 path");
-    const cpool      = svg.querySelectorAll(".cut-pool path");
-    const stage2s    = svg.querySelectorAll(".stage2 path");
-    const edgesCut   = svg.querySelectorAll(".send-cut path");
-    const edgesState = svg.querySelectorAll(".send-state path");
-
-    const cAccent    = "var(--color-accent, hsl(147 42% 64%))";
-    const cOpposite  = "var(--color-opposite)";
-    const frame_time = 1400;
-    const speed      = 80 / (frame_time / 3);
-
-
-    // First stage animations
-    const anim1st = async (speed, color) => {
-      await blink(stage1, frame_time, color);
-
-      await Promise.all(Array.from(edgesState).map(path =>
-        strokeZap(path, speed, color)
-      ));
-
-      await Promise.all(Array.from(edgesCut).map(path =>
-        strokeZap(path, speed, color)
-      ));
-
-      await sleep(frame_time * 0.3);
-    }
-
     while (true) {
-      await anim1st(speed, cOpposite);
+      await this.anim1st();
 
-      for (const [s, node] of stage2s.entries()) {
-        await blink(node, frame_time * 0.5, cAccent);
-        await strokeZap(edgesCut[s], speed, cAccent, true);
-
-        await blink(cpool[s], frame_time * 0.2, cAccent);
-
-        await sleep(frame_time * 0.2);
+      for (let s = 0; s < this.nscen; s++) {
+        await this.anim2nd(s);
       }
 
-      await sleep(frame_time * 0.3);
+      await sleep(this.frame_time * 0.3);
     }
   }
 
   async multiCutTreeParallel() {
-    const svg = this.svg.node();
-    const stage1     = svg.querySelector(".stage1 path");
-    const cpool      = svg.querySelectorAll(".cut-pool path");
-    const stage2s    = Array.from(svg.querySelectorAll(".stage2 path"));
-    const edgesCut   = Array.from(svg.querySelectorAll(".send-cut path"));
-    const edgesState = Array.from(svg.querySelectorAll(".send-state path"));
-
-    const cAccent    = "var(--color-accent, hsl(147 42% 64%))";
-    const cOpposite  = "var(--color-opposite)";
-    const frame_time = 2000;
-    const speed      = 80 / (frame_time / 3);
-    const ncores = 2;
-
-
-    // First stage animations
-    const anim1st = async (speed, color) => {
-      await blink(stage1, frame_time, color);
-
-      await Promise.all(edgesState.map(path =>
-        strokeZap(path, speed, color)
-      ));
-
-      await Promise.all(edgesCut.map(path =>
-        strokeZap(path, speed, color)
-      ));
-
-      await sleep(frame_time * 0.3);
-    }
     // Second stage animations
-    const anims2nd = stage2s.map((node, s) => async () => {
-      const solveTime = randomR(frame_time * 0.5, frame_time);
+    const anims2nd = this.stage2s.map((_, s) => () => this.anim2nd(s));
 
-      await blink(node, solveTime, cAccent);
-      await strokeZap(edgesCut[s], speed, cAccent, true);
-      await blink(cpool[s], frame_time * 0.2, cAccent);
+    // Run each processor asynchrously forever.
+    // They do not interact in this case
+    asyncForever(() => this.anim1st());
 
-      await sleep(frame_time * 0.2);
-    });
+    for (let c = 0; c < this.ncores; c++) {
+      const inUse = anims2nd.slice(c * this.ncores, Math.min((c + 1) * this.ncores, this.stage2s.length));
 
-    (async () =>{
-      while (true)
-        await anim1st(speed, cOpposite);
-    })();
-
-    for (let c = 0; c < ncores; c++) {
-      const inUse = anims2nd.slice(c * ncores, Math.min((c + 1) * ncores, stage2s.length));
-
-      (async () => {
-        while (true) {
-            await inUse.reduce((prev, cur) => prev.then(cur), Promise.resolve());
-          }
-        }
-      )();
+      asyncForever(() => sequentially(inUse));
     }
   }
 
   async linkedCutTree() {
-    const svg = this.svg.node();
-    const stage1     = svg.querySelector(".stage1 path");
-    const cpool      = svg.querySelector(".cut-pool path");
-    const stage2s    = Array.from(svg.querySelectorAll(".stage2 g path"));
-    const edgeCut    = svg.querySelector(".send-cut path");
-    const edgeState  = svg.querySelector(".send-state path");
-
-    const cAccent     = "var(--color-accent, hsl(147 42% 64%))";
-    const cOpposite   = "var(--color-opposite)";
-    const frame_time = 1400;
-    const speed      = 80 / (frame_time / 3);
-    const ncores = 2;
-
-    // First stage animations
-    const anim1st = async (speed, color) => {
-      await blink(stage1, frame_time, color);
-      await strokeZap(edgeState, speed, color);
-      await strokeZap(edgeCut, speed, color);
-
-      await sleep(frame_time * 0.3);
-    }
-    // Second stage animations
+    this.stage2s = Array.from(this.svg.querySelectorAll(".stage2 g path"));
 
     while (true) {
-      // First Stage
-      await anim1st(speed, cOpposite);
-      // Second stage
-      const solveTime = randomR(frame_time * .5, frame_time);
-      await Promise.all(stage2s.map(async (node, s) => {
-        await blink(node, solveTime, cAccent);
-      }));
+      await this.anim1st();
 
-      await strokeZap(edgeCut, speed, cAccent, true);
-      await blink(cpool, frame_time * 0.2, cAccent);
-
-      await sleep(frame_time * 0.3);
+      // TODO: Better parameterized this
+      await this.anim2nd(0, true);
     }
   }
 
 }
+
+
 
 export function fig_randomFunction(id) {
   const g =  x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5) + 0.4;
