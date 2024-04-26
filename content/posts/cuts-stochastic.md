@@ -1,8 +1,11 @@
 ---
 title: Cuts for Stochastic Programming
 keywords: [math]
-date: 2024-02-02
+date: 2024-04-25
 description:
+  Cutting planes are a powerful tool for solving stochastic programs.
+  We focus on the possible ways to represent the cuts during algorithms
+  and their consequences for parallelization.
 suppress-bibliography: true
 ---
 
@@ -228,12 +231,12 @@ $$
 $$
 
 Also, the stochastic second stage is equivalent
-to a family of deterministic value functions `Q^s`,
-each with its decision variables `y^s`
-and with any kind of interaction the distinct scenarios.
-Thus, besides the L-shape, the future program dependencies break even more
-into a block structure.
-This will be important when we solve stochastic programs in the ensuing sections.
+to a family of deterministic value functions,
+each with its decision variables `y^s`,
+where the distinct scenarios do not interact.
+Thus, besides its L-shape, the future dependency on `y` also
+breaks into small blocks corresponding to each scenario.
+This will be important in the ensuing sections when we solve stochastic programs.
 
 ```tikz {tikzlibrary="fit"}
 % Block matrix
@@ -337,7 +340,7 @@ $$
 $$
 
 Where the objective $c$ and the feasibility set $Y$ are _random_.
-Leaving aside any concerns about measurability [^finite-sto],
+Leaving any concerns about measurability aside [^finite-sto],
 this defines a random variable for each input $x$
 and is, thus, what one calls a _random function_.
 
@@ -363,8 +366,7 @@ whenever it has this property whatever the outcome.
 For example, consider $Q(x) = D_{6}\cdot x^2$,
 where $D_6$ corresponds to throwing a 6-sided die.
 It is a convex, non-negative random function
-because no matter the scenario, it has these properties.
-
+because these properties are valid no matter the scenario.
 
 To make our notation more functional, we're going to write $\E{Q}$ for the deterministic function
 defined pointwisely as the average of $Q$,
@@ -451,7 +453,8 @@ The idea is to adapt [Kelley's cutting plane algorithm](/posts/cuts#example-kell
 for stochastic programs.
 
 Consider a bag of cuts $\Cuts$ for $\E{Q}$ that starts empty.
-From it, we construct a polyhedral underapproximation as
+From now on, we will call it the algorithms **cut pool**.
+This pool allows the construction a polyhedral underapproximation of $\E{Q}$ as
 
 $$ \Qfrak(x) = \max\limits_{(b, \lambda) \in \Cuts} b + \inner<\lambda, x>.$$
 
@@ -459,8 +462,8 @@ This is called a _single cut approximation_ for $\E{Q}$
 because it is made only of cuts that directly approximate the average
 (But this nomenclature will make no difference until next section,
 so let's go back to how to use our new friend to solve stochastic programs.)
-With this approximation for the future cost,
-we can construct an underapproximation for the total cost as
+With $\Qfrak$ at hand,
+we can construct an underapproximation for the total cost $z^\star$ as
 
 $$
   \begin{array}{rrl}
@@ -495,8 +498,7 @@ $$
   \end{array}
 $$
 
-This produces an optimal value $Q^s(x)$, solution $y^s$, and dual $\lambda^s$.
-The average of those defines a tight cut for $\E{Q}$,
+The expectation of the optimal value and dual variable define a tight cut for $\E{Q}$,
 which we include into $\Cuts$.
 In code, the procedures for calculating a new cut looks like this.
 
@@ -512,12 +514,17 @@ function average_cut(prog, x)
 end
 ```
 
-Our algorithm alternates between two steps,
+To iteratively solve a stochastic program,
+the algorithm alternates between two steps,
 which correspond to how the information propagates between the stages:
 
 - Solve the first stage and propagate the primal solution $x$ _forwards_ to the second stage;
 - Solve the second stage for each scenario and propagate the average cut _backwards_ to the first stage.
 
+Graphically, we visualize this process as the decision tree below.
+The nodes are optimization problems and the edges their communication.
+We represent $\Qfrak$ by a small diamond,
+which is the only thing the first stage's node sees of the future.
 
 ```tikz {id="figure-tree-singlecut"}
 % First stage
@@ -527,8 +534,8 @@ which correspond to how the information propagates between the stages:
 
 % Cut pool
 
-{ [svgclass=cut-pool]
-  \node[clink] (m) [right = 0.5cm of t1] {};
+{ [svgclass=cut-pool, pin distance=1cm]
+  \node[clink] (m) [right = 0.5cm of t1, pin={[pin edge={<-}]100:$\Qfrak$}] {};
 }
 
 % Second Stage
@@ -653,8 +660,8 @@ one use this to distribute the work over multiple processors.
 
 % Processors
 \pgfonlayer{background}
-    \node[draw, dotted, rectangle, rounded corners, opacity=0.8, fit=(t2-1-1) (t2-2-1)] {};
-    \node[draw, dotted, rectangle, rounded corners, opacity=0.8, fit=(t2-3-1) (t2-4-1)] {};
+    \node[draw, dotted, rectangle, rounded corners, opacity=0.8, fit=(t2-1-1) (t2-2-1)] (core1) {};
+    \node[draw, dotted, rectangle, rounded corners, opacity=0.8, fit=(t2-3-1) (t2-4-1)] (core2) {};
 \endpgfonlayer
 ```
 
@@ -853,8 +860,8 @@ to improve its approximation without affecting the other processors.
 ```
 
 
-A Non-Convex Future {#ncvx}
-===================
+When the Future is Non-Convex {#ncvx}
+=============================
 
 It is time to leave the peaceful and colorful land of convexity
 to enter the dark and haunted land of general, not necessarily convex, functions.
@@ -1123,36 +1130,48 @@ the graph for this mixed approach can have separate nodes representing each cut 
 In the figure, we illustrate an approach that concurrently calculates linked and multicuts.
 
 <!-- Parallel Mixed Approach -->
-```tikz
+```tikz {id="figure-tree-mixed"}
 % First stage
-\node[opt]   (t1) {};
-\node[clink]   (m) [right = 0.2cm of t1] {};
+{ [svgclass=stage1]
+  \node[opt]   (t1) {};
+}
+
+% Cut pool
+{ [svgclass=cut-pool-E]
+  \node[clink] (m) [right = 0.5cm of t1] {};
+}
 
 % Decomposed
-\matrix [matrix of nodes,
-         nodes in empty cells,
-         every node/.style = {opt},
-         row sep = 3mm,
-        ] (t2) [right = 1.4cm of m] {
-    \\  \\  \\  \\
-};
+{ [svgclass=stage2-decomposed]
+  \matrix [matrix of nodes,
+           nodes in empty cells,
+           every node/.style = {opt},
+           row sep = 3mm,
+          ] (t2) [right = 1.4cm of m] {
+      \\  \\  \\  \\
+  };
+}
 
 % Linked
-\matrix [matrix of nodes,
-         nodes in empty cells,
-         draw, rectangle,
-         every node/.style = {opt},
-         column sep = 1mm,
-        ] (linked) [below = 1.4cm of t1] {
-    & & & \\
-};
+{ [svgclass=stage2-linked]
+  \matrix [matrix of nodes,
+           nodes in empty cells,
+           draw, rectangle, rounded corners,
+           every node/.style = {opt},
+           column sep = 1mm,
+          ] (linked) [below = 1.4cm of t1] {
+      & & & \\
+  };
+}
+
+{ [svgclass=cut-pool]
+  \path (m) -- (t2-1-1) node[clink, midway] (m1) {}
+        (m) -- (t2-2-1) node[clink, midway] (m2) {}
+        (m) -- (t2-3-1) node[clink, midway] (m3) {}
+        (m) -- (t2-4-1) node[clink, midway] (m4) {};
+}
 
 % Connectivity
-\path (m) -- (t2-1-1) node[clink, midway] (m1) {}
-      (m) -- (t2-2-1) node[clink, midway] (m2) {}
-      (m) -- (t2-3-1) node[clink, midway] (m3) {}
-      (m) -- (t2-4-1) node[clink, midway] (m4) {};
-
 \graph {
   (t1) -- (m) -- {
     (m1) -- (t2-1-1),
@@ -1162,11 +1181,28 @@ In the figure, we illustrate an approach that concurrently calculates linked and
   }
 };
 
-\node (aux) [below = of m] {};
-\draw (m.south) -| (aux.center) -| (linked.north);
+\node (imp) [below = of m] {};
+\draw (m.south) -| (imp.center) -| (linked.north);
+
+{ [svgclass=send-state]
+  \draw (t1) -- (m);
+}
+{ [svgclass=send-cut-linked]
+  \draw (m.south) -| (imp.center) -| (linked.north);
+}
+{ [svgclass=send-mid]
+  \foreach \c in {1,...,\ncores} {
+    \draw (m) -- (m\c);
+  }
+}
+{ [svgclass=send-cut-mcut]
+  \foreach \c in {1,...,\ncores} {
+    \draw (m\c) -- (t2-\c-1);
+  }
+}
 ```
 
 <script type="module">
   import * as figures from "./figures.js";
-  figures.fig_randomFunction("#figure-random-function");
+  figures.main();
 </script>

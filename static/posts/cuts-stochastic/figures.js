@@ -130,7 +130,7 @@ function updateMarks(selector, pos) {
 }
 
 function plot(elem, fs, scale) {
-  fs = Array.isArray(fs) ? fs : [fs]
+  fs = Array.isArray(fs) ? fs : [fs];
   const fData = fs.map(f => scale.x.ticks(400).map(x => ({x: x, y: f(x)})));
 
   return elem.selectAll(".function-graph")
@@ -266,7 +266,7 @@ function addGlowFilter(svg) {
   Page figures
 */
 
-class DiagramPlot {
+class Diagram {
   constructor(id, f) {
     this.id    = id;
     this.svg   = d3.select(`${id} svg`);
@@ -328,21 +328,27 @@ function randomR(lo, up) {
 
 // Make the stroke glow and then collapse to a point
 function strokeZap(path, speed, color, reverse = false) {
-  const len = path.getTotalLength();
   const sign = reverse ? 1 : -1;
+  const nodes = Array.isArray(path) ? path : [path];
 
-  const kf = {
-    strokeDashoffset: [0, sign * len],
-    strokeDasharray:  [len, len],
-    stroke:           [color, color],
-    strokeWidth:      ["2pt", "2pt"],
-    strokeOpacity:    [0.5, 0.5],
-  };
+  return Promise.all(nodes.map(node => {
+    const len = node.getTotalLength();
+    const dur = len / speed;
+    const kf  = {
+      strokeDashoffset: [0, sign * len],
+      strokeDasharray:  [len, len],
+      stroke:           [color, color],
+      strokeWidth:      ["2pt", "2pt"],
+      strokeOpacity:    [0.5, 0.5],
+    };
 
-  return path.animate(kf, len / speed).finished;
+    return node.animate(kf, dur).finished;
+  }));
 }
 
-function blink(node, time, color) {
+
+function blink(path, time, color) {
+  const nodes = Array.isArray(path) ? path : [path];
   const cAttention = "var(--color-attention, hsl(188 49% 55%))";
   const style = ({
     fill:        [color, cAttention],
@@ -350,7 +356,9 @@ function blink(node, time, color) {
     easing:      "ease-in",
   });
 
-  return node.animate(style, time).finished;
+  return Promise.all(nodes.map(node =>
+    node.animate(style, time).finished)
+  );
 }
 
 
@@ -369,7 +377,7 @@ function sequentially(as) {
   return as.reduce((prev, cur) => prev.then(cur), Promise.resolve());
 }
 
-class DiagramExec {
+class CutTree {
   constructor(id) {
     // Make illustration inline
     document.querySelectorAll(`${id} object`)
@@ -387,80 +395,67 @@ class DiagramExec {
     this.ncores     = 2;
 
     this.stage1     = this.svg.querySelector(".stage1 path");
-    this.edgesCut   = Array.from(this.svg.querySelectorAll(".send-cut path"));
-    this.edgesState = Array.from(this.svg.querySelectorAll(".send-state path"));
-    this.cpool      = Array.from(this.svg.querySelectorAll(".cut-pool path"));
     this.stage2s    = Array.from(this.svg.querySelectorAll(".stage2 path"));
+    this.edgesState = Array.from(this.svg.querySelectorAll(".send-state path"));
     this.edgesCut   = Array.from(this.svg.querySelectorAll(".send-cut path"));
-  }
+    this.cpool      = Array.from(this.svg.querySelectorAll(".cut-pool path"));
 
+    this.futures    = this.stage2s.map((_, s) => () => this.animateSecondStage(s));
+  }
 
   get nscen() {
     return this.stage2s.length;
   }
 
   // Animations for first stage solution + send
-  async anim1st() {
+  async animateFirstStage() {
     const cOpposite  = "var(--color-opposite)";
-    const es = this.edgesState;
-    const ec = this.edgesCut;
 
     await blink(this.stage1, this.frame_time, cOpposite);
-    await Promise.all(es.map(path => strokeZap(path, this.speed, cOpposite)));
-    await Promise.all(ec.map(path => strokeZap(path, this.speed, cOpposite)));
+    await strokeZap(this.edgesState, this.speed, cOpposite);
+    await strokeZap(this.edgesCut, this.speed, cOpposite);
 
     await sleep(this.frame_time * 0.3);
   }
 
   // Animations for 2nd stage node solution + send cut
-  async anim2nd(s, linked) {
+  async animateSecondStage(s) {
     const solveTime = randomR(this.frame_time * 0.5, this.frame_time);
     const cAccent   = "var(--color-accent, hsl(147 42% 64%))";
 
-    if (linked) {
-      await Promise.all(this.stage2s.map(node => {
-        blink(node, solveTime, cAccent);
-      }));
-    } else {
-      await blink(this.stage2s[s], solveTime, cAccent);
-    }
+    await blink(this.stage2s[s], solveTime, cAccent);
     await strokeZap(this.edgesCut[s], this.speed, cAccent, true);
     await blink(this.cpool[s], this.frame_time * 0.3, cAccent);
 
     await sleep(this.frame_time * 0.2);
   }
 
-  async singleCutTree() {
+  async singleCut() {
     // Single cut only has one pool, so we repeat it
     const cpool = this.svg.querySelector(".cut-pool path");
-    this.cpool  = Array(this.stage2s.length).fill(cpool);
+    this.cpool  = Array(this.nscen).fill(cpool);
 
     while (true) {
-      await this.anim1st();
+      await this.animateFirstStage();
 
-      for (let s = 0; s < this.nscen; s++) {
-        await this.anim2nd(s);
-      }
+      await sequentially(this.futures);
 
       await sleep(this.frame_time * 0.3);
     }
   }
 
-  async singleCutTreeParallel() {
+  async singleCutParallel() {
     // Single cut only has one pool, so we repeat it
     const cpool = this.svg.querySelector(".cut-pool path");
-    this.cpool  = Array(this.stage2s.length).fill(cpool);
-
-    // Second stage animations
-    const anims2nd = this.stage2s.map((_, s) => () => this.anim2nd(s));
+    this.cpool  = Array(this.nscen).fill(cpool);
 
     while (true) {
       // First Stage
-      await this.anim1st();
+      await this.animateFirstStage();
 
       // Second stage
       await Promise.all([0, 1].map(c => {
-        const inUse = anims2nd.slice(c * this.ncores, Math.min((c + 1) * this.ncores, this.nscen));
+        const inUse = this.futures.slice(c * this.ncores, Math.min((c + 1) * this.ncores, this.nscen));
         return sequentially(inUse);
       }));
 
@@ -468,49 +463,97 @@ class DiagramExec {
     }
   }
 
-  async multiCutTree() {
+  async multiCut() {
     while (true) {
-      await this.anim1st();
+      await this.animateFirstStage();
 
-      for (let s = 0; s < this.nscen; s++) {
-        await this.anim2nd(s);
-      }
+      await sequentially(this.futures);
 
       await sleep(this.frame_time * 0.3);
     }
   }
 
-  async multiCutTreeParallel() {
-    // Second stage animations
-    const anims2nd = this.stage2s.map((_, s) => () => this.anim2nd(s));
-
+  async multiCutParallel() {
     // Run each processor asynchrously forever.
     // They do not interact in this case
-    asyncForever(() => this.anim1st());
+    asyncForever(() => this.animateFirstStage());
 
     for (let c = 0; c < this.ncores; c++) {
-      const inUse = anims2nd.slice(c * this.ncores, Math.min((c + 1) * this.ncores, this.stage2s.length));
+      const inUse = this.futures.slice(c * this.ncores, Math.min((c + 1) * this.ncores, this.stage2s.length));
 
       asyncForever(() => sequentially(inUse));
     }
   }
 
-  async linkedCutTree() {
-    this.stage2s = Array.from(this.svg.querySelectorAll(".stage2 g path"));
+  async linkedCut() {
+    this.stage2s = [Array.from(this.svg.querySelectorAll(".stage2 g path"))];
 
     while (true) {
-      await this.anim1st();
+      await this.animateFirstStage();
+      await this.animateSecondStage(0);
 
-      // TODO: Better parameterized this
-      await this.anim2nd(0, true);
+      await sleep(this.frame_time * 0.3);
     }
+  }
+
+  async mixedCut() {
+    const cOpposite  = "var(--color-opposite)";
+    const cAccent    = "var(--color-accent, hsl(147 42% 64%))";
+
+    this.stage1      = this.svg.querySelector(".stage1 path");
+
+    this.s2Decomp    = Array.from(this.svg.querySelectorAll(".stage2-decomposed path"));
+    this.s2Linked    = Array.from(this.svg.querySelectorAll(".stage2-linked g path"));
+
+    this.cpoolE      = Array.from(this.svg.querySelectorAll(".cut-pool-E path"));
+    this.cpool       = Array.from(this.svg.querySelectorAll(".cut-pool path"));
+
+    this.edgesState  = Array.from(this.svg.querySelectorAll(".send-state path"));
+    this.edgesMCut   = Array.from(this.svg.querySelectorAll(".send-cut-mcut path"));
+    this.edgesMid    = Array.from(this.svg.querySelectorAll(".send-mid path"));
+    this.edgesLinked = Array.from(this.svg.querySelectorAll(".send-cut-linked path"));
+
+    // First stage
+    asyncForever(async () => {
+      await blink(this.stage1, this.frame_time, cOpposite);
+      await strokeZap(this.edgesState, this.speed, cOpposite);
+
+      await Promise.all([
+        strokeZap(this.edgesLinked, this.speed, cOpposite),
+        strokeZap(this.edgesMid, this.speed, cOpposite)
+          .then(() => strokeZap(this.edgesMCut, this.speed, cOpposite))
+      ]);
+    });
+
+    // Decomposed
+    asyncForever(() => sequentially(this.s2Decomp.map((_, s) => async () => {
+      const solveTime = randomR(this.frame_time * 0.5, this.frame_time);
+
+      await blink(this.s2Decomp[s], solveTime, cAccent);
+      await strokeZap(this.edgesMCut[s], this.speed, cAccent, true);
+      await blink(this.cpool[s], this.frame_time * 0.3, cAccent);
+
+      await sleep(this.frame_time * 0.2);
+    })));
+
+    // Linked
+    asyncForever(async () => {
+      const solveTime = 4 * randomR(this.frame_time * 0.5, this.frame_time);
+
+      await blink(this.s2Linked, solveTime, cAccent);
+      await strokeZap(this.edgesLinked, this.speed, cAccent, true);
+      await blink(this.cpoolE, this.frame_time * 0.3, cAccent);
+
+      await sleep(this.frame_time * 0.3);
+    });
   }
 
 }
 
 
 
-export function fig_randomFunction(id) {
+
+export function main() {
   const g =  x => 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5) + 0.4;
   const fs = new StoFunc(
     [ x => g(x)
@@ -528,59 +571,59 @@ export function fig_randomFunction(id) {
     x => 0.3*(x-0.3)**2,
   ]);
 
-  // const cavg = meanf(cvxs);
-
-  // const W = x => 2*Math.min(Math.abs(x + 1), Math.abs(x - 1));
   const W    = x => 0.3 + 0.5*(x - 1.5)*(x - 1)*(x + 0.5)*(x + 1.5);
   const Wsto = new StoFunc([-0.5, 0, 0.5].map(z => x => W(x - z)));
 
   // Stochastic OVF
-  new DiagramPlot("#figure-random-function", fs)
+  new Diagram("#figure-random-function", fs)
     .plot(fs, "stochastic")
 
-  new DiagramPlot("#figure-random-average", cvxs)
+  new Diagram("#figure-random-average", cvxs)
     .plot(cvxs, "stochastic")
     .plot(cvxs.mean, "deterministic");
 
-  new DiagramPlot("#figure-random-cuts", cvxs)
+  new Diagram("#figure-random-cuts", cvxs)
     .plot(cvxs, "stochastic")
     .cuts(cvxs, cutsConvex);
 
-  // // Convex SP
-  // new DiagramPlot("#figure-average-cuts", cvxs)
-  //   .plot(cvxs, "stochastic")
-  //   .cuts(cvxs, cutsConvex, "stochastic")
-  //   .plot(cvxs.mean, "deterministic")
-  //   .cuts(cvxs, cutAverage, "deterministic");
+  // Convex SP
+  new Diagram("#figure-average-cuts", cvxs)
+    .plot(cvxs, "stochastic")
+    .cuts(cvxs, cutsConvex, "stochastic")
+    .plot(cvxs.mean, "deterministic")
+    .cuts(cvxs, cutAverage, "deterministic");
 
-  // // Linked
-  // new DiagramPlot("#figure-cuts-conv", Wsto)
-  //   .plot(Wsto, "stochastic")
-  //   .cuts(Wsto, cutsLagrangian, "stochastic")
-  //   .plot(Wsto.mean, "deterministic")
-  //   .cuts(Wsto, cutDecomposed, "deterministic", "decomposed");
+  // Linked
+  new Diagram("#figure-cuts-conv", Wsto)
+    .plot(Wsto, "stochastic")
+    .cuts(Wsto, cutsLagrangian, "stochastic")
+    .plot(Wsto.mean, "deterministic")
+    .cuts(Wsto, cutDecomposed, "deterministic", "decomposed");
 
-  // new DiagramPlot("#figure-econv", Wsto)
-  //   .plot(Wsto, "stochastic")
-  //   .plot(Wsto.mean,   "deterministic")
-  //   .plot(Wsto.decomp, "deterministic", "decomposed")
-  //   .plot(Wsto.linked, "deterministic", "linked");
+  new Diagram("#figure-econv", Wsto)
+    .plot(Wsto, "stochastic")
+    .plot(Wsto.mean,   "deterministic")
+    .plot(Wsto.decomp, "deterministic", "decomposed")
+    .plot(Wsto.linked, "deterministic", "linked");
 
 
   /* ~*~ Tikz animations ~*~ */
 
-  new DiagramExec("#figure-tree-singlecut")
-    .singleCutTree();
+  new CutTree("#figure-tree-singlecut")
+    .singleCut();
 
-  new DiagramExec("#figure-tree-singlecut-parallel")
-    .singleCutTreeParallel();
+  new CutTree("#figure-tree-singlecut-parallel")
+    .singleCutParallel();
 
-  new DiagramExec("#figure-tree-multicut")
-    .multiCutTree();
+  new CutTree("#figure-tree-multicut")
+    .multiCut();
 
-  new DiagramExec("#figure-tree-multicut-parallel")
-    .multiCutTreeParallel();
+  new CutTree("#figure-tree-multicut-parallel")
+    .multiCutParallel();
 
-  new DiagramExec("#figure-tree-linked")
-    .linkedCutTree();
+  new CutTree("#figure-tree-linked")
+    .linkedCut();
+
+  new CutTree("#figure-tree-mixed")
+    .mixedCut();
 }
