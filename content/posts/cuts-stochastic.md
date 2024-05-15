@@ -133,21 +133,22 @@ plus future costs such as maintenance, fuel or even purchase installments.
 
 $$
   \begin{array}{rl}
-    \min\limits_{x} & c_{\text{now}}(x) + c_{\text{future}}(x) \\
-    \textrm{s.t.}  & x \in X \\
+    \min\limits_{z} & c_{\text{now}}(z) + c_{\text{future}}(z) \\
+    \textrm{s.t.}  & z \in Z. \\
   \end{array}
 $$
 
-Since the future is uncertain, you cannot be sure of how much it will cost,
-and all you can do is to estimate it as a random variable.
-Or even better: considering the decision-maker you are,
-let's allow, besides this random cost $c_{\text{future}}$,
-for a future decision variable $y$ whose possibilities are random and dependent of $x$.
+As the future is known to be an uncertain beast, we cannot be sure of how much of its costs.
+At best, we can estimate it using a random function $c_{\text{future}}$.
+Besides that, considering the decision-maker you are,
+let's break the decision variable into a current decision $x$
+and a future decision $y$, which itself depends on $x$.
+This way, we're better able to codify how different parts of the program interact.
 
 $$
   \begin{array}{rl}
     \min\limits_{x, y} & c_{\text{now}}(x) + c_{\text{future}}(x, y) \\
-    \text rm{s.t.}   & x \in X \\
+    \textrm{s.t.}   & x \in X \\
                     & (x, y) \in Y.
   \end{array}
 $$
@@ -232,11 +233,11 @@ $$
 
 Also, the stochastic second stage is equivalent
 to a family of deterministic value functions,
-each with its decision variables `y^s`,
+each with its decision variables $y^s$,
 where the distinct scenarios do not interact.
-Thus, besides its L-shape, the future dependency on `y` also
+Thus, besides its L-shape, the future dependency on $y$ also
 breaks into small blocks corresponding to each scenario.
-This will be important in the ensuing sections when we solve stochastic programs.
+This will be important in the ensuing sections to make the solution methods computationally tractable.
 
 ```tikz {tikzlibrary="fit"}
 % Block matrix
@@ -452,7 +453,28 @@ we can use it to construct an algorithm for solving stochastic programs.
 The idea is to adapt [Kelley's cutting plane algorithm](/posts/cuts#example-kelley-cutting-planes)
 for stochastic programs.
 
-Consider a bag of cuts $\Cuts$ for $\E{Q}$ that starts empty.
+All algorithms we're going to see in this post are variations on the same idea.
+We turn the recursive relation between present and future into an iterative algorithm,
+where the first stage sends its decision as a parameter to the second stage,
+which in counterpart sends cuts to improve the first stage's view of the future.
+For convex programs, this process eventually converges towards a good enough approximation of the optimal decision.
+
+```tikz
+{ [every edge/.style = {{Round Cap}-Kite, draw},
+   every loop/.style = {{Round Cap}-Kite, draw},
+   stage/.style = {circle, minimum width = 1.3cm, draw = black},
+  ]
+  \node[stage] (fst)    {present};
+  \node[stage] (snd) [right = 3cm of fst]  {future};
+
+  \path[->] (fst) edge[bend left] node [above] {decision} (snd)
+            (snd) edge[bend left] node [below] {cut}     (fst);
+}
+```
+
+
+Now, it's time to get technical.
+Consider a pool of cuts $\Cuts$ for $\E{Q}$ that starts empty.
 From now on, we will call it the algorithms **cut pool**.
 This pool allows the construction a polyhedral underapproximation of $\E{Q}$ as
 
@@ -504,13 +526,13 @@ In code, the procedures for calculating a new cut looks like this.
 
 ```julia
 function average_cut(prog, x)
-  v, y, λ = [], [], []   # Value, solution, multiplier
+  v, y, λ = [], [], []   # value, solution, multiplier
 
   for s in prog.Scenarios
     v[s], y[s], λ[s] = solve(prog, s, x)
   end
 
-  return Cut(mean(opt), mean(λ), x)
+  return Cut(mean(v), mean(λ), x)
 end
 ```
 
@@ -522,7 +544,7 @@ which correspond to how the information propagates between the stages:
 - Solve the second stage for each scenario and propagate the average cut _backwards_ to the first stage.
 
 Graphically, we visualize this process as the decision tree below.
-The nodes are optimization problems and the edges their communication.
+The nodes are optimization problems and the edges represent their communication.
 We represent $\Qfrak$ by a small diamond,
 which is the only thing the first stage's node sees of the future.
 
@@ -687,7 +709,7 @@ the first stage never sees any information regarding the different scenarios,
 it already comes aggregated to it.
 
 Another possibility is to use a __multicut approximation__
-where we keep a bag of cuts $\Cuts^s$ for each scenario
+where we keep a pool of cuts $\Cuts^s$ for each scenario
 and construct separate approximations
 
 $$ \Qfrak^s(x) = \max\limits_{(b, \lambda) \in \Cuts^s} b + \inner<\lambda, x>.$$
@@ -965,8 +987,8 @@ because they calculate an average cut by decomposing the problem into scenarios.
 To get tighter cuts,
 we need an approach that takes into account all cuts at the same time.
 
-The idea is to build one huge optimization problem representing the entirety of $\E{Q}$.
-We do this by linking all $Q^s$ together.
+The idea is to build one huge optimization problem representing the entirety of $\E{Q}$
+by linking all $Q^s$ together.
 Start by recalling the definition of the problem for each scenario,
 
 $$
@@ -1110,7 +1132,7 @@ one for the first stage, one for the linked second stage,
 and the others for the scenarios.
 
 First, notice that we can write the first stage in a way that accepts both single and multicuts.
-By denoting $\Cuts^s$ the cut bag for scenario $s$ and $\Cuts^\mathbb{E}$ the bag of aggregated cuts,
+By denoting $\Cuts^s$ the cut pool for scenario $s$ and $\Cuts^\mathbb{E}$ the pool of aggregated cuts,
 we represent the first stage as
 
 $$
