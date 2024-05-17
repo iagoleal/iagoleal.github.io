@@ -4,11 +4,22 @@ keywords: [math]
 date: 2024-05-14
 ---
 
+<style>
+.Missing {
+  text-align: center;
+  width:  100%;
+  height: 300px;
+  background-color: gray;
+  border: black 1px;
+}
+</style>
+
 \def\inlsum{\textstyle\sum}
 
 \def\norm#1{\left\lVert#1\right\rVert}
 \def\Unif{\mathrm{Unif}}
 \def\Exp{\mathrm{Exp}}
+\def\Area{\mathrm{Area}}
 
 Oftentimes, I need to sample points from some finite set.
 Most times, there is an obvious way to draw elements,
@@ -29,11 +40,11 @@ Although their equivalence seems to be common knowledge among mathematicians,
 I don't know about any reference that does things this way.
 So, as a bonus, now I'll have where to link people towards whenever I want to talk about Markov kernel-invariance.
 Oh well, it seems I'm putting the cart before the horse in here.
-Let's start out.
+Time to start out.
 
-In case you've landed on this page in search for an algorithm
+In case you've landed on this page in search for a sampling algorithm
 and don't care for the mathematical intricacies --- no matter how elegant they might be ---
-here is the final theorem, which will get you covered.
+here is the final theorem, which should get you covered.
 
 :::Theorem
 Let $U \sim \Unif[0, 1]^N$ be uniform on the $N$-cube and define random variables $E_i = -\log(U_i) \sim \Exp(1)$.
@@ -41,7 +52,6 @@ We can get a random vector that is uniformly distributed on all probabilities ov
 
 $$ Z = \frac{1}{\sum_i E_i} E.$$
 :::
-
 
 Probabilities Over the Probabilities
 ====================================
@@ -66,24 +76,104 @@ on the elements of $\Omega$:
 $$ p = \sum_{\omega \in \Omega} p_\omega \cdot \delta_\omega(x).$$
 
 Since we need the $p_s$ to represent the probability of outcome $\omega$,
-not every linear combination of deltas produces a probability distribution.
-We need the coefficients to form a _convex combination_.
-In other words, the set of all acceptable coefficients is
+not every linear combination of deltas is acceptable.
+To produce a probability distribution, We need the coefficients to form a _convex combination_, i.e.,
 
-$$ \Delta^N = \{\, p \in \R^{N} \mid p_\omega \ge 0,\, \sum p_\omega = 1  \,\}.$$
+$$ p_\omega \ge 0 \text{ and } \sum_{\omega \in \Omega} p_\omega = 1.$$
 
-We call $\Delta^N$ the **standard simplex** (simplex for short, from now on).
+:::Missing
+Graph with lollipops represent the probabilities
+:::
+
+The set of all such coefficients is known as the **standard simplex** (simplex for short, from now on).
 It is a compact convex subset of $R^{N}$ and, as such,
 has a clear notion of uniform probability inherited from the Lebesgue measure.
-
-Since the set $\Omega$ is fixed, sampling a random probability distribution on it
+Furthermore, since the set $\Omega$ is fixed, sampling a random probability distribution on it
 is equivalent to sampling the probability coefficients.
 Therefore, we reduce our problem to a more geometrical one:
 generating points uniformly in the simplex.
 
+:::Missing
+Interactive graph going from 3 lollipops to a simplex
+:::
+
 
 How to Sample From the Standard Simplex
 =======================================
+
+Now forget all that abstract nonsense and let's focus on subsets of $\R^N$.
+If you prefer to remain abstract,
+you can enumerate $\Omega = \{\, \omega_1, \ldots, \omega_N \,\}$
+and use the isomorphism $\delta_{\omega_k} \mapsto e_k$
+taking the point masses to the corresponding canonical basis vectors.
+Everything will work the same.
+
+Alright, we are interested in the set of all **probability vectors** in $\R^N$:
+
+$$ \Delta^N = \left\{\, x \in \R^{N} \mid x \ge 0,\, \inlsum_k x_k = 1  \,\right\}.$$
+
+:::Missing
+Show the simplex
+:::
+
+As a compact subset of $\R^N$, it has a uniform probability measure given by the area of a subset
+
+$$ p_{\Delta^N}(A) = \frac{\Area(A \cap \Delta^N)}{\Area(\Delta^N)}.$$
+
+Our main goal in this section is to construct a way to sample from this probability
+using only the standard tools you'd find in any programming language,
+such as $\Unif[0, 1]$ distributions.
+There are a couple ways to do it involving
+rejection sampling or some kind of combinatorics with partitions of the interval.
+The method of choice for this post uses symmetries
+and mimics the well-known construction for the uniform distribution on the sphere.
+
+The sketch of the idea is that
+we can look at the non-negative cone $\R^N_{\ge 0}$ as a stacking of simplexes $r \Delta^N$
+whose components sum to $r$
+--- In the same way as $\R^N$ is a stacking of spheres with radius $r$.
+
+:::Missing
+Illustrate this sketch with figures!
+
+The stacking
+:::
+
+
+We produce a distribution on $\Delta^N$ by taking a non-negative random vector $X$
+and scaling it such that its components sum to one (barycentric projection).
+By choosing a $X$ whose distribution is invariant with the same symmetries as the simplex,
+the projection will be uniformly distributed.
+
+:::Missing
+Illustrate this sketch with figures!
+
+The projection
+:::
+
+
+Symmetry and Invariance
+-----------------------
+
+Now that you've (hopefully) got some intuition on what's our plan,
+it's time to actually prove the necessary theorems.
+
+Considering we talked about symmetries,
+the most straightforward thing to do would be taking a look
+at the group of linear automorphisms that preserve the simplex.
+Unfortunately, it is too small: only component permutations.
+In other words, the group of (linear) symmetries is the --- no pun intended -- symmetric group on its vertices.
+
+$$ \mathrm{LinAut}(\Delta^N) \cong S_N. $$
+
+
+Not all is lost, nevertheless.
+
+
+
+
+
+
 
 :::Definition
 A matrix $M$ is **stochastic** if all its columns are probability vectors (elements of $\Delta^N$).
