@@ -20,6 +20,7 @@ date: 2024-05-14
 \def\Unif{\mathrm{Unif}}
 \def\Exp{\mathrm{Exp}}
 \def\Area{\mathrm{Area}}
+\def\Sto#1{\mathbf{Sto}}
 
 Oftentimes, I need to sample points from some finite set.
 Most times, there is an obvious way to draw elements,
@@ -86,7 +87,7 @@ Graph with lollipops represent the probabilities
 :::
 
 The set of all such coefficients is known as the **standard simplex** (simplex for short, from now on).
-It is a compact convex subset of $R^{N}$ and, as such,
+It is a compact convex subset of $\R^{N}$ and, as such,
 has a clear notion of uniform probability inherited from the Lebesgue measure.
 Furthermore, since the set $\Omega$ is fixed, sampling a random probability distribution on it
 is equivalent to sampling the probability coefficients.
@@ -128,8 +129,8 @@ rejection sampling or some kind of combinatorics with partitions of the interval
 The method of choice for this post uses symmetries
 and mimics the well-known construction for the uniform distribution on the sphere.
 
-The sketch of the idea is that
-we can look at the non-negative cone $\R^N_{\ge 0}$ as a stacking of simplexes $r \Delta^N$
+Before getting technical, I think a sketch of the idea is due.
+We look at the non-negative cone $\R^N_{\ge 0}$ as a stacking of simplexes $r \Delta^N$
 whose components sum to $r$
 --- In the same way as $\R^N$ is a stacking of spheres with radius $r$.
 
@@ -139,10 +140,13 @@ Illustrate this sketch with figures!
 The stacking
 :::
 
+This amounts to parametrizing the positive quadrant in barycentric coordinates:
 
-We produce a distribution on $\Delta^N$ by taking a non-negative random vector $X$
-and scaling it such that its components sum to one (barycentric projection).
-By choosing a $X$ whose distribution is invariant with the same symmetries as the simplex,
+$$ x = r \sigma,\;\text{ where }\; r = \inlsum_k x_k,\, \sigma \in \Delta^N.$$
+
+To produce a distribution on $\Delta^N$, take a non-negative random vector $X$
+and scale it such that its components sum to one (barycentric projection).
+By choosing a $X$ whose distribution is _invariant_ with respect to symmetries of the simplex,
 the projection will be uniformly distributed.
 
 :::Missing
@@ -151,71 +155,122 @@ Illustrate this sketch with figures!
 The projection
 :::
 
+Now that you've (hopefully) got some intuition on what's our plan,
+it's time to go on and prove the necessary theorems.
 
 Symmetry and Invariance
 -----------------------
 
-Now that you've (hopefully) got some intuition on what's our plan,
-it's time to actually prove the necessary theorems.
-
 Considering we talked about symmetries,
 the most straightforward thing to do would be taking a look
 at the group of linear automorphisms that preserve the simplex.
-Unfortunately, it is too small: only component permutations.
-In other words, the group of (linear) symmetries is the --- no pun intended -- symmetric group on its vertices.
+Unfortunately, it is too meager: no more than permutation matrices.
+In other words, the group of (linear) symmetries is just the --- no pun intended -- symmetric group on its vertices.
 
 $$ \mathrm{LinAut}(\Delta^N) \cong S_N. $$
 
-
-Not all is lost, nevertheless.
-
-
-
-
-
-
+We would like to get a continuous group for our symmetries,
+nevertheless, but not all is lost.
+The thing is: a full-on group was just too much to ask for.
+Instead, the _monoid_ of linear transformations that preserve the simplex
+will attend our needs much better than that symmetry group.
 
 :::Definition
-A matrix $M$ is **stochastic** if all its columns are probability vectors (elements of $\Delta^N$).
+A linear transformation $M$ preserves a subset $A \subset \R^N_{\ge 0}$
+if it takes elements of $A$ to elements of $A$,
+
+$$ x \in A \implies M x \in A. $$
 :::
 
-To simplify our notation,
-we will often denote the $k$-th column of $M$ by $M_k$.
+In the case of the simplex,
+the definition above simplifies to a finite amount of conditions,
+because linear maps preserve extreme points of convex sets.
+Since the simplex is the convex hull of the canonical basis vectors,
+we only need to impose that their image does not leave the set
+to guarantee that a map preserves the simplex.
+
+$$\boxed{M e_k \in \Delta^N,\, k = 1,\ldots, N.}$$
+
+:::Missing
+Spherical caps
+:::
+
+The above is the abstract version of our condition.
+However, we can put it into a more concrete form
+by recollecting that $M e_k$ equals the coefficients on the $k$-th column of $M$.
 
 $$
 M = \left[
   \begin{array}{ccc}
     \rvert &        & \rvert\\
-    M_{1}  & \cdots & M_{N} \\
+    M e_1 & \cdots & M e_N \\
     \rvert &        & \rvert
   \end{array}
 \right].
 $$
 
-:::Theorem
-A matrix is stochastic if and only if it preserves the standard simplex.
+Consequently, the matrices that preserve the simplex are those
+whose components are themselves probability vectors.
+
+If you've ever tinkered with Markov Processes,
+you may know those by the name of _stochastic matrix_ or _Markov Kernel_
+and used them for the exact same reason: preserving the total probability in a transition step.
+Also, they're the reason why my friends who decided to study probability
+to run away from algebra ended up needing to learn about semigroups and monoids.
+Even though I'm a fan of saying "Markov Kernels",
+in this post we'll go with the name "stochastic" [^left-stochastic].
+
+[^left-stochastic]: In fact, people in probability generally work with _left stochastic_ matrices,
+because they like multiplying vectors from the left, i.e. $p M = p$,
+and thus require the _rows_ to be probability vectors.
+The matrices in this post are _right stochastic_ because we multiply vectors like normal people.
+No confusion should arise, because in this post we'll only use the right kind.
+
+:::Definition
+A matrix is **stochastic** if its columns are probability vectors (elements of $\Delta^N$).
+We denote by $\Sto{N}$ the monoid of all such matrices.
 :::
 
-:::Proof
-- $M$ stochastic $\implies$ $M$ preserves $\Delta^N$:
+Throughout the realms of mathematics, symmetries are known for producing invariants
+because by preserving a set, they end up preserving some simple function related to it.
+Rotations conserve inner products and lengths, translations preserve the differences, etc.
+So, what is the invariant associated with stochastic matrices?
+As you might expect from the discussion before,
+they conserve the sum of components.[^invariant-nonneg]
 
-  The output of applying $M$ to a probability vector $x \in \Delta^N$
-  amounts to a convex combination of its columns.
-  Since, by definition of stochastic matrix, the columns $M_k \in \Delta^N$,
-  the result follows by the convexity of the simplex.
+$$ \sum_k (M x)_k = \sum_{k,l} M_{kl} x_l = \sum_l x_l \underbrace{\left( \sum_k M_kl \right)}_{= 1} = \sum_l x_l.$$
 
-  $$ M x = \sum_\beta x_\beta \cdot M_\beta \in \Delta^N.$$
+[^invariant-nonneg]: They also conserve non-negativity.
+But we are only working in the cone $\R^N_{\ge 0}$
 
-- $M$ preserves $\Delta^N \implies M$ stochastic:
+On top of this algebraic derivation,
+we can also look at it from a more geometrical point of view
+by using the barycentric coordinates from the previous section.
+Write $x = r \sigma$, with $r = \sum_k x_k$ and $\sigma \in \Delta^N$.
+The coordinates of $M x$ are
 
-  We can recover the columns of $M$ by applying it to a vector in the canonical basis,
-  $M_k = M e_k$.
-  Since all $e_k \in \Delta^N$, and $M$ preserves the simplex, the columns $M_k = M e_k$
-  are probability vectors.
+$$ Mx = M(r\sigma) = r \underbrace{(M \sigma)}_{\in \Delta^N}.$$
+
+Thus, a stochastic matrix alters the coordinates in the standard simplex
+but does not change in which simplex the vector is.
+It's similar to how rotations alter directions but conserve in which concentric sphere a vector is.
+
+:::Missing
+simplex/Spherical regions
 :::
 
+Something cool about invariants is that we're able
+to transfer them from points to functions.
+In general, if a function is $G$ invariant, i.e.,
+
+$$ \forall M \in G,\, f(M x) = f(x),$$
+
+One expects it to only depend on the quantities conserved by $G$,
+In our case of interest, \Sto{N}$,
+we can rigorously prove that only the sum matters for such functions.
+
 :::Theorem
-A function $f : \R^n_{\ge 0} \to \R$ is invariant by the action of stochastic matrices
+A function $f : \R^n_{\ge 0} \to \R$ is $\Sto{N}$-invariant
 if and only if it only depends on the sum of the input's components.
 That is, there is a $\phi : \R_{\ge 0} \to \R$ such that
 
@@ -223,19 +278,16 @@ $$ f(x) = \phi\left(\inlsum\nolimits_k x_k\right). $$
 :::
 
 :::Proof
-- $f$ depends only on $\inlsum_k x_k \implies$ $f$ stochastic-invariant:
+* $f$ depends only on $\inlsum_k x_k \implies$ $f$ stochastic-invariant:
 
-Start by noticing that stochastic matrices preserve the sum of components:
+  The function $f$ cannot "see" the changes $M \in \Sto{N}$
+  produces in the space:
 
-$$ \sum_k (M x)_k = \sum_{k,l} M_{kl} x_l = \sum_l x_l \underbrace{\left( \sum_k M_kl \right)}_{= 1} = \sum_l x_l.$$
+  $$
+  f(M x) = \phi(\inlsum_k (M x)_k) = \phi(\inlsum_k x_k) = f(x).
+  $$
 
-This implies that $f$ is invariant by stochastic matrices:
-
-$$
-f(M x) = \phi(\inlsum_k (M x)_k) = \phi(\inlsum_k x_k) = f(x).
-$$
-
-- $f$ stochastic-invariant $\implies f$ depends only on $\inlsum_k x_k$:
+* $f$ stochastic-invariant $\implies f$ depends only on $\inlsum_k x_k$:
 
 Since $f$ is invariant by the action of _any_ stochastic matrix,
 we can construct one that's appropriate for our needs.
@@ -289,19 +341,21 @@ By invariance, we then get that
 
 $$ f(x) = f(A x) = f( (\inlsum_k x_k) \cdot e_1) = \phi(\inlsum_k x_k)$$
 
-Where we define  $\phi(t) = f(t \cdot e_1)$.
-
-
+Where we define $\phi(t) = f(t \cdot e_1)$.
 :::
+
+
+A Concrete Sampling Algorithm
+-----------------------------
 
 :::Theorem
 Le $E$ be a non-negative random vector
 whose distribution is continuous and invariant by stochastic matrices.
-The random random vector
+The random vector
 
 $$ Z = \frac{E}{\sum_i E_i} \sim \Unif(\Delta^N).$$
 
-That is, Z is uniformly distributed on the standard simplex.
+In other words, $Z$ is uniformly distributed on the standard simplex.
 :::
 
 :::Theorem
@@ -312,7 +366,7 @@ $$ p_Z(x) = \phi(\norm{x}_1),$$
 
 Then its components are i.i.d. exponentials,
 
-$$ Z_i \sim \exp(\lambda).$$
+$$ Z_i \sim \Exp(\lambda).$$
 :::
 
 :::Proof
