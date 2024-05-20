@@ -20,7 +20,8 @@ date: 2024-05-14
 \def\Unif{\mathrm{Unif}}
 \def\Exp{\mathrm{Exp}}
 \def\Area{\mathrm{Area}}
-\def\Sto#1{\mathbf{Sto}}
+\def\Sto#1{\mathbf{Sto}(#1)}
+\def\Id{\mathbb{I}}
 
 Oftentimes, I need to sample points from some finite set.
 Most times, there is an obvious way to draw elements,
@@ -236,12 +237,9 @@ because by preserving a set, they end up preserving some simple function related
 Rotations conserve inner products and lengths, translations preserve the differences, etc.
 So, what is the invariant associated with stochastic matrices?
 As you might expect from the discussion before,
-they conserve the sum of components.[^invariant-nonneg]
+they conserve the sum of components.
 
 $$ \sum_k (M x)_k = \sum_{k,l} M_{kl} x_l = \sum_l x_l \underbrace{\left( \sum_k M_kl \right)}_{= 1} = \sum_l x_l.$$
-
-[^invariant-nonneg]: They also conserve non-negativity.
-But we are only working in the cone $\R^N_{\ge 0}$
 
 On top of this algebraic derivation,
 we can also look at it from a more geometrical point of view
@@ -266,7 +264,7 @@ In general, if a function is $G$ invariant, i.e.,
 $$ \forall M \in G,\, f(M x) = f(x),$$
 
 One expects it to only depend on the quantities conserved by $G$,
-In our case of interest, \Sto{N}$,
+In our case of interest, $\Sto{N}$,
 we can rigorously prove that only the sum matters for such functions.
 
 :::Theorem
@@ -278,7 +276,7 @@ $$ f(x) = \phi\left(\inlsum\nolimits_k x_k\right). $$
 :::
 
 :::Proof
-* $f$ depends only on $\inlsum_k x_k \implies$ $f$ stochastic-invariant:
+* $f$ depends only on $\inlsum_k x_k \implies f$ is $\Sto{N}$-invariant:
 
   The function $f$ cannot "see" the changes $M \in \Sto{N}$
   produces in the space:
@@ -287,70 +285,76 @@ $$ f(x) = \phi\left(\inlsum\nolimits_k x_k\right). $$
   f(M x) = \phi(\inlsum_k (M x)_k) = \phi(\inlsum_k x_k) = f(x).
   $$
 
-* $f$ stochastic-invariant $\implies f$ depends only on $\inlsum_k x_k$:
+* $f$ is $\Sto{N}$-invariant $\implies f$ depends only on $\inlsum_k x_k$:
 
-Since $f$ is invariant by the action of _any_ stochastic matrix,
-we can construct one that's appropriate for our needs.
-Let's build a matrix that accumulates the sum of any vector into its first component while turning all others into zero.
-You can think of this procedure as a $1$-norm version of rotating the coordinate system to the axis defined by $x$.
+  Since $f$ is invariant by the action of _any_ stochastic matrix,
+  we can construct one that's appropriate for our needs.
+  Let's build a matrix that accumulates the sum of any vector into its first component while turning all others into zero.
+  You can think of this procedure as a $1$-norm version of rotating the coordinate system to the axis defined by $x$.
 
-Concretely, we need the matrix $A$ whose first row is all ones and the others are identically zero.
+  Concretely, we need the matrix $A$ whose first row is all ones and the others are identically zero.
 
-$$
-A = \left[
-  \begin{array}{ccc}
-    1      & \cdots & 1      \\
-    0      & \cdots & 0      \\
-    \vdots & \vdots & \vdots \\
-    0      & \cdots & 0
-  \end{array}
-\right]
-$$
+  $$
+  A = \left[
+    \begin{array}{ccc}
+      1      & \cdots & 1      \\
+      0      & \cdots & 0      \\
+      \vdots & \vdots & \vdots \\
+      0      & \cdots & 0
+    \end{array}
+  \right]
+  $$
 
-This is a stochastic matrix that accumulates the sum of any vector into its first component.
+  This is a stochastic matrix that accumulates the sum of any vector into its first component.
 
-$$ A x =
-\left[
-  \begin{array}{ccc}
-    1      & \cdots & 1      \\
-    0      & \cdots & 0      \\
-    \vdots & \vdots & \vdots \\
-    0      & \cdots & 0
-  \end{array}
-\right]
-\left[
-  \begin{array}{c}
-    x_1      \\
-    x_2      \\
-    \vdots   \\
-    x_N
-  \end{array}
-\right]
-=
-\left[
-  \begin{array}{c}
-    \sum_k x_k  \\
-    0           \\
-    \vdots      \\
-    0
-  \end{array}
-\right]
-$$
+  $$ A x =
+  \left[
+    \begin{array}{ccc}
+      1      & \cdots & 1      \\
+      0      & \cdots & 0      \\
+      \vdots & \vdots & \vdots \\
+      0      & \cdots & 0
+    \end{array}
+  \right]
+  \left[
+    \begin{array}{c}
+      x_1      \\
+      x_2      \\
+      \vdots   \\
+      x_N
+    \end{array}
+  \right]
+  =
+  \left[
+    \begin{array}{c}
+      \sum_k x_k  \\
+      0           \\
+      \vdots      \\
+      0
+    \end{array}
+  \right]
+  $$
 
-By invariance, we then get that
+  By invariance, we then get that
 
-$$ f(x) = f(A x) = f( (\inlsum_k x_k) \cdot e_1) = \phi(\inlsum_k x_k)$$
+  $$ f(x) = f(A x) = f( (\inlsum_k x_k) \cdot e_1) = \phi(\inlsum_k x_k)$$
 
-Where we define $\phi(t) = f(t \cdot e_1)$.
+  Where we define $\phi(t) = f(t \cdot e_1)$.
 :::
 
 
 A Concrete Sampling Algorithm
 -----------------------------
 
+Now that we're acquainted with stochastic matrices and their invariants,
+it's time to go back to probabilities and distributions.
+When a random vector has a $\Sto{N}$-invariant distribution,
+its density will be locally constant on any scaling of the simplex.
+Hence, we can project it back to the standard simplex to get a uniform distribution.
+
 :::Theorem
-Le $E$ be a non-negative random vector
-whose distribution is continuous and invariant by stochastic matrices.
+Let $E$ be a non-negative random vector
+whose distribution is continuous and $\Sto{N}$-invariant.
 The random vector
 
 $$ Z = \frac{E}{\sum_i E_i} \sim \Unif(\Delta^N).$$
@@ -358,31 +362,106 @@ $$ Z = \frac{E}{\sum_i E_i} \sim \Unif(\Delta^N).$$
 In other words, $Z$ is uniformly distributed on the standard simplex.
 :::
 
+The previous theorem is a recipe for turning $\Sto{N}$-invariant distributions
+into ones that are uniform on the simplex.
+The only thing missing is finding a suitable distribution to project.
+What could it be?
+As it turns out,
+a vector of i.i.d. [exponentially distributed random variables](https://en.wikipedia.org/wiki/Exponential_distribution)[^exp-rv] just cuts it.
+I don't want to just postulate it, however.
+We've come this far from first principles,
+so let's make the exponentials show themselves in our deduction.
+
+[^exp-rv]: Continuous random variables with density $f(x) = \lambda e^{-\lambda x} \Id_{[0, \infty)}(x)$.
+
+We can choose any invariant distribution,
+so let's go with the easiest kind: those with independent components.
+What I find the most impressive is that the constraints of $\Sto{N}$-invariance and independence together
+are strong enough to characterize exponential distributions.
+You can think of it as an adaptation of [Maxwell's theorem](https://en.wikipedia.org/wiki/Maxwell's_theorem)[^se-maxwell]
+for the simplex.
+
+[^se-maxwell]: See [this link](https://math.stackexchange.com/questions/105418/very-elementary-proof-of-maxwells-theorem/105470#105470)
+for the deduction of Maxwell's theorem which inspired my proof below.
+
 :::Theorem
-If $Z$ is a random vector with continuous non-negative independent components
-and its distribution only depends on the $L^1$ norm, i.e.,
-
-$$ p_Z(x) = \phi(\norm{x}_1),$$
-
-Then its components are i.i.d. exponentials,
-
-$$ Z_i \sim \Exp(\lambda).$$
+The only $\Sto{N}$-invariant absolutely continuous distributions on $\R^N_{\ge 0}$ (the non-negative quadrant)
+with independent components are identically distributed exponentials $\sim \Exp(\lambda)$.
 :::
 
 :::Proof
-Also see,
+We only consider absolutely continuous distributions supported on the non-negative quadrant.
+Hence, our distribution equals $p_Z = f \cdot \Id_{\ge 0}$ for an integrable probability density $f$.
+Let's investigate this function.
+By $\Sto{N}$-invariance, this density can only depend on the sum of components
+and by independence, the joint density is a product of single-variable densities $f_i$,
+
+$$ f(x) = \phi\left(\inlsum\nolimits_k x_k\right) = \prod_k f_i(x_k).$$
+
+Let's turn it into a system of differential equations and solve for a closed form.
+As we are working with distributions, we don't need to worry about smoothness right now
+because all derivatives can be taken in a weak sense.
+
+$$ \partial_i f(x) = \phi'\left(\inlsum\nolimits_k x_k\right) = f_i'(x_i) \prod_{k \ne i} f_k(x_k).$$
+
+TODO: PROVE f POSITIVE
+
+By dividing both sides by $f$, we get to
+
+$$ \frac{\phi'\left(\inlsum\nolimits_k x_k\right)}{\phi\left(\inlsum\nolimits_k x_k\right)} = \frac{f_i'(x_i)}{f_i(x_i)}.$$
+
+The above works independently of $i$, meaning that the fractions $f_i'(x_i) / f_i(x_i)$ are all equal.
+However, each depends on a different variable.
+The only way this can happen is if they all _equal the same constant_.
+Let's smartly call this constant $-\lambda$.
+
+$$ \frac{f_i'}{f_i} = -\lambda \implies f_i' = -\lambda f_i.$$
+
+Great! As Since the only weak solutions to a linear ordinary differential equation
+are the classical ones,
+the above proves that the only possible densities are exponentials.
+
+$$\boxed{f_i(x_i) = C_i e^{-\lambda x_i}}.$$
+
+You can use that the $f_i$ are probability densities to deduce that $\lambda > 0$
+and $C_i = \lambda$ are the only admissible constants.
+The reason is because their tail has to go to zero and they must integrate to one.
+
+$$ \begin{array}{ll}
+\lim_{t \to \infty} C_i e^{-\lambda t} = 0 &\iff \lambda > 0, \\
+1 = \int_0^\infty C e^{-\lambda t} dt = \frac{C}{\lambda} &\iff C_i = \lambda.
+\end{array}$$
+
+Therefore, for non-negative arguments, the joint density has the form
+
+$$ p_Z(x) = \lambda^N e^{-\lambda \sum_k x_k} \cdot \Id_{\ge 0} $$
+
+Which characterizes a multivariate exponential with i.i.d. components.
+:::
+
 
 http://luc.devroye.org/rnbookindex.html page 594.
 
-https://math.stackexchange.com/questions/105418/very-elementary-proof-of-maxwells-theorem/105470#105470
-:::
+```julia
+function sample_simplex(xs)
+  U = rand(length(xs))     # Uniformly distributed on cube
+  E = map(u -> -log(u), U) # E ~ Exp(1)
 
-# Quantum
+  return E / sum(E)        # Uniformly distributed on simplex
+end
+```
+
+
+Bonus: Sampling Stochastic Matrices
+===================================
+
+
+The General Case
+================
 
 $$ \frac{2}{p}\Gamma(1/p) e^{-\norm{x}_p^p} $$
 
-
-# The General Case
+https://mathoverflow.net/questions/9185/how-to-generate-random-points-in-ell-p-balls/9188#9188
 
 
 Barthe, Franck, Olivier Guédon, Shahar Mendelson, and Assaf Naor. “A Probabilistic Approach to the Geometry of the ℓpn-Ball.” The Annals of Probability 33, no. 2 (March 1, 2005). https://doi.org/10.1214/009117904000000874.
