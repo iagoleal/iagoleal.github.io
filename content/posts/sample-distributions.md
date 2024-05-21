@@ -25,6 +25,21 @@ date: 2024-05-14
 \def\Id{\mathbb{I}}
 \def\Triang{\mathcal{T}}
 
+```{=tex}
+
+\tikzset{
+  every edge/.style = {{Round Cap}-Kite, draw},
+  every loop/.style = {{Round Cap}-Kite, draw},
+  bubble/.style = {fill=black, circle, inner sep = 0.3mm, minimum size=0.04mm,}
+}
+
+\pgfdeclarelayer{background}
+\pgfdeclarelayer{axes}
+\pgfdeclarelayer{decor}
+\pgfsetlayers{background,axes,main,decor}
+```
+
+
 Oftentimes, I need to sample points from some finite set.
 Most times, there is an obvious way to draw elements,
 but even so often, it happens that I need
@@ -116,9 +131,44 @@ Alright, we are interested in the set of all **probability vectors** in $\R^N$:
 
 $$ \Delta^N = \left\{\, x \in \R^{N} \mid x \ge 0,\, \inlsum_k x_k = 1  \,\right\}.$$
 
-:::Missing
-Show the simplex
-:::
+```tikz
+\begin{scope} [scale = 2, xscale = 1.5, rotate around y=45]
+  \coordinate (O)  at (0, 0, 0);
+  \coordinate (e1) at (1, 0, 0);
+  \coordinate (e2) at (0, 1, 0);
+  \coordinate (e3) at (0, 0, 1);
+
+  % Coordinate axes
+  \pgfonlayer{axes}
+    \foreach \i in {1,2,3} {
+      \draw        (O) -- ($ 1.5*(e\i) $);
+      \draw[thick, -Latex] (O) -- (e\i);
+    };
+
+    % Canonical basis
+  \endpgfonlayer
+
+  % Basis points
+  \pgfonlayer{decor}
+    \foreach \i/\where in {1/above,2/left,3/below} {
+      \node[bubble] at (e\i) {};
+      \node at (e\i) [\where] {$e_\i$};
+    };
+
+
+    % Pin / Label
+    \draw[-{Kite}] (0.8, 0.5) node[above] {$\Delta^N$}
+      to[out = -90, in = 45] ($ (e1) ! 0.333 ! (e2) ! 0.333 ! (e3) $) {};
+  \endpgfonlayer
+
+  % The simplex
+  \filldraw[color = green!40, fill opacity = 0.9] (e1) -- (e2) -- (e3) -- cycle;
+
+\end{scope}
+```
+
+
+
 
 As a compact subset of $\R^N$, it has a uniform probability measure given by the area of a subset
 
@@ -137,11 +187,51 @@ We look at the non-negative cone $\R^N_{\ge 0}$ as a stacking of simplexes $r \D
 whose components sum to $r$
 --- In the same way as $\R^N$ is a stacking of spheres with radius $r$.
 
-:::Missing
-Illustrate this sketch with figures!
+```tikz
+% The stacking
+\begin{scope} [scale = 2, xscale = 1.5, rotate around y=45]
+  \coordinate (O)  at (0, 0, 0);
+  \coordinate (e1) at (1, 0, 0);
+  \coordinate (e2) at (0, 1, 0);
+  \coordinate (e3) at (0, 0, 1);
 
-The stacking
-:::
+  % Coordinate axes
+  \pgfonlayer{axes}
+    \foreach \i in {1,2,3} {
+      \draw        (O) -- ($ 3*(e\i) $);
+      \draw[thick, -Latex] (O) -- (e\i);
+    };
+
+    % Canonical basis
+  \endpgfonlayer
+
+  % Basis points
+  \pgfonlayer{decor}
+    \foreach \i/\where in {1/above,2/left,3/below} {
+      \node[bubble] at (e\i) {};
+      \node at (e\i) [\where] {$e_\i$};
+    };
+  \endpgfonlayer
+
+  % The simplex
+  \filldraw[color = green!40, fill opacity = 0.9] (e1) -- (e2) -- (e3) -- cycle;
+
+  % Simplex scalings
+  \foreach \d in {2, 3} {
+    \filldraw[color = orange!40, fill opacity = 0.4]
+      ($ \d*(e1) $) -- ($ \d*(e2) $) -- ($ \d*(e3) $) -- cycle;
+
+    % Ticks
+    \pgfonlayer{decor}
+      \node[bubble] at ($ \d*(e1) $) {};
+      \node[bubble] at ($ \d*(e2) $) ["$\d$" left] {};
+      \node[bubble] at ($ \d*(e3) $) {};
+    \endpgfonlayer
+
+  };
+
+\end{scope}
+```
 
 This amounts to parametrizing the positive orthant in barycentric coordinates:
 
@@ -149,15 +239,50 @@ $$ x = r \sigma,\;\text{ where }\; r = \inlsum_k x_k,\, \sigma \in \Delta^N.$$
 
 To produce a distribution on $\Delta^N$, take a non-negative random vector $X$
 and scale it such that its components sum to one (barycentric projection).
+
+```tikz {tikzlibrary="decorations.pathreplacing"}
+\begin{scope} [scale = 2, xscale = 1.5, rotate around y=45]
+  \coordinate (O)  at (0, 0, 0);
+  \coordinate (e1) at (1, 0, 0);
+  \coordinate (e2) at (0, 1, 0);
+  \coordinate (e3) at (0, 0, 1);
+
+  % Coordinate axes
+  \pgfonlayer{axes}
+    \foreach \i in {1,2,3} {
+      \draw        (O) -- ($ 1.5*(e\i) $);
+      \draw[thick] (O) -- (e\i);
+    };
+
+    % Canonical basis
+  \endpgfonlayer
+
+  % Basis points
+  \pgfonlayer{decor}
+    \foreach \i/\where in {1/above,2/left,3/below} {
+      \node[bubble] at (e\i) {};
+      \node at (e\i) [\where] {$e_\i$};
+    };
+
+    % Pin / Label
+    \coordinate (x)  at (1.5, 1.0, 0.5);
+    \coordinate (px) at (0.5, 0.333, 0.17);
+    \draw[-Latex]
+      (x) node[bubble, "$X$"] {}
+      --
+      (px) node[bubble, "\sigma" below] {};
+
+    \draw[color=gray!80!black, decorate,decoration={brace,raise=3pt,mirror}]
+      (x) -- node[font = \tiny, above = 2mm, rotate=25] {$\sum_k X_k$} (px);
+
+  \endpgfonlayer
+
+  % The simplex
+  \filldraw[color = green!40, fill opacity = 0.9] (e1) -- (e2) -- (e3) -- cycle;
+\end{scope}
+```
 By choosing a $X$ whose distribution is _invariant_ with respect to symmetries of the simplex,
-the projection will be uniformly distributed.
-
-:::Missing
-Illustrate this sketch with figures!
-
-The projection
-:::
-
+the projection's distribution can be made uniform.
 Now that you've (hopefully) got some intuition on what's our plan,
 it's time to go on and prove the necessary theorems.
 
