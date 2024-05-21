@@ -16,6 +16,14 @@
     <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
 
     <item>
+      <guid isPermaLink="false">1176588868</guid>
+      <title>A Uniform Probability over Probabilities</title>
+      <link>https://iagoleal.com/posts/sampling-probabilities/</link>
+      <dc:creator>Iago Leal</dc:creator>
+      <category>Blog</category>
+      <pubDate> 21 May 2024 00:00:00 GMT</pubDate>
+    </item>
+    <item>
       <guid isPermaLink="false">1176588867</guid>
       <title>Cuts for Stochastic Programming</title>
       <link>https://iagoleal.com/posts/cuts-stochastic/</link>

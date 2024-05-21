@@ -1,7 +1,11 @@
 ---
 title: A Uniform Probability over Probabilities
-keywords: [math]
-date: 2024-05-14
+keywords: [math, probability, simplex]
+date: 2024-05-21
+description:
+  You may be used to sampling from probabilities, but what about sampling a random finite probability?
+  As it turns out, this is a procedure rich in geometry and symmetries.
+suppress-bibliography: true
 ---
 
 <style>
@@ -945,7 +949,7 @@ for rotation-invariant distributions.
 Besides 
 In particular because the sum equals the $L^1$ norm in the first quadrant.
 Does this mean something deeper? I don't really know, but I bet so.
-What I know is that one can sample from any $p$-norm sphere using a distribution
+What I know is that one can sample from any $p$-norm sphere [@barthe_probabilistic_2005] using a distribution
 proportional to $e^{-\norm{x}_p^p}$.
 The problem is that finding good transformations preserving general $p$-norms is not so direct.
 To be fair, I can't think of anything but permutations.
