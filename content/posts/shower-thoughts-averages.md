@@ -452,7 +452,7 @@ $$
 $$
 
 This optimization problem can be rewritten as a _linear program_
-as has a (possibly non-unique) solution that is also used all around Statistics:
+and has a (possibly non-unique) solution that is also used all around Statistics:
 the **median**. This is a constant $\mu$ with the nice property
 $\mathrm{P}(X \le \mu) \ge \frac{1}{2}$ and $\mathrm{P}(X \ge \mu) \ge \frac{1}{2}$.
 
