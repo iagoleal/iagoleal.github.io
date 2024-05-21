@@ -1,7 +1,7 @@
 # Personal Site's Source Code
 
 My own [personal website](https://iagoleal.com/).
-There is also a [RSS feed](https://iagoleal.com/rss.xml) for the posts---in case you're interested.
+There is also an [RSS feed](https://iagoleal.com/rss.xml) for the posts---in case you're interested.
 
 The site theme is built upon oxalorg's
 [sakura-earthly](https://github.com/oxalorg/sakura) theme.
@@ -20,7 +20,7 @@ Deployment to GitHub Pages happens automatically on push to `master`.
 
 ### TeX Notation for Math
 
-This site uses (katex)[katex.org] to render equations.
+This site uses [katex](katex.org) to render equations.
 Anything between `$...$` or `$$...$$` is interpreted as mathematics
 and properly converted.
 
@@ -28,7 +28,7 @@ and properly converted.
 
 Files in the <static/> folder with extension `.tex`
 are interpreted as images (usually used for TiKZ graphics),
-thus we com compile them to SVG.
+thus we can compile them to SVG.
 
 If there is both `path/to/bla.svg` and `path/to/bla.tex`,
 the former has priority.
@@ -61,7 +61,7 @@ Hence, it is useful to keep in mind how my pages interact with any of these site
 
 Sharing a post should show its title, its description,
 and a general (site-wide) banner.
-We achieve this via the (Open Graph protocol)[https://ogp.me/].
+We achieve this via the [Open Graph protocol](https://ogp.me/).
 For customizing any tags,
 edit the file <templates/open-graph.html>.
 
