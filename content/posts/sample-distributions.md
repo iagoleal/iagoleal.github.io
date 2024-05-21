@@ -6,11 +6,11 @@ date: 2024-05-14
 
 <style>
 .Missing {
-  text-align: center;
-  width:  100%;
-  height: 300px;
+  text-align:       center;
+  width:            100%;
+  height:           300px;
   background-color: gray;
-  border: black 1px;
+  border:           black 1px;
 }
 </style>
 
@@ -23,6 +23,7 @@ date: 2024-05-14
 \def\Area{\mathrm{Area}}
 \def\Sto#1{\mathbf{Sto}(#1)}
 \def\Id{\mathbb{I}}
+\def\Triang{\mathcal{T}}
 
 Oftentimes, I need to sample points from some finite set.
 Most times, there is an obvious way to draw elements,
@@ -160,7 +161,7 @@ The projection
 Now that you've (hopefully) got some intuition on what's our plan,
 it's time to go on and prove the necessary theorems.
 
-Symmetry and Invariance
+Symmetry and Invariance {#symmetries}
 -----------------------
 
 Considering we talked about symmetries,
@@ -538,9 +539,47 @@ function sample_1_sphere(n)
 end
 ```
 
-Triangulated Regions and Manifolds
+Triangulated Regions and Polyhedra
 ----------------------------------
 
+Triangulations are inescapable in geometry:
+from algebraic topology to computer graphics, you will eventually bump into them.
+They also help us sample from polyhedra --- even when non-convex.
+
+To put it simply, a triangulation of a compact $K \subset \R^N$
+is a finite selection of simplices $\Triang$ such that their union covers $K$
+and all pairwise intersections have dimension less than $K$ (therefore, zero measure).[^triangulation]
+
+[^triangulation]: There are more details, such a requiring that the intersection be themselves simplices.
+But we're already getting too much outside the scope of this post.
+
+The method in this topic is an evolution of the one for the $1$-sphere.
+First we assign a triangulation to the polyhedron $K$.
+Then, by weighting a choice of simplex from the triangulation by their volume
+and choosing uniformly from that simplex, we get a uniform distribution on the whole triangulation.
+
+A non-standard simplex $S$ is a convex combination of affinely independent vectors $y_i$,
+
+$$S = \{\, x \mid \exists p \in \Delta^N, x = \sum_i p_i y_i \,\}.$$
+
+You can generate it from a standard simplex
+by mapping the canonical basis to the vectors spanning $S$.
+From [our previous discussions](#symmetries), you already know this is a matrix $Y$
+whose columns are the vectors $y_i$.
+Then the variable $YP$ is uniformly distributed on $S$ whenever $P \sim \Unif(\Delta^N)$.
+With this variable and the weighting process just discussed,
+we get a uniform distribution on the whole triangulation.
+
+```julia
+function sample_polyhedron(K)
+  T  = triangulate(K)         # Assuming you have a method to do it
+  ws = Dist(τ => volume(τ) / volume(K) for t in T)
+  Y  = sample(ws)             # Random triangle from K
+  P  = sample_simplex(dim(K)) # Uniform on simplex
+
+  return matrix(Y)*P          # Y*P = Σ P_iY_i
+end
+```
 
 Bonus: Sampling from $p$-norm spheres
 =====================================
