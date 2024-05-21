@@ -24,6 +24,7 @@ date: 2024-05-14
 \def\Sto#1{\mathbf{Sto}(#1)}
 \def\Id{\mathbb{I}}
 \def\Triang{\mathcal{T}}
+\def\Prob{\mathbf{Prob}}
 
 ```{=tex}
 
@@ -167,9 +168,6 @@ $$ \Delta^N = \left\{\, x \in \R^{N} \mid x \ge 0,\, \inlsum_k x_k = 1  \,\right
 \end{scope}
 ```
 
-
-
-
 As a compact subset of $\R^N$, it has a uniform probability measure given by the area of a subset
 
 $$ p_{\Delta^N}(A) = \frac{\Area(A \cap \Delta^N)}{\Area(\Delta^N)}.$$
@@ -292,13 +290,13 @@ Symmetry and Invariance {#symmetries}
 Considering we talked about symmetries,
 the most straightforward thing to do would be taking a look
 at the group of linear automorphisms that preserve the simplex.
-Unfortunately, it is too meager: no more than permutation matrices.
+Unfortunately, it is too meager: only permutation matrices and nothing more.
 In other words, the group of (linear) symmetries is just the --- no pun intended -- symmetric group on its vertices.
 
 $$ \mathrm{LinAut}(\Delta^N) \cong S_N. $$
 
-We would like to get a continuous group for our symmetries,
-nevertheless, but not all is lost.
+We would like to get a continuous group for our symmetries.
+Nevertheless, not all is lost!
 The thing is: a full-on group was just too much to ask for.
 Instead, the _monoid_ of linear transformations that preserve the simplex
 will attend our needs much better than that symmetry group.
@@ -477,13 +475,58 @@ its density will be locally constant on any scaling of the simplex.
 Hence, we can project it back to the standard simplex to get a uniform distribution.
 
 :::Theorem
-Let $E$ be a non-negative random vector
+Let $E$ be an almost surely positive random vector
 whose distribution is continuous and $\Sto{N}$-invariant.
-The random vector
+The barycentric projection of $E$ is uniformly distributed on the standard simplex,
 
-$$ Z = \frac{E}{\sum_i E_i} \sim \Unif(\Delta^N).$$
+$$ \frac{E}{\sum_k E_k} \sim \Unif(\Delta^N).$$
+:::
 
-In other words, $Z$ is uniformly distributed on the standard simplex.
+:::Proof
+The components, being positive guarantees that $\sum_k E_k$ is also almost surely positive
+and the projection $Z = E / \sum_k E_k$ is well-defined.
+We know that $Z$ is supported on the simplex because it is normalized.
+Let's use the invariance to show that it is uniformly distributed.
+
+Consider an element $a \in \Delta^N$.
+The projection equals $a$ if and only if
+$E$ lies in the ray $R_a$ going from the origin and passing through $a$,
+
+$$
+  \frac{E}{\inlsum_k E_k} = a
+  \iff
+  E \in \{\, r a \mid r \in (0, +\infty)\}.
+$$
+
+Thus, the probability of $Z$ being in $A \subset \Delta^N$
+equals the one for $E$ being in any ray passing through it,
+which forms a cone.
+
+$$
+\begin{aligned}
+  \Prob\left(\frac{E}{\inlsum_k E_k} \in A\right)
+  &= \Prob\left(\bigcup_{a \in A} R_a\right) \\
+  &= \Prob\left(E \in \{\, r \sigma \mid r \in (0, +\infty), \sigma \in A \,\} \right).
+\end{aligned}
+$$
+
+The distribution of $E$ is continuous,
+so calculating the probability amounts to your typical integral.
+Since the density $f_E$ is $\Sto{N}$-invariant,
+it can only depend on the sum of components, $f_E(x) = \phi(\inlsum x_k)$.
+Thus, a change of variables for barycentric coordinates $x = (\inlsum_k x_k)\sigma$ seems like a good bet.
+
+$$
+\begin{aligned}
+  \Prob(Z \in A)
+  &= \int_{C_A} \phi(\inlsum_k x_k) dx
+  = \int_0^\infty \int_A \phi(r) r^{n-1} d\sigma dr \\
+  &= \Area(A) \underbrace{\int_0^\infty \phi(r) r^{n-1} dr}_{\text{constant}}
+\end{aligned}
+$$
+
+Consequently, the distribution of $E / \inlsum_k E_k$ is a multiple of the area element on the simplex,
+defining a uniform measure.
 :::
 
 The previous theorem is a recipe for turning $\Sto{N}$-invariant distributions
