@@ -1,5 +1,5 @@
 ---
-title: Uniformly Sampling Finite Probabilites
+title: A Uniform Probability over Probabilities
 keywords: [math]
 date: 2024-05-14
 ---
@@ -29,20 +29,25 @@ date: 2024-05-14
 ```{=tex}
 
 \tikzset{
-  every edge/.style = {{Round Cap}-Kite, draw},
-  every loop/.style = {{Round Cap}-Kite, draw},
   bubble/.style = {fill=black, circle, inner sep = 0.3mm, minimum size=0.04mm,}
 }
 
+\colorlet{sgrey}{gray!80}
+\colorlet{sorange}{orange!70}
+\colorlet{sgreen}{green!40}
+
 \pgfdeclarelayer{background}
 \pgfdeclarelayer{axes}
+\pgfdeclarelayer{behind}
+\pgfdeclarelayer{infront}
+\pgfdeclarelayer{plane}
 \pgfdeclarelayer{decor}
-\pgfsetlayers{background,axes,main,decor}
+\pgfsetlayers{background,axes,behind,main,infront,plane,decor}
 ```
 
 
-Oftentimes, I need to sample points from some finite set.
-Most times, there is an obvious way to draw elements,
+Oftentimes, I need to sample points from a finite set.
+Usually, there is an obvious way to draw elements,
 but even so often, it happens that I need
 the _probability distribution itself_ to be random
 (e.g. property testing for solvers depending on weighted averages.)
@@ -101,10 +106,6 @@ To produce a probability distribution, We need the coefficients to form a _conve
 
 $$ p_\omega \ge 0 \text{ and } \sum_{\omega \in \Omega} p_\omega = 1.$$
 
-:::Missing
-Graph with lollipops represent the probabilities
-:::
-
 The set of all such coefficients is known as the **standard simplex** (simplex for short, from now on).
 It is a compact convex subset of $\R^{N}$ and, as such,
 has a clear notion of uniform probability inherited from the Lebesgue measure.
@@ -112,10 +113,6 @@ Furthermore, since the set $\Omega$ is fixed, sampling a random probability dist
 is equivalent to sampling the probability coefficients.
 Therefore, we reduce our problem to a more geometrical one:
 generating points uniformly in the simplex.
-
-:::Missing
-Interactive graph going from 3 lollipops to a simplex
-:::
 
 
 How to Sample From the Standard Simplex
@@ -145,8 +142,6 @@ $$ \Delta^N = \left\{\, x \in \R^{N} \mid x \ge 0,\, \inlsum_k x_k = 1  \,\right
       \draw        (O) -- ($ 1.5*(e\i) $);
       \draw[thick, -Latex] (O) -- (e\i);
     };
-
-    % Canonical basis
   \endpgfonlayer
 
   % Basis points
@@ -156,15 +151,13 @@ $$ \Delta^N = \left\{\, x \in \R^{N} \mid x \ge 0,\, \inlsum_k x_k = 1  \,\right
       \node at (e\i) [\where] {$e_\i$};
     };
 
-
     % Pin / Label
     \draw[-{Kite}] (0.8, 0.5) node[above] {$\Delta^N$}
       to[out = -90, in = 45] ($ (e1) ! 0.333 ! (e2) ! 0.333 ! (e3) $) {};
   \endpgfonlayer
 
   % The simplex
-  \filldraw[color = green!40, fill opacity = 0.9] (e1) -- (e2) -- (e3) -- cycle;
-
+  \filldraw[color = sgreen, fill opacity = 0.9] (e1) -- (e2) -- (e3) -- cycle;
 \end{scope}
 ```
 
@@ -212,11 +205,11 @@ whose components sum to $r$
   \endpgfonlayer
 
   % The simplex
-  \filldraw[color = green!40, fill opacity = 0.9] (e1) -- (e2) -- (e3) -- cycle;
+  \filldraw[color = sgreen, fill opacity = 0.9] (e1) -- (e2) -- (e3) -- cycle;
 
   % Simplex scalings
   \foreach \d in {2, 3} {
-    \filldraw[color = orange!40, fill opacity = 0.4]
+    \filldraw[color = sorange, fill opacity = 0.4]
       ($ \d*(e1) $) -- ($ \d*(e2) $) -- ($ \d*(e3) $) -- cycle;
 
     % Ticks
@@ -261,22 +254,29 @@ and scale it such that its components sum to one (barycentric projection).
       \node[bubble] at (e\i) {};
       \node at (e\i) [\where] {$e_\i$};
     };
-
-    % Pin / Label
-    \coordinate (x)  at (1.5, 1.0, 0.5);
-    \coordinate (px) at (0.5, 0.333, 0.17);
-    \draw[-Latex]
-      (x) node[bubble, "$X$"] {}
-      --
-      (px) node[bubble, "\sigma" below] {};
-
-    \draw[color=gray!80!black, decorate,decoration={brace,raise=3pt,mirror}]
-      (x) -- node[font = \tiny, above = 2mm, rotate=25] {$\sum_k X_k$} (px);
-
   \endpgfonlayer
 
   % The simplex
-  \filldraw[color = green!40, fill opacity = 0.9] (e1) -- (e2) -- (e3) -- cycle;
+  \filldraw[color = sgreen, fill opacity = 0.9] (e1) -- (e2) -- (e3) -- cycle;
+
+  % Projection
+  \coordinate (x)  at (1.5, 1.0, 0.5);
+  \def\norm{3};
+
+  \pgfonlayer{infront}
+  \draw[-Latex]
+    (x) node[bubble, "$X$"] {}
+    --
+    ($ {1/\norm}*(x) $) node[bubble, "\sigma" below] {};
+  \endpgfonlayer
+
+  \pgfonlayer{behind}
+    \draw (O) -- (x);
+
+    \draw[decorate,decoration={brace,raise=3pt,mirror}]
+      (x) -- node[font = \tiny, above = 2mm, rotate=25] {$\sum_k X_k$} (O);
+  \endpgfonlayer
+
 \end{scope}
 ```
 By choosing a $X$ whose distribution is _invariant_ with respect to symmetries of the simplex,
@@ -317,13 +317,53 @@ to guarantee that a map preserves the simplex.
 
 $$\boxed{M e_k \in \Delta^N,\, k = 1,\ldots, N.}$$
 
-:::Missing
-Spherical caps
-:::
+```tikz {tikzlibrary="decorations.pathreplacing"}
+\begin{scope} [scale = 3/2, scale = 2, xscale = 1.5, rotate around y=45, local bounding box = simplexBB]
+  \coordinate (O)  at (0, 0, 0);
+  \coordinate (e1) at (1, 0, 0);
+  \coordinate (e2) at (0, 1, 0);
+  \coordinate (e3) at (0, 0, 1);
+
+  % Coordinate axes
+  \pgfonlayer{axes}
+    \foreach \i in {1,2,3} {
+      \draw        (O) -- ($ 1.5*(e\i) $);
+      \draw[thick] (O) -- (e\i);
+    };
+
+    % Canonical basis
+  \endpgfonlayer
+
+  % Basis points
+  \pgfonlayer{decor}
+    \foreach \i/\where in {1/above,2/left,3/below} {
+      \node[bubble] at (e\i) {};
+      \node at (e\i) [\where] {$e_\i$};
+    };
+  \endpgfonlayer
+
+  % The simplex
+  \filldraw[color = sgreen, fill opacity = 0.4] (e1) -- (e2) -- (e3) -- cycle;
+
+  % Image by stochastic matrix
+
+  \coordinate (m1) at (0.1, 0.8, 0.1);
+  \coordinate (m2) at (0.3, 0.1, 0.6);
+  \coordinate (m3) at (0.7, 0.2, 0.1);
+  \filldraw[color = sorange] (m1) -- (m2) -- (m3) -- cycle;
+
+  \pgfonlayer{decor}
+    \foreach \i/\where in {1/above right,2/right,3/above right} {
+      \node[bubble] at (m\i) [pin={[pin edge = {bend left}]\where:$M e_\i$}] {};
+      % \node at (m\i) [\where] {$Me_\i$};
+    };
+  \endpgfonlayer
+\end{scope}
+```
 
 The above is the abstract version of our condition.
-However, we can put it into a more concrete form
-by recollecting that $M e_k$ equals the coefficients on the $k$-th column of $M$.
+However, it takes a more concrete shape by recollecting that
+$M e_k$ equals the coefficients on the $k$-th column of $M$.
 
 $$
 M = \left[
@@ -374,13 +414,84 @@ The coordinates of $M x$ are
 
 $$ Mx = M(r\sigma) = r \underbrace{(M \sigma)}_{\in \Delta^N}.$$
 
+```tikz {tikzlibrary="decorations.pathreplacing"}
+\begin{scope} [scale = 2, xscale = 1.5, rotate around y=45]
+  \coordinate (O)  at (0, 0, 0);
+  \coordinate (e1) at (1, 0, 0);
+  \coordinate (e2) at (0, 1, 0);
+  \coordinate (e3) at (0, 0, 1);
+
+  % Coordinate axes
+  \pgfonlayer{axes}
+    \foreach \i in {1,2,3} {
+      \draw        (O) -- ($ 2*(e\i) $);
+      \draw[thick] (O) -- (e\i);
+    };
+
+    % Canonical basis
+  \endpgfonlayer
+
+  % Basis points
+  \pgfonlayer{decor}
+    \foreach \i/\where in {1/above,2/left,3/below} {
+      \node[bubble] at (e\i) {};
+      \node at (e\i) [\where] {$e_\i$};
+    };
+  \endpgfonlayer
+
+  % The simplex
+  \pgfonlayer{main}
+    \filldraw[color = sgreen, fill opacity = 0.9] (e1) -- (e2) -- (e3) -- cycle;
+  \endpgfonlayer
+
+  % The other simplex
+  \pgfonlayer{infront}
+    \foreach \d in {2} {
+      \filldraw[color = sorange, fill opacity = 0.4]
+        ($ \d*(e1) $) -- ($ \d*(e2) $) -- ($ \d*(e3) $) -- cycle;
+
+      % Ticks
+      \pgfonlayer{decor}
+        \node[bubble] at ($ \d*(e1) $) {};
+        \node[bubble] at ($ \d*(e2) $) {};
+        \node[bubble] at ($ \d*(e3) $) {};
+      \endpgfonlayer
+
+    };
+  \endpgfonlayer
+
+  % Projection
+  \def\norm{2.0}
+  \coordinate (x)  at (0.5, 1.0, 0.5);
+  \coordinate (mx) at (0.2, 0.4, 1.4);
+
+  \draw[-Latex]
+    (x) node[bubble] {} -- ($ {1/\norm}*(x) $) node[bubble, "\sigma" above] {};
+  \draw[-Latex]
+    (mx) node[bubble] {} -- ($ {1/\norm}*(mx) $) node[bubble, "$M\sigma$" above] {};
+
+
+  \pgfonlayer{decor}
+    \node at (x) [above] {$x$};
+    \node at (mx) [right] {$Mx$};
+
+    % Pin / Label
+    \draw[-{Kite}] (1.5, 1) node[above] {$r\Delta^N$}
+      to[out = -90, in = 0] ($ {2}*(e1)!0.4!(e2)!0.1!(e3) $) {};
+  \endpgfonlayer
+
+
+  \pgfonlayer{behind}
+    \draw (O) -- (x);
+    \draw (O) -- (mx);
+  \endpgfonlayer
+
+\end{scope}
+```
+
 Thus, a stochastic matrix alters the coordinates in the standard simplex
 but does not change in which simplex the vector is.
 It's similar to how rotations alter directions but conserve in which concentric sphere a vector is.
-
-:::Missing
-simplex/Spherical regions
-:::
 
 Something cool about invariants is that we're able
 to transfer them from points to functions.
@@ -401,68 +512,73 @@ $$ f(x) = \phi\left(\inlsum\nolimits_k x_k\right). $$
 :::
 
 :::Proof
-* $f$ depends only on $\inlsum_k x_k \implies f$ is $\Sto{N}$-invariant:
+##### $f$ depends only on $\inlsum_k x_k \implies f$ is $\Sto{N}$-invariant:
 
   The function $f$ cannot "see" the changes $M \in \Sto{N}$ produces:
 
   $$ f(M x) = \phi(\inlsum_k (M x)_k) = \phi(\inlsum_k x_k) = f(x). $$
 
-* $f$ is $\Sto{N}$-invariant $\implies f$ depends only on $\inlsum_k x_k$:
+##### $f$ is $\Sto{N}$-invariant $\implies f$ depends only on $\inlsum_k x_k$:
 
-  Since $f$ is invariant by the action of _any_ stochastic matrix,
-  we can construct one that's appropriate for our needs.
-  Let's build a matrix that accumulates the sum of any vector into its first component while turning all others into zero.
-  You can think of this procedure as a $1$-norm version of rotating the coordinate system to the axis defined by $x$.
+We use the invariance to turn $f$ into a one-dimensional function,
+by constructing a stochastic matrix $A$ that takes each simplex to a single coordinate.
+You can think of this procedure as a $1$-norm version of rotating the coordinate system such $x$ aligns to an axis.
+Concretely, we achieve this by defining $A e_k = e_1$,
+which amount to a matrix whose first row is all ones and the others are identically zero.
 
-  Concretely, we need the matrix $A$ whose first row is all ones and the others are identically zero.
+$$
+A = \left[
+  \begin{array}{ccc}
+    1      & \cdots & 1      \\
+    0      & \cdots & 0      \\
+    \vdots & \vdots & \vdots \\
+    0      & \cdots & 0
+  \end{array}
+\right]
+$$
 
-  $$
-  A = \left[
-    \begin{array}{ccc}
-      1      & \cdots & 1      \\
-      0      & \cdots & 0      \\
-      \vdots & \vdots & \vdots \\
-      0      & \cdots & 0
-    \end{array}
-  \right]
-  $$
+This is a stochastic matrix that accumulates the sum of any vector into its first component.
 
-  This is a stochastic matrix that accumulates the sum of any vector into its first component.
+$$ A x =
+\left[
+  \begin{array}{ccc}
+    1      & \cdots & 1      \\
+    0      & \cdots & 0      \\
+    \vdots & \vdots & \vdots \\
+    0      & \cdots & 0
+  \end{array}
+\right]
+\left[
+  \begin{array}{c}
+    x_1      \\
+    x_2      \\
+    \vdots   \\
+    x_N
+  \end{array}
+\right]
+=
+\left[
+  \begin{array}{c}
+    \sum_k x_k  \\
+    0           \\
+    \vdots      \\
+    0
+  \end{array}
+\right]
+$$
 
-  $$ A x =
-  \left[
-    \begin{array}{ccc}
-      1      & \cdots & 1      \\
-      0      & \cdots & 0      \\
-      \vdots & \vdots & \vdots \\
-      0      & \cdots & 0
-    \end{array}
-  \right]
-  \left[
-    \begin{array}{c}
-      x_1      \\
-      x_2      \\
-      \vdots   \\
-      x_N
-    \end{array}
-  \right]
-  =
-  \left[
-    \begin{array}{c}
-      \sum_k x_k  \\
-      0           \\
-      \vdots      \\
-      0
-    \end{array}
-  \right]
-  $$
+By invariance, we then get that
 
-  By invariance, we then get that
+$$ f(x) = f(A x) = f( (\inlsum_k x_k) \cdot e_1) = \phi(\inlsum_k x_k)$$
 
-  $$ f(x) = f(A x) = f( (\inlsum_k x_k) \cdot e_1) = \phi(\inlsum_k x_k)$$
-
-  Where we define $\phi(t) = f(t \cdot e_1)$.
+Where we define $\phi(t) = f(t \cdot e_1)$.
 :::
+
+This way, we see that being $\Sto{N}$-invariant constrains a function
+to a rather simple form, because it is as if it could only depend on a single axis.
+As we will shortly see,
+this locally constant restriction also simplifies a lot
+the possible invariant random variables.
 
 
 A Concrete Sampling Algorithm
@@ -483,37 +599,111 @@ $$ \frac{E}{\sum_k E_k} \sim \Unif(\Delta^N).$$
 :::
 
 :::Proof
-The components, being positive guarantees that $\sum_k E_k$ is also almost surely positive
+The components being positive guarantees that $\sum_k E_k$ is also almost surely positive
 and the projection $Z = E / \sum_k E_k$ is well-defined.
 We know that $Z$ is supported on the simplex because it is normalized.
 Let's use the invariance to show that it is uniformly distributed.
 
-Consider an element $a \in \Delta^N$.
-The projection equals $a$ if and only if
-$E$ lies in the ray $R_a$ going from the origin and passing through $a$,
-
-$$
-  \frac{E}{\inlsum_k E_k} = a
-  \iff
-  E \in \{\, r a \mid r \in (0, +\infty)\}.
-$$
-
-Thus, the probability of $Z$ being in $A \subset \Delta^N$
-equals the one for $E$ being in any ray passing through it,
-which forms a cone.
+Consider a region $A \subset \Delta^N$.
+The projection is in $A$ if and only if the original variable $E$
+lies in a ray coming from the origin and crossing $A$ somewhere,
 
 $$
 \begin{aligned}
   \Prob\left(\frac{E}{\inlsum_k E_k} \in A\right)
-  &= \Prob\left(\bigcup_{a \in A} R_a\right) \\
-  &= \Prob\left(E \in \{\, r \sigma \mid r \in (0, +\infty), \sigma \in A \,\} \right).
+  &= \Prob\left(E \in \left\{\, r \sigma \mid r \in (0, +\infty), \sigma \in A \,\right\} \right).
 \end{aligned}
 $$
 
+```tikz {tikzlibrary="shapes.geometric"}
+\begin{scope} [scale = 2, xscale = 1.5, rotate around y=45,
+    heptagon/.style = {
+      regular polygon,
+      regular polygon sides=7,
+      minimum width=1cm,
+      outer sep=0pt,
+      rotate = -45,
+    }
+  ]
+  \coordinate (O)  at (0, 0, 0);
+  \coordinate (e1) at (1, 0, 0);
+  \coordinate (e2) at (0, 1, 0);
+  \coordinate (e3) at (0, 0, 1);
+
+  % Coordinate axes
+  \pgfonlayer{axes}
+    \foreach \i in {1,2,3} {
+      \draw        (O) -- ($ 1.5*(e\i) $);
+      \draw[thick] (O) -- (e\i);
+    };
+
+    % Canonical basis
+  \endpgfonlayer
+
+  % Basis points
+  \pgfonlayer{infront}
+    \foreach \i/\where in {1/above,2/left,3/below} {
+      \node[bubble] at (e\i) {};
+    };
+  \endpgfonlayer
+
+  % The simplex
+    \filldraw[color = sgreen, fill opacity = 0.4] (e1) -- (e2) -- (e3) -- cycle;
+
+  \coordinate (m) at (barycentric cs:e1=1,e2=0.8,e3=1);
+
+  \node[heptagon, draw] (A) at (m) {};
+
+  \pgfonlayer{plane}
+    \node[heptagon,
+          draw,
+          minimum width = 2cm,
+          left color=cyan!10,
+          right color=cyan!40,
+          opacity = 0.6] (Ar) at ($ 2*(m) $) {};
+  \endpgfonlayer
+
+
+  \pgfonlayer{behind}
+    \foreach \i in {1, 2,  6, 7}
+      \draw[-, opacity = 0.6] (O) -- (A.corner \i);
+
+    \foreach \i in {1,...,5} {
+      \pgfmathtruncatemacro{\j}{\i + 1}
+      \shade[left color=cyan!15,right color=cyan!40, opacity=0.6]
+            (O) -- (A.corner \i) -- (A.corner \j) -- cycle;
+    };
+
+    \foreach \i in {3,...,5}
+        \draw[-, opacity = 0.6] (O) -- (A.corner \i);
+  \endpgfonlayer
+
+
+  \pgfonlayer{infront}
+    \foreach \i in {1, 2, 6, 7}
+      \draw[-] (A.corner \i) -- (Ar.corner \i);
+
+    \foreach \i in {1,...,5} {
+      \pgfmathtruncatemacro{\j}{\i + 1}
+      \fill[left color=cyan!15,right color=cyan!40, opacity=0.6]
+            (A.corner \i) -- (Ar.corner \i) -- (Ar.corner \j) -- (A.corner \j) -- cycle ;
+    };
+
+    \foreach \i in {3,...,5}
+        \draw[-] (A.corner \i) -- (Ar.corner \i);
+  \endpgfonlayer
+
+  \pgfonlayer{decor}
+    \node at (A.center)  [pin={[pin distance = 1.4cm, pin edge = {Stealth-, bend right}]-30:$Z \in A$}] {};
+    \node at (Ar.center) [pin={[pin distance = 1cm, pin edge = {Stealth-, bend right}]60:$E \in C_A$}] {};
+  \endpgfonlayer
+\end{scope}
+```
+
 The distribution of $E$ is continuous,
-so calculating the probability amounts to your typical integral.
+so calculating the probability on the right amounts to your commonplace integral.
 Since the density $f_E$ is $\Sto{N}$-invariant,
-it can only depend on the sum of components, $f_E(x) = \phi(\inlsum x_k)$.
+it can only depend on the sum of components (i.e., $f_E(x) = \phi(\inlsum x_k)$).
 Thus, a change of variables for barycentric coordinates $x = (\inlsum_k x_k)\sigma$ seems like a good bet.
 
 $$
@@ -570,8 +760,6 @@ As we are working with distributions, we don't need to worry about smoothness ri
 because all derivatives can be taken in a weak sense.
 
 $$ \partial_i f(x) = \phi'\left(\inlsum\nolimits_k x_k\right) = f_i'(x_i) \prod_{k \ne i} f_k(x_k).$$
-
-TODO: PROVE f POSITIVE
 
 By dividing both sides by $f$, we get to
 
@@ -665,8 +853,7 @@ Thus, the stochastic matrices are equivalent to $N$ independent copies of the si
 
 $$ \Sto{N} \cong \prod_{i = 1}^N \Delta^N.$$
 
-This is a compact set, by [Tychonoff's theorem](https://en.wikipedia.org/wiki/Tychonoff's_theorem#)
-and we can uniformly sample from it by drawing each component independently.
+This is compact and we can uniformly sample from it by drawing each component independently.
 
 ```julia
 function sample_sto(n)
@@ -688,10 +875,6 @@ The $1$-norm unit sphere is the set of all points
 whose $1$-norm equals $1$,
 
 $$ \partial B^N_1 = \{\, x \mid \norm{x}_1 = 1 \,\}.$$
-
-:::Missing
-1-norm in dimension 2.
-:::
 
 This is a collage of identical simplexes, one for each orthant.
 As their intersections have zero measure,
@@ -749,16 +932,23 @@ function sample_polyhedron(K)
 end
 ```
 
-Bonus: Sampling from $p$-norm spheres
-=====================================
+Conclusion
+==========
 
-$$ \frac{2}{p}\Gamma(1/p) e^{-\norm{x}_p^p} $$
+Very well, today's journey has come to an end.
+I hope you had fun exploring how a at first strange problem in statistics
+could be reduced to a geometrical problem about symmetries.
+I surely did.
 
-https://mathoverflow.net/questions/9185/how-to-generate-random-points-in-ell-p-balls/9188#9188
+To wrap up, I should point the similarity between today's derivation and Herschel-Maxwell's theorem
+for rotation-invariant distributions.
+Besides 
+In particular because the sum equals the $L^1$ norm in the first quadrant.
+Does this mean something deeper? I don't really know, but I bet so.
+What I know is that one can sample from any $p$-norm sphere using a distribution
+proportional to $e^{-\norm{x}_p^p}$.
+The problem is that finding good transformations preserving general $p$-norms is not so direct.
+To be fair, I can't think of anything but permutations.
+That's a topic for a future post, perhaps.
 
-
-Barthe, Franck, Olivier Guédon, Shahar Mendelson, and Assaf Naor. “A Probabilistic Approach to the Geometry of the ℓpn-Ball.” The Annals of Probability 33, no. 2 (March 1, 2005). https://doi.org/10.1214/009117904000000874.
-
-https://metaphor.ethz.ch/x/2017/hs/401-3370-67L/sc/Joost1.pdf
-
-http://blog.geomblog.org/2013/01/a-sampling-gem-sampling-from-ellp-balls.html
+Farewell and good sampling for y'all!
