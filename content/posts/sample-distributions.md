@@ -17,6 +17,7 @@ date: 2024-05-14
 \def\inlsum{\textstyle\sum}
 
 \def\norm#1{\left\lVert#1\right\rVert}
+\def\abs#1{\left|#1\right|}
 \def\Unif{\mathrm{Unif}}
 \def\Exp{\mathrm{Exp}}
 \def\Area{\mathrm{Area}}
@@ -141,7 +142,7 @@ Illustrate this sketch with figures!
 The stacking
 :::
 
-This amounts to parametrizing the positive quadrant in barycentric coordinates:
+This amounts to parametrizing the positive orthant in barycentric coordinates:
 
 $$ x = r \sigma,\;\text{ where }\; r = \inlsum_k x_k,\, \sigma \in \Delta^N.$$
 
@@ -268,7 +269,7 @@ In our case of interest, $\Sto{N}$,
 we can rigorously prove that only the sum matters for such functions.
 
 :::Theorem
-A function $f : \R^n_{\ge 0} \to \R$ is $\Sto{N}$-invariant
+A function $f : \R^N_{\ge 0} \to \R$ is $\Sto{N}$-invariant
 if and only if it only depends on the sum of the input's components.
 That is, there is a $\phi : \R_{\ge 0} \to \R$ such that
 
@@ -278,12 +279,9 @@ $$ f(x) = \phi\left(\inlsum\nolimits_k x_k\right). $$
 :::Proof
 * $f$ depends only on $\inlsum_k x_k \implies f$ is $\Sto{N}$-invariant:
 
-  The function $f$ cannot "see" the changes $M \in \Sto{N}$
-  produces in the space:
+  The function $f$ cannot "see" the changes $M \in \Sto{N}$ produces:
 
-  $$
-  f(M x) = \phi(\inlsum_k (M x)_k) = \phi(\inlsum_k x_k) = f(x).
-  $$
+  $$ f(M x) = \phi(\inlsum_k (M x)_k) = \phi(\inlsum_k x_k) = f(x). $$
 
 * $f$ is $\Sto{N}$-invariant $\implies f$ depends only on $\inlsum_k x_k$:
 
@@ -385,12 +383,12 @@ for the simplex.
 for the deduction of Maxwell's theorem which inspired my proof below.
 
 :::Theorem
-The only $\Sto{N}$-invariant absolutely continuous distributions on $\R^N_{\ge 0}$ (the non-negative quadrant)
+The only $\Sto{N}$-invariant absolutely continuous distributions on $\R^N_{\ge 0}$ (the non-negative cone)
 with independent components are identically distributed exponentials $\sim \Exp(\lambda)$.
 :::
 
 :::Proof
-We only consider absolutely continuous distributions supported on the non-negative quadrant.
+We only consider absolutely continuous distributions supported on the positive orthant.
 Hence, our distribution equals $p_Z = f \cdot \Id_{\ge 0}$ for an integrable probability density $f$.
 Let's investigate this function.
 By $\Sto{N}$-invariance, this density can only depend on the sum of components
@@ -425,7 +423,7 @@ $$\boxed{f_i(x_i) = C_i e^{-\lambda x_i}}.$$
 
 You can use that the $f_i$ are probability densities to deduce that $\lambda > 0$
 and $C_i = \lambda$ are the only admissible constants.
-The reason is because their tail has to go to zero and they must integrate to one.
+The reasons are their tail has to go to zero and they must integrate to one.
 
 $$ \begin{array}{ll}
 \lim_{t \to \infty} C_i e^{-\lambda t} = 0 &\iff \lambda > 0, \\
@@ -439,25 +437,113 @@ $$ p_Z(x) = \lambda^N e^{-\lambda \sum_k x_k} \cdot \Id_{\ge 0} $$
 Which characterizes a multivariate exponential with i.i.d. components.
 :::
 
+Among its many properties, the exponential distribution is famously
+simple to generate from a uniform distribution on $[0, 1]$ (which are available everywhere),
+as a consequence of the [inverse transform sampling](https://en.wikipedia.org/wiki/Inverse_transform_sampling#):
 
-http://luc.devroye.org/rnbookindex.html page 594.
+$$ U \sim \Unif[0, 1] \implies -\frac{1}{\lambda}\log(U) \sim \Exp(\lambda).$$
+
+Combining the above with this section's theorems,
+we arrive at a way to sample uniformly from the simplex
+using only $\Unif[0, 1]$ distributions --- which are available everywhere.
+The function below illustrates how simple an implementation can be.
+To be fair, I could've even made it a one-liner, but it's spelt out for legibility.
+
 
 ```julia
-function sample_simplex(xs)
-  U = rand(length(xs))     # Uniformly distributed on cube
-  E = map(u -> -log(u), U) # E ~ Exp(1)
+function sample_simplex(n)
+  U = rand(n)              # Uniformly distributed on n-cube
+  E = map(u -> -log(u), U) # E[i] ~ Exp(1)
 
   return E / sum(E)        # Uniformly distributed on simplex
 end
 ```
 
+It's a single step to go from the previous method
+to a uniform sampling on the probabilities over probabilities.
+In Julia code, you could do the below.
 
-Bonus: Sampling Stochastic Matrices
-===================================
+```julia
+function sample_prob(xs)
+  P = sample_simplex(length(xs))
+  return Dist(xs[i] => P[i] for i in eachindex(xs))
+end
+```
+
+Bonus: Using the Simplex to Sample Other Sets
+=============================================
+
+The previous section already wrapped up our main goals.
+Nevertheless, it would be a shame develop such a tool
+and simply finish the post and go home.
+Let's thus explore how to use $\Delta^N$
+to uniformly sample from a couple other interesting sets.
+By the way, this is a bonus section, so feel free to ignore it
+and just call it a day.
+
+Stochastic Matrices
+-------------------
+
+Stochastic matrices helped us a lot during this post,
+specially as a tool to understand the invariants related to the simplex.
+Let's switch our view during this section to put them on the spotlight.
+I think they deserve it.
+
+How to sample uniformly from $\Sto{N}$?
+Well, their only requirement is that each column must be a probability vector
+--- an element of the simplex.
+Thus, the stochastic matrices are equivalent to $N$ independent copies of the simplex,
+
+$$ \Sto{N} \cong \prod_{i = 1}^N \Delta^N.$$
+
+This is a compact set, by [Tychonoff's theorem](https://en.wikipedia.org/wiki/Tychonoff's_theorem#)
+and we can uniformly sample from it by drawing each component independently.
+
+```julia
+function sample_sto(n)
+  # Sample n vectors uniformly from simplex
+  Ps = (sample_simplex(n) for i = 1 in 1:n)
+  # Concatenate vectors into columns of a matrix
+  return reduce(hcat, Ps)
+end
+```
+
+$1$-norm unit sphere
+--------------------
+
+All that we've done is deeply linked to the $1$-norm,
+
+$$ \norm{x}_1 = \sum_k \abs{x_k}.$$
+
+The $1$-norm unit sphere is the set of all points
+whose $1$-norm equals $1$,
+
+$$ \partial B^N_1 = \{\, x \mid \norm{x}_1 = 1 \,\}.$$
+
+:::Missing
+1-norm in dimension 2.
+:::
+
+This is a collage of identical simplexes, one for each orthant.
+As their intersections have zero measure,
+we can uniformly sample from the sphere by drawing a point in the simplex
+and throwing $n$ coins to decide the component's sign.
+
+```julia
+function sample_1_sphere(n)
+  Z = sample_simplex(n)    # Point in the simplex
+  S = rand([-1, 1], n)     # n choices of positive/negative
+
+  return Z .* S            # Pointwise product
+end
+```
+
+Triangulated Regions and Manifolds
+----------------------------------
 
 
-The General Case
-================
+Bonus: Sampling from $p$-norm spheres
+=====================================
 
 $$ \frac{2}{p}\Gamma(1/p) e^{-\norm{x}_p^p} $$
 
