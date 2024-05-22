@@ -52,17 +52,17 @@ suppress-bibliography: true
 
 Oftentimes, I need to sample points from a finite set.
 Usually, there is an obvious way to draw elements,
-but even so often, it happens that I need
+but every so often, I end up needing
 the _probability distribution itself_ to be random
 (e.g. property testing for solvers depending on weighted averages.)
 To avoid possible statistical misfortunes,
-it is desirable to choose such a distribution uniformly among all candidates.
+it is also desirable to choose such a distribution uniformly among all possibilities.
 
 As it stands, there are some methods to do that.
 Today we're going to explore my favorite one,
-which only requires us to be able to independently sample uniformly from the $[0, 1]$ interval.
+whose only requirement is uniformly sampling from the $[0, 1]$ interval.
 Besides, it is pretty fast to compute and has an elegant geometric flavour.
-What more could we ask?
+What else could we ask?
 
 What's more, a lot of the lemmas we'll use are $L^1$ versions of well-known results for Gaussians.
 Although their equivalence seems to be common knowledge among mathematicians,
@@ -76,24 +76,26 @@ and don't care for the mathematical intricacies --- no matter how elegant they m
 here is the final theorem, which should get you covered.
 
 :::Theorem
-Let $U \sim \Unif[0, 1]^N$ be uniform on the $N$-cube and define random variables $E_i = -\log(U_i) \sim \Exp(1)$.
-We can get a random vector that is uniformly distributed on all probabilities over $N$ elements as
+Let $U_i \sim \Unif[0, 1]$ be i.i.d. uniform random variables and define $E_i = -\log(U_i) \sim \Exp(1)$.
+The barycentric projection
 
-$$ Z = \frac{1}{\sum_i E_i} E.$$
+$$ Z = \frac{1}{\sum_i E_i} E$$
+
+Is uniformly distributed over all $N$-element probability weights.
 :::
 
 Probabilities Over the Probabilities
 ====================================
 
 To sample from a set, we must have a measurable structure.
-In our case, this means we need a _probability over the probabilities_.
+In our case, this means a _probability over the probabilities_.
 Since whenever our set has more than a single element,
 its probability distributions form an infinite set,
 we must ask ourselves whether our problem is even well-posed.
 
 - What is a probability distribution over the probability distributions over a finite set?
 
-- In what sense can one such probability be considered uniform?
+- In what sense can such probability be considered uniform?
 
 To answer these,
 let's first reduce our problem to a more concrete one.
@@ -104,19 +106,19 @@ on the elements of $\Omega$:
 
 $$ p = \sum_{\omega \in \Omega} p_\omega \cdot \delta_\omega(x).$$
 
-Since we need the $p_s$ to represent the probability of outcome $\omega$,
+Since the $p_\omega$ represents the probability of outcome $\omega$,
 not every linear combination of deltas is acceptable.
-To produce a probability distribution, We need the coefficients to form a _convex combination_, i.e.,
+To produce a probability distribution, the coefficients must form a _convex combination_, i.e.,
 
 $$ p_\omega \ge 0 \text{ and } \sum_{\omega \in \Omega} p_\omega = 1.$$
 
-The set of all such coefficients is known as the **standard simplex** (simplex for short, from now on).
+The set of all such coefficients is known as the **standard simplex** (from now on, just _simplex_ for short).
 It is a compact convex subset of $\R^{N}$ and, as such,
 has a clear notion of uniform probability inherited from the Lebesgue measure.
-Furthermore, since the set $\Omega$ is fixed, sampling a random probability distribution on it
-is equivalent to sampling the probability coefficients.
-Therefore, we reduce our problem to a more geometrical one:
-generating points uniformly in the simplex.
+Furthermore, since the set $\Omega$ is fixed, sampling a random probability distribution
+is equivalent to sampling the coefficients.
+This way, our problem becomes geometrical:
+how to generate points uniformly in the simplex.
 
 
 How to Sample From the Standard Simplex
@@ -127,9 +129,10 @@ If you prefer to remain abstract,
 you can enumerate $\Omega = \{\, \omega_1, \ldots, \omega_N \,\}$
 and use the isomorphism $\delta_{\omega_k} \mapsto e_k$
 taking the point masses to the corresponding canonical basis vectors.
-Everything will work the same.
+Everything works the same.
 
-Alright, we are interested in the set of all **probability vectors** in $\R^N$:
+Alright, we are interested in the set of all **probability vectors** in $\R^N$,
+called the **standard simplex**
 
 $$ \Delta^N = \left\{\, x \in \R^{N} \mid x \ge 0,\, \inlsum_k x_k = 1  \,\right\}.$$
 
@@ -165,7 +168,8 @@ $$ \Delta^N = \left\{\, x \in \R^{N} \mid x \ge 0,\, \inlsum_k x_k = 1  \,\right
 \end{scope}
 ```
 
-As a compact subset of $\R^N$, it has a uniform probability measure given by the area of a subset
+As a compact subset of $\R^N$, its normalized (hyper-)area element
+defines a uniform probability measure
 
 $$ p_{\Delta^N}(A) = \frac{\Area(A \cap \Delta^N)}{\Area(\Delta^N)}.$$
 
@@ -174,8 +178,8 @@ using only the standard tools you'd find in any programming language,
 such as $\Unif[0, 1]$ distributions.
 There are a couple ways to do it involving
 rejection sampling or some kind of combinatorics with partitions of the interval.
-The method of choice for this post uses symmetries
-and mimics the well-known construction for the uniform distribution on the sphere.
+The method of choice for this post, however,
+uses symmetries and mimics the well-known construction for the uniform distribution on the sphere.
 
 Before getting technical, I think a sketch of the idea is due.
 We look at the non-negative cone $\R^N_{\ge 0}$ as a stacking of simplexes $r \Delta^N$
@@ -291,15 +295,16 @@ it's time to go on and prove the necessary theorems.
 Symmetry and Invariance {#symmetries}
 -----------------------
 
+
 Considering we talked about symmetries,
-the most straightforward thing to do would be taking a look
+the apparent next step would be taking a look
 at the group of linear automorphisms that preserve the simplex.
 Unfortunately, it is too meager: only permutation matrices and nothing more.
-In other words, the group of (linear) symmetries is just the --- no pun intended -- symmetric group on its vertices.
+In other words, its group of (linear) symmetries is just the --- no pun intended -- symmetric group on its vertices.
 
 $$ \mathrm{LinAut}(\Delta^N) \cong S_N. $$
 
-We would like to get a continuous group for our symmetries.
+We would prefer a _continuous group_ for our symmetries.
 Nevertheless, not all is lost!
 The thing is: a full-on group was just too much to ask for.
 Instead, the _monoid_ of linear transformations that preserve the simplex
@@ -366,7 +371,7 @@ $$\boxed{M e_k \in \Delta^N,\, k = 1,\ldots, N.}$$
 ```
 
 The above is the abstract version of our condition.
-However, it takes a more concrete shape by recollecting that
+It takes a more concrete shape by noticing that
 $M e_k$ equals the coefficients on the $k$-th column of $M$.
 
 $$
@@ -383,8 +388,8 @@ Consequently, the matrices that preserve the simplex are those
 whose components are themselves probability vectors.
 
 If you've ever tinkered with Markov Processes,
-you may know those by the name of _stochastic matrix_ or _Markov Kernel_
-and used them for the exact same reason: preserving the total probability in a transition step.
+you may know those by the name of _stochastic matrix_ or _Markov Kernel_,
+and perhaps even used them for the exact same reason: preserving the total probability in a transition step.
 Also, they're the reason why my friends who decided to study probability
 to run away from algebra ended up needing to learn about semigroups and monoids.
 Even though I'm a fan of saying "Markov Kernels",
@@ -402,7 +407,7 @@ We denote by $\Sto{N}$ the monoid of all such matrices.
 :::
 
 Throughout the realms of mathematics, symmetries are known for producing invariants
-because by preserving a set, they end up preserving some simple function related to it.
+because, by preserving a set, they end up preserving some simple function related to it.
 Rotations conserve inner products and lengths, translations preserve the differences, etc.
 So, what is the invariant associated with stochastic matrices?
 As you might expect from the discussion before,
@@ -411,10 +416,10 @@ they conserve the sum of components.
 $$ \sum_k (M x)_k = \sum_{k,l} M_{kl} x_l = \sum_l x_l \underbrace{\left( \sum_k M_kl \right)}_{= 1} = \sum_l x_l.$$
 
 On top of this algebraic derivation,
-we can also look at it from a more geometrical point of view
-by using the barycentric coordinates from the previous section.
-Write $x = r \sigma$, with $r = \sum_k x_k$ and $\sigma \in \Delta^N$.
-The coordinates of $M x$ are
+there is also a more geometrical point of view.
+Let's use the barycentric coordinates from the previous section to write
+$x = r \sigma$, with $r = \sum_k x_k$ and $\sigma \in \Delta^N$.
+By linearity, the coordinates of $M x$ are
 
 $$ Mx = M(r\sigma) = r \underbrace{(M \sigma)}_{\in \Delta^N}.$$
 
@@ -439,7 +444,6 @@ $$ Mx = M(r\sigma) = r \underbrace{(M \sigma)}_{\in \Delta^N}.$$
   \pgfonlayer{decor}
     \foreach \i/\where in {1/above,2/left,3/below} {
       \node[bubble] at (e\i) {};
-      \node at (e\i) [\where] {$e_\i$};
     };
   \endpgfonlayer
 
@@ -466,30 +470,28 @@ $$ Mx = M(r\sigma) = r \underbrace{(M \sigma)}_{\in \Delta^N}.$$
 
   % Projection
   \def\norm{2.0}
-  \coordinate (x)  at (0.5, 1.0, 0.5);
-  \coordinate (mx) at (0.2, 0.4, 1.4);
+  \coordinate (x)  at ($ \norm*(barycentric cs:e1=1,e2=3,e3=1) $);
+  \coordinate (mx) at ($ \norm*(barycentric cs:e1=1.5,e2=1.5,e3=2) $);
+  \coordinate (s)  at ($ {1/\norm}*(x) $);
+  \coordinate (ms) at ($ {1/\norm}*(mx) $);
 
   \draw[-Latex]
-    (x) node[bubble] {} -- ($ {1/\norm}*(x) $) node[bubble, "\sigma" above] {};
+    (x)  --  (s)  node[bubble, "$\sigma$" above] {};
   \draw[-Latex]
-    (mx) node[bubble] {} -- ($ {1/\norm}*(mx) $) node[bubble, "$M\sigma$" above] {};
-
+    (s)  --  (ms) node[bubble, "-90:$M\sigma$"] {};
+  \draw[-Latex]
+    (ms) --  (mx);
 
   \pgfonlayer{decor}
-    \node at (x) [above] {$x$};
-    \node at (mx) [right] {$Mx$};
+    \node[bubble] at (x) ["$x$" above] {};
+    \node[bubble] at (mx) ["$Mx$" right] {};
+
+    \draw (x) edge [-Latex, bend left] (mx);
 
     % Pin / Label
     \draw[-{Kite}] (1.5, 1) node[above] {$r\Delta^N$}
       to[out = -90, in = 0] ($ {2}*(e1)!0.4!(e2)!0.1!(e3) $) {};
   \endpgfonlayer
-
-
-  \pgfonlayer{behind}
-    \draw (O) -- (x);
-    \draw (O) -- (mx);
-  \endpgfonlayer
-
 \end{scope}
 ```
 
@@ -503,9 +505,9 @@ In general, if a function is $G$ invariant, i.e.,
 
 $$ \forall M \in G,\, f(M x) = f(x),$$
 
-One expects it to only depend on the quantities conserved by $G$,
+One expects it to only depend on the quantities conserved by $G$.
 In our case of interest, $\Sto{N}$,
-we can rigorously prove that only the sum matters for such functions.
+we rigorously prove that only the sum matters for such functions.
 
 :::Theorem
 A function $f : \R^N_{\ge 0} \to \R$ is $\Sto{N}$-invariant
@@ -524,7 +526,7 @@ $$ f(x) = \phi\left(\inlsum\nolimits_k x_k\right). $$
 
 ##### $f$ is $\Sto{N}$-invariant $\implies f$ depends only on $\inlsum_k x_k$:
 
-We use the invariance to turn $f$ into a one-dimensional function,
+We use the invariance to turn $f$ into a one-dimensional function
 by constructing a stochastic matrix $A$ that takes each simplex to a single coordinate.
 You can think of this procedure as a $1$-norm version of rotating the coordinate system such $x$ aligns to an axis.
 Concretely, we achieve this by defining $A e_k = e_1$,
@@ -541,7 +543,7 @@ A = \left[
 \right]
 $$
 
-This is a stochastic matrix that accumulates the sum of any vector into its first component.
+This stochastic matrix accumulates the sum into the first component.
 
 $$ A x =
 \left[
@@ -571,7 +573,7 @@ $$ A x =
 \right]
 $$
 
-By invariance, we then get that
+By invariance,
 
 $$ f(x) = f(A x) = f( (\inlsum_k x_k) \cdot e_1) = \phi(\inlsum_k x_k)$$
 
@@ -610,7 +612,7 @@ Let's use the invariance to show that it is uniformly distributed.
 
 Consider a region $A \subset \Delta^N$.
 The projection is in $A$ if and only if the original variable $E$
-lies in a ray coming from the origin and crossing $A$ somewhere,
+lies in the cone $C_A$ of rays coming from the origin and crossing $A$ somewhere,
 
 $$
 \begin{aligned}
@@ -621,6 +623,7 @@ $$
 
 ```tikz {tikzlibrary="shapes.geometric"}
 \begin{scope} [scale = 2, xscale = 1.5, rotate around y=45,
+    blend group = multiply,
     heptagon/.style = {
       regular polygon,
       regular polygon sides=7,
@@ -652,53 +655,56 @@ $$
   \endpgfonlayer
 
   % The simplex
-    \filldraw[color = sgreen, fill opacity = 0.4] (e1) -- (e2) -- (e3) -- cycle;
+    \filldraw[color = sgreen, draw = sgreen!80!black, opacity = 1] (e1) -- (e2) -- (e3) -- cycle;
 
-  \coordinate (m) at (barycentric cs:e1=1,e2=0.8,e3=1);
+  \coordinate (m) at (barycentric cs:e1=1,e2=1.3,e3=1);
 
-  \node[heptagon, draw] (A) at (m) {};
+  \node[heptagon, draw = black, fill = sgreen!50!sorange] (A) at (m) {};
 
-  \pgfonlayer{plane}
-    \node[heptagon,
-          draw,
-          minimum width = 2cm,
-          left color=cyan!10,
-          right color=cyan!40,
-          opacity = 0.6] (Ar) at ($ 2*(m) $) {};
-  \endpgfonlayer
+  %% Build the cone
+  {[every path/.style = {ultra thin, draw opacity = 1, fill opacity = 0.6},
+    wall/.style = {left color=cyan!10, right color=cyan!40},
+   ]
+    % Top part
+    \pgfonlayer{plane}
+      \node[heptagon,
+            draw,
+            minimum width = 2cm,
+            wall,
+           ] (Ar) at ($ 2*(m) $) {};
+    \endpgfonlayer
 
+    % middle part
+    \pgfonlayer{infront}
+      \foreach \i in {1, 2, 6, 7}
+        \draw (A.corner \i) -- (Ar.corner \i);
 
-  \pgfonlayer{behind}
-    \foreach \i in {1, 2,  6, 7}
-      \draw[-, opacity = 0.6] (O) -- (A.corner \i);
+      \foreach \i in {1,...,5} {
+        \pgfmathtruncatemacro{\j}{\i + 1}
+        \shade[wall] (A.corner \i) -- (Ar.corner \i) -- (Ar.corner \j) -- (A.corner \j) -- cycle ;
+      };
 
-    \foreach \i in {1,...,5} {
-      \pgfmathtruncatemacro{\j}{\i + 1}
-      \shade[left color=cyan!15,right color=cyan!40, opacity=0.6]
-            (O) -- (A.corner \i) -- (A.corner \j) -- cycle;
-    };
+      \foreach \i in {3,...,5}
+          \draw (A.corner \i) -- (Ar.corner \i);
+    \endpgfonlayer
 
-    \foreach \i in {3,...,5}
-        \draw[-, opacity = 0.6] (O) -- (A.corner \i);
-  \endpgfonlayer
+    % Back part
+    \pgfonlayer{behind}
+      \foreach \i in {1, 2,  6, 7}
+        \draw (O) -- (A.corner \i);
 
+      \foreach \i in {1,...,5} {
+        \pgfmathtruncatemacro{\j}{\i + 1}
+        \shade[wall] (O) -- (A.corner \i) -- (A.corner \j) -- cycle;
+      };
 
-  \pgfonlayer{infront}
-    \foreach \i in {1, 2, 6, 7}
-      \draw[-] (A.corner \i) -- (Ar.corner \i);
-
-    \foreach \i in {1,...,5} {
-      \pgfmathtruncatemacro{\j}{\i + 1}
-      \fill[left color=cyan!15,right color=cyan!40, opacity=0.6]
-            (A.corner \i) -- (Ar.corner \i) -- (Ar.corner \j) -- (A.corner \j) -- cycle ;
-    };
-
-    \foreach \i in {3,...,5}
-        \draw[-] (A.corner \i) -- (Ar.corner \i);
-  \endpgfonlayer
+      \foreach \i in {3,...,5}
+          \draw (O) -- (A.corner \i);
+    \endpgfonlayer
+  }
 
   \pgfonlayer{decor}
-    \node at (A.center)  [pin={[pin distance = 1.4cm, pin edge = {Stealth-, bend right}]-30:$Z \in A$}] {};
+    \node at (A.center)  [pin={[pin distance = 1.4cm, pin edge = {Stealth-, bend right}]-30:$\frac{\textstyle E}{\inlsum_k E_k} \in A$}] {};
     \node at (Ar.center) [pin={[pin distance = 1cm, pin edge = {Stealth-, bend right}]60:$E \in C_A$}] {};
   \endpgfonlayer
 \end{scope}
@@ -725,17 +731,17 @@ defining a uniform measure.
 
 The previous theorem is a recipe for turning $\Sto{N}$-invariant distributions
 into ones that are uniform on the simplex.
-The only thing missing is finding a suitable distribution to project.
+The only thing missing is to find a suitable distribution to project.
 What could it be?
 As it turns out,
 a vector of i.i.d. [exponentially distributed random variables](https://en.wikipedia.org/wiki/Exponential_distribution)[^exp-rv] just cuts it.
 I don't want to just postulate it, however.
 We've come this far from first principles,
-so let's make the exponentials show themselves in our deduction.
+so let's make the exponentials appear by themselves.
 
 [^exp-rv]: Continuous random variables with density $f(x) = \lambda e^{-\lambda x} \Id_{[0, \infty)}(x)$.
 
-We can choose any invariant distribution,
+Any invariant distribution will do,
 so let's go with the easiest kind: those with independent components.
 What I find the most impressive is that the constraints of $\Sto{N}$-invariance and independence together
 are strong enough to characterize exponential distributions.
@@ -752,20 +758,20 @@ with independent components are identically distributed exponentials $\sim \Exp(
 
 :::Proof
 We only consider absolutely continuous distributions supported on the positive orthant.
-Hence, our distribution equals $p_Z = f \cdot \Id_{\ge 0}$ for an integrable probability density $f$.
+Hence, the distribution equals $p_Z = f \cdot \Id_{\ge 0}$ for an integrable probability density $f$.
 Let's investigate this function.
-By $\Sto{N}$-invariance, this density can only depend on the sum of components
-and by independence, the joint density is a product of single-variable densities $f_i$,
+By $\Sto{N}$-invariance, this density only depends on the sum of components
+and, by independence, the joint density is a product of single-variable densities $f_i$,
 
 $$ f(x) = \phi\left(\inlsum\nolimits_k x_k\right) = \prod_k f_i(x_k).$$
 
 Let's turn it into a system of differential equations and solve for a closed form.
-As we are working with distributions, we don't need to worry about smoothness right now
+As we are working with distributions, there's no need to worry about smoothness right now
 because all derivatives can be taken in a weak sense.
 
 $$ \partial_i f(x) = \phi'\left(\inlsum\nolimits_k x_k\right) = f_i'(x_i) \prod_{k \ne i} f_k(x_k).$$
 
-By dividing both sides by $f$, we get to
+By dividing both sides by $f$, it becomes
 
 $$ \frac{\phi'\left(\inlsum\nolimits_k x_k\right)}{\phi\left(\inlsum\nolimits_k x_k\right)} = \frac{f_i'(x_i)}{f_i(x_i)}.$$
 
@@ -776,9 +782,9 @@ Let's smartly call this constant $-\lambda$.
 
 $$ \frac{f_i'}{f_i} = -\lambda \implies f_i' = -\lambda f_i.$$
 
-Great! As Since the only weak solutions to a linear ordinary differential equation
+Great! As the only weak solutions to a linear ordinary differential equation
 are the classical ones,
-the above proves that the only possible densities are exponentials.
+the above proves that the densities are exponentials.
 
 $$\boxed{f_i(x_i) = C_i e^{-\lambda x_i}}.$$
 
@@ -799,14 +805,14 @@ Which characterizes a multivariate exponential with i.i.d. components.
 :::
 
 Among its many properties, the exponential distribution is famously
-simple to generate from a uniform distribution on $[0, 1]$ (which are available everywhere),
+simple to generate from a uniform distribution on $[0, 1]$,
 as a consequence of the [inverse transform sampling](https://en.wikipedia.org/wiki/Inverse_transform_sampling#):
 
 $$ U \sim \Unif[0, 1] \implies -\frac{1}{\lambda}\log(U) \sim \Exp(\lambda).$$
 
 Combining the above with this section's theorems,
 we arrive at a way to sample uniformly from the simplex
-using only $\Unif[0, 1]$ distributions --- which are available everywhere.
+using only $\Unif[0, 1]$ distributions --- which are available in any programming language worth its salt.
 The function below illustrates how simple an implementation can be.
 To be fair, I could've even made it a one-liner, but it's spelt out for legibility.
 
@@ -822,7 +828,7 @@ end
 
 It's a single step to go from the previous method
 to a uniform sampling on the probabilities over probabilities.
-In Julia code, you could do the below.
+Assuming you have a type `Dist` for distributions, its just a mapping.
 
 ```julia
 function sample_prob(xs)
@@ -835,10 +841,10 @@ Bonus: Using the Simplex to Sample Other Sets
 =============================================
 
 The previous section already wrapped up our main goals.
-Nevertheless, it would be a shame develop such a tool
-and simply finish the post and go home.
-Let's thus explore how to use $\Delta^N$
-to uniformly sample from a couple other interesting sets.
+Nevertheless, it would be a shame develop such a fine tool
+to simply finish the post and go home.
+Let's thus explore a couple examples of using $\Delta^N$
+to uniformly sample from other interesting sets.
 By the way, this is a bonus section, so feel free to ignore it
 and just call it a day.
 
@@ -857,7 +863,7 @@ Thus, the stochastic matrices are equivalent to $N$ independent copies of the si
 
 $$ \Sto{N} \cong \prod_{i = 1}^N \Delta^N.$$
 
-This is compact and we can uniformly sample from it by drawing each component independently.
+Drawing each component independently samples from it uniformly.
 
 ```julia
 function sample_sto(n)
@@ -871,19 +877,19 @@ end
 $1$-norm unit sphere
 --------------------
 
-All that we've done is deeply linked to the $1$-norm,
+This whole post i deeply linked to the $1$-norm
 
 $$ \norm{x}_1 = \sum_k \abs{x_k}.$$
 
 The $1$-norm unit sphere is the set of all points
 whose $1$-norm equals $1$,
 
-$$ \partial B^N_1 = \{\, x \mid \norm{x}_1 = 1 \,\}.$$
+$$ \partial B^N_1 = \{\, x \in \R^N \mid \norm{x}_1 = 1 \,\}.$$
 
 This is a collage of identical simplexes, one for each orthant.
 As their intersections have zero measure,
-we can uniformly sample from the sphere by drawing a point in the simplex
-and throwing $n$ coins to decide the component's sign.
+you sample uniformly from the sphere by drawing a point in the simplex
+and throwing $N$ coins to decide the component's sign.
 
 ```julia
 function sample_1_sphere(n)
@@ -909,7 +915,7 @@ and all pairwise intersections have dimension less than $K$ (therefore, zero mea
 But we're already getting too much outside the scope of this post.
 
 The method in this topic is an evolution of the one for the $1$-sphere.
-First we assign a triangulation to the polyhedron $K$.
+First, assign a triangulation to the polyhedron $K$.
 Then, by weighting a choice of simplex from the triangulation by their volume
 and choosing uniformly from that simplex, we get a uniform distribution on the whole triangulation.
 
@@ -940,14 +946,13 @@ Conclusion
 ==========
 
 Very well, today's journey has come to an end.
-I hope you had fun exploring how a at first strange problem in statistics
+I hope you had fun exploring how a seemly strange problem in statistics
 could be reduced to a geometrical problem about symmetries.
-I surely did.
+I know that I did.
 
-To wrap up, I should point the similarity between today's derivation and Herschel-Maxwell's theorem
-for rotation-invariant distributions.
-Besides 
-In particular because the sum equals the $L^1$ norm in the first quadrant.
+To wrap up, I should point out the similarity between today's derivation
+the and Herschel-Maxwell's theorem for rotation-invariant distributions.
+In particular, because the sum equals the $L^1$ norm in the first quadrant.
 Does this mean something deeper? I don't really know, but I bet so.
 What I know is that one can sample from any $p$-norm sphere [@barthe_probabilistic_2005] using a distribution
 proportional to $e^{-\norm{x}_p^p}$.
