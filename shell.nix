@@ -1,8 +1,11 @@
 let
   pkgs = import <nixpkgs> {};
   tex = (pkgs.texlive.combine {
-    inherit (pkgs.texlive) scheme-medium
-      dvisvgm amsmath standalone tikz-cd;
+    inherit (pkgs.texlive) scheme-small
+      dvisvgm
+      luatex luatex85 standalone
+      lm amsmath
+      pgf tikz-cd;
   });
 in
 pkgs.mkShell {
