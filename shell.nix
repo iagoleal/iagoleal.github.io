@@ -1,10 +1,10 @@
 let
   pkgs = import <nixpkgs> {};
   tex = (pkgs.texlive.combine {
-    inherit (pkgs.texlive) scheme-small
+    inherit (pkgs.texlive) scheme-basic
       dvisvgm
       luatex luatex85 standalone
-      lm amsmath
+      lm amsmath etoolbox
       pgf tikz-cd;
   });
 in
