@@ -67,7 +67,7 @@ What else could we ask?
 What's more, a lot of the lemmas we'll use are $L^1$ versions of well-known results for Gaussians.
 Although their equivalence seems to be common knowledge among mathematicians,
 I don't know about any reference that does things this way.
-So, as a bonus, now I'll have where to link people towards whenever I want to talk about Markov kernel-invariance.
+So, as a bonus, now I have a place to link people to whenever I want to talk about Markov kernel-invariance.
 Oh well, it seems I'm putting the cart before the horse in here.
 Time to start out.
 
@@ -287,7 +287,7 @@ and scale it such that its components sum to one (barycentric projection).
 
 \end{scope}
 ```
-By choosing a $X$ whose distribution is _invariant_ with respect to symmetries of the simplex,
+By choosing an $X$ whose distribution is _invariant_ with respect to symmetries of the simplex,
 the projection's distribution can be made uniform.
 Now that you've (hopefully) got some intuition on what's our plan,
 it's time to go on and prove the necessary theorems.
@@ -393,7 +393,7 @@ and perhaps even used them for the exact same reason: preserving the total proba
 Also, they're the reason why my friends who decided to study probability
 to run away from algebra ended up needing to learn about semigroups and monoids.
 Even though I'm a fan of saying "Markov Kernels",
-in this post we'll go with the name "stochastic" [^left-stochastic].
+in this post we'll go with the name "stochastic matrices" [^left-stochastic].
 
 [^left-stochastic]: In fact, people in probability generally work with _left stochastic_ matrices,
 because they like multiplying vectors from the left, i.e. $p M = p$,
@@ -712,8 +712,9 @@ $$
 
 The distribution of $E$ is continuous,
 so calculating the probability on the right amounts to your commonplace integral.
-Since the density $f_E$ is $\Sto{N}$-invariant,
-it can only depend on the sum of components (i.e., $f_E(x) = \phi(\inlsum x_k)$).
+Also, from invariance,
+its density $f_E$ only depends on the sum of components
+(i.e., $f_E(x) = \phi(\inlsum x_k)$).
 Thus, a change of variables for barycentric coordinates $x = (\inlsum_k x_k)\sigma$ seems like a good bet.
 
 $$
@@ -749,7 +750,7 @@ You can think of it as an adaptation of [Maxwell's theorem](https://en.wikipedia
 for the simplex.
 
 [^se-maxwell]: See [this link](https://math.stackexchange.com/questions/105418/very-elementary-proof-of-maxwells-theorem/105470#105470)
-for the deduction of Maxwell's theorem which inspired my proof below.
+for the deduction of Maxwell's theorem from which inspired this proof.
 
 :::Theorem
 The only $\Sto{N}$-invariant absolutely continuous distributions on $\R^N_{\ge 0}$ (the non-negative cone)
@@ -841,7 +842,7 @@ Bonus: Using the Simplex to Sample Other Sets
 =============================================
 
 The previous section already wrapped up our main goals.
-Nevertheless, it would be a shame develop such a fine tool
+Nevertheless, it would be a shame to develop such a fine tool
 to simply finish the post and go home.
 Let's thus explore a couple examples of using $\Delta^N$
 to uniformly sample from other interesting sets.
@@ -946,7 +947,7 @@ Conclusion
 ==========
 
 Very well, today's journey has come to an end.
-I hope you had fun exploring how a seemly strange problem in statistics
+I hope you had fun exploring how a seemingly strange problem in statistics
 could be reduced to a geometrical problem about symmetries.
 I know that I did.
 
@@ -961,3 +962,8 @@ To be fair, I can't think of anything but permutations.
 That's a topic for a future post, perhaps.
 
 Farewell and good sampling for y'all!
+
+Acknowledgements
+================
+
+Many thanks to Ivani Ivanova for her comments and effort proofreading this post.
