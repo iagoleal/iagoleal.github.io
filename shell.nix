@@ -4,7 +4,7 @@ let
     inherit (pkgs.texlive) scheme-basic
       dvisvgm
       luatex luatex85 standalone
-      lm amsmath etoolbox
+      lm amsmath amsfonts xcolor etoolbox
       pgf tikz-cd;
   });
 in

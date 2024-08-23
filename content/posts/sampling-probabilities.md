@@ -18,7 +18,8 @@ suppress-bibliography: true
 }
 </style>
 
-\def\inlsum{\textstyle\sum}
+\def\inlsum{{\textstyle\sum}}
+\def\R{\mathbb{R}}
 
 \def\norm#1{\left\lVert#1\right\rVert}
 \def\abs#1{\left|#1\right|}
@@ -29,6 +30,8 @@ suppress-bibliography: true
 \def\Id{\mathbb{I}}
 \def\Triang{\mathcal{T}}
 \def\Prob{\mathbf{Prob}}
+\def\d{\mathrm{d}}
+\def\sumop{\Sigma}
 
 ```{=tex}
 
@@ -77,9 +80,9 @@ here is the final theorem, which should get you covered.
 
 :::Theorem
 Let $U_i \sim \Unif[0, 1]$ be i.i.d. uniform random variables and define $E_i = -\log(U_i) \sim \Exp(1)$.
-The barycentric projection
+The projection
 
-$$ Z = \frac{1}{\sum_i E_i} E$$
+$$ Z = \frac{1}{\inlsum_i E_i} E$$
 
 Is uniformly distributed over all $N$-element probability weights.
 :::
@@ -120,6 +123,17 @@ is equivalent to sampling the coefficients.
 This way, our problem becomes geometrical:
 how to generate points uniformly in the simplex.
 
+Before, proceeding, let's introduce a little notation.
+Since we will stumble into a lot of component sums,
+let's define an operator to represent it.
+This way, we free ourselves from juggling unnecessary indices.
+
+::: {.Definition data-title="Component sum operator"}
+The linear operator $\sumop : \R^N \to \R$
+takes a vector to the sum of its components in the canonical basis
+$$ \sumop x = \sum_{k = 1}^N x_k.$$
+:::
+
 
 How to Sample From the Standard Simplex
 =======================================
@@ -134,7 +148,7 @@ Everything works the same.
 Alright, we are interested in the set of all **probability vectors** in $\R^N$,
 called the **standard simplex**
 
-$$ \Delta^N = \left\{\, x \in \R^{N} \mid x \ge 0,\, \inlsum_k x_k = 1  \,\right\}.$$
+$$ \Delta^N = \left\{\, x \in \R^{N} \mid x \ge 0,\, \sumop x = 1  \,\right\}.$$
 
 ```tikz
 \begin{scope} [scale = 2, xscale = 1.5, rotate around y=45]
@@ -182,8 +196,8 @@ The method of choice for this post, however,
 uses symmetries and mimics the well-known construction for the uniform distribution on the sphere.
 
 Before getting technical, I think a sketch of the idea is due.
-We look at the non-negative cone $\R^N_{\ge 0}$ as a stacking of simplexes $r \Delta^N$
-whose components sum to $r$
+We can think about the non-negative cone $\R^N_{\ge 0}$
+as a stacking of simplexes $r \Delta^N$ whose components sum to&nbsp;$r$
 --- In the same way as $\R^N$ is a stacking of spheres with radius $r$.
 
 ```tikz
@@ -234,7 +248,7 @@ whose components sum to $r$
 
 This amounts to parametrizing the positive orthant in barycentric coordinates:
 
-$$ x = r \sigma,\;\text{ where }\; r = \inlsum_k x_k,\, \sigma \in \Delta^N.$$
+$$ x = r \sigma,\;\text{ where }\; r = \sumop x,\, \sigma \in \Delta^N.$$
 
 To produce a distribution on $\Delta^N$, take a non-negative random vector $X$
 and scale it such that its components sum to one (barycentric projection).
@@ -282,7 +296,7 @@ and scale it such that its components sum to one (barycentric projection).
     \draw (O) -- (x);
 
     \draw[decorate,decoration={brace,raise=3pt,mirror}]
-      (x) -- node[font = \tiny, above = 2mm, rotate=25] {$\sum_k X_k$} (O);
+      (x) -- node[font = \tiny, above = 2mm, rotate=25] {${\textstyle\sumop X}$} (O);
   \endpgfonlayer
 
 \end{scope}
@@ -399,6 +413,7 @@ in this post we'll go with the name "stochastic matrices" [^left-stochastic].
 because they like multiplying vectors from the left, i.e. $p M = p$,
 and thus require the _rows_ to be probability vectors.
 The matrices in this post are _right stochastic_ because we multiply vectors like normal people.
+(To be fair, people prefer the _left stochastic_ because they think about measures as functionals instead of vectors)
 No confusion should arise, because in this post we'll only use the right kind.
 
 :::Definition
@@ -409,16 +424,16 @@ We denote by $\Sto{N}$ the monoid of all such matrices.
 Throughout the realms of mathematics, symmetries are known for producing invariants
 because, by preserving a set, they end up preserving some simple function related to it.
 Rotations conserve inner products and lengths, translations preserve the differences, etc.
-So, what is the invariant associated with stochastic matrices?
-As you might expect from the discussion before,
+So, what are the invariants associated with stochastic matrices?
+For one, as you might expect from the previous discussion,
 they conserve the sum of components.
 
-$$ \sum_k (M x)_k = \sum_{k,l} M_{kl} x_l = \sum_l x_l \underbrace{\left( \sum_k M_kl \right)}_{= 1} = \sum_l x_l.$$
+$$ \sumop (M x) = \sum_{k,l} M_{kl} x_l = \sum_l x_l \underbrace{\left( \sum_k M_{kl} \right)}_{= 1} = \sumop x.$$
 
 On top of this algebraic derivation,
 there is also a more geometrical point of view.
 Let's use the barycentric coordinates from the previous section to write
-$x = r \sigma$, with $r = \sum_k x_k$ and $\sigma \in \Delta^N$.
+$x = r \sigma$, with $r = \sumop x$ and $\sigma \in \Delta^N$.
 By linearity, the coordinates of $M x$ are
 
 $$ Mx = M(r\sigma) = r \underbrace{(M \sigma)}_{\in \Delta^N}.$$
@@ -499,85 +514,70 @@ Thus, a stochastic matrix alters the coordinates in the standard simplex
 but does not change in which simplex the vector is.
 It's similar to how rotations alter directions but conserve in which concentric sphere a vector is.
 
-Something cool about invariants is that we're able
-to transfer them from points to functions.
-In general, if a function is $G$ invariant, i.e.,
+:::Definition
+A function $f : \R^N_{\ge 0} \to \R$ is $\Sto{N}$-invariant
+if it is preserved by the action of all stochastic matrices, i.e.,
 
-$$ \forall M \in G,\, f(M x) = f(x),$$
+$$ \forall M \in \Sto{N},\, f(M x) = f(x).$$
+:::
 
-One expects it to only depend on the quantities conserved by $G$.
-In our case of interest, $\Sto{N}$,
-we rigorously prove that only the sum matters for such functions.
+As we saw, the sum $\sumop$ is $\Sto{N}$-invariant.
+Even more than that, it is a _universal invariant_,
+in the sense that all other invariants are generated by it.
+This will be extremely useful later on,
+because it effectively says that $\Sto{N}$-invariant functions act as if they were unidimensional.
 
 :::Theorem
 A function $f : \R^N_{\ge 0} \to \R$ is $\Sto{N}$-invariant
-if and only if it only depends on the sum of the input's components.
-That is, there is a $\phi : \R_{\ge 0} \to \R$ such that
-
-$$ f(x) = \phi\left(\inlsum\nolimits_k x_k\right). $$
+if and only if it exclusively depends on the sum of the input's components.
+That is, there exists a unique $\phi : \R_{\ge 0} \to \R$ such that
+$f(x) = \phi(\sumop x)$.
 :::
 
 :::Proof
-##### $f$ depends only on $\inlsum_k x_k \implies f$ is $\Sto{N}$-invariant:
+We prove the implications and uniqueness separately.
+
+**$f = \phi \circ \sumop \implies f$ is $\Sto{N}$-invariant**:
 
   The function $f$ cannot "see" the changes $M \in \Sto{N}$ produces:
 
-  $$ f(M x) = \phi(\inlsum_k (M x)_k) = \phi(\inlsum_k x_k) = f(x). $$
+  $$ f(M x) = \phi(\sumop (M x)) = \phi(\sumop x) = f(x). $$
 
-##### $f$ is $\Sto{N}$-invariant $\implies f$ depends only on $\inlsum_k x_k$:
+**$f$ is $\Sto{N}$-invariant $\implies f = \phi \circ \sumop$**:
 
 We use the invariance to turn $f$ into a one-dimensional function
-by constructing a stochastic matrix $A$ that takes each simplex to a single coordinate.
+by constructing a stochastic matrix $A$ taking each simplex to a single coordinate.
 You can think of this procedure as a $1$-norm version of rotating the coordinate system such $x$ aligns to an axis.
-Concretely, we achieve this by defining $A e_k = e_1$,
-which amount to a matrix whose first row is all ones and the others are identically zero.
+
+Concretely, we achieve this by taking an arbitrary $p \in \Delta^N$
+and defining $A_p e_k = p$,
+which amounts to the square matrix whose columns[^e1-visualize] are all $p$.
+
+[^e1-visualize]: In case you find this hard to visualize, just set $p = e_1$.
 
 $$
-A = \left[
+A_p = \left[
   \begin{array}{ccc}
-    1      & \cdots & 1      \\
-    0      & \cdots & 0      \\
-    \vdots & \vdots & \vdots \\
-    0      & \cdots & 0
+    \rvert &        & \rvert\\
+    p & \cdots & p \\
+    \rvert &        & \rvert
   \end{array}
-\right]
+\right].
 $$
+This stochastic matrix accumulates the sum into the $p$-axis, $A_p x = (\sumop x) \cdot p$.
+By invariance, $f$ is indifferent to collapsing the domain with $A_p$,
 
-This stochastic matrix accumulates the sum into the first component.
+$$ f(x) = f(A_p x) = f( (\sumop x) \cdot p) = \phi_p(\sumop x)$$
 
-$$ A x =
-\left[
-  \begin{array}{ccc}
-    1      & \cdots & 1      \\
-    0      & \cdots & 0      \\
-    \vdots & \vdots & \vdots \\
-    0      & \cdots & 0
-  \end{array}
-\right]
-\left[
-  \begin{array}{c}
-    x_1      \\
-    x_2      \\
-    \vdots   \\
-    x_N
-  \end{array}
-\right]
-=
-\left[
-  \begin{array}{c}
-    \sum_k x_k  \\
-    0           \\
-    \vdots      \\
-    0
-  \end{array}
-\right]
-$$
+Where we define $\boxed{\phi_p(t) = f(t \cdot e_1)}$.
 
-By invariance,
+**Uniqueness**:
 
-$$ f(x) = f(A x) = f( (\inlsum_k x_k) \cdot e_1) = \phi(\inlsum_k x_k)$$
+Suppose $\phi \circ \sumop = f = \psi \circ \sumop$
+and fix $p \in \Delta^N$ arbitrary.
+We prove that $\phi$ and $\psi$ are extensionally equal.
 
-Where we define $\phi(t) = f(t \cdot e_1)$.
+$$ \phi(t) = \phi(\sumop (t p)) = f(t p) = \psi( \sumop (t p)) = \psi(t).$$
 :::
 
 This way, we see that being $\Sto{N}$-invariant constrains a function
@@ -585,6 +585,15 @@ to a rather simple form, because it is as if it could only depend on a single ax
 As we will shortly see,
 this locally constant restriction also simplifies a lot
 the possible invariant random variables.
+
+Additionally, if you thought that the previous theorem reads a lot like a universal property,
+you can bet you're right.
+Here's the theorem recast as a commutative diagram of invariant functions.
+
+```tikzcd
+\R^N_{\ge 0} \ar[r, "f"] \ar[d, "\sumop"'] & \R \\
+\R_{\ge 0}   \ar[ur, dashed, "\phi"']      &
+```
 
 
 A Concrete Sampling Algorithm
@@ -601,12 +610,12 @@ Let $E$ be an almost surely positive random vector
 whose distribution is continuous and $\Sto{N}$-invariant.
 The barycentric projection of $E$ is uniformly distributed on the standard simplex,
 
-$$ \frac{E}{\sum_k E_k} \sim \Unif(\Delta^N).$$
+$$ \frac{E}{\sumop E} \sim \Unif(\Delta^N).$$
 :::
 
 :::Proof
-The components being positive guarantees that $\sum_k E_k$ is also almost surely positive
-and the projection $Z = E / \sum_k E_k$ is well-defined.
+The components being positive guarantees that $\sumop E$ is also almost surely positive
+and the projection $Z = E / \sumop E$ is well-defined.
 We know that $Z$ is supported on the simplex because it is normalized.
 Let's use the invariance to show that it is uniformly distributed.
 
@@ -616,7 +625,7 @@ lies in the cone $C_A$ of rays coming from the origin and crossing $A$ somewhere
 
 $$
 \begin{aligned}
-  \Prob\left(\frac{E}{\inlsum_k E_k} \in A\right)
+  \Prob\left(\frac{E}{\sumop E} \in A\right)
   &= \Prob\left(E \in \left\{\, r \sigma \mid r \in (0, +\infty), \sigma \in A \,\right\} \right).
 \end{aligned}
 $$
@@ -704,7 +713,7 @@ $$
   }
 
   \pgfonlayer{decor}
-    \node at (A.center)  [pin={[pin distance = 1.4cm, pin edge = {Stealth-, bend right}]-30:$\frac{\textstyle E}{\inlsum_k E_k} \in A$}] {};
+    \node at (A.center)  [pin={[pin distance = 1.4cm, pin edge = {Stealth-, bend right}]-30:$\frac{\textstyle E}{\sumop E} \in A$}] {};
     \node at (Ar.center) [pin={[pin distance = 1cm, pin edge = {Stealth-, bend right}]60:$E \in C_A$}] {};
   \endpgfonlayer
 \end{scope}
@@ -714,19 +723,19 @@ The distribution of $E$ is continuous,
 so calculating the probability on the right amounts to your commonplace integral.
 Also, from invariance,
 its density $f_E$ only depends on the sum of components
-(i.e., $f_E(x) = \phi(\inlsum x_k)$).
-Thus, a change of variables for barycentric coordinates $x = (\inlsum_k x_k)\sigma$ seems like a good bet.
+(i.e., $f_E(x) = \phi(\sumop x)$).
+Thus, a change of variables for barycentric coordinates $x = (\sumop x)\sigma$ seems like a good bet.
 
 $$
 \begin{aligned}
-  \Prob(Z \in A)
-  &= \int_{C_A} \phi(\inlsum_k x_k) dx
-  = \int_0^\infty \int_A \phi(r) r^{n-1} d\sigma dr \\
-  &= \Area(A) \underbrace{\int_0^\infty \phi(r) r^{n-1} dr}_{\text{constant}}
+  \Prob\left(\frac{E}{\sumop E} \in A\right)
+  &= \int_{C_A} \phi(\sumop x) \d{x} \\
+  &= \int_0^\infty \int_A \phi(r) r^{n-1} \d\sigma \d{r} \\
+  &= \Area(A) \underbrace{\int_0^\infty \phi(r) r^{n-1} \d{r}}_{\text{constant}}.
 \end{aligned}
 $$
 
-Consequently, the distribution of $E / \inlsum_k E_k$ is a multiple of the area element on the simplex,
+Consequently, the distribution of $E / \sumop E$ is a multiple of the area element on the simplex,
 defining a uniform measure.
 :::
 
@@ -764,17 +773,17 @@ Let's investigate this function.
 By $\Sto{N}$-invariance, this density only depends on the sum of components
 and, by independence, the joint density is a product of single-variable densities $f_i$,
 
-$$ f(x) = \phi\left(\inlsum\nolimits_k x_k\right) = \prod_k f_i(x_k).$$
+$$ f(x) = \phi\left(\sumop x \right) = \prod_k f_i(x_k).$$
 
 Let's turn it into a system of differential equations and solve for a closed form.
 As we are working with distributions, there's no need to worry about smoothness right now
 because all derivatives can be taken in a weak sense.
 
-$$ \partial_i f(x) = \phi'\left(\inlsum\nolimits_k x_k\right) = f_i'(x_i) \prod_{k \ne i} f_k(x_k).$$
+$$ \partial_i f(x) = \phi'\left(\sumop x\right) = f_i'(x_i) \prod_{k \ne i} f_k(x_k).$$
 
 By dividing both sides by $f$, it becomes
 
-$$ \frac{\phi'\left(\inlsum\nolimits_k x_k\right)}{\phi\left(\inlsum\nolimits_k x_k\right)} = \frac{f_i'(x_i)}{f_i(x_i)}.$$
+$$ \frac{\phi'\left(\sumop x\right)}{\phi\left(\sumop x\right)} = \frac{f_i'(x_i)}{f_i(x_i)}.$$
 
 The above works independently of $i$, meaning that the fractions $f_i'(x_i) / f_i(x_i)$ are all equal.
 However, each depends on a different variable.
@@ -793,14 +802,14 @@ You can use that the $f_i$ are probability densities to deduce that $\lambda > 0
 and $C_i = \lambda$ are the only admissible constants.
 The reasons are their tail has to go to zero and they must integrate to one.
 
-$$ \begin{array}{ll}
-\lim_{t \to \infty} C_i e^{-\lambda t} = 0 &\iff \lambda > 0, \\
-1 = \int_0^\infty C e^{-\lambda t} dt = \frac{C}{\lambda} &\iff C_i = \lambda.
+$$ \begin{array}{rcl}
+\lim_{t \to \infty} C_i e^{-\lambda t}                &= 0 &\iff \lambda > 0, \\
+\int_0^\infty C_i e^{-\lambda t} \d{t} = \frac{C_i}{\lambda} &= 1 &\iff C_i = \lambda.
 \end{array}$$
 
 Therefore, for non-negative arguments, the joint density has the form
 
-$$ p_Z(x) = \lambda^N e^{-\lambda \sum_k x_k} \cdot \Id_{\ge 0} $$
+$$ p_Z(x) = \lambda^N e^{-\lambda \sumop x} \cdot \Id_{\ge 0} $$
 
 Which characterizes a multivariate exponential with i.i.d. components.
 :::

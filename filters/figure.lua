@@ -112,7 +112,9 @@ illustrators.graphviz = {
   -- Turn a string in Graphviz DOT language into a SVG image.
   convert = function(target, code)
     return pandoc.pipe("dot", {"-Tsvg", "-o", target}, code)
-  end
+  end,
+
+  ext = "dot",
 }
 
 -------------------------
@@ -185,14 +187,16 @@ illustrators.tikz = {
     if raw_block.format == "tex" then
       table.insert(tex_snippets, raw_block.text)
     end
-  end
+  end,
+
+  ext = "tikz",
 }
 
 ------------------------------------------
 -- Actual figure making
 ------------------------------------------
 
-local function make_figure(svg_maker, content, name, block)
+local function make_figure(svg_maker, content, block)
   -- Assumes all outputs are of the form 'build/path/to/page/index.html'
   local page_path = path.make_relative(path.directory(PANDOC_STATE.output_file), "build")
   local hashed    = pandoc.sha1(content) .. ".svg"
@@ -228,7 +232,7 @@ return {
       for _, illustrator in pairs(illustrators) do
         if illustrator.match(block.classes[1]) then
           local text = illustrator.format(block)
-          return make_figure(illustrator.convert, text, block.attributes.name, block)
+          return make_figure(illustrator.convert, text, block)
         end
       end
     end,
