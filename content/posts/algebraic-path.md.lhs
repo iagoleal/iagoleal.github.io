@@ -181,8 +181,8 @@ The thing is: the real numbers extended with $\infty$
 satisfy all the axioms for a [Semiring structure](https://en.wikipedia.org/wiki/Semiring)
 if we take sum to be $\min$ and product to be $+$.
 This is called the **min-plus** or
-[**Tropical** semiring](https://en.wikipedia.org/wiki/Tropical_semiring)
-and, surprisingly, satisfies a lot of the axioms we expect from a sum and product
+[**Tropical** semiring](https://en.wikipedia.org/wiki/Tropical_semiring),
+and surprisingly satisfies a lot of the axioms we expect from a sum and product
 The main difference is that instead of having inverses, $\oplus$ is idempotent.
 
 Before further exploring the properties of the Tropical semiring,
@@ -193,7 +193,7 @@ $$
   V(s, t) = I(s, t) \oplus \bigoplus_{q \in \States} A(s, q) \otimes V(q, t)
 $$
 
-into the much more elegant (and index-free!) matrix format
+Into the much more elegant (and index-free!) matrix format
 
 $$
   V = I \oplus (A \otimes V).
@@ -303,7 +303,7 @@ Let's take a look at weighted adjacency matrices.
 Matrices over a semiring are a semiring
 ---------------------------------------
 
-Since working wht Haskell arrays may be described as anything but pleasent,
+Since working with Haskell arrays could be described as anything but pleasant,
 let's define some simple wrappers to ease our life a little bit.
 We will go with some dependentish square matrices,
 but nothing that makes our code too complicated.
@@ -387,9 +387,9 @@ $$
 $$
 
 What does this view contributes to us?
-Let's take a look in the Tropical Semiring.
+Let's take a look at the Tropical Semiring.
 Each power $A^k$ of the adjacency matrix has at its components $A^k(s, t)$
-the distance of the shortest path from $s$ to $t$ with exacly $k$ edges.
+the distance of the shortest path from $s$ to $t$ with exactly $k$ edges.
 Thus, while the recursive Bellman equation decomposes the cost of an edge plus the cost of a smaller path,
 this power series formulation, on the other hand,
 is saying that the optimal cost among all paths may be decomposed by path length.
@@ -425,7 +425,7 @@ that is adapted to work on any closed semiring.[^idempotent-algo]
 
 To see that it is in general necessary to cross $n$ vertices,
 consider a graph consisting of a single path passing through all nodes.
-It takes exactly $n$ iterations to discover that all vertices are reacheable from the first.
+It takes exactly $n$ iterations to discover that all vertices are reachable from the first.
 
 ```dot
 digraph "Linear Graph" {
@@ -586,7 +586,7 @@ All we have to do is to use the Boolean semiring.
 >  closure _ = one  -- Reflexivity for a single vertex
 
 Using the old trick of representing a finite relation as a Boolean matrix,
-the operation we need is exaclty the closure for the matrix semiring. 
+the operation we need is exactly the closure for the matrix semiring. 
 
 > reflexiveTransitive :: KnownNat n => Matrix n Bool -> Matrix n Bool
 > reflexiveTransitive = closure
@@ -647,7 +647,7 @@ as its own a [datatype](https://en.wikipedia.org/wiki/Regular_expression#Formal_
 Notice that we're limiting ourselves to truly regular expressions,
 those that represent some kind of [**Regular Language**](https://en.wikipedia.org/wiki/Regular_language).
 
-The semiring instance is straighforward,
+The semiring instance is straightforward,
 since the constructors closely resemble the class methods.
 We will only implement a couple simplifications
 in order to not get expressions with redundant parts.
@@ -677,11 +677,11 @@ in order to not get expressions with redundant parts.
 
 The previous definition was long but rather mechanical
 and, most important of all, gave us a shining new semiring to play with!
-Alright, what does the closure of a matrix of regular expressions?
+Alright, what does the closure of a matrix of regular expressions mean?
 First, a graph labeled with regular expressions is exactly a finite state machine
 (more precisely, a ε-NFA),
 and since in this case $\oplus$ is union and $\otimes$ is concatenation,
-we get from the power series interpretation that the closure $A^*$
+the power series interpretation implies that the closure $A^*$
 is the component-wise union of all fixed length paths one can follow in this automaton.
 Hence, each component $A^*(s, t)$ is a regular expression
 representing the language accepted by this automaton with initial state $s$

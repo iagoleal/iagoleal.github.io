@@ -55,7 +55,7 @@ module Calculus.Fraction where
 ```
 
 A rational function is formed of sums, products, and divisions
-of numbers and a indeterminate symbol, traditionally denoted by $x$.
+of numbers and an indeterminate symbol, traditionally denoted by $x$.
 An example is something like
 
 $$ \frac{32x^4 + \frac{5}{4}x^3 - x + 21}{\frac{5x^{87} - 1}{23x} + 41 x^{76}}.$$
@@ -332,10 +332,10 @@ The derivative is pretty similar,
 with the difference that we implement the chain rule
 instead of for the `Apply` constructor.
 
-Let's start by writing a cheatsheet of derivatives.
+Let's start by writing a cheat sheet of derivatives.
 This is the kind of thing you're probably not allowed to carry to a Calculus exam,
 but let's say that our program has it stored in its head (provided this makes any sense).
-Our cheatsheet will get a `Func` and turn it into the expression
+Our cheat sheet will get a `Func` and turn it into the expression
 of its derivative.
 
 ```haskell
@@ -350,7 +350,7 @@ cheatsheet Atan = 1 / (1 + X^2)
 ```
 
 Finally, the differentiator is exactly the same as before
-except for a new pattern that looks for the derivative on the cheatsheet
+except for a new pattern that looks for the derivative on the cheat sheet
 and evaluates the chain rule using it.
 
 ```haskell
@@ -531,7 +531,7 @@ ghci> eval (g 10) 1
 it :: (Floating a, Eq a) => a
 ```
 
-Acknowledgements
+Acknowledgments
 ================
 
 This post only exists thanks to the great chats I had with João Paixão and Lucas Rufino.
@@ -539,5 +539,5 @@ Besides listening to me talking endlessly about symbolic expressions and recursi
 they also asked a lot of good questions and provided the insights
 that helped shape what became this post.
 
-I also want to thank the people on [reddit](https://www.reddit.com/r/haskell/comments/ubyqwu/lets_program_a_calculus_student/)
+I also want to thank the people on [Reddit](https://www.reddit.com/r/haskell/comments/ubyqwu/lets_program_a_calculus_student/)
 that noticed typos and gave suggestions for code improvement.
