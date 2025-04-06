@@ -3,6 +3,9 @@ title: Running Jupyter Notebooks from a Supercomputer
 keywords: [linux, jupyter, ssh]
 date: 2025-04-06
 description:
+  A simple ssh workflow for interacting
+  with Jupyter notebooks from your browser
+  while using  an HPC supercomputer's resources.
 ---
 
 When running a program in an HPC cluster,
@@ -105,4 +108,4 @@ The access token is the one you took note earlier.
 References
 ==========
 
-- [A short(ish) guide on how to get Jupyter Notebooks up and running on the Bridges supercomputer](https://gist.github.com/mcburton/d80e4395cd82737d3677c570aa31ee40)
+- [A short(ssh) guide on how to get Jupyter Notebooks up and running on the Bridges supercomputer](https://gist.github.com/mcburton/d80e4395cd82737d3677c570aa31ee40)
