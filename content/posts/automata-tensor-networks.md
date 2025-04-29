@@ -40,6 +40,28 @@ description:
 }
 ```
 
+Quantum states are notoriously hard to represent in a classical computer.
+For example, a general quantum computing system with $N$ qubits requires $2^N$ complex coefficients,
+which is already prohibitively large for moderately sized $N$.
+Thankfully, a lot of systems that one may encounter in the real world
+are describable with much less information.
+
+You may have noticed from my previous posts that I am really into finite automata (FA).
+They exist in an intersection between languages and controllable systems that is simply awesome.
+So, as you may have expected from the title, this is yet another post about them.
+Our plan today is to take a look at quantum systems and circuits
+that measure whether a finite automaton accepts a fixed-size input string.
+As we will see, those only require a polynomial amount of coefficients and circuit depth!
+Therefore, they are great candidates for simulations in classical computers.
+
+In the course of this post,
+we also explore different forms of representing FAs.
+Namely, as vectors, tensor networks and quantum circuits.
+Also, besides the obvious prerequisites on tensors and automata,
+a bit of familiarity with String Diagrams will be useful for understanding this post.
+Nevertheless, I'll try to introduce any new concept as needed.
+Please drop a message if you find anything to be missing or confusing!
+
 
 Automata in Vector Form
 =======================
@@ -133,6 +155,9 @@ Turning into a Quantum Circuit
 References
 ==========
 
-https://quantum-journal.org/papers/q-2023-11-07-1171/pdf/
+Preparing QC:
+* https://quantum-journal.org/papers/q-2023-11-07-1171/pdf/
+* https://arxiv.org/pdf/1803.11537
 
 https://en.wikipedia.org/wiki/Quantum_finite_automaton
+
