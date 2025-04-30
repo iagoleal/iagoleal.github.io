@@ -129,7 +129,7 @@ because, after running them, we have a single unambiguous state.
 > -- | Deterministic Finite Automaton.
 > type DFA  = Automaton Identity
 
-To test whether it is accepting, all we have to do is checking it.
+To test whether it is accepting, all we have to do is check it.
 
 > instance Context Identity where
 >  possible pred (Identity s) = pred s

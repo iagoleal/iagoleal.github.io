@@ -197,7 +197,7 @@ uses symmetries and mimics the well-known construction for the uniform distribut
 
 Before getting technical, I think a sketch of the idea is due.
 We can think about the non-negative cone $\R^N_{\ge 0}$
-as a stacking of simplexes $r \Delta^N$ whose components sum to&nbsp;$r$
+as a stacking of simplices $r \Delta^N$ whose components sum to&nbsp;$r$
 --- In the same way as $\R^N$ is a stacking of spheres with radius $r$.
 
 ```tikz
@@ -800,7 +800,7 @@ $$\boxed{f_i(x_i) = C_i e^{-\lambda x_i}}.$$
 
 You can use that the $f_i$ are probability densities to deduce that $\lambda > 0$
 and $C_i = \lambda$ are the only admissible constants.
-The reasons are their tail has to go to zero and they must integrate to one.
+The reasons are that their tail has to go to zero and they must integrate to one.
 
 $$ \begin{array}{rcl}
 \lim_{t \to \infty} C_i e^{-\lambda t}                &= 0 &\iff \lambda > 0, \\
@@ -887,7 +887,7 @@ end
 $1$-norm unit sphere
 --------------------
 
-This whole post i deeply linked to the $1$-norm
+This whole post is deeply linked to the $1$-norm
 
 $$ \norm{x}_1 = \sum_k \abs{x_k}.$$
 
@@ -896,7 +896,7 @@ whose $1$-norm equals $1$,
 
 $$ \partial B^N_1 = \{\, x \in \R^N \mid \norm{x}_1 = 1 \,\}.$$
 
-This is a collage of identical simplexes, one for each orthant.
+This is a collage of identical simplices, one for each orthant.
 As their intersections have zero measure,
 you sample uniformly from the sphere by drawing a point in the simplex
 and throwing $N$ coins to decide the component's sign.
