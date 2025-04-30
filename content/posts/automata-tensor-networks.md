@@ -9,8 +9,16 @@ description:
   a polynomial amount of information to represent and simulate classicaly.
 ---
 
+\def\Pow{\mathcal{P}}
+
 \def\States{\mathcal{S}}
 \def\Actions{\mathcal{A}}
+\def\nStates{A}
+\def\nActions{S}
+\def\Accepting{\mathcal{F}}
+
+\def\C{\mathbb{C}}
+
 
 ```{=tex}
 
@@ -51,20 +59,131 @@ They exist in an intersection between languages and controllable systems that is
 So, as you may have expected from the title, this is yet another post about them.
 Our plan today is to take a look at quantum systems and circuits
 that measure whether a finite automaton accepts a fixed-size input string.
-As we will see, those only require a polynomial amount of coefficients and circuit depth!
+As we will see, for $N$ characters and an automaton with $A$ symbols and $S$ states,
+the relevant quantum systems reduce from the exponential $A^N$,
+to a much more amenable $O(N \cdot A \cdot S^2)$ coefficients to represent!
 Therefore, they are great candidates for simulations in classical computers.
 
 In the course of this post,
 we also explore different forms of representing FAs.
 Namely, as vectors, tensor networks and quantum circuits.
 Also, besides the obvious prerequisites on tensors and automata,
-a bit of familiarity with String Diagrams will be useful for understanding this post.
-Nevertheless, I'll try to introduce any new concept as needed.
+a bit of familiarity with [Bra-ket notation](https://en.wikipedia.org/wiki/Bra%E2%80%93ket_notation)
+and String Diagrams will be useful for understanding this post,
+nevertheless, I'll try to introduce any new concept as needed.
 Please drop a message if you find anything to be missing or confusing!
 
 
 Automata in Vector Form
 =======================
+
+Start by fixing a (non-deterministic) finite automaton with
+
+- Finite state set $\States$;
+- Finite alphabet set $\Actions$;
+- Initial state $s_0 \in \States$;
+- Accepting states $\Accepting \in \Pow\States$;
+- Transition function $t \colon \Actions \times \States \to \Pow \States$.
+
+We've already discussed the dynamics of FA in a [previous post](/posts/automata-monads/),
+so I won't spend much time on it.
+What's important is that these machines follow their transition $t$
+to check if a string takes it from $s_0$ to a state in $\Accepting$.
+How can we represent this using only linear algebra?
+
+To translate this system on finite sets to vectors and matrices,
+let's make use of the _free vector space_.
+For a finite set $X$, we write its free vector space as $\C^X$,
+which is isomorphic to the functions $X \to \C$,
+so let's just treat it as these functions.[^free-vect]
+Since this post's theme is quantum mechanics,
+let's use some of the field's notation.
+We denote vectors inside funny triangles called _kets_,
+such as $\ket{\psi} \in \C^X$.
+Also, elements of the dual have the triangles inverted in a _bra_:
+$\bra{\phi} \colon \C^X \to \C$.
+Joining them into a _bra-ket_ $\braket{\phi|\psi}$ amounts to function application
+and computes a complex number.
+Also, yes, the pun is intended. These physicists...
+
+[^free-vect]: You can also use formal linear combinations of elements of $X$,
+and everything works the same. For finite sets, they are isomorphic.
+
+For each element $x \in X$,
+there is an indicator function $\ket{x}$
+and, as expected, these form an orthonormal basis of $\C^X$.[^braket-notation]
+That is,
+there are $c_x \in \C$ such that for any vector
+$$ \ket{\psi} = \sum_{x \in X} c_x \ket{x}.$$
+
+[^braket-notation]: In the usual mathematical notation,
+we generally write the vector $\ket{x}$ as $e_x$ or even simply $x$.
+
+For the automaton, the states and alphabet turn into vector spaces $\C^\States$ and $\C^\Actions$,
+while the initial state is the vector $\ket{s_0} \in C^\States$,
+but we are still missing vectorial versions of the accepting states and transition function.
+For that, we employ the useful trick of looking at subsets as binary functions:
+$$ \Pow{X} \cong \{0, 1\}^X \subseteq \C^X.$$
+This way, subsets become those vectors with only binary components.
+In particular, the accepting states turn into
+$$ \ket{\Accepting} \coloneqq \sum_{f \in \Accepting} \ket{f} \in \C^\States.$$
+
+So we already see an interesting characteristic of the vectorial approach:
+it unifies elements and subsets---or analogously, determinism and nondeterminism.
+Moreover, checking if the automaton accepts an state $s \in \States$
+becomes an inner product
+$$ \braket{\Accepting | s} = \begin{cases}
+  1,& x \in \Accepting, \\
+  0,& x \not \in \Accepting.
+\end{cases}
+$$
+
+How cool is that?
+Keep this at the back of your head while we turn our attention to the transition.
+The previous isomorphism and some currying on its type yields
+$$ \begin{array}{rcl}
+  && \Actions \times \States  \to \Pow \States \\
+  &\cong&
+  \Actions \times \States \to (\States \to \{0, 1\})\\
+  &\cong&
+  \Actions \to (\States \to (\States \to \{0, 1\})) \\
+  &\cong&
+  \Actions \to (\States \times \States \to \{0, 1\}) \\
+  &\subseteq&
+  \Actions \to (\States \times \States \to \C) \\
+  &\cong&
+  \Actions \to \C^{\States \times \States} \\
+  &\cong&
+  \Actions \to (\C^{\States} \overset{\text{Linear}}{\to} \C^\States)
+\end{array}
+$$
+
+Although this seems like a lot of steps, they are mostly bookkeeping.
+The important part is that the transition $t$ becomes a family of matrices
+indexed by $\Actions$.
+This way, we define the linear operators
+$$ T^{\alpha} \coloneqq \sum_{s, s' \in \States} t(s, \alpha)(s')\ket{s'}\bra{s},\, \text{ for } \alpha \in \Actions.$$
+
+For a state $s$,
+this represents the transition from $(s, \alpha)$ as $\ket{s'} = T^\alpha \ket{s}$.
+Even when $s$ is non-deterministic (a subset instead of an element),
+linearity guarantees that the transition matrices act as they should.
+Thus, for a finite string[^kleene-star] $\sigma = \alpha \cdots \omega \in \Actions^\star$,
+we construct a matrix $T^\sigma \coloneqq T^\omega \cdots T^\alpha$ which takes a state
+and takes it through the string's dynamics.
+To check whether the automaton accepts $\sigma$,
+we can start at $\ket{s_0}$, apply each $T^\alpha$ and check if the inner product with $\bra{\Accepting}$ is nonzero:
+$$\mathtt{match}(\alpha \cdots \omega) = \braket{\Accepting | T^\omega \cdots T^\alpha | s_0} \neq 0.$$
+
+As a final treat, notice that the only property of nondeterminism that we actually used
+is that $\Pow \States$ is representable as complex functions.
+Thus, the above discussion still works for other kind of automata with this property
+such as deterministic, probabilistic or quantum.
+
+[^kleene-star]: The notation $X^*$ denotes the [Kleene Star](https://en.wikipedia.org/wiki/Kleene_star),
+not the dual vector space.
+Math likes to reuse symbols, I know.
+
 
 
 Automata in Tensor Form
@@ -83,7 +202,7 @@ there is a tensor network $\bra{}$ such that for any state $\ket{\psi}$,
 $\braket{M, \psi}$ equals the probability of $\psi$ satisfying the automaton.
 :::
 
-By interpreting the diagram of a FA as a graph,
+By interpreting the diagram of an FA as a graph,
 a common way to represent its transition function
 is as a family of adjacency matrices $U_\alpha$ for $\alpha \in A$.
 Each $U_\alpha$ represents the edges labeled with letter $\alpha$.
