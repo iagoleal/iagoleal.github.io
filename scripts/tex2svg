@@ -21,4 +21,4 @@ cp "$INFILE" "${TMPFILE}.tex"
 # tex -> dvi
 lualatex --output-format=dvi --halt-on-error --file-line-error --interaction nonstopmode --output-directory "$TMPPATH" "${TMPFILE}.tex"
 # dvi -> svg
-dvisvgm --relative --zoom=2 --optimize=all --font-format=woff2 --exact --bbox=min -o "$OUTFILE" "${TMPFILE}.dvi"
+dvisvgm --color --relative --zoom=1.5 --optimize=all --font-format=woff2,autohint --exact --bbox=min -o "$OUTFILE" "${TMPFILE}.dvi"
