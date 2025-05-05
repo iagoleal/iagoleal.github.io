@@ -22,6 +22,8 @@ description:
 
 \def\match{\mathtt{match}}
 
+\def\brac#1{\llbracket #1 \rrbracket}
+
 
 ```{=tex}
 
@@ -45,27 +47,26 @@ description:
     inner sep = 0.5mm,
   },
   covec/.style = {
-    state,
+    vec,
     shape border rotate = 180,
   },
 }
 ```
-
-Quantum states are notoriously hard to represent in a classical computer.
-For example, a general quantum computing system with $N$ qubits requires $2^N$ complex coefficients,
-which is already prohibitively large for moderately sized $N$.
-Thankfully, a lot of systems that one may encounter in the real world
-are describable with much less information.
 
 You may have noticed from my previous posts that I am really into finite automata (FA).
 They exist in an intersection between languages and controllable systems that is simply awesome.
 So, as you may have expected from the title, this is yet another post about them.
 Our plan today is to take a look at quantum systems and circuits
 that measure whether a finite automaton accepts a fixed-size input string.
+
+Quantum states are notoriously hard to represent in a classical computer.
+For example, a general quantum computing system with $N$ qubits requires $2^N$ complex coefficients,
+which is prohibitively large for even moderately sized $N$.
+Thankfully, many of systems that one may encounter in the real world
+are describable with much less information.
 As we will see, for $N$ characters and an automaton with $A$ symbols and $S$ states,
 the relevant quantum systems reduce from the exponential $A^N$,
-to a much more amenable $O(N \cdot A \cdot S^2)$ coefficients to represent!
-Therefore, they are great candidates for simulations in classical computers.
+to a much more amenable $O(N A S^2)$ coefficients to represent---making them great candidates for simulations in classical machines.
 
 In the course of this post,
 we also explore different forms of representing FAs.
@@ -77,8 +78,8 @@ nevertheless, I'll try to introduce any new concept as needed.
 Please drop a message if you find anything to be missing or confusing!
 
 
-Automata in Vector Form
-=======================
+Vector Spaces for Automata
+==========================
 
 Start by fixing a (nondeterministic) finite automaton with
 
@@ -91,9 +92,11 @@ Start by fixing a (nondeterministic) finite automaton with
 Also, for practicality,
 let's name a function $\match \colon \Actions^\star \to \{0, 1\}$
 that checks whether the automaton recognizes a string.
+We write brackets $\brac{\text{--}} \colon \mathtt{Bool} \to \C$
+whenever using truth values as the complex numbers $0$ and $1$.
 
-We've already discussed the dynamics of FA in a [previous post](/posts/automata-monads/),
-so I won't spend much time on it.
+Since, we've already discussed the dynamics of FA in a [previous post](/posts/automata-monads/),
+I won't spend much time on it.
 What's important is that these machines follow their transition $t$
 to check if a string takes it from $s_0$ to a state in $\Accepting$.
 How can we represent this using only linear algebra?
@@ -101,9 +104,8 @@ How can we represent this using only linear algebra?
 To translate this system on finite sets to vectors and matrices,
 let's make use of the _free vector space_.
 For a finite set $X$, we write its free vector space as $\C^X$,
-which is isomorphic to the functions $X \to \C$,
-so let's just treat it as these functions.[^free-vect]
-You can think of those as complex-weighted _superpositions_ of elements of $X$.
+and you can think of it as complex-weighted _superpositions_ of elements of $X$.
+To be practical, in this post $\C^X$ will just mean the complex-valued functions $X \to \C$.[^free-vect]
 
 Since this post's theme is quantum mechanics,
 let's use some of the field's notation.
@@ -143,8 +145,7 @@ it unifies elements and subsets---or analogously, determinism and nondeterminism
 Moreover, checking if the automaton accepts a state $s \in \States$
 becomes an inner product.
 All accepted states have a nonzero projection into $\ket{\Accepting}$:
-$$ \braket{\Accepting | s} = \bigg[ x \in \Accepting\bigg].
-$$
+$$ \braket{\Accepting | s} = \brac{ x \in \Accepting }. $$
 
 How cool is that?
 Keep this at the back of your head while we turn our attention to the transition.
@@ -170,7 +171,7 @@ Although this seems like a lot of steps, they are mostly bookkeeping.
 The important part is that the transition $t$ becomes a family of matrices
 indexed by $\Actions$.
 This way, we define the linear operators
-$$ T^{\alpha} \coloneqq \sum_{s, s' \in \States} t(s, \alpha)(s')\ket{s'}\bra{s},\, \text{ for } \alpha \in \Actions.$$
+$$ T^{\alpha} \coloneqq \sum_{s, s' \in \States} \brac{s' \in t(\alpha, s)}\ket{s'}\bra{s},\, \text{ for } \alpha \in \Actions.$$
 
 For a state $s$,
 this represents the transition from $(s, \alpha)$ as $\ket{s'} = T^\alpha \ket{s}$.
@@ -180,8 +181,8 @@ Thus, for a finite string[^kleene-star] $\sigma = \alpha \cdots \omega \in \Acti
 we construct a matrix $T^\sigma \coloneqq T^\omega \cdots T^\alpha$ which takes a state
 and takes it through the string's dynamics.
 To check whether the automaton accepts $\sigma$,
-we can start at $\ket{s_0}$, apply each $T^\alpha$ and check the projection onto $\bra{\Accepting}$:
-$$\mathtt{match}(\alpha \cdots \omega) = \bigg[ \braket{\Accepting | T^\omega \cdots T^\alpha | s_0} \neq 0 \bigg].$$
+we start at $\ket{s_0}$, apply each $T^\alpha$ and check the projection onto $\bra{\Accepting}$:
+$$\mathtt{match}(\alpha \cdots \omega) = \brac{ \braket{\Accepting | T^\omega \cdots T^\alpha | s_0} \neq 0 }.$$
 
 As a final treat, notice that the only property of nondeterminism that we actually use
 is that $\Pow \States$ is representable as complex functions.
@@ -290,14 +291,14 @@ the tensor product $\bigotimes_{i=1}^N \C^\Actions$
 is a vector space with $N$-length strings as basis.
 Does it have a subspace spanned only by recognized functions?
 If so, its projection would be a linear functional
-$\bra{\phi} \colon \bigotimes_{i=1}^N \C^\Actions \to \C$
+$\bra{\mathtt{match}_N} \colon \bigotimes_{i=1}^N \C^\Actions \to \C$
 which is non-zero only on the span of matched strings.
 
 In theory, it is simple to do.
-Just define $\bra{\phi}$ as the matched set's indicator:
-$$ \bra{\phi} = \sum_{\sigma \in \Actions^N} \match(\sigma) \bra{\sigma}.$$
+Just define $\bra{\mathtt{match}_N}$ as the matched set's indicator:
+$$ \bra{\mathtt{match}_N} = \sum_{\sigma \in \Actions^N} \match(\sigma) \bra{\sigma}.$$
 Although this is enough for an existence proof,
-actually constructing $\bra{\phi}$ requires the problem to be already solved.
+actually constructing $\bra{\mathtt{match}_N}$ requires the problem to be already solved.
 Furthermore, this is computationally expensive, requiring $A^N$ complex coefficients.
 Using _Tensor Networks_, this amounts to saying that we only know a black box for this tensor.
 
@@ -307,64 +308,30 @@ Using _Tensor Networks_, this amounts to saying that we only know a black box fo
   \draw[thick] (\x, 1) -- (\x, 1.5);
 }
 \node at (2, 1.25) {$\cdots$};
-\node at (2, 0.5) {$\phi$};
+\node at (2, 0.5) {$\mathtt{match}_N$};
 ```
 
 We can do much better than this though.
-This is one of the main points in this post,
-so it deserves to be enshrined as a theorem.
-The remainder of this section will be dedicated to finding such compaction formulation.
+To be fair,
+this is among this post's main points and deserves to be enshrined as a theorem.
+The remainder of this section will be dedicated to finding such compact formulation.
 
 :::Theorem
 Given a (nondeterministic) finite automaton with $A$ symbols and $S$ states,
-there is a tensor network projecting length $N$ strings into the recognized ones
-while requiring only $O(NAS^2)$ coefficients to represent.
+there is a tensor network requiring only $O(NAS^2)$ coefficients to represent
+that determines whether the FA accepts any string with length $N$.
 :::
 
+You can think of a _tensor network_ as a graph of lazily evaluated tensors.[^vect]
+They are in one-to-one correspondence with Einstein summation notation
+because of instead of writing a tensor as its components,
+they represent it as the result of contracting other tensors.
+Previously, we represented the automaton
+as an inner product $\braket{\Accepting | T^\omega \cdots T^\alpha | s_0}$.
+By looking at all elements as tensors, we get a linear tensor network.
 
-
-
-
------------------------------------------------------------------------------------------
-
-
-Let's now look at (nondeterministic) finite automata (FA) and how to represent them as quantum systems.
-More concretely, the idea is to construct a $N$-site operator that classifies
-whether a string with $N$ tokens from the alphabet is accepted by the FA.
-
-First of all, some notation.
-
-
-
-By interpreting the diagram of an FA as a graph,
-a common way to represent its transition function
-is as a family of adjacency matrices $U_\alpha$ for $\alpha \in A$.
-Each $U_\alpha$ represents the edges labeled with letter $\alpha$.
-For us, it is more interesting to join all those matrices into a 3-tensor $U$
-whose components are
-
-$$ U_{\alpha s s'} = \begin{cases}
-  1,& s' \in T(s, \alpha) \\
-  0,& \text{otherwise}.
-\end{cases} $$
-
-This is a tensor with $(\#S)^2 \cdot (\#A)$ components.
-Also, notice that with this construction, $U_\alpha = U \ket{\alpha}$.
-
-For a string of $N$ characters $\{\alpha_1,\ldots,\alpha_N\}$,
-the evolution of an automata can be described in vector form
-as a sequence of matrix applications
-
-$$ \ket{s_N} = U_{\alpha_N} \ldots U_{\alpha_1}\ket{s_0}$$
-
-Now, $\ket{s_n}$ is a vector of possible states the system can be.
-To check whether the machine accepts the input string,
-we can take its (usual) inner product with the operator defined as
-$\bra{F} = \sum_{f \in F} \bra{f}$.
-If it is nonzero, the we are in a final state and the machine accepts the string,
-
-$$ \braket{F | s_n} > 0. $$
-
+[^vect]: For my categorist readers: They are exactly the string diagrams
+in the category of $\mathtt{FinVect}(\C)$ of finite dimensional complex vector spaces.
 
 ```tikz
 { [ start chain
@@ -373,13 +340,37 @@ $$ \braket{F | s_n} > 0. $$
   , node distance=5mm
   ]
 
-  \node [on chain] {};
+  \node [covec, on chain] {$\Accepting$};
   \foreach \i in {5,...,1}
-    \node [tensor, on chain] {$U_{\alpha_\i}$};
+    \node [tensor, on chain] {$T^\alpha$};
   \node [vec, on chain] {$s_0$};
 }
 ```
 
+This is a "closed system" inasmuch as there are no free wires to connect an external input.
+The string $\sigma$ is fixed and this network represents a single complex number.
+How can we make this system linear on $\sigma$?
+
+The answer is to look again at the transition function's type
+but smartly uncurry it as a 3-tensor,
+
+$$ \begin{array}{rcl}
+  && \Actions \times \States  \to \Pow \States \\
+  &\cong&
+  \Actions \times \States \times \States \to \{0, 1\} \\
+  &\subseteq&
+  \Actions \times \States \times \States \to \C \\
+  &\cong&
+  \C^\Actions \otimes \C^\States \otimes \C^\States
+\end{array}
+$$
+
+Let's call this tensor $T$.
+Notice that contracting it with pure characters
+gives rise to our previous matrices: $T^\alpha = T \ket{\alpha}$,
+and we get a linear dependence on the input string.
+Substitute this into our previous tensor network.
+
 ```tikz
 { [ start chain
   , every on chain/.style=join
@@ -387,9 +378,9 @@ $$ \braket{F | s_n} > 0. $$
   , node distance=5mm
   ]
 
-  \node [on chain] {};
+  \node [covec, on chain] {$\Accepting$};
   \foreach \i in {5,...,1} {
-    \node [tensor, on chain] {$U$};
+    \node [tensor, on chain] {$T$};
     { [start branch = U going above]
       \node [vec, on chain, shape border rotate=90] {$\alpha_\i$};
     }
@@ -398,8 +389,78 @@ $$ \braket{F | s_n} > 0. $$
 }
 ```
 
+By isolating the part of the network that does not depend on
+the tensor product of characters $\bigotimes \ket{\alpha_i}$,
+we arrive at an expression for the matching tensor.
+
+```tikz
+\draw[fill=sgreen, rounded corners, thick] (0, 0) rectangle (4, 1);
+\foreach \x in {0.4, 1.2, 2.8, 3.6} {
+  \draw[thick] (\x, 1) -- (\x, 1.5);
+}
+\node at (2, 1.25) {$\cdots$};
+\node at (2, 0.5) {$\mathtt{matcher}_N$};
+
+\node (eq) at (5, 0.5) {$=$};
+
+{ [ start chain
+  , every on chain/.style=join
+  , every join/.style=thick
+  , node distance=5mm
+  ]
+
+  \node [covec, on chain, right = of eq] {$\Accepting$};
+  \foreach \i in {5,...,1} {
+    \ifnum \i=3
+    \node[on chain] {$\cdots$};
+    \else
+      \node [tensor, on chain] {$T$};
+      { [start branch = U going above]
+        \node [on chain] {};
+      }
+    \fi
+  }
+  \node [vec, on chain] {$s_0$};
+}
+```
+
+This kind of tensor network is known as a _Matrix Product State_ (MPS)
+among physicists and as a _Tensor Train_ among numerical analysts.
+Although I'm quite a fan of trains, let's go with MPS for this post.
+They are very compact representation for an $N$-tensor.
+In our application, there are $N$ copies of
+$T$---each requiring $A S^2$ coefficients---plus the $S$ coefficients
+for each of $\bra{\Accepting}$ and $\bra{s_0}$.
+Therefore, we got down from the exponential $A^N$ to only $NAS^2 + 2S$ degrees of freedom.
+By precontracting $T$ with the initial and final states, we can reduce it even further to
+$NAS^2 - 2AS(S-1)$.
+
+```tikz
+{ [ start chain
+  , every on chain/.style=join
+  , every join/.style=thick
+  , node distance=5mm
+  ]
+
+  \node [tensor, on chain, fill=sorange] {}; { [start branch = U going above] \node [on chain] {}; }
+  \node [tensor, on chain] {}; { [start branch = U going above] \node [on chain] {}; }
+  \node[on chain] {$\cdots$};
+  \node [tensor, on chain] {}; { [start branch = U going above] \node [on chain] {}; }
+  \node [tensor, on chain, fill=sorange] {}; { [start branch = U going above] \node [on chain] {}; }
+}
+```
+
 Turning into a Quantum Circuit
 ------------------------------
+
+Tensor networks are great for quantum simulations,
+but what if we want to represent our automaton on an actual quantum computer?
+We will need to represent it as a (quantum circuit)[https://en.wikipedia.org/wiki/Quantum_circuit] (QC).
+For this post's purposes, a QC is a tensor network where all tensors are unitary.
+In a single-sided circuit, we also allow it to have a pure state as input.
+Fortunately for us, MPS have a property called _gauge freedom_
+which allow them to be rewritten using only isometries.
+With this, it is possible to rewrite any MPS as a quantum circuit.
 
 
 
