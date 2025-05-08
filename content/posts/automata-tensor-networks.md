@@ -35,20 +35,30 @@ description:
 
 \tikzset{
   tensor/.style = {
-    fill = sgreen, draw=black, circle, thick, minimum size=0.8cm,
+    fill = sgreen, draw=black, circle, very thick, minimum size=0.8cm,
+  },
+  unitary/.style = {
+    tensor, rectangle, rounded corners,
   },
   vec/.style = {
     tensor,
+    node font = \tiny,
     fill = white,
     isosceles triangle,
     isosceles triangle apex angle = 75,
-    minimum size = 0.7cm,
+    minimum size = 0.1cm,
     minimum width = 0.5cm,
     inner sep = 0.5mm,
   },
   covec/.style = {
     vec,
     shape border rotate = 180,
+  },
+  tn chain/.style = {
+    start chain,
+    every on chain/.style=join,
+    every join/.style=very thick,
+    node distance=5mm,
   },
 }
 ```
@@ -93,7 +103,7 @@ Also, for practicality,
 let's name a function $\match \colon \Actions^\star \to \{0, 1\}$
 that checks whether the automaton recognizes a string.
 We write brackets $\brac{\text{--}} \colon \mathtt{Bool} \to \C$
-whenever using truth values as the complex numbers $0$ and $1$.
+for using truth values as the complex numbers $0$ and $1$.
 
 How to represent this system on finite sets using only linear algebra?
 The translation to vectors and matrices makes use of the _free vector space_,
@@ -143,16 +153,17 @@ which is non-zero only on the span of matched strings.
 
 In theory, it is simple to construct such functional.
 Just define $\bra{\mathtt{match}_N}$ as the matched set's indicator:
-$$ \bra{\mathtt{match}_N} = \sum_{\sigma \in \Actions^N} \match(\sigma) \bra{\sigma}.$$
+$$ \bra{\mathtt{match}_N} \coloneqq \sum_{\sigma \in \Actions^N} \match(\sigma) \bra{\sigma}.$$
+
 Although this is enough for an existence proof,
 actually constructing $\bra{\mathtt{match}_N}$ requires the problem to be already solved.
 Furthermore, this is computationally expensive, requiring $A^N$ complex coefficients.
 Using _Tensor Networks_, this amounts to saying that we only know a black box for this tensor.
 
 ```tikz
-\draw[fill=sgreen, rounded corners, thick] (0, 0) rectangle (4, 1);
+\draw[fill=sgreen, rounded corners, very thick] (0, 0) rectangle (4, 1);
 \foreach \x in {0.4, 1.2, 2.8, 3.6} {
-  \draw[thick] (\x, 1) -- (\x, 1.5);
+  \draw[very thick] (\x, 1) -- (\x, 1.5);
 }
 \node at (2, 1.25) {$\cdots$};
 \node at (2, 0.5) {$\mathtt{match}_N$};
@@ -178,14 +189,14 @@ and see what happens.
 Our object of study is a machine recognizing whether a binary string
 represents an integer divisible by three.
 The alphabet is binary $\Actions = \{0, 1\}$
-while the states are the possible remainders $\States = \{0, 1, 2\}$.
+while the states are the possible remainders $\States = \{s_0, s_1, s_2\}$.
 It is represented in the diagram below.
 
 ```tikz {tikzlibrary="automata"}
 { [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]}]
-  \node[state, initial, accepting, initial text= ] (q_0)                {$0$};
-  \node[state]                                     (q_1) [right=of q_0] {$1$};
-  \node[state]                                     (q_2) [right=of q_1] {$2$};
+  \node[state, initial, accepting, initial text= ] (q_0)                {$s_0$};
+  \node[state]                                     (q_1) [right=of q_0] {$s_1$};
+  \node[state]                                     (q_2) [right=of q_1] {$s_2$};
 
   \path[->] (q_0) edge[bend left]  node [above] {1} (q_1)
             (q_1) edge[bend left]  node [below] {0} (q_2)
@@ -198,7 +209,7 @@ It is represented in the diagram below.
 ```
 
 Let's construct $\bra{\mathtt{match}_4}$ from its truth table.
-For each bitstring, we use check whether it is accepted and use that as component for the tensor.
+For each bitstring, we check whether it is accepted and use that as component for the tensor.
 $$ \begin{array}{rcl|rcl|rcl|rcl}
 0000 &\to& 0 & 0100 &\to& 0 & 1000 &\to& 0 & 1100 &\to& 1 \\
 0001 &\to& 0 & 0101 &\to& 0 & 1001 &\to& 1 & 1101 &\to& 0 \\
@@ -206,10 +217,11 @@ $$ \begin{array}{rcl|rcl|rcl|rcl}
 0011 &\to& 1 & 0111 &\to& 0 & 1011 &\to& 0 & 1111 &\to& 1
 \end{array} $$
 
-And construct the matcher as
+Finally, construct the matcher with the table above as coefficients.
+Omitting zeros, it is
 $$ \bra{\mathtt{match}_N} = \bra{0011} + \bra{0110} + \bra{1001} + \bra{1100} + \bra{1111}.$$
 
-I suppose you can see how badly this grows with the string length.
+I suppose you can see how badly this process grows with the string length.
 
 The Vector Dynamics Approach
 ============================
@@ -365,11 +377,7 @@ By looking at all its elements as tensors, we find a tensor network.
 in the category of $\mathtt{FinVect}(\C)$ of finite dimensional complex vector spaces.
 
 ```tikz
-{ [ start chain
-  , every on chain/.style=join
-  , every join/.style=thick
-  , node distance=5mm
-  ]
+{ [ tn chain ]
 
   \node [covec, on chain] {$\Accepting$};
   \foreach \i / \a in {5/\omega,4/\gamma,3/x,2/\beta,1/\alpha} {
@@ -407,11 +415,7 @@ and we get a linear dependence on the input string.
 Substitute this into our previous tensor network.
 
 ```tikz
-{ [ start chain
-  , every on chain/.style=join
-  , every join/.style=thick
-  , node distance=5mm
-  ]
+{ [ tn chain, ]
 
   \node [covec, on chain] {$\Accepting$};
   \foreach \i / \a in {5/\omega,4/\gamma,3/x,2/\beta,1/\alpha} {
@@ -433,20 +437,16 @@ the tensor product of characters $\bigotimes \ket{\alpha_i}$,
 we arrive at an expression for the matching tensor.
 
 ```tikz
-\draw[fill=sgreen, rounded corners, thick] (0, 0) rectangle (4, 1);
+\draw[fill=sgreen, rounded corners, very thick] (0, 0) rectangle (4, 1);
 \foreach \x in {0.4, 1.2, 2.8, 3.6} {
-  \draw[thick] (\x, 1) -- (\x, 1.5);
+  \draw[very thick] (\x, 1) -- (\x, 1.5);
 }
 \node at (2, 1.25) {$\cdots$};
-\node at (2, 0.5) {$\mathtt{matcher}_N$};
+\node at (2, 0.5) {$\mathtt{match}_N$};
 
 \node (eq) at (5, 0.5) {$=$};
 
-{ [ start chain
-  , every on chain/.style=join
-  , every join/.style=thick
-  , node distance=5mm
-  ]
+{ [ tn chain, ]
 
   \node [covec, on chain, right = of eq] {$\Accepting$};
   \foreach \i in {5,...,1} {
@@ -463,7 +463,7 @@ we arrive at an expression for the matching tensor.
 }
 ```
 
-This kind of tensor network is known as a (_Matrix Product State_)[https://tensornetwork.org/mps/] (MPS)
+This kind of tensor network is known as a [_Matrix Product State_](https://tensornetwork.org/mps/) (MPS)
 among physicists and as a _Tensor Train_ among numerical analysts.
 Although I'm quite a fan of trains, let's go with MPS for this post.
 They are very compact representation for an $N$-tensor.
@@ -475,11 +475,7 @@ By precontracting $T$ with the initial and final states, we can reduce it even f
 $NAS^2 - 2AS(S-1)$.
 
 ```tikz
-{ [ start chain
-  , every on chain/.style=join
-  , every join/.style=thick
-  , node distance=5mm
-  ]
+{ [ tn chain ]
 
   \node [tensor, on chain, fill=sorange] {}; { [start branch = U going above] \node [on chain] {}; }
   \node [tensor, on chain] {}; { [start branch = U going above] \node [on chain] {}; }
@@ -505,21 +501,40 @@ Tensor networks are great for quantum simulations,
 but what if we want to represent our automaton on an actual quantum computer?
 We will need to represent it as a [quantum circuit](https://en.wikipedia.org/wiki/Quantum_circuit) (QC).
 For this post's purposes, a QC is a tensor network where all tensors are unitary.
+You can then employ the usual methods to turn those gates (unitaries) into Pauli matrices or whatever.
 In a single-sided circuit, we also allow it to have a pure state as input.
 Fortunately for us, MPS have a property called _gauge freedom_
 which allow them to be rewritten using only isometries.
 With this, it is possible to rewrite any MPS as a quantum circuit.
 
+Our approach follows @preparing_quantum_2023 [Sec. 4.1] and @Huggins_2019 [Sec. IV.C]
+and uses the QR decomposition to obtain unitaries.
 
 
+------------------------------------------------------------------------------
 
 
-References
-==========
+Suppose that $S = A^k$.
 
-Preparing QC:
-* https://quantum-journal.org/papers/q-2023-11-07-1171/pdf/
-* https://arxiv.org/pdf/1803.11537
+:::{.Theorem data-title="Unitary Dilation"}
+For an isometry $V \colon \C^m \to \C^n$ with $n = l m$,
+there is a unitary matrix $U \colon \C^l \otimes \C^m \to \C^n$
+such that
+$$ U(\ket{\psi} \otimes \ket{0}) = V \ket{\psi}.$$
 
-https://en.wikipedia.org/wiki/Quantum_finite_automaton
+Or in tensor networks,
 
+```tikz
+\node[unitary] (V) {$V$};
+\draw[very thick] (V.east) |- ++(0.5, 0);
+\draw[very thick] (V.west) |- ++(-0.5, 0);
+
+\node[right = of V] (eq) {$=$};
+
+\node[unitary, minimum height = 1.5cm, right = of eq] (U) {$U$};
+\draw[very thick] (U.east) |- ++(0.7, 0);
+\draw[very thick] (U.150)  |- ++(-0.3, 0) node[covec, minimum size = 0.1 cm] {\tiny $0$};
+\draw[very thick] (U.210) |- ++(-0.7, 0);
+```
+
+:::
