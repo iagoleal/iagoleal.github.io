@@ -34,6 +34,8 @@ suppress-bibliography: true
 \def\ca#1{\colorbox{lightgreen}{$#1$}}
 \def\cb#1{\colorbox{thistle}{$#1$}}
 
+\def\by#1#2{\left.{#1}\right|_{{#2}}}
+
 ```{=tex}
 \definecolor{lightgreen}{HTML}{90EE90}
 \definecolor{thistle}{HTML}{D8BFD8}
@@ -80,9 +82,28 @@ So today let's explore how to write such automata
 in a painfully explicit way.
 As a starter, the standard construction.
 
+Notation
+--------
 
-First Construction: Transitions as Divisibility
-===============================================
+By $a \divides b$ we mean that $a$ divides $b$.
+The greatest common divisor has the usual $\gcd$ notation,
+and since we'll make heavy use of their ratios, define
+$$ {\by a b} \coloneqq {\frac a {\gcd(a, b)}}.$$
+This one is a non-standard notation,
+but helps with the mess of symbols we're about to confront.
+I write $\ceil{\cdot}$ for the ceiling function,
+i.e., the smallest integer greater than a real number.
+For a sequence of digits $\omega$,
+$$ [\omega]_b \coloneqq \sum_{i = 0}^N \omega_i b^i.$$
+
+
+Sometimes I'll also use regex notation to declutter some figures.
+For example, $\texttt{[abcd]}$ means one of $a, b, c,$ or $d$
+and $\texttt{[1-9]}$ means all digits from 1 till 9.
+
+
+First Construction: Modular Transitions
+=======================================
 
 Our objective is to construct a deterministic finite automaton
 $A_1 = (\S, \A, s_0, \F, \delta)$
@@ -120,25 +141,41 @@ the next remainder amounts to
 $$ \boxed{\delta(s, k) = s b + k \pmod m}.$$
 <!-- $$ \boxed{s \xrightarrow{k} (s b + k \bmod m)}.$$ -->
 
-:::Missing
-Example for this automaton
-:::
+Examples
+--------
 
+Below is an automaton checking for divisibility by 3 in decimal.
+
+
+```tikz {tikzlibrary="automata"}
+{ [shorten >=1pt, node distance=3cm, on grid, auto, >={Stealth[round]},
+    every edge quotes/.style = {font = {\scriptsize\tt}}
+  ]
+  \node[state, initial, accepting, initial text= ] (0) []  {$0$};
+  \node[state]                                     (1) [below left  = of 0] {$1$};
+  \node[state]                                     (2) [below right = of 0] {$2$};
+
+  \path[->]
+    (0) edge[loop above, "{[0369]}"] ()
+    (0) edge[bend right, "{[147]}"'] (1)
+    (0) edge[bend left,  "{[258]}"] (2)
+    (1) edge[loop left,  "{[0369]}"] ()
+    (1) edge[sloped,     "{[258]}"'] (0)
+    (1) edge[bend right, "{[147]}"'] (2)
+    (2) edge[loop right, "{[0369]}"] ()
+    (2) edge[sloped,     "{[147]}"'] (0)
+    (2) edge[,           "{[258]}"'] (1)
+  ;
+}
+```
 
 Second Construction: Orbit-based Transitions
 ============================================
 
-I don't know about you,
-but constructing the transitions from modular arithmetic seems a bit like cheating to me.
-It's indeed elegant but makes the transition structure too opaque.
-Let's try to find some simpler relations between the states.
-Also remember that $\delta$ can be cast as a transition table where column $k$
-determines the transition from each state when the DFA reads $k$.
-I'll use both views interchangeably.
-
-:::Missing
-Transition table for small automaton
-:::
+The edges from modular arithmetic are elegant
+but make the transition structure too opaque.
+Indeed, there is some hard to see redundancy in there.
+Let's try to find simpler relations between the states.
 
 Instead of directly defining the transition, cast it as a recursive relation
 $$ \begin{aligned}
@@ -147,24 +184,28 @@ $$ \begin{aligned}
 \delta(s+1, k) &\equiv \delta(s, k) + b \mod m
 \end{aligned}
 $$
-The first thing it tells us is that if we know the first column,
+The first thing it tells us is that if we know the action of $0$,
 all others are easy to find.
 Just cyclically compute the number's successor and you're good to go.
 
-For the first column,
-it starts at $0$ and adds $b$ for each number in $\Z_m$, producing a sequence
-$$0, b, 2b, 3b, \ldots, (m-1)b.$$
-This is the _orbit_ $\orbit(b, m)$ of $b$ in $\Z_m$.
+For zero, it starts at $0$ and sequentially adds $b$.
+Or equivalently,
+$$\delta(s, 0) = sb \pmod m$$
+This produces a sequence
+$$0, b, 2b, 3b, \ldots, (m-1)b$$
+Called the _orbit_ $\orbit(b, m)$ of $b$ in $\Z_m$.
 The most interesting part is that the orbit's length equals $m$ if and only if $b$ and $m$ are coprime.
-In general it has $\tilde{m} \coloneqq \frac{m}{\gcd(b, m)}$ elements before repeating,
+In general it has $\by{m}{b}$ elements before repeating,
 meaning that we only have to consider,
-$$ \orbit(b, m) = \left\{0, b, 2b, \ldots, (\tilde{m} - 1)b \right\}.$$
-For us, this is interesting because when $b$ shares a factor with $m$, the orbit is shorter,
-and the table must have repeated rows --- making some states indistinguishable.
+$$ \orbit(b, m) = \left\{0, b, 2b, \ldots, (\by{m}{b} - 1)b \right\}.$$
+For us, this is interesting because whenever $b$ shares a factor with $m$,
+the orbit is shorter,
+making the transitions from certain states indistinguishable.
 Perhaps we can use this to improve our automata?
 
-The Automata from the Orbits
-----------------------------
+
+Let's Start Trimming
+--------------------
 
 To be sincere, at first, I thought this meant we could construct an automata for $L(b, m)$
 whose state set is $\orbit(b, m)$.
@@ -175,27 +216,28 @@ We sure need more than one state, right?
 Not everything is lost though.
 We can reduce to the orbit with a caveat:
 when merging, one must distinguish between accepting and non-accepting states.
-Thus, we can only collapse transition rows _greater than_ 0.
-Roughly, we collapse $x \sim y \neq 0 \iff xb \equiv yb \mod m$.
+Thus, we can only collapse states _greater than_ 0.
+Roughly, we collapse $x, y \neq 0$ if $xb \equiv yb \mod m$.
 From this, we find another automata with $1 + \frac{m}{\gcd(b, m)}$ states.
 More concretely, define an automaton $A_2$ whose states are
-$$\S = \ca{\Z_{\frac{m}{\gcd(b, m)}}} \sqcup \{ \cb 0 \}.$$
+$$\S = \ca{\Z_{\by{m}{b}}} \sqcup \{ \cb 0 \}.$$
 We view it as a cyclic group augmented by a point $\cb{0}$
 and use colors to distinguish between the points from the orbit and this additional state
 for accepting.
 
 The state $\cb 0$ is the initial and accepting state,
-while the others are equivalence classes of equal rows,
-with $\ca{0}$ representing the non-accepting states with rows equal to the zeroth.
+while the others are equivalence classes of remainders
+mapping to the same point on the orbit of $b$,
+with $\ca{0}$ representing the non-accepting states mapping to zero.
 Confusing?
-Just think that we are collapsing all states $s > 0$ who have the same rows.
+Just think that we are collapsing all states $s > 0$ who have the same transitions.
 
 To map the states from our original automaton to this new one,
 we map $0$ to $\cb 0$ while cycling other states to their position on the orbit,
 $$\begin{aligned}
-  \phi &\colon \Z_m \to \ca{\Z_{\frac{m}{\gcd(b, m)}}} \sqcup \{ \cb 0 \} \\
+  \phi &\colon \Z_m \to \ca{\Z_{\by{m}{b}}} \sqcup \{ \cb 0 \} \\
   0    &\mapsto \cb 0 \\
-  x    &\mapsto \ca{x \bmod \tilde m}
+  x    &\mapsto \ca{x \bmod \by m b}
 \end{aligned}
 $$
 
@@ -205,28 +247,103 @@ $\tilde{\delta} = \phi \circ \delta$.
 Or explicitly,
 $$ \begin{aligned}
 \tilde \delta(s, k) = \begin{cases}
-  \cb{0}, & r \equiv 0 \bmod m  \\
-  \ca{r \bmod \tilde{m}}, & \text{otherwise}
+  \cb{0}, & m \divides r \\
+  \ca{r \bmod \by{m}{b}}, & \text{otherwise}
 \end{cases}
-  \\ \text{ where } r = b s + k \bmod m
+  \\ \text{ where } r = sb + k \bmod m
 \end{aligned}
 $$
 
-
-:::Missing
-New transition table for 
-:::
-
 Notice that if $b$ and $m$ are coprime,
 $\phi$ is injective but not surjective and
-the automaton $A_2$ has an unreachable state $\tilde{m}$.
+the automaton $A_2$ has an unreachable state $\ca 0$.
 On the other hand, when they do share a factor,
-the full orbit takes the whole codomain function is surjective --- although not necessarily injective.
-This way, we get a smaller automaton recognizing the same language.
+the full orbit takes the whole codomain and $\phi$ is surjective --- although not necessarily injective.
+In this case, we get a smaller automaton recognizing the same language.
 
+Example: Divisibility by 6 in binary
+------------------------------------
 
-Third Construction: States for the Powers
-=========================================
+By using only modular arithmetic, binary divisibility by 6 requires 5 states
+and produces the automaton below.
+
+```tikz {tikzlibrary="automata"}
+{ [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]},
+    every edge quotes/.style = {font = {\scriptsize\tt}}
+  ]
+  \node[state, initial, initial where = above, accepting, initial text= ] (0) []  {$0$};
+  \node[state]                 (1) [right = of 0] {$1$};
+  \node[state]                 (2) [right = of 1] {$2$};
+  \node[state]                 (3) [below = of 0] {$3$};
+  \node[state]                 (4) [right = of 3] {$4$};
+  \node[state]                 (5) [right = of 4] {$5$};
+
+  \path[->]
+    (0) edge["0", loop left] ()
+    (0) edge["1"] (1)
+    (1) edge["0"] (2)
+    (1) edge["1", bend right] (3)
+    (2) edge["0", bend right] (4)
+    (2) edge["1"] (5)
+    (3) edge["0"] (0)
+    (3) edge["1", bend right] (1)
+    (4) edge["0", bend right] (2)
+    (4) edge["1"] (3)
+    (5) edge["0"] (4)
+    (5) edge["1", loop right] ()
+  ;
+}
+```
+
+Notice in this diagram that the transitions from $s$ and $s + 3$ are indistinguishable.
+We thus collapse these states according to
+$$\begin{array}{rcl|rcl}
+0 &\to & \cb{0} & 3 &\to & \ca{0} \\
+1 &\to & \ca{1} & 4 &\to & \ca{1} \\
+2 &\to & \ca{2} & 5 &\to & \ca{2}
+\end{array}
+$$
+
+This produces a reduced automaton recognizing the same language.
+
+```tikz {tikzlibrary="automata"}
+{ [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]},
+    every edge quotes/.style = {font = {\scriptsize\tt}}
+  ]
+
+  { [every state/.style = spow]
+    \node[state, initial, initial where = left, accepting, initial text= ] (0) []  {$0$};
+  }
+  { [every state/.style = sdiv]
+    \node[state]                 (1) [above = of 0] {$1$};
+    \node[state]                 (2) [right = of 1] {$2$};
+    \node[state]                 (3) [left  = of 1] {$0$};
+  }
+
+  \path[->]
+    (0) edge["0", loop right] ()
+    (0) edge["1"] (1)
+
+    (1) edge["0", bend left] (2)
+    (1) edge["1", bend left] (3)
+
+    (2) edge["0", bend left] (1)
+    (2) edge["1", loop right] ()
+
+    (3) edge["0"'] (0)
+    (3) edge["1", bend left] (1)
+  ;
+}
+```
+
+Notice that except for the transition $\ca 0 \xrightarrow{0} \cb 0$,
+the green part is an automaton measuring divisibility by 3.
+This is no coincidence. As we will later see,
+a binary number is divisible by $6$ if and only if it is a number divisible by $3$
+follows by at least one $0$.
+
+Third Construction: Power to The States
+=======================================
 
 Generally, there are many DFAs recognizing the same language.
 Hence, to save on resources,
@@ -241,21 +358,23 @@ while the orbit-based $A_2$ still needs 101 states.
 Yet, just checking the powers of 10 would be enough.
 
 ```tikz {tikzlibrary="automata"}
-{ [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]}]
+{ [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]},
+   every edge quotes/.style = {font = {\scriptsize\tt}}
+  ]
   \node[state]                                     (q_1) []  {};
   \node[state]                                     (q_2) [below = of q_1]  {};
   \node[state]                                     (q_3) [right = of q_2]  {};
   \node[state, initial, accepting, initial where = above, initial text= ] (q_0) [right = of q_3]  {};
 
   \path[->]
-    (q_0) edge[loop right] node               {\texttt{0}}     ()
-    (q_1) edge[]           node [right]       {\texttt{0}}     (q_2)
-    (q_2) edge[]           node [above]       {\texttt{0}}     (q_3)
-    (q_3) edge[]           node [above]       {\texttt{0}}     (q_0)
-    (q_0) edge[bend right] node [above right] {\texttt{[1-9]}} (q_1)
-    (q_1) edge[loop left]  node []            {\texttt{[1-9]}} ()
-    (q_2) edge[bend left]  node []            {\texttt{[1-9]}} (q_1)
-    (q_3) edge[bend right] node [right]       {\texttt{[1-9]}} (q_1)
+    (q_0) edge["{0}"    , loop right]  ()
+    (q_1) edge["{0}"    , ]            (q_2)
+    (q_2) edge["{0}"    , ]            (q_3)
+    (q_3) edge["{0}"    , ]            (q_0)
+    (q_0) edge["{[1-9]}'", bend right]  (q_1)
+    (q_1) edge["{[1-9]}", loop left]   ()
+    (q_2) edge["{[1-9]}", bend left]   (q_1)
+    (q_3) edge["{[1-9]}'", bend right]  (q_1)
   ;
 }
 ```
@@ -318,7 +437,7 @@ $$ \begin{aligned}
 $$
 
 Meanwhile, the purple state $\cb{s}$ represents a number divisible by $x$
-but which still have to read at least $s$ to be divisible by $b^k$.
+but which still has to read at least $s$ zeros to be divisible by $b^k$.
 Think of it as augmenting $\ca{0}$ with a counter.
 Reading a zero takes you one step further while reading anything else
 takes you back to the green states.
@@ -333,7 +452,10 @@ $$
 As an illustration, all such machines will have this same shape.
 
 ```tikz {tikzlibrary="automata,fit"}
-{ [every state/.style={node font = \footnotesize, minimum size = 1cm}, shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]}]
+{ [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]},
+   every edge quotes/.style = {font = {\scriptsize\tt}},
+   every state/.style={node font = \footnotesize, minimum size = 1cm},
+  ]
   \node[state, sdiv] (d0) {$0$};
   \node[state, sdiv] (d1) [below left = of d0] {};
   \node[state, sdiv] (d2) [above left = of d0] {};
@@ -347,14 +469,14 @@ As an illustration, all such machines will have this same shape.
   \node[draw, dotted, fit=(d0) (d1) (d2) (dl), "Divisibility by $x$" below] (D) {};
 
   \path[->]
-    (d0)  edge["\texttt{0}"] (sq)
-    (s0)  edge["\texttt{0}", loop right] ()
-    (sq)  edge["\texttt{0}"] (ll)
-    (ll)  edge["\texttt{0}"] (s0)
+    (d0)  edge["{0}"] (sq)
+    (s0)  edge["{0}", loop right] ()
+    (sq)  edge["{0}"] (ll)
+    (ll)  edge["{0}"] (s0)
 
-    (sq) edge["\texttt{k}" above, bend left]  (D)
-    (ll) edge["\texttt{k}" above, out = 225, in = -40]  (D)
-    (s0) edge["\texttt{k}" above, out = 225, in = -50]  (D)
+    (sq) edge["{k}" above, bend left]  (D)
+    (ll) edge["{k}" above, out = 225, in = -40]  (D)
+    (s0) edge["{k}" above, out = 225, in = -50]  (D)
   ;
 }
 ```
@@ -362,9 +484,56 @@ As an illustration, all such machines will have this same shape.
 
 ### Example: Decimal Division by 300
 
-:::Missing
-300 base 10
-:::
+Write $b = 10$, $m = 300 = 3 \cdot 10^2$.
+From the previous discussion,
+we can recognize $L(b, m)$ with a 6 state automaton checking for divisibility by 3 and 2 trailing zeros.
+Its diagram is below.
+Notice that the green part looks the same as our previous automaton for $m = 3$
+and that the purple states act the same as $\ca 0$.
+
+```tikz {tikzlibrary="automata"}
+{ [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]},
+    every edge quotes/.style = {font = {\scriptsize\tt}, sloped}
+  ]
+  {[ every state/.style = {sdiv}, node distance=3cm]
+    \node[state, initial text= ] (0) []  {$0$};
+    \node[state]                                     (1) [above left = of 0] {$1$};
+    \node[state]                                     (2) [below left = of 0] {$2$};
+  }
+
+  {[ every state/.style = {spow} ]
+    \node[state, spow]     (s1) [right = of 0] {$1$};
+    \node[state, spow, initial, accepting, initial where = above, initial text= ] (s0) [right = of s1]  {$0$};
+  }
+
+  \path[->]
+    (0) edge[loop left,  "{[369]}" sloped=false]  ()
+    (0) edge[bend right, "{[147]}"]               (1)
+    (0) edge[bend left,  "{[258]}"']              (2)
+    (1) edge[loop left,  "{[0369]}" sloped=false] ()
+    (1) edge[,           "{[258]}"']              (0)
+    (1) edge[bend right, "{[147]}"']              (2)
+    (2) edge[loop left,  "{[0369]}" sloped=false] ()
+    (2) edge[sloped,     "{[147]}"]               (0)
+    (2) edge[,           "{[258]}"']              (1)
+    ;
+
+  \path[->]
+    (0)   edge["{0}"] (s1)
+    (s1)  edge["{0}"] (s0)
+    (s0)  edge["{0}" sloped=false, loop right] ()
+  ;
+
+  \path[->]
+    (s1)  edge[bend left,  "{[369]}"'] (0)
+    (s1)  edge[bend right, "{[147]}"]  (1)
+    (s1)  edge[bend left,  "{[258]}"'] (2)
+    (s0)  edge[bend right, "{[369]}"]  (0)
+    (s0)  edge[bend right, "{[147]}"]  (1)
+    (s0)  edge[bend left,  "{[258]}"'] (2)
+  ;
+}
+```
 
 Recognizing $L(a^c, a^d)$ --- Non-matching Powers
 -------------------------------------------------
@@ -454,33 +623,29 @@ $$
 As an illustration,
 all such automata will have roughly the shape below.
 
-```tikz {tikzlibrary="automata"}
-{ [every state/.style={node font = \footnotesize, minimum size = 1cm}, shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]}]
+```tikz {tikzlibrary="automata" usepackage="amssymb"}
+{ [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]},
+   every edge quotes/.style = {font = {\scriptsize\tt}},
+   every state/.style={node font = \footnotesize, minimum size = 1cm},
+  ]
   \node[state, sdiv] (sa) {$0$};
-  \node[state, spow] (sq) [right = of sa] {$Q-1$};
+  \node[state, spow] (sq) [right = 3cm of sa] {$Q-1$};
   \node[]            (ll) [right = of sq] {$\cdots$};
   \node[state, spow, initial, accepting, initial where = above, initial text= ] (s0) [right = of ll]  {$0$};
 
   \path[->]
-    (s0)  edge["\texttt{0}", loop right] ()
-    (sa)  edge["\texttt{0}"] (sq)
-    (sq)  edge["\texttt{0}"] (ll)
-    (ll)  edge["\texttt{0}"] (s0)
+    (s0)  edge["{0}", loop right] ()
+    (sa)  edge["$a^r \divides \mathtt{k}$"] (sq)
+    (sq)  edge["{0}"] (ll)
+    (ll)  edge["{0}"] (s0)
 
-    (sa) edge["\texttt{k}", loop left]  ()
-    (sq) edge["\texttt{k}", bend left]  (sa)
-    (ll) edge["\texttt{k}", out = 225, in = -45]  (sa)
-    (s0) edge["\texttt{k}", out = 225, in = -60]  (sa)
+    (sa) edge["$a^r \nmid \mathtt{k}$", loop left]  ()
+    (sq) edge["{k}", bend left]  (sa)
+    (ll) edge["{k}", out = 225, in = -45]  (sa)
+    (s0) edge["{k}", out = 225, in = -60]  (sa)
   ;
 }
 ```
-
-
-### Example: Octal Division by 32
-
-:::Missing
-300 base 10
-:::
 
 
 A Power-Counting Automaton
@@ -542,7 +707,7 @@ Are these machines minimal?
 So, what is the size of the minimal automaton for the general case $L(b, m)$?
 The answer turns out to be rather complicated!
 @alexeev_2004 proved that the minimum necessary amount of states is
-$$ \min_{N \ge 0}\left[ \frac{m}{\gcd(m, b^N)} + \sum_{i=0}^{N - 1} \frac{b^i}{\gcd(b^i, m)} \right].$$
+$$ \min_{N \ge 0}\left[ \sum_{i=0}^{N - 1} \by{b^i}{m} + \by{m}{b^N}  \right].$$
 Quite a mouthful!
 The paper also proves that the minimum is achieved by the last $N$
 before it starts to increase.
