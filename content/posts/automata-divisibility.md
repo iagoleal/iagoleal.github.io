@@ -1,5 +1,5 @@
 ---
-title: Finite Automata for Divisibility
+title: Explicitly Constructing Finite Automata for Divisibility
 keywords: [math, automata]
 date: 2025-05-08
 description:
@@ -33,17 +33,61 @@ suppress-bibliography: true
 
 \def\ca#1{\colorbox{lightgreen}{$#1$}}
 \def\cb#1{\colorbox{thistle}{$#1$}}
-\def\cc#1{\colorbox{lightblue}{$#1$}} % lightcoral
+
+```{=tex}
+\definecolor{lightgreen}{HTML}{90EE90}
+\definecolor{thistle}{HTML}{D8BFD8}
+
+\tikzset{
+  sdiv/.style = {fill = lightgreen},
+  spow/.style = {fill = thistle},
+}
+```
+
+
+Recently I've been thinking a lot about integer divisibility.
+It was all well and good until, for an unrelated project,
+a needed an interesting but relatively simple finite automaton to as an example,
+and stumbled into a construction for dividing numbers with DFAs.
+This made me fall into a rabbit hole and this post redacts everything I brought back from inside that madness.
+I don't promise it will be useful.
+I don't promise it will be sane.
+But I at least hope it will be novel to you, my dear reader.
+
+Today we explore the answers to two related questions.
+
+:::Aside
+Can a DFA determine the language $L(b, m)$ of numbers written in base-$b$ and
+divisible by $m$?
+:::
+
+The answer is a resounding **yes**
+and the construction, which we tackle in the next section,
+is standard and very simple to come up with.
+This takes us to the next and much darker question.
+
+:::Aside
+What is the minimal DFA recognizing $L(b, m)$?
+:::
+
+At first, I thought it would be a simple formula just using some
+$\gcd$'s or something like that but it turned out to be much more involved.
+After 3 attempts, documented on the proceeding sections,
+I discovered that in 2004 @alexeev_2004 proved a formula for how many states this automaton must have
+but with no comments on how to actually construct the transitions.
+
+So today let's explore how to write such automata
+in a painfully explicit way.
+As a starter, the standard construction.
 
 
 First Construction: Transitions as Divisibility
 ===============================================
 
-Our objective is to construct a deterministic finite automaton (DFA)
+Our objective is to construct a deterministic finite automaton
 $A_1 = (\S, \A, s_0, \F, \delta)$
-which determines the language $L(b, m)$ of numbers written in base-$b$
+which determines the language $L(b, m)$ of base-$b$ numbers
 divisible by $m$.
-
 
 How do we construct this automaton?
 The input consists of digits written in base-$b$,
@@ -62,17 +106,19 @@ we only accept strings ending at the state $0$.
 
 The seemingly most complicated part is the transition function.
 What should it be?
-Let's consider a word $x = x_N \ldots x_0 \in \A^\star$ and write $[x]_b$ for the number it represents,
-$$ [x]_b \coloneqq \sum_{i = 0}^N x_i b^i.$$
+Let's consider a word $\omega = \omega_N \ldots \omega_0 \in \A^\star$
+and write $[\omega]_b$ for the number it represents,
+$$ [\omega]_b \coloneqq \sum_{i = 0}^N \omega_i b^i.$$
 
 The main insight is to look at how concatenating a digit $k$ translates into numbers, i.e.,
-$$ [x \cdot k]_b = \sum_{i = 0}^N x_i b^{i+1} + k = [x]_b \cdot b + k.$$
+$$ [\omega \cdot k]_b = \sum_{i = 0}^N \omega_i b^{i+1} + k = [\omega]_b \cdot b + k.$$
 By considering this expansion modulo $m$,
-$$ [x \cdot k]_b \equiv [x]_b \cdot b + k \mod m,$$
+$$ [\omega \cdot k]_b \equiv [\omega]_b \cdot b + k \mod m,$$
 We arrive at an expression for the transition function $\delta \colon \S \times \A \to \S$.
 Since the current state is the remainder of the input up until now,
 the next remainder amounts to
 $$ \boxed{\delta(s, k) = s b + k \pmod m}.$$
+<!-- $$ \boxed{s \xrightarrow{k} (s b + k \bmod m)}.$$ -->
 
 :::Missing
 Example for this automaton
@@ -96,9 +142,9 @@ Transition table for small automaton
 
 Instead of directly defining the transition, cast it as a recursive relation
 $$ \begin{aligned}
-t(0, 0)   &= 0 \\
-t(s, k+1) &\equiv t(s, k) + 1 \mod m \\
-t(s+1, k) &\equiv t(s, k) + b \mod m
+\delta(0, 0)   &= 0 \\
+\delta(s, k+1) &\equiv \delta(s, k) + 1 \mod m \\
+\delta(s+1, k) &\equiv \delta(s, k) + b \mod m
 \end{aligned}
 $$
 The first thing it tells us is that if we know the first column,
@@ -130,34 +176,42 @@ Not everything is lost though.
 We can reduce to the orbit with a caveat:
 when merging, one must distinguish between accepting and non-accepting states.
 Thus, we can only collapse transition rows _greater than_ 0.
-From this, there is another automata construction with $1 + \frac{m}{\gcd(b, m)}$ states.
-More concretely, define $A_2 \coloneqq (\Sb, \A, s_0, \F, \tilde{\delta})$,
-where the state set is
-$$ \Sb = \left\{0, 1, \ldots, \tilde{m} \right\} \cong \{0\} \sqcup \Z_{\tilde m},$$
-We will shortly make use of this view as a cyclic group augmented by a point $0$.
+Roughly, we collapse $x \sim y \neq 0 \iff xb \equiv yb \mod m$.
+From this, we find another automata with $1 + \frac{m}{\gcd(b, m)}$ states.
+More concretely, define an automaton $A_2$ whose states are
+$$\S = \ca{\Z_{\frac{m}{\gcd(b, m)}}} \sqcup \{ \cb 0 \}.$$
+We view it as a cyclic group augmented by a point $\cb{0}$
+and use colors to distinguish between the points from the orbit and this additional state
+for accepting.
 
-The state $0$ represents the accepting state,
-while the others are the equivalence classes of equal rows,
-with $\tilde{m}$ representing the non-accepting rows equal to the zeroth one.
+The state $\cb 0$ is the initial and accepting state,
+while the others are equivalence classes of equal rows,
+with $\ca{0}$ representing the non-accepting states with rows equal to the zeroth.
 Confusing?
 Just think that we are collapsing all states $s > 0$ who have the same rows.
 
 To map the states from our original automaton to this new one,
-we keep $0$ fixed while cycling the other elements from $1$ to $\tilde{m}$,
-thus "collapsing" anything larger than $\tilde{m}$:
+we map $0$ to $\cb 0$ while cycling other states to their position on the orbit,
 $$\begin{aligned}
-  \phi &\colon \Z_m \to \tilde{\S} \\
-  0    &\mapsto 0 \\
-  x    &\mapsto (x - 1 \bmod \tilde m) + 1
+  \phi &\colon \Z_m \to \ca{\Z_{\frac{m}{\gcd(b, m)}}} \sqcup \{ \cb 0 \} \\
+  0    &\mapsto \cb 0 \\
+  x    &\mapsto \ca{x \bmod \tilde m}
 \end{aligned}
 $$
 
-If the second formula seems confusing,
-just know that it is the construction you would use to cycle an array in a language with 1-based indexes,
-such as Lua, Julia, or Fortran.
 
 The transition is thus just the composition between the previous one and this collapsing function,
-$$ \boxed{\tilde{\delta} = \phi \circ \delta}.$$
+$\tilde{\delta} = \phi \circ \delta$.
+Or explicitly,
+$$ \begin{aligned}
+\tilde \delta(s, k) = \begin{cases}
+  \cb{0}, & r \equiv 0 \bmod m  \\
+  \ca{r \bmod \tilde{m}}, & \text{otherwise}
+\end{cases}
+  \\ \text{ where } r = b s + k \bmod m
+\end{aligned}
+$$
+
 
 :::Missing
 New transition table for 
@@ -188,10 +242,10 @@ Yet, just checking the powers of 10 would be enough.
 
 ```tikz {tikzlibrary="automata"}
 { [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]}]
-  \node[state]                                     (q_1) []  {1};
-  \node[state]                                     (q_2) [below = of q_1]  {10};
-  \node[state]                                     (q_3) [right = of q_2]  {100};
-  \node[state, initial, accepting, initial where = above, initial text= ] (q_0) [right = of q_3]  {0};
+  \node[state]                                     (q_1) []  {};
+  \node[state]                                     (q_2) [below = of q_1]  {};
+  \node[state]                                     (q_3) [right = of q_2]  {};
+  \node[state, initial, accepting, initial where = above, initial text= ] (q_0) [right = of q_3]  {};
 
   \path[->]
     (q_0) edge[loop right] node               {\texttt{0}}     ()
@@ -206,18 +260,18 @@ Yet, just checking the powers of 10 would be enough.
 }
 ```
 
-This idea generalizes for any case where $m = b^k$.
-Then $L(b, b^k) = 0^\star + \A^\star 0^k$
---- the language whose words are either all zero or end with at least $k$ zeros.
+This idea generalizes for any case where $m = b^d$.
+$L(b, b^d) = 0^\star + \A^\star 0^d$,
+the language whose words are either all zero or end with at least $k$ zeros.
 One can recognize this by simply keeping a record of the zeros,
-which takes $1 + k = 1 + \log_b m$ states,
+which takes $1 + \log_b m = 1 + d$ states,
 an exponential decrease compared to the previous constructions!
-By using ${k, \ldots, 0}$ as state space,
+By using ${d, \ldots, 0}$ as state space,
 the transition keeps track of how many zeros are left,
 $$ \begin{aligned}
 \delta(0, 0) &= 0 \\
 \delta(s, 0) &= s - 1 \\
-\delta(s, a) &= k
+\delta(s, k) &= d
 \end{aligned}
 $$
 
@@ -226,16 +280,16 @@ this process only works for dividing powers of the base --- a very specific case
 Nonetheless, it is possible to mix it with our previous constructions
 in a way that extends to other divisors.
 The process is kinda convoluted though, so let's do it in steps
-by first generalizing to the languages $L(b, xb^k)$ and $L(a^c, a^d)$.
+by first generalizing to the languages $L(b, xb^d)$ and $L(a^c, a^d)$.
 
-Recognizing $L(b, x b^k)$ with $x$ and $b$ coprime
+Recognizing $L(b, x b^d)$ with $x$ and $b$ coprime
 --------------------------------------------------
 
-Suppose that $m = x b^k$ with $\gcd(b, x) = 1$.
-There is a smart way to determine divisibility by $m$ requiring only $x + k$ states.
+Suppose that $m = x b^d$ with $\gcd(b, x) = 1$.
+There is a smart way to determine divisibility by $m$ requiring only $x + d$ states.
 The idea is that coprime factors can be checked separately.
 First, notice that thanks to coprimality $m \divides n$
-if and only if $x \divides n$ and $b^k \divides n$.
+if and only if $x \divides n$ and $b^d \divides n$.
 Furthermore, we know from our previous discussion
 that trailing zeros never "lose" divisibility.
 Thus, a characterization follows.
@@ -244,21 +298,21 @@ Thus, a characterization follows.
 Let $b$ and $m$ be as above.
 A number written in base $b$
 is divisible by $m$ if and only if it is either only zeros
-or a number divisible by $x$ followed by $k$ zeros.
-In other words, $L(b, m) = 0^\star + L(b, x)0^k$.
+or a number divisible by $x$ followed by $d$ zeros.
+In other words, $L(b, m) = 0^\star + L(b, x)0^d$.
 :::
 
 Now, we can build an automaton that first checks for divisibility by $x$
 and then proceeds to count trailing zeros.
 Let's again use colors to represent those distinct kinds of states.
-$$\S = \ca{\Z_x} \sqcup \cb{\Z_k}.$$
+$$\S = \ca{\Z_x} \sqcup \cb{\Z_d}.$$
 
 The starting and accepting state is $\cb{0}$.
 For the transitions,
 the green states act as the usual divisibility automaton automaton
 except that reading a zero on $\ca{0}$ takes you to the purple states.
 $$ \begin{aligned}
-\delta(\ca{0}, 0) &= \cb{k-1} \\
+\delta(\ca{0}, 0) &= \cb{d-1} \\
 \delta(\ca{s}, k) &= \ca{bs + k \pmod x}
 \end{aligned}
 $$
@@ -276,9 +330,34 @@ $$ \begin{aligned}
 \end{aligned}
 $$
 
-:::Missing
-Illustrate this machine
-:::
+As an illustration, all such machines will have this same shape.
+
+```tikz {tikzlibrary="automata,fit"}
+{ [every state/.style={node font = \footnotesize, minimum size = 1cm}, shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]}]
+  \node[state, sdiv] (d0) {$0$};
+  \node[state, sdiv] (d1) [below left = of d0] {};
+  \node[state, sdiv] (d2) [above left = of d0] {};
+  \node[color = lightgreen]            (dl) at ($(d1)!0.5!(d2)$) {$\cdots$} ;
+
+  \node[state, spow]     (sq) [right = 3cm of d0] {$d-1$};
+  \node[color = thistle] (ll) [right = of sq] {$\cdots$};
+  \node[state, spow, initial, accepting, initial where = above, initial text= ] (s0) [right = of ll]  {$0$};
+
+
+  \node[draw, dotted, fit=(d0) (d1) (d2) (dl), "Divisibility by $x$" below] (D) {};
+
+  \path[->]
+    (d0)  edge["\texttt{0}"] (sq)
+    (s0)  edge["\texttt{0}", loop right] ()
+    (sq)  edge["\texttt{0}"] (ll)
+    (ll)  edge["\texttt{0}"] (s0)
+
+    (sq) edge["\texttt{k}" above, bend left]  (D)
+    (ll) edge["\texttt{k}" above, out = 225, in = -40]  (D)
+    (s0) edge["\texttt{k}" above, out = 225, in = -50]  (D)
+  ;
+}
+```
 
 
 ### Example: Decimal Division by 300
@@ -321,14 +400,14 @@ In other words, the $q$ last digits of $n$ on base-$b$ _must be zero_.
 is that $a^r \divides n_q$.
 This is possible because $r < c$ and $0 \le n_q < a^c$.
 
-Put this all together, we get a relatively simple formula.
+Putting this together, we get a relatively simple formula.
 
 :::Lemma
 Let $b = a^c$ and $m = a^d$ and write $d = cq + r$.
 A word $\omega$ represents a base-$b$ number divisible by $m$
 if it is either all zeros or has $q$ trailing zeros and the digit before that is divisible by $a^r$.
 In other words, $L(a^c, a^d) = 0^\star + \A^\star\omega_00^q$
-with $\omega_0 \equiv 0 \mod a^r$.
+with $\omega_0$ divisible by $a^r$.
 :::
 
 This lets us construct an automaton with $2 + q$ state.
@@ -346,7 +425,7 @@ Let $b = a^c$ and $m = a^d$, $Q = \ceil{\frac d c}$, and write $d = cQ - r$.
 A word $\omega$ represents a base-$b$ number divisible by $m$
 if it is either all zeros or has $Q-1$ trailing zeros and the digit before that is divisible by $a^{c-r}$.
 In other words, $L(a^c, a^d) = 0^\star + \A^\star\omega_00^{Q-1}$
-with $\omega_0 \equiv 0 \mod a^{c-r}$.
+with $\omega_0$ divisible by $a^{c-r}$.
 :::
 
 This way, the condition on $\omega_0$ becomes just another zero if the exponents align.
@@ -368,13 +447,33 @@ After that, it turns into the already familiar zero counting machine.
 $$ \begin{aligned}
 \delta(\cb{0}, 0) &= \cb{0} \\
 \delta(\cb{s}, 0) &= \cb{s - 1} \\
-\delta(\cb{s}, a) &= \ca{1}
+\delta(\cb{s}, k) &= \ca{0}
 \end{aligned}
 $$
 
-:::Missing
-Illustrate this machine
-:::
+As an illustration,
+all such automata will have roughly the shape below.
+
+```tikz {tikzlibrary="automata"}
+{ [every state/.style={node font = \footnotesize, minimum size = 1cm}, shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]}]
+  \node[state, sdiv] (sa) {$0$};
+  \node[state, spow] (sq) [right = of sa] {$Q-1$};
+  \node[]            (ll) [right = of sq] {$\cdots$};
+  \node[state, spow, initial, accepting, initial where = above, initial text= ] (s0) [right = of ll]  {$0$};
+
+  \path[->]
+    (s0)  edge["\texttt{0}", loop right] ()
+    (sa)  edge["\texttt{0}"] (sq)
+    (sq)  edge["\texttt{0}"] (ll)
+    (ll)  edge["\texttt{0}"] (s0)
+
+    (sa) edge["\texttt{k}", loop left]  ()
+    (sq) edge["\texttt{k}", bend left]  (sa)
+    (ll) edge["\texttt{k}", out = 225, in = -45]  (sa)
+    (s0) edge["\texttt{k}", out = 225, in = -60]  (sa)
+  ;
+}
+```
 
 
 ### Example: Octal Division by 32
