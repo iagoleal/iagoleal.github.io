@@ -921,7 +921,7 @@ To put it simply, a triangulation of a compact $K \subset \R^N$
 is a finite selection of simplices $\Triang$ such that their union covers $K$
 and all pairwise intersections have dimension less than $K$ (therefore, zero measure).[^triangulation]
 
-[^triangulation]: There are more details, such a requiring that the intersection be themselves simplices.
+[^triangulation]: There are more details, such a requiring that the intersections be themselves simplices.
 But we're already getting too much outside the scope of this post.
 
 The method in this topic is an evolution of the one for the $1$-sphere.
@@ -961,7 +961,7 @@ could be reduced to a geometrical problem about symmetries.
 I know that I did.
 
 To wrap up, I should point out the similarity between today's derivation
-the and Herschel-Maxwell's theorem for rotation-invariant distributions.
+and Herschel-Maxwell's theorem for rotation-invariant distributions.
 In particular, because the sum equals the $L^1$ norm in the first quadrant.
 Does this mean something deeper? I don't really know, but I bet so.
 What I know is that one can sample from any $p$-norm sphere [@barthe_probabilistic_2005] using a distribution

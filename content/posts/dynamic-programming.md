@@ -84,11 +84,11 @@ In our hypothetical game which is definitely not about some Italian plumber,
 the character stands idle doing nothing by default.
 But with the press of a button in the controller,
 the player may command the character to do a few things:
-shoot, jump or walk.
+shoot, jump, or walk.
 And, of course, each of these actions activate the respective animation on the screen.
 In the best Resident Evil style,
 this game only allows a character to shoot while idle
-and also forces you to first be idle after a jump before doing any other action.
+and forces you to first be idle after a jump before doing any other action.
 Think of that as the time it takes to restore one's balance after falling.
 This description may seem overly complicated on text,
 but fortunately the nice folks in the Comp Sci department
@@ -206,7 +206,7 @@ $$
 \sum\limits_{t=0}^\infty \gamma^{t}|c(s_t, a_t)| \le \sum\limits_{t=0}^\infty \gamma^{t} M \le \frac{M}{1 - \gamma},
 $$
 
-thus guaranteeing that the value function is well-defined.
+Thus guaranteeing that the value function is well-defined.
 
 Optimal Decisions
 -----------------
@@ -463,7 +463,7 @@ how much each state of affairs will cost to the kingdom in the future.
 After God knows how many rituals and incantations,
 the wizard hands you a shining new value function $\CBall : \States \to \R$.
 
-Since it is never wise to blindly follow the advices from a crystal ball,
+Since it is never wise to blindly follow a crystal ball's advice,
 you decide to use it only to predict the future,
 while relying on your discernment for taking immediate decisions.
 In other words, you rule your kingdom by solving the optimization problem
@@ -1111,11 +1111,11 @@ the transition can only return a function $\Actions(s) \to \States$.
 
 [^monads]: The technical definition is that $M$ should be a [Monad](https://en.wikipedia.org/wiki/Monad_(category_theory)).
 But discussing those details is out of scope here.
-See [this other post on autamata with contexts](/posts/automata-monads)
+See [this other post on automata with contexts](/posts/automata-monads)
 for a discussion of this structure in a similar context.
 
 To deal with nondeterministic transitions,
-we need some way to take a value function
+we need to take a value function
 and aggregate it over all possible costs
 for the uncertain future into a single real number,
 

@@ -497,7 +497,7 @@ $$\inner<a,x_0> + b = 0 \quad \text{and}\quad \forall x \in X,\, \inner<a,x> + b
 
 :::Proof
 If $X$ has nonempty interior, there is a hyperplane separating $\{x_0\}$ from the interior of $X$,
-and if it is empty, the entirety of $X$ lies inside in an affine subspace of $\R^n$,
+and if it is empty, the entirety of $X$ lies inside an affine subspace of $\R^n$,
 and we can take this subspace as our hyperplane.
 :::
 
