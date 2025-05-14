@@ -14,7 +14,7 @@ pkgs.mkShell {
   packages = with pkgs; [
       # Workhorse
       gnumake
-      pandoc   # 2.18
+      pandoc_3_6
       lua5_4
 
       # Figures
