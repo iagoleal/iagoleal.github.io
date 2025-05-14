@@ -100,16 +100,16 @@ which is prohibitively large for even moderately sized $N$.
 Thankfully, many of systems that one may encounter in the real world
 are describable with much less information.
 As we will see, for $N$ characters and an automaton with $A$ symbols and $S$ states,
-the relevant quantum systems reduce from the exponential $A^N$,
-to a much more amenable $O(N A S^2)$ coefficients to represent---making them great candidates for simulations in classical machines.
+the relevant quantum systems requires only $O(N A S^2)$ coefficients to represent.
+That's an exponential improvement compared to the general case.
 
 In the course of this post,
 we also explore different forms of representing FAs.
 Namely, as vectors, tensor networks and quantum circuits.
 Also, besides the obvious prerequisites on tensors and automata,
 a bit of familiarity with [Bra-ket notation](https://en.wikipedia.org/wiki/Bra%E2%80%93ket_notation)
-and String Diagrams will be useful for understanding this post,
-nevertheless, I'll try to introduce any new concept as needed.
+and String Diagrams will be useful for understanding this post.
+Nevertheless, I'll try to introduce any new concept as needed.
 Please drop a message if you find anything to be missing or confusing!
 
 
@@ -119,7 +119,7 @@ Vector Spaces for Automata
 Start by fixing a (nondeterministic) finite automaton with
 
 - Finite state set $\S$ with $S$ elements;
-- Finite alphabet set $\A$  with $A$ elements;
+- Finite alphabet set $\A$ with $A$ elements;
 - Initial state $s_0 \in \S$;
 - Accepting states $\Accepting \in \Pow\S$;
 - Transition function $t \colon \A \times \S \to \Pow \S$.
