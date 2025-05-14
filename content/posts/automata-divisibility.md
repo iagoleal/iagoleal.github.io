@@ -1,8 +1,12 @@
 ---
-title: Explicitly Constructing Finite Automata for Divisibility
-keywords: [math, automata]
+title: Arithmancia Automatorum
+subtitle: A Painfully Explicitly Construction of The Minimal DFA for Divisibility
+keywords: [math, automata, modular arithmetic]
 date: 2025-05-08
 description:
+  Did you know that Finite Automata can recognize divisibility?
+  To find one such automaton, the procedure is simple
+  but constructing the minimal one requires a lot of modular arithmetic.
 suppress-bibliography: true
 ---
 
