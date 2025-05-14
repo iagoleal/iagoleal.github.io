@@ -1,7 +1,7 @@
 ---
 title: Finite Automata as Quantum Tensor Networks
 keywords: [automata, quantum computing]
-date: 2025-04-22
+date: 2025-05-14
 suppress-bibliography: true
 description:
   Finite automata accept a description using linear algebra
@@ -489,7 +489,7 @@ we arrive at an expression for the matching tensor.
 This kind of tensor network is known as a [_Matrix Product State_](https://tensornetwork.org/mps/) (MPS)
 among physicists and as a _Tensor Train_ among numerical analysts.
 Although I'm quite a fan of trains, let's go with MPS for this post.
-They are very compact representation for an $N$-tensor.
+They are a very compact representation for an $N$-tensor.
 In our application, there are $N$ copies of
 $T$---each requiring $A S^2$ coefficients---plus the $S$ coefficients
 for each of $\bra{\Accepting}$ and $\bra{s_0}$.
@@ -938,6 +938,6 @@ a quantum system would.
 For example, MPS can be viewed as _Born machines_ allowing you to extract independent samples
 of finite strings from the automaton.
 You can also use low-rank approximations (such as SVD truncation)
-to compress these states while still being very similar to the original FA.
+to compress these states while still being similar to the original FA.
 
 The sky is the limit! Have fun with this new tool.

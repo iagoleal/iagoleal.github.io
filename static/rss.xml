@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
-    <title>Iago Leal's blog</title>
+    <title>Iago's blog</title>
     <link><![CDATA[https://iagoleal.com]]></link>
-    <copyright>© Iago Leal de Freitas, 2020-2023</copyright>
-    <description>Iago Leal's blog about math, programming and everything more.</description>
+    <copyright>© Iago Leal de Freitas, 2020-2025</copyright>
+    <description>Iago's blog about math, programming and everything more.</description>
     <language>en</language>
     <image>
       <url>https://iagoleal/static/img/me.jpg</url>
@@ -15,6 +15,14 @@
     <webMaster>hello@iagoleal.com</webMaster>
     <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
 
+    <item>
+      <guid isPermaLink="false">1176588870</guid>
+      <title>Finite Automata as Quantum Tensor Networks</title>
+      <link>https://iagoleal.com/posts/automata-tensor-networks/</link>
+      <dc:creator>Iago Leal</dc:creator>
+      <category>Blog</category>
+      <pubDate> 14 May 2025 00:00:00 GMT</pubDate>
+    </item>
     <item>
       <guid isPermaLink="false">1176588869</guid>
       <title>Running Jupyter Notebooks from a Supercomputer</title>
