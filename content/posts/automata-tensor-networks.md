@@ -2,6 +2,7 @@
 title: Finite Automata as Quantum Tensor Networks
 keywords: [automata, quantum computing]
 date: 2025-04-22
+suppress-bibliography: true
 description:
   Finite automata accept a description using linear algebra
   that we can translate into a system of tensors or quantum circuits.
@@ -11,8 +12,8 @@ description:
 
 \def\Pow{\mathcal{P}}
 
-\def\States{\mathcal{S}}
-\def\Actions{\mathcal{A}}
+\def\S{\mathcal{S}}
+\def\A{\mathcal{A}}
 \def\nStates{A}
 \def\nActions{S}
 \def\Accepting{\mathcal{F}}
@@ -23,6 +24,7 @@ description:
 \def\match{\mathtt{match}}
 
 \def\brac#1{\llbracket #1 \rrbracket}
+\def\norm#1{\left\lVert#1\right\rVert}
 
 
 ```{=tex}
@@ -32,14 +34,19 @@ description:
 \colorlet{sgrey}{gray!80}
 \colorlet{sorange}{orange!70}
 \colorlet{sgreen}{green!40}
+\colorlet{sblue}{green!40}
+
+\definecolor{lightgreen}{HTML}{90EE90}
+\definecolor{thistle}{HTML}{D8BFD8}
 
 \tikzset{
   tensor/.style = {
     fill = sgreen, draw=black, circle, very thick, minimum size=0.8cm,
   },
   unitary/.style = {
-    tensor, rectangle, rounded corners,
+    tensor, rectangle, rounded corners, fill = thistle
   },
+  isometry/.style = unitary,
   vec/.style = {
     tensor,
     node font = \tiny,
@@ -93,14 +100,14 @@ Vector Spaces for Automata
 
 Start by fixing a (nondeterministic) finite automaton with
 
-- Finite state set $\States$ with $S$ elements;
-- Finite alphabet set $\Actions$  with $A$ elements;
-- Initial state $s_0 \in \States$;
-- Accepting states $\Accepting \in \Pow\States$;
-- Transition function $t \colon \Actions \times \States \to \Pow \States$.
+- Finite state set $\S$ with $S$ elements;
+- Finite alphabet set $\A$  with $A$ elements;
+- Initial state $s_0 \in \S$;
+- Accepting states $\Accepting \in \Pow\S$;
+- Transition function $t \colon \A \times \S \to \Pow \S$.
 
 Also, for practicality,
-let's name a function $\match \colon \Actions^\star \to \{0, 1\}$
+let's name a function $\match \colon \A^\star \to \{0, 1\}$
 that checks whether the automaton recognizes a string.
 We write brackets $\brac{\text{--}} \colon \mathtt{Bool} \to \C$
 for using truth values as the complex numbers $0$ and $1$.
@@ -141,19 +148,19 @@ we generally write the vector $\ket{x}$ as $e_x$ or even simply $x$.
 The Brute-Force Approach
 ========================
 
-For the automaton, the states and alphabet turn into vector spaces $\C^\States$ and $\C^\Actions$.
+For the automaton, the states and alphabet turn into vector spaces $\C^\S$ and $\C^\A$.
 Let's make our problem statement precise in this language.
 For $N \in \N$,
-the tensor product $\bigotimes_{i=1}^N \C^\Actions$
+the tensor product $\bigotimes_{i=1}^N \C^\A$
 is a vector space with $N$-length strings as basis.
 Does it have a subspace spanned only by recognized functions?
 If so, its projection would be a linear functional
-$\bra{\mathtt{match}_N} \colon \bigotimes_{i=1}^N \C^\Actions \to \C$
+$\bra{\mathtt{match}_N} \colon \bigotimes_{i=1}^N \C^\A \to \C$
 which is non-zero only on the span of matched strings.
 
 In theory, it is simple to construct such functional.
 Just define $\bra{\mathtt{match}_N}$ as the matched set's indicator:
-$$ \bra{\mathtt{match}_N} \coloneqq \sum_{\sigma \in \Actions^N} \match(\sigma) \bra{\sigma}.$$
+$$ \bra{\mathtt{match}_N} \coloneqq \sum_{\sigma \in \A^N} \match(\sigma) \bra{\sigma}.$$
 
 Although this is enough for an existence proof,
 actually constructing $\bra{\mathtt{match}_N}$ requires the problem to be already solved.
@@ -188,8 +195,8 @@ Alright, this is all too abstract, so let's apply this formulation to a simple a
 and see what happens.
 Our object of study is a machine recognizing whether a binary string
 represents an integer divisible by three.
-The alphabet is binary $\Actions = \{0, 1\}$
-while the states are the possible remainders $\States = \{s_0, s_1, s_2\}$.
+The alphabet is binary $\A = \{0, 1\}$
+while the states are the possible remainders $\S = \{s_0, s_1, s_2\}$.
 It is represented in the diagram below.
 
 ```tikz {tikzlibrary="automata"}
@@ -199,7 +206,7 @@ It is represented in the diagram below.
   \node[state]                                     (q_2) [right=of q_1] {$s_2$};
 
   \path[->] (q_0) edge[bend left]  node [above] {1} (q_1)
-            (q_1) edge[bend left]  node [below] {0} (q_2)
+            (q_1) edge[bend left]  node [above] {0} (q_2)
             (q_2) edge[bend left]  node [below] {0} (q_1)
             (q_1) edge[bend left]  node [below] {1} (q_0)
             (q_0) edge[loop above] node {0} ()
@@ -232,18 +239,18 @@ What's important is that these machines follow their transition $t$
 to check if a string takes it from $s_0$ to a state in $\Accepting$.
 Let's put it into vector form.
 
-The initial state is simple: it becomes the vector $\ket{s_0} \in C^\States$.
+The initial state is simple: it becomes the vector $\ket{s_0} \in C^\S$.
 For vectorial versions of the accepting states and transition function,
 let's employ the useful trick of looking at subsets as binary functions:
 $$ \Pow{X} \cong \{0, 1\}^X \subseteq \C^X.$$
 This way, subsets become superpositions where each element is either present or not,
 i.e., vectors with only binary components.
 In particular, the accepting set turns into
-$$ \ket{\Accepting} \coloneqq \sum_{f \in \Accepting} \ket{f} \in \C^\States.$$
+$$ \ket{\Accepting} \coloneqq \sum_{f \in \Accepting} \ket{f} \in \C^\S.$$
 
 So we encounter an interesting characteristic of the vectorial view:
 it unifies elements and subsets---or analogously, determinism and nondeterminism.
-Moreover, checking if the automaton accepts a state $s \in \States$
+Moreover, checking if the automaton accepts a state $s \in \S$
 becomes an inner product,
 because accepted states have a nonzero projection into $\ket{\Accepting}$:
 $$ \braket{\Accepting | s} = \brac{ x \in \Accepting }. $$
@@ -252,33 +259,33 @@ How cool is that?
 Keep this at the back of your head while we turn our attention to the transition.
 The previous isomorphism and some currying on its type yields
 $$ \begin{array}{rcl}
-  && \Actions \times \States  \to \Pow \States \\
+  && \A \times \S  \to \Pow \S \\
   &\cong&
-  \Actions \times \States \to (\States \to \{0, 1\})\\
+  \A \times \S \to (\S \to \{0, 1\})\\
   &\cong&
-  \Actions \to (\States \to (\States \to \{0, 1\})) \\
+  \A \to (\S \to (\S \to \{0, 1\})) \\
   &\cong&
-  \Actions \to (\States \times \States \to \{0, 1\}) \\
+  \A \to (\S \times \S \to \{0, 1\}) \\
   &\subseteq&
-  \Actions \to (\States \times \States \to \C) \\
+  \A \to (\S \times \S \to \C) \\
   &\cong&
-  \Actions \to \C^{\States \times \States} \\
+  \A \to \C^{\S \times \S} \\
   &\cong&
-  \Actions \to (\C^{\States} \overset{\text{Linear}}{\to} \C^\States)
+  \A \to (\C^{\S} \overset{\text{Linear}}{\to} \C^\S)
 \end{array}
 $$
 
 Although this seems like a lot of steps, they are mostly bookkeeping.
 The important part is that the transition $t$ becomes a family of matrices
-indexed by $\Actions$.
+indexed by $\A$.
 This way, we define the linear operators
-$$ T^{\alpha} \coloneqq \sum_{s, s' \in \States} \brac{s' \in t(\alpha, s)}\ket{s'}\bra{s},\, \text{ for } \alpha \in \Actions.$$
+$$ T^{\alpha} \coloneqq \sum_{s, s' \in \S} \brac{s' \in t(\alpha, s)}\ket{s'}\bra{s},\, \text{ for } \alpha \in \A.$$
 
 For a state $s$,
 this represents the transition $s \xrightarrow{\alpha} s'$ as $\ket{s'} = T^\alpha \ket{s}$.
 Even when $s$ is nondeterministic (a subset instead of an element),
 linearity guarantees that the transition matrices act as they should.
-Thus, for a finite string[^kleene-star] $\sigma = \alpha \cdots \omega \in \Actions^\star$,
+Thus, for a finite string[^kleene-star] $\sigma = \alpha \cdots \omega \in \A^\star$,
 we construct a matrix $T^\sigma \coloneqq T^\omega \cdots T^\alpha$
 which takes a state through the string's dynamics.
 To check whether the automaton accepts $\sigma$,
@@ -286,7 +293,7 @@ we start at $\ket{s_0}$, apply each $T^\alpha$ and check the projection onto $\b
 $$\mathtt{match}(\alpha \cdots \omega) = \brac{ \braket{\Accepting | T^\omega \cdots T^\alpha | s_0} \neq 0 }.$$
 
 As a final treat, notice that the only property of nondeterminism that we actually use
-is that $\Pow \States$ is representable as complex functions.
+is that $\Pow \S$ is representable as complex functions.
 Thus, the above discussion still works for other kind of automata with this property
 such as deterministic, probabilistic or quantum.
 
@@ -301,11 +308,9 @@ Back to Our Example
 
 Recall our state machine recognizing whether a binary string
 represents an integer divisible by three.
-It had alphabet $\Actions = \{0, 1\}$ and states $\States = \{0, 1, 2\}$.
+It had alphabet $\A = \{0, 1\}$ and states $\S = \{0, 1, 2\}$.
 In vector form, it starts at $\ket{0}$ and accepts any string also finishing at $\ket{0}$.
-Since this automaton is deterministic,
-its transition matrices are permutations
-and we can extract them by inspecting the FA,
+We can extract the transition matrices by looking at the FA's edges,
 
 $$
 T^0 = \begin{bmatrix}
@@ -360,7 +365,7 @@ The Tensor Network Approach
 ===========================
 
 Our vector discussion was well and good but it still lacks something.
-Since the strings in $\Actions^\star$ had to be fixed beforehand,
+Since the strings in $\A^\star$ had to be fixed beforehand,
 the dynamics are not linear on them.
 We made an open system parameterized on $s_0$ and $\Accepting$
 while we want those to remain constant with varying input strings.
@@ -398,13 +403,13 @@ The answer is to look again at the transition function's type
 but smartly uncurry it as a 3-tensor,
 
 $$ \begin{array}{rcl}
-  && \Actions \times \States  \to \Pow \States \\
+  && \A \times \S  \to \Pow \S \\
   &\cong&
-  \Actions \times \States \times \States \to \{0, 1\} \\
+  \A \times \S \times \S \to \{0, 1\} \\
   &\subseteq&
-  \Actions \times \States \times \States \to \C \\
+  \A \times \S \times \S \to \C \\
   &\cong&
-  \C^\Actions \otimes \C^\States \otimes \C^\States
+  \C^\A \otimes \C^\S \otimes \C^\S
 \end{array}
 $$
 
@@ -476,7 +481,6 @@ $NAS^2 - 2AS(S-1)$.
 
 ```tikz
 { [ tn chain ]
-
   \node [tensor, on chain, fill=sorange] {}; { [start branch = U going above] \node [on chain] {}; }
   \node [tensor, on chain] {}; { [start branch = U going above] \node [on chain] {}; }
   \node[on chain] {$\cdots$};
@@ -505,18 +509,21 @@ You can then employ the usual methods to turn those gates (unitaries) into Pauli
 In a single-sided circuit, we also allow it to have a pure state as input.
 Fortunately for us, MPS have a property called _gauge freedom_
 which allow them to be rewritten using only isometries.
-With this, it is possible to rewrite any MPS as a quantum circuit.
+With this, it is possible to rewrite any MPS as a quantum circuit!
 
 Our approach follows @preparing_quantum_2023 [Sec. 4.1] and @Huggins_2019 [Sec. IV.C]
 and uses the QR decomposition to obtain unitaries.
+The only hypothesis we need is that $S = A^k$.
+In general, we are working with qubits (so $A = 2$)
+and all gates should be between them.
+If your FA does not match, just pad the state vectors and matrices with zeros.
+Also, we make use of a distinguished vector $\ket{0} \in \C^\A$.
 
+Throughout this section,
+we put the following lemma to good use.
+It is a standard linear algebra construction.
 
-------------------------------------------------------------------------------
-
-
-Suppose that $S = A^k$.
-
-:::{.Theorem data-title="Unitary Dilation"}
+:::{.Lemma data-title="Unitary Dilation"}
 For an isometry $V \colon \C^m \to \C^n$ with $n = l m$,
 there is a unitary matrix $U \colon \C^l \otimes \C^m \to \C^n$
 such that
@@ -525,7 +532,7 @@ $$ U(\ket{\psi} \otimes \ket{0}) = V \ket{\psi}.$$
 Or in tensor networks,
 
 ```tikz
-\node[unitary] (V) {$V$};
+\node[isometry] (V) {$V$};
 \draw[very thick] (V.east) |- ++(0.5, 0);
 \draw[very thick] (V.west) |- ++(-0.5, 0);
 
@@ -536,5 +543,265 @@ Or in tensor networks,
 \draw[very thick] (U.150)  |- ++(-0.3, 0) node[covec, minimum size = 0.1 cm] {\tiny $0$};
 \draw[very thick] (U.210) |- ++(-0.7, 0);
 ```
-
 :::
+
+Now, to decompose some states!
+First of all, a quantum circuit must be normalized.
+A global complex constant does not change its properties as a quantum state,
+so let's work with
+$$\ket{\psi} = \frac{1}{\norm{\mathtt{match}_N}_2} \ket{\mathtt{match}_N}.$$
+
+The next step is to use the aforementioned gauge invariance
+to rewrite $\ket{\psi}$ as an equivalent MPS where all tensors but the last are isometries.
+We achieve this orthogonalization process via a series of QR decompositions.[^svd]
+
+[^svd]: In the literature, people generally use the SVD for this step
+because it allows truncating the inner dimensions optimally.
+Since we are interested on the exact quantum circuit, both SVD and QR work.
+
+Each tensor in the MPS can be reshaped into a $\C^\S \to (\C^\S \otimes \C^\A)$ matrix.
+
+```tikz
+{ [ every edge quotes/.style = {at end, outer sep = 2mm}]
+\node[tensor] (V) {};
+\draw[very thick] (V.west)   edge ["$\S$"] ++(-0.5, 0);
+\draw[very thick] (V.east)   edge ["$\S$"] ++(0.5, 0);
+\draw[very thick] (V.north)  edge ["$\A$"] ++(0, 0.5);
+
+\node[right = of V] (eq) {$\to$};
+
+\node[tensor, right = of eq] (U) {};
+\draw[very thick] (U.180-30) edge ["$\A$"] ++(-0.5, 0);
+\draw[very thick] (U.180+30) edge ["$\S$"] ++(-0.5, 0);
+\draw[very thick] (U.east)   edge ["$\S$"]  ++(0.5, 0);
+}
+```
+Applying a QR decomposition to this matrix turns it into a product between
+an isometry $V$ and a triangular matrix $R$.
+
+```tikz
+{ [on grid, node distance = 2cm, every edge quotes/.style = {at end, inner sep = 2mm}]
+\node[tensor] (U) {};
+\draw[very thick] (U.180-30) edge ["$\A$"] ++(-0.5, 0);
+\draw[very thick] (U.180+30) edge ["$\S$"] ++(-0.5, 0);
+\draw[very thick] (U.east)   edge ["$\S$"]  ++(0.5, 0);
+
+\node[right = of U] (eq) {$=$};
+
+\node[isometry, right = of eq]     (V) {$V$};
+\node[tensor,  right = 1.5cm of V] (R) {$R$};
+
+\draw[very thick] (V.180-30) edge ["$\A$"] ++(-0.5, 0);
+\draw[very thick] (V.180+30) edge ["$\S$"] ++(-0.5, 0);
+\draw[very thick] (V.east)   edge ["$\S$" {midway, above}] (R);
+
+\draw[very thick] (R.east)  edge ["$\S$"]  ++(0.5, 0);
+}
+```
+
+With the aforestated lemma,
+this isometry can be dilated into a unitary with a plugged $\ket{0}$.
+Doing that and reshaping again.
+
+```tikz
+{ [on grid, node distance = 2cm, every edge quotes/.style = {at end, inner sep = 2mm}]
+\node[tensor] (T) {};
+\draw[very thick] (T.west)   edge ["$\S$"] ++(-0.5, 0);
+\draw[very thick] (T.east)   edge ["$\S$"] ++(0.5, 0);
+\draw[very thick] (T.north)  edge ["$\A$"] ++(0, 0.5);
+
+\node[right = of T] (eq) {$=$};
+
+\node[isometry, right = of eq]     (V) {$V$};
+\node[tensor,  right = 1.5cm of V] (R) {$R$};
+
+\draw[very thick]
+  (V.north) edge ["$\A$"] ++(0, 0.5)
+  (V.west)  edge ["$\S$"] ++(-0.5, 0)
+  (V.east)  edge ["$\S$" {midway, above}] (R)
+  (V.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+;
+
+\draw[very thick] (R.east)  edge ["$\S$"]  ++(0.5, 0);
+}
+```
+
+To orthogonalize a MPS, repeated this procedure for each tensor
+keeping the isometry and contracting $R$ with the next site.
+
+```tikz {tikzlibrary="fit"}
+{ [ tn chain ]
+  \node [unitary, on chain] (V1) {}; { [start branch = U going above] \node [on chain] {}; }
+  \node[on chain] {$\cdots$};
+  \node [unitary, on chain] (V) {$V_i$}; { [start branch = U going above] \node [on chain] {}; }
+  \node [tensor, on chain] (R) {$R_i$};
+  \node [tensor, on chain] (T) {}; { [start branch = U going above] \node [on chain] {}; }
+  \node[on chain] {$\cdots$};
+  \node [tensor, on chain, fill=sorange] {}; { [start branch = U going above] \node [on chain] {}; }
+
+  \node[fit=(R) (T), draw, dotted, "Contract" below] {};
+
+}
+\draw[very thick]
+  (V1.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+  (V.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+;
+```
+
+In Julia pseudocode, this process looks like this.
+
+```julia
+function orthogonalize!(psi::MPS) :: MPS
+  N = length(psi)   # How many tensors in psi
+
+  for i in 1:(N-1)
+    Q, R     = qr(psi)
+    psi[i]   = dilate(Q)   # Turn into unitary with |0>
+    psi[i+1] = contract(R, psi[i+1])
+  end
+
+  return psi
+end
+```
+
+After orthogonalization, we're left with a sequence of isometries except for the last one.
+This MPS represents the same tensor but is much more structured.
+
+```tikz
+{ [ tn chain ]
+  \node [unitary, on chain] (V1) {$U_1$}; { [start branch = U going above] \node [on chain] {}; }
+  \node[on chain] {$\cdots$};
+  \node [unitary, on chain] (Vi) {}; { [start branch = U going above] \node [on chain] {}; }
+  \node [tensor, on chain, fill=sorange] {$T$}; { [start branch = U going above] \node [on chain] {}; }
+}
+\draw[very thick]
+  (V1.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+  (Vi.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+;
+```
+
+Now, what do we do with this last tensor?
+Remember that the first step was normalizing the MPS such that $\braket{\psi|\psi} = 1$.
+This is what is going to save the day!
+After orthogonalizing, the normalization "moves" to just the last tensor.
+To see that, build the inner product.
+
+```tikz
+{ [ tn chain ]
+  \node [unitary, on chain] (V1) {$U_1$}; { [start branch = U going above] \node [on chain] {}; }
+  \node[on chain] {$\cdots$};
+  \node [unitary, on chain] (Vi) {}; { [start branch = U going above] \node [on chain] {}; }
+  \node [tensor, on chain, fill=sorange] {$T$}; { [start branch = U going above] \node [on chain] {}; }
+}
+\draw[very thick]
+  (V1.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+  (Vi.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+;
+
+{ [ tn chain ]
+  \node [unitary, on chain, above = of V1] (U1) {$U_1^\dag$};
+  \node[on chain] {$\cdots$};
+  \node [unitary, on chain] (Ui) {};
+  \node [tensor, on chain, fill=sorange] {$T^\dag$};
+}
+
+\draw[very thick]
+  (U1.north) edge node[vec, shape border rotate = 90, minimum size = 0.1 cm] {\tiny $0$} ++(0, 0.5)
+  (Ui.north) edge node[vec, shape border rotate = 90, minimum size = 0.1 cm] {\tiny $0$} ++(0, 0.5)
+;
+```
+
+Notice that being an isometry in this context means that
+
+```tikz
+{ [on grid, node distance = 1.5cm]
+\node[unitary]        (U)  {$U$};
+\node[unitary, above = of U] (Ut) {$U^\dag$};
+
+\draw[very thick]
+  (U) edge node (Z) [midway] {} (Ut)
+  (U.south)  edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+  (Ut.north) edge node[vec, shape border rotate = 90, minimum size = 0.1 cm] {\tiny $0$} ++(0,  0.5)
+  (U.east)   edge ++(0.5, 0)
+  (Ut.east)  edge ++(0.5, 0)
+  (U.west) [in = 180, out = 180] edge (Ut.west);
+;
+
+\node[right = of Z] (eq) {$=$};
+
+\node[right = 3cm of U] (a) {};
+\node[above = of a] (b) {};
+
+\draw[very thick]
+  (a.west) [in = 180, out = 180] edge (b.west);
+;
+
+}
+```
+
+With the first unitary $U_1$ satisfying the same without the arch to the left.
+By iterating this equation, the inner product is left as
+
+```tikz
+{ [on grid, node distance = 1.5cm]
+\node[tensor,fill = sorange]        (U)  {$T$};
+\node[tensor,fill = sorange, above = of U] (Ut) {$T^\dag$};
+
+\draw[very thick]
+  (U) edge node (Z) [midway] {} (Ut)
+  (U.west) [in = 180, out = 180] edge (Ut.west);
+;
+
+\node[right = of Z] (eq2) {$=$};
+
+\node[right = of eq2, tensor]  {$1$};
+
+\node[left = of Z] (eq1) {$=$};
+
+\node[vec, shape border rotate = -90, left = 3cm of U] (p)  {$\psi$};
+\node[vec, shape border rotate =  90, above = of p] (pt) {$\psi$};
+
+\draw[very thick] (p) -- (pt);
+}
+```
+
+We conclude that $T$ is normalized when viewed as a vector in $\C^\S \otimes \C^\A$.
+What is nice about that?
+Well, a normalized vector is equivalent to a 1-column isometry in $\C \to \C^\S \otimes \C^\A$,
+so we can complete it to a unitary!
+
+```tikz {tikzlibrary="fit"}
+{ [ tn chain]
+  \node [unitary, on chain] (V1) {}; { [start branch = U going above] \node [on chain] {}; }
+  \node [unitary, on chain] (V2) {}; { [start branch = U going above] \node [on chain] {}; }
+  \node[on chain] {$\cdots$};
+  \node [unitary, on chain] (V3) {}; { [start branch = U going above] \node [on chain] {}; }
+  \node [unitary, on chain] (V4) {}; { [start branch = U going above] \node [on chain] {}; }
+}
+\draw[very thick]
+  (V1.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+  (V2.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+  (V3.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+  (V4.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+;
+```
+
+In case it is not clear why the MPS above is a quantum circuit, worry not.
+All is takes is rotating it to the horizontal and sliding the boxes.
+
+Conclusion
+----------
+
+Well, we saw today that finite automata have a neat description as quantum systems.
+We can cast them as Matrix Product States to perform classical simulations
+or even as quantum circuits if you want to run in the real thing.
+This representation is just the tip of the iceberg though!
+
+You can play with your FAs by subjecting them to anything
+a quantum system would.
+For example, MPS can be viewed as _Born machines_ allowing you to extract independent samples
+of finite strings from the automaton.
+You can also use low-rank approximations (such as SVD truncation)
+to compress these states while still being very similar to the original FA.
+
+The sky is the limit! Have fun with this new tool.
