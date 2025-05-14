@@ -14,6 +14,7 @@ description:
 
 \def\S{\mathcal{S}}
 \def\A{\mathcal{A}}
+\def\H{\mathcal{H}}
 \def\nStates{A}
 \def\nActions{S}
 \def\Accepting{\mathcal{F}}
@@ -37,16 +38,22 @@ description:
 \colorlet{sblue}{green!40}
 
 \definecolor{lightgreen}{HTML}{90EE90}
+\definecolor{palegreen}{HTML}{98FB98}
 \definecolor{thistle}{HTML}{D8BFD8}
 
 \tikzset{
   tensor/.style = {
-    fill = sgreen, draw=black, circle, very thick, minimum size=0.8cm,
+    fill = palegreen, draw=black, circle, very thick, minimum size=0.8cm,
   },
   unitary/.style = {
-    tensor, rectangle, rounded corners, fill = thistle
+    tensor, rectangle, rounded corners=1pt, fill = thistle
   },
-  isometry/.style = unitary,
+  isometry/.style = {
+    unitary,
+    trapezium,
+    trapezium left angle = 90,
+    trapezium right angle = 75,
+  },
   vec/.style = {
     tensor,
     node font = \tiny,
@@ -57,6 +64,17 @@ description:
     minimum width = 0.5cm,
     inner sep = 0.5mm,
   },
+  plug/.style = {
+    tensor,
+    node font = \tiny,
+    fill = white,
+    isosceles triangle,
+    isosceles triangle apex angle = 75,
+    minimum size = 0.2cm,
+    inner sep = 0.1mm,
+    shape border rotate = #1,
+  },
+  plug/.default = 0,
   covec/.style = {
     vec,
     shape border rotate = 180,
@@ -168,7 +186,7 @@ Furthermore, this is computationally expensive, requiring $A^N$ complex coeffici
 Using _Tensor Networks_, this amounts to saying that we only know a black box for this tensor.
 
 ```tikz
-\draw[fill=sgreen, rounded corners, very thick] (0, 0) rectangle (4, 1);
+\draw[fill=lightgreen, rounded corners, very thick] (0, 0) rectangle (4, 1);
 \foreach \x in {0.4, 1.2, 2.8, 3.6} {
   \draw[very thick] (\x, 1) -- (\x, 1.5);
 }
@@ -442,7 +460,7 @@ the tensor product of characters $\bigotimes \ket{\alpha_i}$,
 we arrive at an expression for the matching tensor.
 
 ```tikz
-\draw[fill=sgreen, rounded corners, very thick] (0, 0) rectangle (4, 1);
+\draw[fill=lightgreen, rounded corners, very thick] (0, 0) rectangle (4, 1);
 \foreach \x in {0.4, 1.2, 2.8, 3.6} {
   \draw[very thick] (\x, 1) -- (\x, 1.5);
 }
@@ -506,18 +524,19 @@ but what if we want to represent our automaton on an actual quantum computer?
 We will need to represent it as a [quantum circuit](https://en.wikipedia.org/wiki/Quantum_circuit) (QC).
 For this post's purposes, a QC is a tensor network where all tensors are unitary.
 You can then employ the usual methods to turn those gates (unitaries) into Pauli matrices or whatever.
-In a single-sided circuit, we also allow it to have a pure state as input.
+Since it is a single-sided circuit, we will use $\ket{0}$ as its input.
 Fortunately for us, MPS have a property called _gauge freedom_
 which allow them to be rewritten using only isometries.
 With this, it is possible to rewrite any MPS as a quantum circuit!
 
 Our approach follows @preparing_quantum_2023 [Sec. 4.1] and @Huggins_2019 [Sec. IV.C]
 and uses the QR decomposition to obtain unitaries.
-The only hypothesis we need is that $S = A^k$.
+The only hypothesis we need is that $S = A^k$, making $\C^\S = \bigotimes_{i=1}^k \C^\A$.
 In general, we are working with qubits (so $A = 2$)
-and all gates should be between them.
+and all gates should be between them, so the states should match this.
 If your FA does not match, just pad the state vectors and matrices with zeros.
-Also, we make use of a distinguished vector $\ket{0} \in \C^\A$.
+To unclutter the notation, let's sometimes write how many tensor products
+each wire represents.
 
 Throughout this section,
 we put the following lemma to good use.
@@ -540,7 +559,7 @@ Or in tensor networks,
 
 \node[unitary, minimum height = 1.5cm, right = of eq] (U) {$U$};
 \draw[very thick] (U.east) |- ++(0.7, 0);
-\draw[very thick] (U.150)  |- ++(-0.3, 0) node[covec, minimum size = 0.1 cm] {\tiny $0$};
+\draw[very thick] (U.150)  |- ++(-0.3, 0) node[plug=180] {};
 \draw[very thick] (U.210) |- ++(-0.7, 0);
 ```
 :::
@@ -559,92 +578,146 @@ We achieve this orthogonalization process via a series of QR decompositions.[^sv
 because it allows truncating the inner dimensions optimally.
 Since we are interested on the exact quantum circuit, both SVD and QR work.
 
-Each tensor in the MPS can be reshaped into a $\C^\S \to (\C^\S \otimes \C^\A)$ matrix.
+For this next part, let's view the first tensor as 3-tensor with incoming
+rank 0.
 
 ```tikz
-{ [ every edge quotes/.style = {at end, outer sep = 2mm}]
+{ [ tn chain]
+  {[every join/.style = {very thick, "$k$"} ]
+    \node [tensor, on chain] {}; { [start branch = U1 going above] }
+    \node [tensor, on chain] {}; { [start branch = U2 going above] }
+    \node[on chain] {$\cdots$};
+    \node [tensor, on chain] {}; { [start branch = U3 going above] }
+    \node [tensor, on chain] {}; { [start branch = U4 going above] }
+  }
+
+  \foreach \i in {1,...,4} {
+    \begin{scope}[continue branch = U\i]
+      \node [on chain] {$1$};
+    \end{scope}
+  }
+}
+
+\node [left = 5mm of chain-1] (p) {};
+\draw[dotted] (p) edge ["{$0$}" midway] (chain-1);
+```
+
+We will repeated the same process below for every node but the last one.
+Start by taking a tensor on the MPS and reshaping it into a $A^{(l+1)} \times A^k$ matrix.
+
+```tikz
+{ [ ]
 \node[tensor] (V) {};
-\draw[very thick] (V.west)   edge ["$\S$"] ++(-0.5, 0);
-\draw[very thick] (V.east)   edge ["$\S$"] ++(0.5, 0);
-\draw[very thick] (V.north)  edge ["$\A$"] ++(0, 0.5);
+\draw[very thick] (V.north)  edge ["$1$"] ++(0, 0.5);
+\draw[very thick] (V.west)   edge ["$l$"'] ++(-0.5, 0);
+\draw[very thick] (V.east)   edge ["$k$"] ++(0.5, 0);
 
 \node[right = of V] (eq) {$\to$};
 
 \node[tensor, right = of eq] (U) {};
-\draw[very thick] (U.180-30) edge ["$\A$"] ++(-0.5, 0);
-\draw[very thick] (U.180+30) edge ["$\S$"] ++(-0.5, 0);
-\draw[very thick] (U.east)   edge ["$\S$"]  ++(0.5, 0);
+\draw[very thick] (U.180-45) edge ["$1$"'] ++(-0.5, 0);
+\draw[very thick] (U.180+45) edge ["$l$"'] ++(-0.5, 0);
+\draw[very thick] (U.east)   edge ["$k$"]  ++(0.5, 0);
 }
 ```
-Applying a QR decomposition to this matrix turns it into a product between
-an isometry $V$ and a triangular matrix $R$.
+
+If $l < k$,
+apply a QR factorization to turn this matrix into a product between a unitary $U$
+and a triangular matrix $R$.
+From that and some reshaping, we get
 
 ```tikz
-{ [on grid, node distance = 2cm, every edge quotes/.style = {at end, inner sep = 2mm}]
-\node[tensor] (U) {};
-\draw[very thick] (U.180-30) edge ["$\A$"] ++(-0.5, 0);
-\draw[very thick] (U.180+30) edge ["$\S$"] ++(-0.5, 0);
-\draw[very thick] (U.east)   edge ["$\S$"]  ++(0.5, 0);
+{ [on grid, node distance = 2cm]
+\node[tensor] (T) {};
+\draw[very thick] (T.north)  edge ["$1$"] ++(0, 0.5);
+\draw[very thick] (T.west)   edge ["$l$"'] ++(-0.5, 0);
+\draw[very thick] (T.east)   edge ["$k$"] ++(0.5, 0);
 
-\node[right = of U] (eq) {$=$};
+\node[right = of T] (eq) {$=$};
 
-\node[isometry, right = of eq]     (V) {$V$};
-\node[tensor,  right = 1.5cm of V] (R) {$R$};
+\node[unitary, right = of eq]     (V) {$U$};
+\node[tensor,  right = 2cm of V] (R) {$R$};
 
-\draw[very thick] (V.180-30) edge ["$\A$"] ++(-0.5, 0);
-\draw[very thick] (V.180+30) edge ["$\S$"] ++(-0.5, 0);
-\draw[very thick] (V.east)   edge ["$\S$" {midway, above}] (R);
+\draw[very thick] (V.north)  edge ["$1$"] ++(0, 0.5);
+\draw[very thick] (V.west) edge ["$l$"'] ++(-0.5, 0);
+\draw[very thick] (V.east) edge ["$l+1$" {midway, above}] (R);
 
-\draw[very thick] (R.east)  edge ["$\S$"]  ++(0.5, 0);
+\draw[very thick] (R.east)  edge ["$k$"]  ++(0.5, 0);
+}
+```
+
+When $l = k$, perform a _thin QR decomposition_ instead
+to turn the tensor into a product between
+an isometry $V$ and a triangular $R$.
+
+```tikz
+{ [on grid, node distance = 2cm]
+\node[tensor] (T) {};
+\draw[very thick] (T.north)  edge ["$1$"] ++(0, 0.5);
+\draw[very thick] (T.west)   edge ["$k$"'] ++(-0.5, 0);
+\draw[very thick] (T.east)   edge ["$k$"] ++(0.5, 0);
+
+\node[right = of T] (eq) {$=$};
+
+\node[isometry, right = of eq]    (V) {$V$};
+\node[tensor,  right = 2cm of V] (R) {$R$};
+
+\draw[very thick] (V.north)  edge ["$1$"] ++(0, 0.5);
+\draw[very thick] (V.west) edge ["$k$"'] ++(-0.5, 0);
+\draw[very thick] (V.east) edge ["$k$" {midway, above}] (R);
+
+\draw[very thick] (R.east)  edge ["$k$"]  ++(0.5, 0);
 }
 ```
 
 With the aforestated lemma,
-this isometry can be dilated into a unitary with a plugged $\ket{0}$.
+this isometry can be dilated into a unitary $U$ contracted with $\ket{0} \in \C^\A$.
 Doing that and reshaping again.
 
 ```tikz
-{ [on grid, node distance = 2cm, every edge quotes/.style = {at end, inner sep = 2mm}]
+{ [on grid, node distance = 2cm]
 \node[tensor] (T) {};
-\draw[very thick] (T.west)   edge ["$\S$"] ++(-0.5, 0);
-\draw[very thick] (T.east)   edge ["$\S$"] ++(0.5, 0);
-\draw[very thick] (T.north)  edge ["$\A$"] ++(0, 0.5);
+\draw[very thick] (T.north)  edge ["$1$"] ++(0, 0.5);
+\draw[very thick] (T.west)   edge ["$k$"'] ++(-0.5, 0);
+\draw[very thick] (T.east)   edge ["$k$"] ++(0.5, 0);
 
 \node[right = of T] (eq) {$=$};
 
-\node[isometry, right = of eq]     (V) {$V$};
-\node[tensor,  right = 1.5cm of V] (R) {$R$};
+\node[unitary, right = of eq]    (V) {$U$};
+\node[tensor,  right = 2cm of V] (R) {$R$};
+
+\draw[very thick] (V.north)  edge ["$1$"] ++(0, 0.5);
+\draw[very thick] (V.west) edge ["$k$"'] ++(-0.5, 0);
+\draw[very thick] (V.east) edge ["$k$" {midway, above}] (R);
+
+\draw[very thick] (R.east)  edge ["$k$"]  ++(0.5, 0);
 
 \draw[very thick]
-  (V.north) edge ["$\A$"] ++(0, 0.5)
-  (V.west)  edge ["$\S$"] ++(-0.5, 0)
-  (V.east)  edge ["$\S$" {midway, above}] (R)
-  (V.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+  (V.south) edge["1" {midway, left}] node[plug=-90, at end] {} ++(0, -0.5)
 ;
-
-\draw[very thick] (R.east)  edge ["$\S$"]  ++(0.5, 0);
 }
 ```
 
-To orthogonalize a MPS, repeated this procedure for each tensor
-keeping the isometry and contracting $R$ with the next site.
+To orthogonalize a MPS, repeat this procedure for each tensor
+keeping the unitary and contracting $R$ with the next site.
+Notice that $l$ starts at zero and increases at every step
+until it equals the bond dimension $k$.
 
 ```tikz {tikzlibrary="fit"}
 { [ tn chain ]
-  \node [unitary, on chain] (V1) {}; { [start branch = U going above] \node [on chain] {}; }
+  \node [unitary, on chain] (V1) {$U_1$}; { [start branch = U going above] \node [on chain] {}; }
   \node[on chain] {$\cdots$};
-  \node [unitary, on chain] (V) {$V_i$}; { [start branch = U going above] \node [on chain] {}; }
+  \node [unitary, on chain] (V) {$U_i$}; { [start branch = U going above] \node [on chain] {}; }
   \node [tensor, on chain] (R) {$R_i$};
   \node [tensor, on chain] (T) {}; { [start branch = U going above] \node [on chain] {}; }
   \node[on chain] {$\cdots$};
-  \node [tensor, on chain, fill=sorange] {}; { [start branch = U going above] \node [on chain] {}; }
+  \node [tensor, on chain] {}; { [start branch = U going above] \node [on chain] {}; }
 
   \node[fit=(R) (T), draw, dotted, "Contract" below] {};
 
 }
 \draw[very thick]
-  (V1.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
-  (V.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+  (V.south) edge node[plug=-90, at end] {} ++(0, -0.3)
 ;
 ```
 
@@ -655,8 +728,14 @@ function orthogonalize!(psi::MPS) :: MPS
   N = length(psi)   # How many tensors in psi
 
   for i in 1:(N-1)
-    Q, R     = qr(psi)
-    psi[i]   = dilate(Q)   # Turn into unitary with |0>
+    if psi[i].prev < psi[i].next   # Compare the left dim with the right dim
+      Q, R   = qr(psi)
+      psi[i] = dilate(Q)   # Turn into unitary with |0>
+    else
+      Q, R   = thin_qr(psi)
+      psi[i] = Q
+    end
+
     psi[i+1] = contract(R, psi[i+1])
   end
 
@@ -664,7 +743,7 @@ function orthogonalize!(psi::MPS) :: MPS
 end
 ```
 
-After orthogonalization, we're left with a sequence of isometries except for the last one.
+After orthogonalization, All tensors in the MPS become isometries except for the last one.
 This MPS represents the same tensor but is much more structured.
 
 ```tikz
@@ -675,8 +754,7 @@ This MPS represents the same tensor but is much more structured.
   \node [tensor, on chain, fill=sorange] {$T$}; { [start branch = U going above] \node [on chain] {}; }
 }
 \draw[very thick]
-  (V1.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
-  (Vi.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+  (Vi.south) edge node[plug = -90, at end] {} ++(0, -0.3)
 ;
 ```
 
@@ -694,8 +772,7 @@ To see that, build the inner product.
   \node [tensor, on chain, fill=sorange] {$T$}; { [start branch = U going above] \node [on chain] {}; }
 }
 \draw[very thick]
-  (V1.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
-  (Vi.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+  (Vi.south) edge node[plug = -90, at end] {} ++(0, -0.3)
 ;
 
 { [ tn chain ]
@@ -706,8 +783,7 @@ To see that, build the inner product.
 }
 
 \draw[very thick]
-  (U1.north) edge node[vec, shape border rotate = 90, minimum size = 0.1 cm] {\tiny $0$} ++(0, 0.5)
-  (Ui.north) edge node[vec, shape border rotate = 90, minimum size = 0.1 cm] {\tiny $0$} ++(0, 0.5)
+  (Ui.north) edge node[plug = 90, at end] {} ++(0, 0.3)
 ;
 ```
 
@@ -720,8 +796,8 @@ Notice that being an isometry in this context means that
 
 \draw[very thick]
   (U) edge node (Z) [midway] {} (Ut)
-  (U.south)  edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
-  (Ut.north) edge node[vec, shape border rotate = 90, minimum size = 0.1 cm] {\tiny $0$} ++(0,  0.5)
+  (U.south)  edge node[plug = -90, at end] {} ++(0, -0.3)
+  (Ut.north) edge node[plug = 90,  at end] {} ++(0,  0.3)
   (U.east)   edge ++(0.5, 0)
   (Ut.east)  edge ++(0.5, 0)
   (U.west) [in = 180, out = 180] edge (Ut.west);
@@ -768,26 +844,86 @@ By iterating this equation, the inner product is left as
 We conclude that $T$ is normalized when viewed as a vector in $\C^\S \otimes \C^\A$.
 What is nice about that?
 Well, a normalized vector is equivalent to a 1-column isometry in $\C \to \C^\S \otimes \C^\A$,
-so we can complete it to a unitary!
+so we can complete it to a unitary by plugging $k+1$ kets to it!
+
+Putting it all together,
+the new MPS takes the following form:
 
 ```tikz {tikzlibrary="fit"}
-{ [ tn chain]
-  \node [unitary, on chain] (V1) {}; { [start branch = U going above] \node [on chain] {}; }
-  \node [unitary, on chain] (V2) {}; { [start branch = U going above] \node [on chain] {}; }
+{ [start chain, every join/.style = very thick, node distance = 5mm]
+  \node [unitary, on chain] (V1) {}; { [start branch = U1 going above] }
+  \node [unitary, on chain] (V2) {}; { [start branch = U2 going above] }
   \node[on chain] {$\cdots$};
-  \node [unitary, on chain] (V3) {}; { [start branch = U going above] \node [on chain] {}; }
-  \node [unitary, on chain] (V4) {}; { [start branch = U going above] \node [on chain] {}; }
+  \node [unitary, on chain] (V3) {}; { [start branch = U3 going above] }
+  \node [unitary, on chain] (V4) {}; { [start branch = U4 going above] }
+
+  \foreach \i in {1,...,4} {
+    \begin{scope}[continue branch = U\i]
+      \node [on chain, join] {$1$};
+    \end{scope}
+  }
 }
+
+{ [every above delimiter/.style = {yshift = -2mm},]
+  \node [below = 5mm of V4, above delimiter = \}] {$k+1$};
+  \node [below = -0.5mm of V4] {\tiny $\cdots$};
+}
+
+% Inner bonds
 \draw[very thick]
-  (V1.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
-  (V2.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
-  (V3.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
-  (V4.south) edge node[vec, shape border rotate = -90, minimum size = 0.1 cm] {\tiny $0$} ++(0, -0.5)
+  (chain-1) edge["$1$"] (chain-2)
+  (chain-2) edge["$2$"] (chain-3)
+  (chain-3) edge["$k$"] (chain-4)
+  (chain-4) edge["$k$"] (chain-5)
+;
+
+\draw[very thick]
+  (V3.south) edge node[plug = -90, at end] {} ++(0, -0.3)
+  (V4.-120)  edge node[plug = -90, at end] {} ++(0, -0.3)
+  (V4.-60)   edge node[plug = -90, at end] {} ++(0, -0.3)
 ;
 ```
 
 In case it is not clear why the MPS above is a quantum circuit, worry not.
-All is takes is rotating it to the horizontal and sliding the boxes.
+All it takes is rotating it to the horizontal and sliding the boxes.
+Here's an example with $N = 5$ and $k = 2$
+where each wire is one qubit.
+
+```tikz {tikzlibrary="fit"}
+\matrix (c) [
+  matrix of nodes, nodes in empty cells,
+  column sep = 0.7cm, row sep = 4mm,
+  text width = 0.5cm,
+  every node/.style = {minimum height = 4mm},
+  ]
+{
+  &  & & & & & \\
+  &  & & & & & \\
+  &  & & & & & \\
+  &  & & & & & \\
+  &  & & & & & \\
+};
+
+\draw[very thick]
+  (c-1-1) |- (c-1-7)
+  (c-2-1) |- (c-2-7)
+  (c-3-1) |- (c-3-7)
+  (c-4-1) |- (c-4-7)
+  (c-5-1) |- (c-5-7)
+;
+
+\node[unitary, fit=(c-1-6)] (U1) {$U_1$};
+\node[unitary, fit=(c-2-5)(c-1-5)] {$U_2$};
+\node[unitary, fit=(c-3-4)(c-1-4)] {$U_3$};
+\node[unitary, fit=(c-4-3)(c-2-3)] {$U_4$};
+\node[unitary, fit=(c-5-2)(c-3-2)] {$U_5$};
+
+\foreach \i in {1,...,5} {
+  \node[covec] at (c-\i-1) {$0$};
+}
+```
+
+Now that's a quantum circuit!
 
 Conclusion
 ----------
