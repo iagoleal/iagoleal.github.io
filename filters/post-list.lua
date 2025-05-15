@@ -45,7 +45,7 @@ local Date = setmetatable({
 })
 
 local function getfilename(path)
-  local fname = pandoc.path.split_extension(pandoc.path.filename(path))
+  local fname = pandoc.path.split_extension(pandoc.path.split_extension(pandoc.path.filename(path)))
   return fname
 end
 
