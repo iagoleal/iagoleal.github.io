@@ -1,114 +1,124 @@
 local fmt = string.format
 
-local function trimspaces(s)
-  return string.gsub(s, '^%s*(.-)%s*$', '%1')
-end
-
-local function split(s, delimiter)
-    result = {}
-    for m in (s..delimiter):gmatch("(.-)"..delimiter) do
-        table.insert(result, m)
-    end
-    return result
-end
-
-local function getfilename(s)
-    local parts = split(s, "/")
-    return string.match(parts[#parts], "^[^.]+")
-end
-
-
--- Lua implementation of PHP scandir function
-local function scandir(directory)
-    local t = {}
-    local file = io.popen(fmt("find '%s' -maxdepth 1 -type f", directory))
-    for filename in file:lines() do
-      table.insert(t, filename)
-    end
-    file:close()
-    return t
-end
-
--- Iterate over the lines of a file and read the YAML fields into a table.
--- NOTE: The first match for the field is kept.
-local function readyaml(fname, keys)
-  local values = { href = fmt("/posts/%s/", getfilename(fname))}
-  for line in io.lines(fname) do
-    for i = #keys, 1, -1 do
-      local k = keys[i]
-      local matched = string.match(line, '^' .. k .. ':%s+(.+)%s*$')
-      if matched then
-        if k == 'date' then
-          values[k] = pandoc.utils.normalize_date(matched)
-        else
-          values[k] = trimspaces(matched)
-        end
-        table.remove(keys, i)
-        break
-      end
-    end
-    if #keys == 0 then
-      break
-    end
+local function map(t, f)
+  out = {}
+  for k, v in pairs(t) do
+    out[k] = f(v)
   end
-  return values
+
+  return out
 end
 
-local function format_date(date)
-  return string.gsub(date, '-', '.')
-end
+local function take(t, n)
+  out = {}
 
-local function format_title(title, subtitle)
-  if subtitle then
-    return fmt("%s", title)
-  else
-    return title
+  for i=1,n do
+    out[i] = t[i]
   end
+
+  return out
+
 end
 
-local function makeitem(info)
+local Date = setmetatable({
+  __lt = function(self, b)
+    return os.time(self) < os.time(b)
+  end,
+  __eq = function(a, b)
+    return a.year == b.year and a.month == b.month and a.day == b.day
+  end,
+  __tostring = function(self)
+    local delimiter = "."
+    return fmt("%04d%s%02d%s%02d", self.year, delimiter, self.month, delimiter, self.day)
+  end
+}, {
+  __call = function(self, str)
+    local date = pandoc.utils.normalize_date(pandoc.utils.stringify(str))
+    local ya, ma, da = date:match("^(%d+)-(%d+)-(%d+)$")
+
+    return setmetatable({
+      day   = tonumber(da),
+      month = tonumber(ma),
+      year  = tonumber(ya),
+    }, self)
+  end,
+})
+
+local function getfilename(path)
+  local fname = pandoc.path.split_extension(pandoc.path.filename(path))
+  return fname
+end
+
+function readfile(fname, mode)
+  local f = io.open(fname, "r")
+
+  if not f then
+    io.stderr:write(fmt("ERROR reading file %s\n", fname))
+    return nil
+  end
+
+  local content = f:read(mode)
+
+  f:close()
+
+  return content
+end
+
+function read_metadata(fname)
+  -- Read the entire file content
+  local content = readfile(fname, "*a")
+  local doc = pandoc.read(content, "markdown")
+
+  return doc.meta  -- We only need the metadata
+end
+
+local function makeitem(meta)
   return pandoc.List {
     pandoc.Plain { -- This is a <li>
       pandoc.Link ({
-        pandoc.Span(format_title(info.title, info.subtitle), {class = "title"}),
-        pandoc.Span(format_date(info.date), {class = "date"}),
-      }, info.href)
+        pandoc.Span(meta.title, {class = "title"}),
+        pandoc.Span(tostring(meta.date), {class = "date"}),
+      }, meta.href)
     }
   }
 end
 
-local function compare_dates(a, b)
-  local ya, ma, da = table.unpack(split(a.date, '-'))
-  local yb, mb, db = table.unpack(split(b.date, '-'))
-  return os.time({year = ya, month = ma, day = da})
-       > os.time({year = yb, month = mb, day = db})
-end
-
 local function make_postlist(path, n)
-  local posts = scandir(path)
-  local data = {}
-  local headlines = {}
-  n = n and math.min(n, #posts) or #posts
-  print(fmt("Making post list with %d out of %d posts", n, #posts))
-  for _, post in ipairs(posts) do
-    print("\tPost list: reading post " .. post)
-    local info = readyaml(post, {"title", "subtitle", "date"})
-    table.insert(data, info)
-  end
-  table.sort(data, compare_dates)
-  for i = 1, n do
-    headlines[i] = makeitem(data[i])
-  end
-  return pandoc.BulletList(headlines)
+  local posts = pandoc.system.list_directory(path)
+  n = math.min(n or math.huge, #posts)
+
+  pandoc.log.info(fmt("Making post list with %d out of %d posts", n, #posts))
+
+  local metadata = map(posts, function(post)
+    local meta = read_metadata(pandoc.path.join{path, post})
+
+    pandoc.log.info("Post list: reading post " .. post)
+
+    meta.href = fmt("/posts/%s/", getfilename(post))
+    meta.date = Date(meta.date)
+
+    return meta
+  end)
+
+  table.sort(metadata, function(a, b) return a.date > b.date end)
+
+  return map(take(metadata, n), makeitem)
 end
 
 function Block(elem)
   if elem.content then
     local text = pandoc.utils.stringify(elem.content)
-    local num = string.match(text, "^%s*{{%s*post%-list%s*(%d*)%s*}}%s*$")
+    local num  = string.match(text, "^%s*{{%s*post%-list%s*(%d*)%s*}}%s*$")
+
     if num then
       local postlist = make_postlist("content/posts", tonumber(num))
-      local div = pandoc.Div({postlist}, {class = "post-list"})
+
+      local div = pandoc.Div({
+        pandoc.BulletList(postlist)
+      }, {
+        class = "post-list",
+      })
+
       return div
     end
   end

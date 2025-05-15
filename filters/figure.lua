@@ -11,7 +11,6 @@
 
 Note: Tex code blocks use any environment previously declared as raw tex blocks.
 --]]
-local system = require "pandoc.system"
 local path   = require "pandoc.path"
 
 local fmt = string.format
@@ -37,45 +36,10 @@ local function file_exists(fname)
   end
 end
 
--- Copy contents from a file to a another, creating any directory needed in the process.
+-- Copy contents from a file to another, creating any directory needed in the process.
 local function copy(source, target)
   mkparent(target)
   os.execute(fmt("cp --update --no-target-directory %s %s", source , target))
-end
-
--- Write contents to a file, creating any directory needed in the process.
-local function write(fname, content)
-  mkparent(fname)
-  local f = io.open(fname, 'w')
-  if f then
-    f:write(content)
-    f:close()
-    return true
-  else
-    error(fmt("Cannot write to file '%s'.", fname))
-  end
-end
-
--- Read file contents.
-local function read(fname)
-  file = io.open(fname, 'rb')
-  if file then
-    local content = file:read("*all")
-    file:close()
-    return content
-  else
-    error(fmt("Cannot read from file '%s'.", fname))
-  end
-end
-
--- Turn a file path absolute.
-local function make_absolute(fname)
-  if path.is_absolute(fname) then
-    return fname
-  else
-    local pwd = system.get_working_directory()
-    return path.normalize(path.join {pwd, path.make_relative(fname, pwd)})
-  end
 end
 
 -------------------------
@@ -109,7 +73,7 @@ illustrators.graphviz = {
     return block.text
   end,
 
-  -- Turn a string in Graphviz DOT language into a SVG image.
+  -- Turn a string in Graphviz DOT language into an SVG image.
   convert = function(target, code)
     return pandoc.pipe("dot", {"-Tsvg", "-o", target}, code)
   end,
@@ -211,7 +175,7 @@ local function make_figure(svg_maker, content, block)
 
   copy(cachefile, buildfile)
 
-  return format_tag(outname, block) -- pandoc.RawBlock("html", format_tag(outname))
+  return format_tag(outname, block)
 end
 
 return {

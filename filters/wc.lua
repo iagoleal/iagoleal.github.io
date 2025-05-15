@@ -8,7 +8,7 @@ wpm = 275.0
 
 wordcount = {
   Str = function(el)
-    -- we don't count a word if it's entirely punctuation:
+    -- We don't count a word if it's entirely punctuation:
     if el.text:match("%P") then
       words = words + 1
     end
