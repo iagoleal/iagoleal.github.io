@@ -265,7 +265,7 @@ On the other hand, when they do share a factor,
 the full orbit takes the whole codomain and $\phi$ is surjective --- although not necessarily injective.
 In this case, we get a smaller automaton recognizing the same language.
 
-Example: Divisibility by 6 in binary
+Example: Divisibility by 6 in Binary
 ------------------------------------
 
 By using only modular arithmetic, binary divisibility by 6 requires 5 states
@@ -486,7 +486,7 @@ As an illustration, all such machines will have this same shape.
 ```
 
 
-### Example: Decimal Division by 300
+### Example: Divisibility by 300 in Decimal
 
 Write $b = 10$, $m = 300 = 3 \cdot 10^2$.
 From the previous discussion,
@@ -585,9 +585,10 @@ with $\omega_0$ divisible by $a^r$.
 
 This lets us construct an automaton with $2 + q$ state.
 However, notice that using Euclidean division helped with the formulation
-but this lemma has a caveat:
+but it has a caveat:
 whenever $r = 0$, i.e. $c$ divides $d$,
-the condition on the last digit vanishes and we end up with a spurious state representing it.
+the condition on the last digit vanishes and we end up with a spurious state
+checking if a digit is divisible by 1.
 A smart trick solves this problem:
 instead of division,
 consider the ceiling $Q = \ceil{\frac d c}$ and write
@@ -608,24 +609,27 @@ and take as states
 $$\S = \{ \ca 0 \} \sqcup \cb{\Z_{\ceil{\frac d c}}}.$$
 The starting and accepting state is, as usual, $\cb{0}$.
 The state $\ca 0$ represents the ignored digits and
-the machine leaves it as soon as it encounters something divisible by $a^r$,
+the machine leaves it as soon as it encounters something divisible by $a^{c-r}$,
 $$
 \delta(\ca{0}, k) = \begin{cases}
-  \cb{Q-1}, & a^r \divides k  \\
+  \cb{Q-1}, & a^{c-r} \divides k  \\
   \ca{0}, & \text{otherwise}
 \end{cases}
 $$
 
-After that, it turns into the already familiar zero counting machine.
+After that, it turns into the already familiar zero counting machine
+with one addition:
+getting a digit divisible by $a^{c-r}$
+takes you back to the start of the $purple$ chain.
 $$ \begin{aligned}
 \delta(\cb{0}, 0) &= \cb{0} \\
 \delta(\cb{s}, 0) &= \cb{s - 1} \\
-\delta(\cb{s}, k) &= \ca{0}
+\delta(\cb{s}, k) &= \delta(\ca{0}, k) \\
 \end{aligned}
 $$
 
 As an illustration,
-all such automata will have roughly the shape below.
+all such automata roughly have the shape below.
 
 ```tikz {tikzlibrary="automata" usepackage="amssymb"}
 { [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]},
@@ -638,15 +642,50 @@ all such automata will have roughly the shape below.
   \node[state, spow, initial, accepting, initial where = above, initial text= ] (s0) [right = of ll]  {$0$};
 
   \path[->]
-    (s0)  edge["{0}", loop right] ()
-    (sa)  edge["$a^r \divides \mathtt{k}$"] (sq)
-    (sq)  edge["{0}"] (ll)
-    (ll)  edge["{0}"] (s0)
+    (s0) edge["{0}", loop right] ()
+    (sq) edge["{0}"] (ll)
+    (ll) edge["{0}"] (s0)
 
-    (sa) edge["$a^r \nmid \mathtt{k}$", loop left]  ()
-    (sq) edge["{k}", bend left]  (sa)
-    (ll) edge["{k}", out = 225, in = -45]  (sa)
-    (s0) edge["{k}", out = 225, in = -60]  (sa)
+    (sa) edge["$a^{c-r} \divides \mathtt{k}$"] (sq)
+    (sq) edge["$a^{c-r} \divides \mathtt{k}$", out = 75, in = 105, loop, above] ()
+    (s0) edge["$a^{c-r} \divides \mathtt{k}$"', out = -225, in = 60]  (sq)
+    (ll) edge["$a^{c-r} \divides \mathtt{k}$"', out = -225, in = 45]  (sq)
+
+    (sa) edge["$a^{c-r} \nmid \mathtt{k}$", loop left]  ()
+    (sq) edge["$a^{c-r} \nmid \mathtt{k}$", out = 225, in = -30, below, near start]  (sa)
+    (ll) edge["$a^{c-r} \nmid \mathtt{k}$", out = 225, in = -45]  (sa)
+    (s0) edge["$a^{c-r} \nmid \mathtt{k}$", out = 225, in = -60]  (sa)
+  ;
+}
+```
+
+### Example: Divisibility by 32 in Octal
+
+For $b = 8 = 2^3$ and $m = 32 = 2^5$,
+we calculate $5 = 2\cdot3 - 1$.
+Thus, the automaton has $3$ states, with transitions from green to purple
+happening only when $2^{3-1} = 4$, i.e., $k = 0$ or $4$.
+
+```tikz {tikzlibrary="automata" usepackage="amssymb"}
+{ [shorten >=1pt, node distance=3cm, on grid, auto, >={Stealth[round]},
+   every edge quotes/.style = {font = {\scriptsize\tt}},
+   every state/.style={node font = \footnotesize, minimum size = 1cm},
+  ]
+  \node[state, sdiv] (sa) {$0$};
+  \node[state, spow] (sq) [right = 3cm of sa] {$1$};
+  \node[state, spow, initial, accepting, initial where = above, initial text= ] (s0) [right = of sq]  {$0$};
+
+  \path[->]
+    (s0)  edge["{0}", loop right] ()
+    (sa)  edge["{[04]}"] (sq)
+    (sq)  edge["{0}"] (s0)
+
+    (sa) edge["{[123567]}", loop left]  ()
+    (sq) edge["{[123567]}", bend left]  (sa)
+    (s0) edge["{[123567]}", out = 225, in = -60]  (sa)
+
+    (sq) edge["{4}", out = 75, in = 105, loop, above] ()
+    (s0) edge["{4}"', out = -225, in = 60]  (sq)
   ;
 }
 ```
@@ -686,7 +725,7 @@ and follow the zero-counting mechanism.
 $$ \begin{aligned}
 \delta(\cb{0}, 0) &= \cb{0} \\
 \delta(\cb{s}, 0) &= \cb{s - 1} \\
-\delta(\cb{s}, k) &= \ca{1}
+\delta(\cb{s}, k) &= \delta(\ca{0}, k) \\
 \end{aligned}
 $$
 
@@ -695,7 +734,7 @@ we use $\ca{0}$ for divisibility only by $x$ and $\cb{Q-1}$
 for divisibility by $x$ and $a^{c-r}$.
 $$
 \delta(\ca{s}, k) = \begin{cases}
-  \cb{Q-1}, & a^r \divides k \text{ and } x \divides (bs + k) \\
+  \cb{Q-1}, & a^{c-r} \divides k \text{ and } x \divides (bs + k) \\
   \ca{bs + k \pmod x} , & \text{otherwise}
 \end{cases}
 $$
