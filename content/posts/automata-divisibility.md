@@ -40,6 +40,8 @@ suppress-bibliography: true
 
 \def\by#1#2{\left.{#1}\right|_{{#2}}}
 
+\def\layer#1#2{#1 \triangleright #2}
+
 ```{=tex}
 \definecolor{lightgreen}{HTML}{90EE90}
 \definecolor{thistle}{HTML}{D8BFD8}
@@ -63,8 +65,8 @@ But I at least hope it will be novel to you, my dear reader.
 Today we explore the answers to two related questions.
 
 :::Aside
-Can a DFA determine the language $L(b, m)$ of numbers written in base-$b$ and
-divisible by $m$?
+Can a DFA determine the language $L(b, m)$ of numbers written in base $b$
+which are divisible by $m$?
 :::
 
 The answer is a resounding **yes**
@@ -344,7 +346,7 @@ Notice that except for the transition $\ca 0 \xrightarrow{0} \cb 0$,
 the green part is an automaton measuring divisibility by 3.
 This is no coincidence. As we will later see,
 a binary number is divisible by $6$ if and only if it is a number divisible by $3$
-follows by at least one $0$.
+followed by at least one $0$.
 
 Third Construction: Power to The States
 =======================================
@@ -563,11 +565,13 @@ $$ n = \sum_{i = 0}^{q-1} n_i a^{ci} + n_q a^{cq} + \sum_{j = {q+1}}^N n_j a^{cj
 
 A case analysis on the groups reveal the form they must take.
 
-- $i > q$: Those terms are all divisible by $a^d$ because $ci \ge c(q+1) = cq + c > cq + r = d$.
-And can, thus, be _ignored) without remorse.
+- $i > q$: Those terms are all divisible by $a^d$ because
+$$ci \ge c(q+1) = cq + c > cq + r = d.$$
+And can, thus, be _ignored_ without remorse.
 
-- $i < q$: Notice that $a^{cq + r} \divides n \implies b^q | n$.
-In other words, the $q$ last digits of $n$ on base-$b$ _must be zero_.
+- $i < q$: Notice that $a^{cq + r} \divides n \implies n = \alpha \cdot b^q$.
+Since the last $q$ digits of $n$ never sum up to a whole $b^q$ factor,
+they _must be zero_.
 
 - $i = q$: The remaining term is $n_q a^{cq}$. The only constraint for $a^d$ to divide it
 is that $a^r \divides n_q$.
@@ -685,7 +689,7 @@ happening only when $2^{3-1} = 4$, i.e., $k = 0$ or $4$.
     (s0) edge["{[123567]}", out = 225, in = -60]  (sa)
 
     (sq) edge["{4}", out = 75, in = 105, loop, above] ()
-    (s0) edge["{4}"', out = -225, in = 60]  (sq)
+    (s0) edge["{4}"', bend right]  (sq)
   ;
 }
 ```
@@ -709,7 +713,7 @@ Factor $b = a^c$ and $m = xa^d$, and write
 $Q = \ceil{\frac d c}$ such that $d = cQ - r$.
 A word represents a base-$b$ number divisible by $m$
 if it is either all zeros or of the form $\omega \omega_0 0^{Q-1}$,
-with 
+with
 $$\begin{aligned}
   [\omega \omega_0]_b &\equiv 0 \mod x \\
   \omega_0            &\equiv 0 \mod a^{c-r}.
@@ -740,12 +744,32 @@ $$
 $$
 
 Despite all the indirections, I hope this DFA makes sense to you!
+These are the optimal automata whenever the base $b$ is a prime power,
+i.e., $a$ is prime.
 Also, notice that when $b$ and $m$ are coprime, there are no purple states
 and it becomes the original automaton $A_1$.
 
+Fourth Construction: Layers for Digit Lookup
+============================================
+
+For compound numbers, we've improved our original automaton in two different ways.
+What do they have in common?
+Well, have states clustered into different "meanings"
+and both perform some kind of digit lookup besides checking divisibility!
+For the powers it is easy, since we divide by a coprime factor and then proceed to count zeros.
+
+The orbit is more interesting to us, though.
+Although we got to it by removing redundant states,
+another view is that it is a DFA checking divisibility
+at the same time that it checks the last digit's admissibility.
+I'll explain it further in a bit,
+but before constructing these machines with lookup,
+let's check the literature to see what is
+the minimum amount of states that a divisibility DFA must have.
+
 
 Are these machines minimal?
-===========================
+---------------------------
 
 So, what is the size of the minimal automaton for the general case $L(b, m)$?
 The answer turns out to be rather complicated!
@@ -771,9 +795,110 @@ the sum is
 $$\frac{x a^d}{\gcd\underbrace{(x a^d, a^{cN})}_{=a^d}} + \sum_{i=0}^{N - 1} \frac{a^{ci}}{\gcd\underbrace{(a^{ci}, xa^d)}_{=a^{ci}}} = x + \textstyle{\ceil{\frac d c}}.$$
 
 
+On Digits and Orbits
+--------------------
+
+You may remember some divisibility rules from school
+such as "An even number has an even last digit" or "A number is divisible by 5 if it ends in either 0 or 5".
+Why do 2 and 5 have such rules, while 3 or 7 do not?
+In general, we can check the last digit of a number by looking at it modulo the base:
+$$ x_0 \equiv x \mod b.$$
+
+Now, if it is a multiple of $m$, i.e. $x = \alpha m$,
+$$ x_0 \equiv x \equiv \alpha m \equiv \alpha' \gcd(m, b) \mod b.$$
+
+We notice that the last digit $x_0$ is on the orbit $\orbit(m, b)$,
+making it a multiple of $\gcd(b, m)$.
+This explains the middle school formulas,
+since $\gcd(5, 10) = 5$ and $\gcd(2, 10) = 2$,
+while $3$ and $7$ are coprime to $10$ and, thus, accept any last digit.
+We can expand this analysis to the $l$ last digits by considering $x$ modulo $b^l$
+and obtain a similar result.
+
+:::Lemma
+The last $l$ digits of a multiple of $m$ written in base $b$ are in
+$$\orbit(m, b^l) = \left\{ j \cdot \gcd(m, b^l) \mid  0 \le j < \by{b^l}{m} \right\}.$$
+:::
+
+Now suppose there's a power $N$ such that $\gcd(m, b^{N-1}) = m$.
+This happens when $m$ is a power of a factor of $b$, for example.
+In this case, the condition on the digits is not only necessary but also sufficient
+for divisibility, since
+$$ x \equiv \sum_{i=0}^{N-1} x_i b^i  \mod m,$$
+And we can check that the last $N$ digits are on the orbit $\orbit(m, b^{N-1})$.
+
+How many states does an automaton need to check all such suffixes?
+Well, some arithmetic shows that to check each digit,
+we need $\sum_{i=0}^{N - 1} \by{b^i}{m}$ states.
+Do you remember this term from Alexeev's formula?
+Well, this suggests we're getting somewhere.
+
+For a general base and divisor, the above is not enough though.
+To deal with them, besides the suffixes, it is also necessary to keep track
+of a coprime factor.
+We will see in the next section how to construct such a machine.
 
 
+### Example: Divisibility by 25 in Decimal
 
+Since $b = 10 = 2\cdot5$ and $m = 125 = 5^2$,
+we can test divisibility by $m$ by checking a string's last $2$ digits.
+The language is $0^\star + \A^\star\orbit(m, b^2)$,
+where the orbit is
+$$\orbit(25, 10^2) = \{00, 25, 50, 75 \}.$$
+We need 4 states in total:
+One to discriminate the last digit, two other to discriminate the second-to-last
+and a last one to represent nodes without any admissible suffix.
+
+The transitions try to advance the suffix or act exactly the same as a node on the previous layer.
+
+```tikz {tikzlibrary="automata" usepackage="amssymb"}
+{ [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]},
+   every edge quotes/.style = {font = {\scriptsize\tt}},
+   every state/.style={node font = \footnotesize, minimum size = 1cm},
+  ]
+  \node[state] (2-0) at (-1, 0) {};
+
+  \node[state] (1-0) [above right = 3cm of 2-0] {};
+  \node[state] (1-1) [below right = 3cm of 2-0] {};
+
+  \node[state, initial, accepting, initial where=above, initial text = ] (0-0) at (5, 0) {};
+
+  \path[->]
+    (2-0) edge["{[05]}", bend left] (1-0)
+    (2-0) edge["{[27]}"', bend right] (1-1)
+    (2-0) edge["{[134689]}", loop left] ()
+  ;
+
+  \path[->]
+    (0-0) edge["0", loop right] ()
+
+    (0-0) edge["{5}"', bend right] (1-0)
+    (0-0) edge["{[27]}", bend left] (1-1)
+    (0-0) edge["{[134689]}"' near start] (2-0)
+  ;
+
+  \path[->]
+    (1-0) edge["0"] (0-0)
+
+    (1-0) edge["5", loop above] ()
+    (1-0) edge["{[27]}" near start, bend right] (1-1)
+    (1-0) edge["{[134689]}", sloped] (2-0)
+  ;
+
+  \path[->]
+    (1-1) edge["5"] (0-0)
+
+    (1-1) edge["0" near start, bend right] (1-0)
+    (1-1) edge["{[27]}", loop below] ()
+    (1-1) edge["{[134689]}"', sloped] (2-0)
+  ;
+
+}
+```
+
+Layering Up for Suffixes
+------------------------
 
 
 ---------------------------------------------------------------------------------------
@@ -787,6 +912,3 @@ $$\frac{x a^d}{\gcd\underbrace{(x a^d, a^{cN})}_{=a^d}} + \sum_{i=0}^{N - 1} \fr
 
 
 ------------------------------------------------------------------------------------------------------------------------------------------
-
-https://content.wolfram.com/sites/19/2010/02/Sutner.pdf
-
