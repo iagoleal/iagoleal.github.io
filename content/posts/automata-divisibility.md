@@ -42,6 +42,9 @@ suppress-bibliography: true
 
 \def\layer#1#2{#1 \triangleright #2}
 
+\def\rem{\mathrm{rem}}
+\def\expect{\mathrm{expect}}
+
 ```{=tex}
 \definecolor{lightgreen}{HTML}{90EE90}
 \definecolor{thistle}{HTML}{D8BFD8}
@@ -843,10 +846,8 @@ We will see in the next section how to construct such a machine.
 
 Since $b = 10 = 2\cdot5$ and $m = 125 = 5^2$,
 we can test divisibility by $m$ by checking a string's last $2$ digits.
-The language is $0^\star + \A^\star\orbit(m, b^2)$,
-where the orbit is
-$$\orbit(25, 10^2) = \{00, 25, 50, 75 \}.$$
-We need 4 states in total:
+Since the orbit is $\orbit(25, 10^2) = \{00, 25, 50, 75 \}$,
+we need 4 states in total:
 One to discriminate the last digit, two other to discriminate the second-to-last
 and a last one to represent nodes without any admissible suffix.
 
@@ -900,15 +901,95 @@ The transitions try to advance the suffix or act exactly the same as a node on t
 Layering Up for Suffixes
 ------------------------
 
+Now, it is the time for our final construction --- the most complicated so far.
+For each $N \ge 0$ we construct a divisibility automaton checking for $N$-digit suffixes.
+What should be its states and transitions?
+First, consider the original machine $A_1$
+and suppose we calculated remainder $r$ up until now.
+By reading $N$ digits, it arrives at
+$$ r b^N + \sum_{i=0}^{N-1} \omega_i b^i \pmod m.$$
 
----------------------------------------------------------------------------------------
+Thus in a machine with $N$-digit lookup,
+two remainders are indistinguishable if they map to the same elements of $\orbit(b^N, m)$.
+Like we previously did in the orbit-based automaton,
+we merge remainders according to the relation
+$$x \sim y = (xb^N \equiv yb^N \bmod m).$$
+From this, there are $\by{m}{b^N}$ distinguishable remainders.
+Those form the "divisibility part of the automaton".
+For the missing part,
+we need a machine capable of identifying $N$-digit suffixes.
+From the previous section, it requires $\sum_{i=0}^{N - 1} \by{b^i}{m}$ states
+to identify all orbits $\orbit(m, b^i)$,
+leaving us with state set
+$$\S_4 = \bigsqcup_{i=0}^{N-1} \cb{\orbit(m, b^i)} \sqcup \ca{\Z_{\by m {b^N}}}.$$
 
-<!-- For the general construction, -->
-<!-- the state space is divided into $N+1$ blocks. -->
-<!-- The first corresponds to the orbit $\orbit(b^N, m)$ and acts as a remainder for divisibility. -->
-<!-- The other blocks have $b^i / \gcd(m, b^i)$ elements and correspond to the powers "trimmed by  -->
+To index these states, just the colors are not enough, so we employ natural numbers $p \in \{0, \ldots, N\}$
+with $\layer{p}{s}$ meaning the state $s$ on layer $p$, i.e., expecting $p$ more digits.
+The $N$th layer is the green one and represents the remainder whenever we are not trying to read a suffix.
+The purple states are the orbit themselves and an element $\layer p s$ represents
+a state waiting for the $p$-digit number $s$.
+
+Let's build the transition then.
+To make the notation uniform, let's define some helpers: $p^- = \min(p-1, 0)$ and $p^+ = \max(p+1, N)$
+represent, respectively, the previous and next layer.
+Also, we define a remainder function taking a state to the remainder it represents modulo $m$.
+On the last layer it is just the state,
+$$\rem(\ca{\layer N s}) = s,$$
+while on the others, it must take the expect value to a zero remainder in $p$ steps,
+$$\rem(\cb{\layer p s})b^p + s \equiv 0 \mod m.$$
+
+This is a modular linear equation.
+Fortunately, $s$ is by definition a multiple of $\gcd(m, b^p)$
+since it is on the orbit of $m$ in $b^p$.
+Then we can rewrite it as an equation on integers,
+$$\rem(\cb{\layer p s})b^p + \zeta m = \frac{-s}{\gcd(m, b^p)}\gcd(m, b^p).$$
+We solve this equation using Bezout's
+[Bézout's identity](https://en.wikipedia.org/wiki/B%C3%A9zout's_identity),
+which you can calculate via the [extended Euclidean algorithm](https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm)
+to obtain
+$$\alpha b^p + \beta m = \gcd(m, b^p).$$
+Thus, we get an expression for the remainder as
+$$\rem(\cb{\layer p s}) = -\frac{s}{\gcd(m, b^p)} \alpha.$$
+
+We can also revert this procedure with a function turning a remainder into an expected $p$-digit suffix,
+$$\expect(p, r) = - r b^p \pmod m.$$
+
+A transition from $\layer p s$ by a letter $k$ takes the machine to a state $\layer{p^-}{w}$
+if they satisfy
+$$\rem(\layer p s) b^p + k b^{p-1} + w \equiv 0 \mod m.$$
+This is equivalent to saying that $w = -(\rem(\layer p s) b + k) b^{p-1} \pmod m$
+must be on the orbit $\orbit(m, b^{p-1})$.
+The $b^{p-1}$ factor guarantees that $w$ is a multiple of $\gcd(m, b^{p-1})$.
+So it is acceptable if $w < b^{p-1}$ --- that is, $w$ has at most $p-1$ digits in base $b$.
+
+In case the procedure above fails,
+there is no $p$ digit suffix starting with $k$ that takes the machine to a remainder of zero.
+What the machine does, then, is to try longer suffixes representing the same remainder.
+This is a recursive procedure where the DFA acts the same as layer $\layer{p^+}{s'}$
+where $s' = \expect(p^+, \rem(\layer p s))$
+until the layer N-1.
+There, it recurs to the layer with same remainder,
+$$\ca{\layer{N}{\rem(\layer{N-1}{s}) \bmod \by{m}{b^N}}}.$$
+If even this layer cannot advance, it simply continues as a divisibility machine modulo $\by{m}{b^N}$.
+
+We can put the discussion above together into a definition for the transition.
+$$\delta(\layer{p}{s}) = \begin{cases}
+\cb{\layer{p^-}{s'}}, & s' < b^{p-1}, \\
+\ca{\layer{N}{\left(r' \bmod \by{m}{b^N}\right)}}, & p = N, \\
+\delta(\ca{\layer N r}, k), & p = N - 1, \\
+\delta(\cb{\layer{p^+}{\expect(p^+, r)}}, k), & \text{otherwise},
+\end{cases}
+\\
+    \begin{array}{rrl}
+      \text{ where }  & & \\
+        & r  &= \rem(\layer p s) \\
+        & r' &=  rb + k \bmod m \\
+        & s' &= \expect(p^-, r')
+    \end{array}
+$$
+
+That is the DFA recognizing divisibility while checking for $N$ digits.
+According Alexeev's formula, the minimal automaton is the choice of $N$ requiring the least states.
 
 
-
-
-------------------------------------------------------------------------------------------------------------------------------------------
+### Example: Divisibility by 75 in Decimal
