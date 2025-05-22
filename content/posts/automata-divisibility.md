@@ -858,12 +858,12 @@ The transitions try to advance the suffix or act exactly the same as a node on t
    every edge quotes/.style = {font = {\scriptsize\tt}},
    every state/.style={node font = \footnotesize, minimum size = 1cm},
   ]
-  \node[state] (2-0) at (-1, 0) {};
+  \node[state] (2-0) at (0, 0) {};
 
-  \node[state] (1-0) [above right = 3cm of 2-0] {};
-  \node[state] (1-1) [below right = 3cm of 2-0] {};
+  \node[state] (1-0) at (3, 2)  {};
+  \node[state] (1-1) at (3, -2)   {};
 
-  \node[state, initial, accepting, initial where=above, initial text = ] (0-0) at (5, 0) {};
+  \node[state, initial, accepting, initial where=above, initial text = ] (0-0) at (6, 0) {};
 
   \path[->]
     (2-0) edge["{[05]}", bend left] (1-0)
@@ -872,15 +872,7 @@ The transitions try to advance the suffix or act exactly the same as a node on t
   ;
 
   \path[->]
-    (0-0) edge["0", loop right] ()
-
-    (0-0) edge["{5}"', bend right] (1-0)
-    (0-0) edge["{[27]}", bend left] (1-1)
-    (0-0) edge["{[134689]}"' near start] (2-0)
-  ;
-
-  \path[->]
-    (1-0) edge["0"] (0-0)
+    (1-0) edge["0", bend left] (0-0)
 
     (1-0) edge["5", loop above] ()
     (1-0) edge["{[27]}" near start, bend right] (1-1)
@@ -888,11 +880,19 @@ The transitions try to advance the suffix or act exactly the same as a node on t
   ;
 
   \path[->]
-    (1-1) edge["5"] (0-0)
+    (1-1) edge["5"', bend right] (0-0)
 
     (1-1) edge["0" near start, bend right] (1-0)
     (1-1) edge["{[27]}", loop below] ()
     (1-1) edge["{[134689]}"', sloped] (2-0)
+  ;
+
+  \path[->]
+    (0-0) edge["0", loop right] ()
+
+    (0-0) edge["{5}", sloped] (1-0)
+    (0-0) edge["{[27]}"', sloped] (1-1)
+    (0-0) edge["{[134689]}"' very near start] (2-0)
   ;
 
 }
@@ -976,7 +976,7 @@ We can put the discussion above together into a definition for the transition.
 $$\delta(\layer{p}{s}) = \begin{cases}
 \cb{\layer{p^-}{s'}}, & s' < b^{p-1}, \\
 \ca{\layer{N}{\left(r' \bmod \by{m}{b^N}\right)}}, & p = N, \\
-\delta(\ca{\layer N r}, k), & p = N - 1, \\
+\delta(\ca{\layer N (r \bmod \by{m}{b^N})}, k), & p = N - 1, \\
 \delta(\cb{\layer{p^+}{\expect(p^+, r)}}, k), & \text{otherwise},
 \end{cases}
 \\
@@ -993,3 +993,81 @@ According Alexeev's formula, the minimal automaton is the choice of $N$ requirin
 
 
 ### Example: Divisibility by 75 in Decimal
+
+The minimal automaton for base $b = 10 = 2\cdot5$ division by $75= 3\cdot5^2$ has $N = 2$,
+for a total of 3 layers.
+We calculate
+$$ \begin{array}{lcr}
+\by{b^0}{m} = 1 & \by{b^1}{m} = \frac{10}{5} = 2 & \by{m}{b^2} = \frac{75}{25} = 3.
+\end{array}
+$$
+
+This results in the machine below,
+where we use green dashed arrows to represent the recursive lookup.
+Notice that it guarantees a suffix divisible by $25$ while keeping up with divisibility by $3$.
+
+```tikz {tikzlibrary="automata" usepackage="amssymb"}
+{ [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]},
+   every edge quotes/.style = {font = {\scriptsize\tt}},
+   every state/.style={node font = \footnotesize, minimum size = 1cm},
+  ]
+  \node[state, sdiv] (2-0) at (0, 0) {$\layer 2 0$};
+  \node[state, sdiv] (2-1) at (-2, 2) {$\layer 2 1$};
+  \node[state, sdiv] (2-2) at (-2, -2) {$\layer 2 2$};
+
+  \node[state, spow] (1-0) at (2, 2) {$\layer 1 0$};
+  \node[state, spow] (1-1) at (2, -2) {$\layer 1 1$};
+
+  \node[state, spow, initial, accepting, initial where=above, initial text = ] (0-0) at (5, 0) {$\layer 0 0$};
+
+  \path[->]
+    (2-0) edge["{0}"] (1-0)
+    (2-0) edge["{7}"'] (1-1)
+    (2-0) edge["{[369]}", loop right] ()
+    (2-0) edge["{[14]}"', sloped] (2-1)
+    (2-0) edge["{[258]}", sloped] (2-2)
+  ;
+
+  \path[->]
+    (2-1) edge["{5}"] (1-0)
+    (2-1) edge["{[0369]}", loop left] ()
+    (2-1) edge["{[147]}"', sloped, bend right] (2-2)
+    (2-1) edge["{[28]}"', sloped, bend left] (2-0)
+  ;
+
+  \path[->]
+    (2-2) edge["{2}"'] (1-1)
+    (2-2) edge["{[0369]}", loop left] ()
+    (2-2) edge["{[147]}", sloped, bend right] (2-0)
+    (2-2) edge["{[258]}"', sloped] (2-1)
+  ;
+
+  \path[->]
+    (1-0) edge["{0}"] (0-0)
+    (1-0) edge["{7}"] (1-1)
+    (1-0) edge[green, dashed, bend right] (2-0)
+   % (1-0) edge["{[369]}", sloped, bend right] (2-0)
+   % (1-0) edge["{[14]}",  sloped, bend right] (2-1)
+   % (1-0) edge["{[258]}" near start, sloped, bend left] (2-2)
+  ;
+
+  \path[->]
+    (1-1) edge["{5}"'] (0-0)
+    % (1-1) edge["{[0369]}", out=-90, in=180] (2-1)
+    % (1-1) edge["{[147]}", bend left] (2-2)
+    % (1-1) edge["{[28]}"] (2-0)
+  ;
+  \draw[->, green, dashed] (1-1) .. controls (-5, -4) and (-6,  -1) ..   (2-1);
+
+  \path[->]
+    (0-0) edge["{0}", loop right] ()
+    (0-0) edge[green, dashed, bend right] (1-0)
+
+    %(0-0) edge["{7}"] (1-1)
+    %(0-0) edge["{[14]}"] (2-1)
+    %(0-0) edge["{[258]}"] (2-2)
+    %(0-0) edge["{[369]}"] (2-0)
+  ;
+
+}
+```
