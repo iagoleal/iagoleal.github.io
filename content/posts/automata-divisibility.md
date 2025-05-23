@@ -10,15 +10,6 @@ description:
 suppress-bibliography: true
 ---
 
-<style>
-.Missing {
-  text-align: center;
-  width:  100%;
-  height: 300px;
-  background-color: gray;
-  border: black 1px;
-}
-</style>
 
 \def\S{\mathcal{S}}
 
@@ -89,7 +80,8 @@ but with no comments on how to actually construct the transitions.
 
 So today let's explore how to write such automata
 in a painfully explicit way.
-As a starter, the standard construction.
+We start the journey at the standard construction
+and refine it till reaching the minimal one.
 
 Notation
 --------
@@ -111,11 +103,11 @@ For example, $\texttt{[abcd]}$ means one of $a, b, c,$ or $d$
 and $\texttt{[1-9]}$ means all digits from 1 till 9.
 
 
-First Construction: Modular Transitions
-=======================================
+Construction I: Modular Transitions
+===================================
 
 Our objective is to construct a deterministic finite automaton
-$A_1 = (\S, \A, s_0, \F, \delta)$
+$A_1 = (\S_1, \A, s_0, \F, \delta)$
 which determines the language $L(b, m)$ of base-$b$ numbers
 divisible by $m$.
 
@@ -126,7 +118,7 @@ For the states,
 the idea is to consider them as the machine's "memory"
 remembering the remainder up until now.
 So, when dividing a number by $m$, there are $m$ possible remainders
-and the state set is $\S = \Z_m = \{0, \ldots, b-1\}$.
+and the state set is $\S_1 = \Z_m = \{0, \ldots, b-1\}$.
 Also, for simplicity, we consider the empty string to equal zero,
 and use it as the initial state.
 You can always add an extra state to deal with this edge case,
@@ -150,11 +142,8 @@ the next remainder amounts to
 $$ \boxed{\delta(s, k) = s b + k \pmod m}.$$
 <!-- $$ \boxed{s \xrightarrow{k} (s b + k \bmod m)}.$$ -->
 
-Examples
---------
-
-Below is an automaton checking for divisibility by 3 in decimal.
-
+Example: Divisibility by 3 in Decimal
+-------------------------------------
 
 ```tikz {tikzlibrary="automata"}
 { [shorten >=1pt, node distance=3cm, on grid, auto, >={Stealth[round]},
@@ -178,8 +167,8 @@ Below is an automaton checking for divisibility by 3 in decimal.
 }
 ```
 
-Second Construction: Orbit-based Transitions
-============================================
+Construction II: Orbit-based Transitions
+========================================
 
 The edges from modular arithmetic are elegant
 but make the transition structure too opaque.
@@ -351,8 +340,8 @@ This is no coincidence. As we will later see,
 a binary number is divisible by $6$ if and only if it is a number divisible by $3$
 followed by at least one $0$.
 
-Third Construction: Power to The States
-=======================================
+Construction III: Power to The States
+=====================================
 
 Generally, there are many DFAs recognizing the same language.
 Hence, to save on resources,
@@ -752,8 +741,8 @@ i.e., $a$ is prime.
 Also, notice that when $b$ and $m$ are coprime, there are no purple states
 and it becomes the original automaton $A_1$.
 
-Fourth Construction: Layers for Digit Lookup
-============================================
+Construction IV: Layers for Digit Lookup
+========================================
 
 For compound numbers, we've improved our original automaton in two different ways.
 What do they have in common?
@@ -776,18 +765,18 @@ Are these machines minimal?
 
 So, what is the size of the minimal automaton for the general case $L(b, m)$?
 The answer turns out to be rather complicated!
-@alexeev_2004 proved that the minimum necessary amount of states is
+@alexeev_2004 proved that the states required by divisibility automaton are at least
 $$ \min_{N \ge 0}\left[ \sum_{i=0}^{N - 1} \by{b^i}{m} + \by{m}{b^N}  \right].$$
 Quite a mouthful!
 The paper also proves that the minimum is achieved by the last $N$
-before it starts to increase.
+before the total sum starts to increase.
 I'll skip the proof since it is complicated (but quite readable!)
-and does not elucidate much on how to actually construct these automata
+and does not elucidate much on how to actually construct the automata's transitions
 --- our true interest here.
 You can check the paper, if you're curious.
 Let's nevertheless take a look at the possible terms on this minimum.
 
-Each possible term corresponds to a DFA recognizing $L(b, m)$.
+Each possible $N$ corresponds to a DFA recognizing $L(b, m)$.
 Let's compare that with our automata so far.
 
 - $A_1$ corresponds to $N = 0$, with sum $m$.
@@ -804,8 +793,8 @@ On Digits and Orbits
 You may remember some divisibility rules from school
 such as "An even number has an even last digit" or "A number is divisible by 5 if it ends in either 0 or 5".
 Why do 2 and 5 have such rules, while 3 or 7 do not?
-In general, we can check the last digit of a number by looking at it modulo the base:
-$$ x_0 \equiv x \mod b.$$
+In general, we check the last digit of a number by looking at it modulo the base:
+$$ x \equiv \sum_{i=0}^T x_i b^i \equiv x_0 \equiv x \mod b.$$
 
 Now, if it is a multiple of $m$, i.e. $x = \alpha m$,
 $$ x_0 \equiv x \equiv \alpha m \equiv \alpha' \gcd(m, b) \mod b.$$
@@ -819,9 +808,24 @@ We can expand this analysis to the $l$ last digits by considering $x$ modulo $b^
 and obtain a similar result.
 
 :::Lemma
-The last $l$ digits of a multiple of $m$ written in base $b$ are in
+The last $l$ digits of a multiple of $m$ written in base $b$ are in the orbit
 $$\orbit(m, b^l) = \left\{ j \cdot \gcd(m, b^l) \mid  0 \le j < \by{b^l}{m} \right\}.$$
 :::
+
+Another interesting observation is that there is an overlap between
+$\orbit(x, y)$ and $\orbit(y, x)$.
+This is going to be important, so let's write it as another lemma.
+
+:::Lemma
+Write $\bar{\orbit}$ for the orbit views as a set of integers.
+Then, they satisfy
+$$\begin{aligned}
+\bar{\orbit}(x, y) \cap \bar{\orbit}(y, x) &= \big\{\, j \cdot \gcd(x, y) \mid 0 \le j < \min(\by{x}{y}, \by{y}{x}) \,\big\} \\
+  &= \bar{\orbit}(\gcd(x, y), \min(x, y))
+\end{aligned}
+$$
+:::
+
 
 Now suppose there's a power $N$ such that $\gcd(m, b^{N-1}) = m$.
 This happens when $m$ is a power of a factor of $b$, for example.
@@ -831,10 +835,12 @@ $$ x \equiv \sum_{i=0}^{N-1} x_i b^i  \mod m,$$
 And we can check that the last $N$ digits are on the orbit $\orbit(m, b^{N-1})$.
 
 How many states does an automaton need to check all such suffixes?
-Well, some arithmetic shows that to check each digit,
-we need $\sum_{i=0}^{N - 1} \by{b^i}{m}$ states.
+Well, it needs $\by{b^{p-1}}{m}$ states to discriminate whether the $p$-th digit
+starts an element of the orbit $\orbit(m, b^p)$.
+Some arithmetic shows that it amounts to a total of
+$\sum_{i=0}^{N - 1} \by{b^i}{m}$ states for $N$ digits.
 Do you remember this term from Alexeev's formula?
-Well, this suggests we're getting somewhere.
+This suggests we're getting somewhere.
 
 For a general base and divisor, the above is not enough though.
 To deal with them, besides the suffixes, it is also necessary to keep track
@@ -853,7 +859,7 @@ and a last one to represent nodes without any admissible suffix.
 
 The transitions try to advance the suffix or act exactly the same as a node on the previous layer.
 
-```tikz {tikzlibrary="automata" usepackage="amssymb"}
+```tikz {tikzlibrary="automata,graphs" usepackage="amssymb"}
 { [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]},
    every edge quotes/.style = {font = {\scriptsize\tt}},
    every state/.style={node font = \footnotesize, minimum size = 1cm},
@@ -921,13 +927,17 @@ we need a machine capable of identifying $N$-digit suffixes.
 From the previous section, it requires $\sum_{i=0}^{N - 1} \by{b^i}{m}$ states
 to identify all orbits $\orbit(m, b^i)$,
 leaving us with state set
-$$\S_4 = \bigsqcup_{i=0}^{N-1} \cb{\orbit(m, b^i)} \sqcup \ca{\Z_{\by m {b^N}}}.$$
+$$\S_4 = \bigsqcup_{i=0}^{N-1} \cb{\Z_{\by{b^i}{m}}} \sqcup \ca{\Z_{\by m {b^N}}}.$$
 
-To index these states, just the colors are not enough, so we employ natural numbers $p \in \{0, \ldots, N\}$
-with $\layer{p}{s}$ meaning the state $s$ on layer $p$, i.e., expecting $p$ more digits.
-The $N$th layer is the green one and represents the remainder whenever we are not trying to read a suffix.
-The purple states are the orbit themselves and an element $\layer p s$ represents
-a state waiting for the $p$-digit number $s$.
+We again use colors to differentiate between (green) states storing remainders
+and (purple) states expecting an input.
+Unfortunately, just the colors are not enough. So we index with natural numbers $p \in \{0, \ldots, N\}$,
+where $\layer{p}{s}$ means the state $s$ on layer $p$, i.e., expecting $p$ more digits.
+The $N$th layer is the green one and represents the remainder before starting to read a suffix.
+The purple states index the orbits they are _waiting for_,
+with $\cb{\layer p s}$ being the state that requires
+the first digit of the $s$-th element in the orbit $\orbit(m, b^p)$,
+that is, $s \cdot \gcd(m, b^p)$.
 
 Let's build the transition then.
 To make the notation uniform, let's define some helpers: $p^- = \min(p-1, 0)$ and $p^+ = \max(p+1, N)$
@@ -935,61 +945,78 @@ represent, respectively, the previous and next layer.
 Also, we define a remainder function taking a state to the remainder it represents modulo $m$.
 On the last layer it is just the state,
 $$\rem(\ca{\layer N s}) = s,$$
-while on the others, it must take the expect value to a zero remainder in $p$ steps,
-$$\rem(\cb{\layer p s})b^p + s \equiv 0 \mod m.$$
+while on the others, it must take the value it expects to a zero remainder in $p$ steps,
+$$\rem(\cb{\layer p s})b^p + s\cdot(m, b^p) \equiv 0 \mod m.$$
 
 This is a modular linear equation.
-Fortunately, $s$ is by definition a multiple of $\gcd(m, b^p)$
-since it is on the orbit of $m$ in $b^p$.
-Then we can rewrite it as an equation on integers,
-$$\rem(\cb{\layer p s})b^p + \zeta m = \frac{-s}{\gcd(m, b^p)}\gcd(m, b^p).$$
-We solve this equation using Bezout's
+Rewrite it as an equation on integers and arrange terms to
+$$\rem(\cb{\layer p s})b^p + \zeta m = -s\gcd(m, b^p).$$
+Fortunately, every term is a multiple of $\gcd(m, b^p)$
+and we can solve this equation using Bezout's
 [Bézout's identity](https://en.wikipedia.org/wiki/B%C3%A9zout's_identity),
 which you can calculate via the [extended Euclidean algorithm](https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm)
 to obtain
 $$\alpha b^p + \beta m = \gcd(m, b^p).$$
 Thus, we get an expression for the remainder as
-$$\rem(\cb{\layer p s}) = -\frac{s}{\gcd(m, b^p)} \alpha.$$
+$$\rem(\cb{\layer p s}) = -s \alpha.$$
 
-We can also revert this procedure with a function turning a remainder into an expected $p$-digit suffix,
-$$\expect(p, r) = - r b^p \pmod m.$$
+It is also useful to revert this procedure
+with a function turning a remainder into an expected $p$-digit suffix,
+$$ \expect(p, r) \coloneqq -r b^p \pmod{m}.$$
+Even more useful it to find what's the required index for this suffix
+by reducing this equation to
+$$ \expect'(p, r) \coloneqq -r \by{b^p}{m} \pmod{\by{m}{b^p}}.$$
+Notice that for an arbitrary remainder,
+this expected value is not always reachable by an element of the corresponding orbit.
 
-A transition from $\layer p s$ by a letter $k$ takes the machine to a state $\layer{p^-}{w}$
-if they satisfy
-$$\rem(\layer p s) b^p + k b^{p-1} + w \equiv 0 \mod m.$$
-This is equivalent to saying that $w = -(\rem(\layer p s) b + k) b^{p-1} \pmod m$
-must be on the orbit $\orbit(m, b^{p-1})$.
-The $b^{p-1}$ factor guarantees that $w$ is a multiple of $\gcd(m, b^{p-1})$.
-So it is acceptable if $w < b^{p-1}$ --- that is, $w$ has at most $p-1$ digits in base $b$.
+
+Consider a state $\layer p s$ and let its remainder be $r = \rem(\layer p s)$.
+A transition from it by a letter $k$ advances to a state $\layer{p-1}{s'}$ if
+$$r b^p + k b^{p-1} + s' \cdot \gcd(m, b^{p-1}) \equiv 0 \mod m.$$
+We reduce this equation to obtain
+$$\begin{aligned}
+  s' &\equiv -(rb + k) \by{b^{p-1}}{m}  \mod \by{m}{b^{p-1}} \\
+  s' &= \expect'(p-1, rb + k).
+\end{aligned}
+$$
+
+Viewed as an integer, this $s'$ is a number between $0$ and $\by{m}{b^{p-1}} - 1$.
+For it to index a state, we need $s' < \by{b^{p-1}}{m}$.
+Notice that this amounts to saying that the necessary suffix
+$s' \cdot \gcd(m, b^{p-1})$ has at most $p-1$ digits in base $b$.
 
 In case the procedure above fails,
 there is no $p$ digit suffix starting with $k$ that takes the machine to a remainder of zero.
 What the machine does, then, is to try longer suffixes representing the same remainder.
-This is a recursive procedure where the DFA acts the same as layer $\layer{p^+}{s'}$
-where $s' = \expect(p^+, \rem(\layer p s))$
-until the layer N-1.
-There, it recurs to the layer with same remainder,
-$$\ca{\layer{N}{\rem(\layer{N-1}{s}) \bmod \by{m}{b^N}}}.$$
+This is a recursive procedure where it just copies the transitions from $\layer{p^+}{s^+}$
+where $s^+ = \expect'(p^+, \rem(\layer p s))$
+until the looking at layer N.
+There, the meaning of a state switches from "expected" to "remainder"
+and the information passed changes to acting as state
+$$\ca{\layer{N}{\Big[\rem(\layer{p}{s}) \mod \by{m}{b^N}}\Big]}.$$
 If even this layer cannot advance, it simply continues as a divisibility machine modulo $\by{m}{b^N}$.
 
 We can put the discussion above together into a definition for the transition.
 $$\delta(\layer{p}{s}) = \begin{cases}
-\cb{\layer{p^-}{s'}}, & s' < b^{p-1}, \\
+\cb{\layer{p^-}{s'}}, & s' < \by{b^{p-1}}{m}, \\
 \ca{\layer{N}{\left(r' \bmod \by{m}{b^N}\right)}}, & p = N, \\
 \delta(\ca{\layer N (r \bmod \by{m}{b^N})}, k), & p = N - 1, \\
-\delta(\cb{\layer{p^+}{\expect(p^+, r)}}, k), & \text{otherwise},
+\delta(\cb{\layer{p^+}{\expect'(p^+, r)}}, k), & \text{otherwise},
 \end{cases}
 \\
-    \begin{array}{rrl}
+    \begin{array}{rrcl}
       \text{ where }  & & \\
-        & r  &= \rem(\layer p s) \\
-        & r' &=  rb + k \bmod m \\
-        & s' &= \expect(p^-, r')
+        & r  &=& \rem(\layer p s) \\
+        & r' &=&  rb + k \pmod m \\
+        & s' &=& \expect'(p^-, r')
     \end{array}
 $$
 
 That is the DFA recognizing divisibility while checking for $N$ digits.
-According Alexeev's formula, the minimal automaton is the choice of $N$ requiring the least states.
+According Alexeev's formula, the minimal automaton is the choice of $N$ requiring the least states
+among all such DFA.
+As previously commented, this subsumes constructions $I$, $II$, or $III$
+by choosing the right amount of layers.
 
 
 ### Example: Divisibility by 75 in Decimal
@@ -1071,3 +1098,15 @@ Notice that it guarantees a suffix divisible by $25$ while keeping up with divis
 
 }
 ```
+
+E quindi uscimmo a riveder le stelle
+====================================
+
+Very well, my dear reader, this post got much longer than expected.
+Nevertheless, it shows that one finds interesting patterns
+even in the simplest of maths: number and their digits.
+
+Now I bid you farewell and hope you have enjoyed
+this trip over automata and numbers.
+
+See ya next time!
