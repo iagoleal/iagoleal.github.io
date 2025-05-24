@@ -1,8 +1,8 @@
 ---
 title: Arithmancia Automatorum
 subtitle: A Painfully Explicitly Construction of The Minimal DFA for Divisibility
-keywords: [math, automata, modular arithmetic]
-date: 2025-05-08
+keywords: [math, automata, modular-arithmetic]
+date: 2025-05-23
 description:
   Did you know that Finite Automata can recognize divisibility?
   To find one such automaton, the procedure is simple
@@ -24,6 +24,7 @@ suppress-bibliography: true
 
 \def\divides{\mid}
 \def\ceil#1{\lceil #1 \rceil}
+\def\floor#1{\lfloor #1 \rfloor}
 \def\Ceil#1{\left\lceil #1 \right\rceil}
 
 \def\ca#1{\colorbox{lightgreen}{$#1$}}
@@ -49,7 +50,7 @@ suppress-bibliography: true
 
 Recently I've been thinking a lot about integer divisibility.
 It was all well and good until, for an unrelated project,
-a needed an interesting but relatively simple finite automaton to as an example,
+a needed an interesting but relatively simple finite automaton to use as an example,
 and stumbled into a construction for dividing numbers with DFAs.
 This made me fall into a rabbit hole and this post redacts everything I brought back from inside that madness.
 I don't promise it will be useful.
@@ -88,18 +89,19 @@ Notation
 
 By $a \divides b$ we mean that $a$ divides $b$.
 The greatest common divisor has the usual $\gcd$ notation,
-and since we'll make heavy use of their ratios, define
+and since we make heavy use of their ratios, let's define
 $$ {\by a b} \coloneqq {\frac a {\gcd(a, b)}}.$$
 This one is a non-standard notation,
 but helps with the mess of symbols we're about to confront.
-I write $\ceil{\cdot}$ for the ceiling function,
-i.e., the smallest integer greater than a real number.
-For a sequence of digits $\omega$,
+For a rational $x$,
+denote by $\floor{x}$ and $\ceil{x}$ its floor and ceiling,
+i.e., the tightest integers satisfying $\floor{x} \le x \le \ceil{x}$.
+A sequence of digits $\omega$ represents a number in base $b$ defined as
 $$ [\omega]_b \coloneqq \sum_{i = 0}^N \omega_i b^i.$$
 
 
 Sometimes I'll also use regex notation to declutter some figures.
-For example, $\texttt{[abcd]}$ means one of $a, b, c,$ or $d$
+For example, $\texttt{[abcd]}$ means one of $\mathtt{a, b, c,}$ or $\mathtt d$
 and $\texttt{[1-9]}$ means all digits from 1 till 9.
 
 
@@ -107,18 +109,16 @@ Construction I: Modular Transitions
 ===================================
 
 Our objective is to construct a deterministic finite automaton
-$A_1 = (\S_1, \A, s_0, \F, \delta)$
-which determines the language $L(b, m)$ of base-$b$ numbers
+$A_1$ accepting the language $L(b, m)$ of base-$b$ numbers
 divisible by $m$.
-
-How do we construct this automaton?
+How do we construct this machine?
 The input consists of digits written in base-$b$,
 thus the alphabet is $\A = \{0, \ldots, b-1\}$.
 For the states,
 the idea is to consider them as the machine's "memory"
 remembering the remainder up until now.
 So, when dividing a number by $m$, there are $m$ possible remainders
-and the state set is $\S_1 = \Z_m = \{0, \ldots, b-1\}$.
+and the state set is $\S_1 = \Z_m = \{0, \ldots, m-1\}$.
 Also, for simplicity, we consider the empty string to equal zero,
 and use it as the initial state.
 You can always add an extra state to deal with this edge case,
@@ -133,14 +133,13 @@ and write $[\omega]_b$ for the number it represents,
 $$ [\omega]_b \coloneqq \sum_{i = 0}^N \omega_i b^i.$$
 
 The main insight is to look at how concatenating a digit $k$ translates into numbers, i.e.,
-$$ [\omega \cdot k]_b = \sum_{i = 0}^N \omega_i b^{i+1} + k = [\omega]_b \cdot b + k.$$
+$$ [\omega \cdot k]_b = \sum_{i = i}^N \omega_i b^{i} + k = [\omega]_b \cdot b + k.$$
 By considering this expansion modulo $m$,
 $$ [\omega \cdot k]_b \equiv [\omega]_b \cdot b + k \mod m,$$
-We arrive at an expression for the transition function $\delta \colon \S \times \A \to \S$.
+We arrive at an expression for the transition function $\delta_1 \colon \S_1 \times \A \to \S$.
 Since the current state is the remainder of the input up until now,
 the next remainder amounts to
-$$ \boxed{\delta(s, k) = s b + k \pmod m}.$$
-<!-- $$ \boxed{s \xrightarrow{k} (s b + k \bmod m)}.$$ -->
+$$\delta_1(s, k) = s b + k \pmod m.$$
 
 Example: Divisibility by 3 in Decimal
 -------------------------------------
@@ -170,16 +169,16 @@ Example: Divisibility by 3 in Decimal
 Construction II: Orbit-based Transitions
 ========================================
 
-The edges from modular arithmetic are elegant
-but make the transition structure too opaque.
-Indeed, there is some hard to see redundancy in there.
-Let's try to find simpler relations between the states.
+The previous construction just using modular arithmetic is indeed elegant
+but makes the transition structure too opaque.
+There is some hard to see redundancy in there that we're not taking advantage of.
+Let's thus try to find simpler relations between the states.
 
 Instead of directly defining the transition, cast it as a recursive relation
 $$ \begin{aligned}
-\delta(0, 0)   &= 0 \\
-\delta(s, k+1) &\equiv \delta(s, k) + 1 \mod m \\
-\delta(s+1, k) &\equiv \delta(s, k) + b \mod m
+\delta_1(0, 0)   &= 0 \\
+\delta_1(s, k+1) &\equiv \delta_1(s, k) + 1 \mod m \\
+\delta_1(s+1, k) &\equiv \delta_1(s, k) + b \mod m
 \end{aligned}
 $$
 The first thing it tells us is that if we know the action of $0$,
@@ -188,7 +187,7 @@ Just cyclically compute the number's successor and you're good to go.
 
 For zero, it starts at $0$ and sequentially adds $b$.
 Or equivalently,
-$$\delta(s, 0) = sb \pmod m$$
+$$\delta_1(s, 0) = sb \pmod m$$
 This produces a sequence
 $$0, b, 2b, 3b, \ldots, (m-1)b$$
 Called the _orbit_ $\orbit(b, m)$ of $b$ in $\Z_m$.
@@ -213,51 +212,49 @@ We sure need more than one state, right?
 
 Not everything is lost though.
 We can reduce to the orbit with a caveat:
-when merging, one must distinguish between accepting and non-accepting states.
-Thus, we can only collapse states _greater than_ 0.
-Roughly, we collapse $x, y \neq 0$ if $xb \equiv yb \mod m$.
+we need an extra state to distinguish acceptable last digits.
+Roughly, we collapse the states according to the relation
+$$x \sim y (xb \equiv yb \mod m)$$
+but notice that although two remainders may act the same for outgoing transitions,
+they may have different behaviours for incoming transitions.
+In particular, ending at _zero_ accepts a string
+not ending in the equivalence class of zero.
+To deal with this, we add an extra accepting state meaning "finishing at true zero".
+
 From this, we find another automata with $1 + \frac{m}{\gcd(b, m)}$ states.
 More concretely, define an automaton $A_2$ whose states are
-$$\S = \ca{\Z_{\by{m}{b}}} \sqcup \{ \cb 0 \}.$$
+$$\S_2 = \{ \cb 0 \} \sqcup \ca{\Z_{\by{m}{b}}}.$$
 We view it as a cyclic group augmented by a point $\cb{0}$
-and use colors to distinguish between the points from the orbit and this additional state
-for accepting.
+and use colors to distinguish between the points from the orbit and this additional state.
 
 The state $\cb 0$ is the initial and accepting state,
-while the others are equivalence classes of remainders
-mapping to the same point on the orbit of $b$,
-with $\ca{0}$ representing the non-accepting states mapping to zero.
+while $\ca r$ is the smallest possible remainder
+representing $rb \in \orbit(b, m)$.
+Keep in mind that although $\ca{0}$ and $\cb 0$ have the same transitions,
+they are distinct.
+$\ca 0$ represents the zeroth position on the orbit
+where the last transition had a non-zero remainder modulo $m$.
 Confusing?
-Just think that we are collapsing all states $s > 0$ who have the same transitions.
+You could think that we are collapsing all states $s > 0$ with the same transitions.
 
-To map the states from our original automaton to this new one,
-we map $0$ to $\cb 0$ while cycling other states to their position on the orbit,
-$$\begin{aligned}
-  \phi &\colon \Z_m \to \ca{\Z_{\by{m}{b}}} \sqcup \{ \cb 0 \} \\
-  0    &\mapsto \cb 0 \\
-  x    &\mapsto \ca{x \bmod \by m b}
-\end{aligned}
+The transition for this automaton checks whether $rb + k$
+is divisible modulo $m$, which takes us to the accepting state.
+In case it fails, it only has to store the orbit position of the new remainder,
 $$
-
-
-The transition is thus just the composition between the previous one and this collapsing function,
-$\tilde{\delta} = \phi \circ \delta$.
-Or explicitly,
-$$ \begin{aligned}
-\tilde \delta(s, k) = \begin{cases}
+\delta_2(s, k) = \begin{cases}
   \cb{0}, & m \divides r \\
   \ca{r \bmod \by{m}{b}}, & \text{otherwise}
-\end{cases}
-  \\ \text{ where } r = sb + k \bmod m
-\end{aligned}
+\end{cases} \\
+      \text{ where }   r = sb + k \bmod m
 $$
 
 Notice that if $b$ and $m$ are coprime,
-$\phi$ is injective but not surjective and
-the automaton $A_2$ has an unreachable state $\ca 0$.
+state $\ca 0$ is unreachable and this automaton is worse than the previous one.
 On the other hand, when they do share a factor,
-the full orbit takes the whole codomain and $\phi$ is surjective --- although not necessarily injective.
-In this case, we get a smaller automaton recognizing the same language.
+every state is reachable.
+In this case, we get a smaller automaton recognizing the same language
+with a reduction by $\gcd(b, m)$ on the amount of states,
+which could be substantial.
 
 Example: Divisibility by 6 in Binary
 ------------------------------------
@@ -265,7 +262,7 @@ Example: Divisibility by 6 in Binary
 By using only modular arithmetic, binary divisibility by 6 requires 5 states
 and produces the automaton below.
 
-```tikz {tikzlibrary="automata"}
+```tikz {tikzlibrary="automata,fit"}
 { [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]},
     every edge quotes/.style = {font = {\scriptsize\tt}}
   ]
@@ -294,14 +291,7 @@ and produces the automaton below.
 ```
 
 Notice in this diagram that the transitions from $s$ and $s + 3$ are indistinguishable.
-We thus collapse these states according to
-$$\begin{array}{rcl|rcl}
-0 &\to & \cb{0} & 3 &\to & \ca{0} \\
-1 &\to & \ca{1} & 4 &\to & \ca{1} \\
-2 &\to & \ca{2} & 5 &\to & \ca{2}
-\end{array}
-$$
-
+We thus collapse them into $3$ states and add an extra state to check for final divisibility.
 This produces a reduced automaton recognizing the same language.
 
 ```tikz {tikzlibrary="automata"}
@@ -426,8 +416,8 @@ $$\S = \ca{\Z_x} \sqcup \cb{\Z_d}.$$
 
 The starting and accepting state is $\cb{0}$.
 For the transitions,
-the green states act as the usual divisibility automaton automaton
-except that reading a zero on $\ca{0}$ takes you to the purple states.
+the green states act as the usual divisibility automaton
+except that reading a zero on $\ca{0}$ starts to read a suffix,
 $$ \begin{aligned}
 \delta(\ca{0}, 0) &= \cb{d-1} \\
 \delta(\ca{s}, k) &= \ca{bs + k \pmod x}
@@ -438,7 +428,7 @@ Meanwhile, the purple state $\cb{s}$ represents a number divisible by $x$
 but which still has to read at least $s$ zeros to be divisible by $b^k$.
 Think of it as augmenting $\ca{0}$ with a counter.
 Reading a zero takes you one step further while reading anything else
-takes you back to the green states.
+takes you back to checking divisibility by $x$,
 
 $$ \begin{aligned}
 \delta(\cb{0}, 0) &= \cb{0} \\
@@ -447,7 +437,7 @@ $$ \begin{aligned}
 \end{aligned}
 $$
 
-As an illustration, all such machines will have this same shape.
+As an illustration, all such machines will have roughly the same shape.
 
 ```tikz {tikzlibrary="automata,fit"}
 { [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]},
@@ -487,7 +477,8 @@ From the previous discussion,
 we can recognize $L(b, m)$ with a 6 state automaton checking for divisibility by 3 and 2 trailing zeros.
 Its diagram is below.
 Notice that the green part looks the same as our previous automaton for $m = 3$
-and that the purple states act the same as $\ca 0$.
+and that the purple states act the same as $\ca 0$
+for any input besides $0$.
 
 ```tikz {tikzlibrary="automata"}
 { [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]},
@@ -559,7 +550,7 @@ A case analysis on the groups reveal the form they must take.
 
 - $i > q$: Those terms are all divisible by $a^d$ because
 $$ci \ge c(q+1) = cq + c > cq + r = d.$$
-And can, thus, be _ignored_ without remorse.
+And can thus be _ignored_ without remorse.
 
 - $i < q$: Notice that $a^{cq + r} \divides n \implies n = \alpha \cdot b^q$.
 Since the last $q$ digits of $n$ never sum up to a whole $b^q$ factor,
@@ -579,16 +570,20 @@ In other words, $L(a^c, a^d) = 0^\star + \A^\star\omega_00^q$
 with $\omega_0$ divisible by $a^r$.
 :::
 
-This lets us construct an automaton with $2 + q$ state.
-However, notice that using Euclidean division helped with the formulation
-but it has a caveat:
+This lets us construct an automaton with $2 + q$ states.
+However, notice that although using Euclidean division helped with the formulation,
+it has a caveat:
 whenever $r = 0$, i.e. $c$ divides $d$,
 the condition on the last digit vanishes and we end up with a spurious state
 checking if a digit is divisible by 1.
 A smart trick solves this problem:
 instead of division,
-consider the ceiling $Q = \ceil{\frac d c}$ and write
+consider the ceiling[^floor-ceil] $Q = \ceil{\frac d c}$ and write
 $d = c Q - r$, with $0 \le r < c$.
+
+[^floor-ceil]: This is the same division procedure,
+but instead of $d = c \floor{\frac{d}{c}} + R$,
+we use $d = c \ceil{\frac{d}{c}} - r$.
 
 :::Lemma
 Let $b = a^c$ and $m = a^d$, $Q = \ceil{\frac d c}$, and write $d = cQ - r$.
@@ -616,7 +611,7 @@ $$
 After that, it turns into the already familiar zero counting machine
 with one addition:
 getting a digit divisible by $a^{c-r}$
-takes you back to the start of the $purple$ chain.
+takes you back to the start of the suffix-checking chain,
 $$ \begin{aligned}
 \delta(\cb{0}, 0) &= \cb{0} \\
 \delta(\cb{s}, 0) &= \cb{s - 1} \\
@@ -692,7 +687,7 @@ A Power-Counting Automaton
 
 Alright, it's been a long while but all steps are finally ready
 to build our third general automaton $A_3$.
-The idea is to factor $b = a^c$ and $m = x a^d$ with $\gcd{a, x} = 1$.
+The idea is to factor $b = a^c$ and $m = x a^d$ with $\gcd(a, x) = 1$.
 Since $x$ and $a^d$ are coprime,
 we can join the previous constructions to check divisibility by $m$
 using $x + \ceil{\frac d c}$ states.
@@ -714,14 +709,14 @@ $$
 :::
 
 Let's again use colors to represent the distinct kinds of states:
-$$\S = \ca{\Z_x} \sqcup \cb{\Z_Q}.$$
+$$\S_3 = \ca{\Z_x} \sqcup \cb{\Z_Q}.$$
 The starting and accepting state is $\cb{0}$.
 The purple states represent numbers already divisible by $x$
 and follow the zero-counting mechanism.
 $$ \begin{aligned}
-\delta(\cb{0}, 0) &= \cb{0} \\
-\delta(\cb{s}, 0) &= \cb{s - 1} \\
-\delta(\cb{s}, k) &= \delta(\ca{0}, k) \\
+\delta_3(\cb{0}, 0) &= \cb{0} \\
+\delta_3(\cb{s}, 0) &= \cb{s - 1} \\
+\delta_3(\cb{s}, k) &= \delta_3(\ca{0}, k) \\
 \end{aligned}
 $$
 
@@ -729,24 +724,28 @@ The green states store the remainder by $x$ with a detail:
 we use $\ca{0}$ for divisibility only by $x$ and $\cb{Q-1}$
 for divisibility by $x$ and $a^{c-r}$.
 $$
-\delta(\ca{s}, k) = \begin{cases}
+\delta_3(\ca{s}, k) = \begin{cases}
   \cb{Q-1}, & a^{c-r} \divides k \text{ and } x \divides (bs + k) \\
-  \ca{bs + k \pmod x} , & \text{otherwise}
+  \ca{bs + k \pmod x} , & \text{otherwise.}
 \end{cases}
 $$
 
 Despite all the indirections, I hope this DFA makes sense to you!
-These are the optimal automata whenever the base $b$ is a prime power,
+These are the minimal automata whenever the base $b$ is a prime power,
 i.e., $a$ is prime.
 Also, notice that when $b$ and $m$ are coprime, there are no purple states
 and it becomes the original automaton $A_1$.
+While for $d = c$, it becomes the orbit-based automaton $A_2$
+--- although the orbit-based construction did not require $b$ to divide $m$,
+so it is not a strict generalization.
+
 
 Construction IV: Layers for Digit Lookup
 ========================================
 
 For compound numbers, we've improved our original automaton in two different ways.
 What do they have in common?
-Well, have states clustered into different "meanings"
+Well, both use states clustered into different "meanings"
 and both perform some kind of digit lookup besides checking divisibility!
 For the powers it is easy, since we divide by a coprime factor and then proceed to count zeros.
 
@@ -765,7 +764,7 @@ Are these machines minimal?
 
 So, what is the size of the minimal automaton for the general case $L(b, m)$?
 The answer turns out to be rather complicated!
-@alexeev_2004 proved that the states required by divisibility automaton are at least
+@alexeev_2004 proved that the states required by a divisibility automaton are at least
 $$ \min_{N \ge 0}\left[ \sum_{i=0}^{N - 1} \by{b^i}{m} + \by{m}{b^N}  \right].$$
 Quite a mouthful!
 The paper also proves that the minimum is achieved by the last $N$
@@ -773,7 +772,7 @@ before the total sum starts to increase.
 I'll skip the proof since it is complicated (but quite readable!)
 and does not elucidate much on how to actually construct the automata's transitions
 --- our true interest here.
-You can check the paper, if you're curious.
+You can check the paper if you're curious.
 Let's nevertheless take a look at the possible terms on this minimum.
 
 Each possible $N$ corresponds to a DFA recognizing $L(b, m)$.
@@ -804,12 +803,12 @@ making it a multiple of $\gcd(b, m)$.
 This explains the middle school formulas,
 since $\gcd(5, 10) = 5$ and $\gcd(2, 10) = 2$,
 while $3$ and $7$ are coprime to $10$ and, thus, accept any last digit.
-We can expand this analysis to the $l$ last digits by considering $x$ modulo $b^l$
+We can expand this analysis to the last $p$ digits by considering $x$ modulo $b^p$
 and obtain a similar result.
 
 :::Lemma
-The last $l$ digits of a multiple of $m$ written in base $b$ are in the orbit
-$$\orbit(m, b^l) = \left\{ j \cdot \gcd(m, b^l) \mid  0 \le j < \by{b^l}{m} \right\}.$$
+The last $p$ digits of a multiple of $m$ written in base $b$ are in the orbit
+$$\orbit(m, b^p) = \left\{ j \cdot \gcd(m, b^p) \mid  0 \le j < \by{b^p}{m} \right\}.$$
 :::
 
 Another interesting observation is that there is an overlap between
@@ -817,11 +816,11 @@ $\orbit(x, y)$ and $\orbit(y, x)$.
 This is going to be important, so let's write it as another lemma.
 
 :::Lemma
-Write $\bar{\orbit}$ for the orbit views as a set of integers.
+Write $\bar{\orbit}$ for the orbit viewed as a set of integers.
 Then, they satisfy
 $$\begin{aligned}
 \bar{\orbit}(x, y) \cap \bar{\orbit}(y, x) &= \big\{\, j \cdot \gcd(x, y) \mid 0 \le j < \min(\by{x}{y}, \by{y}{x}) \,\big\} \\
-  &= \bar{\orbit}(\gcd(x, y), \min(x, y))
+  &= \bar{\orbit}(\gcd(x, y),\, \min(x, y))
 \end{aligned}
 $$
 :::
@@ -832,7 +831,7 @@ This happens when $m$ is a power of a factor of $b$, for example.
 In this case, the condition on the digits is not only necessary but also sufficient
 for divisibility, since
 $$ x \equiv \sum_{i=0}^{N-1} x_i b^i  \mod m,$$
-And we can check that the last $N$ digits are on the orbit $\orbit(m, b^{N-1})$.
+and we can check that the last $N$ digits are on the orbit $\orbit(m, b^{N-1})$.
 
 How many states does an automaton need to check all such suffixes?
 Well, it needs $\by{b^{p-1}}{m}$ states to discriminate whether the $p$-th digit
@@ -851,9 +850,15 @@ We will see in the next section how to construct such a machine.
 ### Example: Divisibility by 25 in Decimal
 
 Since $b = 10 = 2\cdot5$ and $m = 125 = 5^2$,
-we can test divisibility by $m$ by checking a string's last $2$ digits.
-Since the orbit is $\orbit(25, 10^2) = \{00, 25, 50, 75 \}$,
-we need 4 states in total:
+to test divisibility by $m$, we check a string's last $2$ digits.
+The orbits are
+$$\begin{align*}
+ \orbit(25, 10^0) &= \{0\} \\
+ \orbit(25, 10^1) &= \{0, 5\} \\
+ \orbit(25, 10^2) &= \{00, 25, 50, 75 \}
+\end{align*}
+$$
+We need $4 = \frac{1}{1} + \frac{10}{5} + \frac{25}{25}$ states in total:
 One to discriminate the last digit, two other to discriminate the second-to-last
 and a last one to represent nodes without any admissible suffix.
 
@@ -922,7 +927,7 @@ we merge remainders according to the relation
 $$x \sim y = (xb^N \equiv yb^N \bmod m).$$
 From this, there are $\by{m}{b^N}$ distinguishable remainders.
 Those form the "divisibility part of the automaton".
-For the missing part,
+For the remaining part,
 we need a machine capable of identifying $N$-digit suffixes.
 From the previous section, it requires $\sum_{i=0}^{N - 1} \by{b^i}{m}$ states
 to identify all orbits $\orbit(m, b^i)$,
@@ -940,19 +945,19 @@ the first digit of the $s$-th element in the orbit $\orbit(m, b^p)$,
 that is, $s \cdot \gcd(m, b^p)$.
 
 Let's build the transition then.
-To make the notation uniform, let's define some helpers: $p^- = \min(p-1, 0)$ and $p^+ = \max(p+1, N)$
+To make the notation uniform, define some helpers: $p^- = \min(p-1, 0)$ and $p^+ = \max(p+1, N)$
 represent, respectively, the previous and next layer.
 Also, we define a remainder function taking a state to the remainder it represents modulo $m$.
 On the last layer it is just the state,
 $$\rem(\ca{\layer N s}) = s,$$
 while on the others, it must take the value it expects to a zero remainder in $p$ steps,
-$$\rem(\cb{\layer p s})b^p + s\cdot(m, b^p) \equiv 0 \mod m.$$
+$$\rem(\cb{\layer p s})b^p + s\cdot\gcd(m, b^p) \equiv 0 \mod m.$$
 
 This is a modular linear equation.
 Rewrite it as an equation on integers and arrange terms to
 $$\rem(\cb{\layer p s})b^p + \zeta m = -s\gcd(m, b^p).$$
 Fortunately, every term is a multiple of $\gcd(m, b^p)$
-and we can solve this equation using Bezout's
+and we can solve this equation using
 [Bézout's identity](https://en.wikipedia.org/wiki/B%C3%A9zout's_identity),
 which you can calculate via the [extended Euclidean algorithm](https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm)
 to obtain
@@ -968,6 +973,7 @@ by reducing this equation to
 $$ \expect'(p, r) \coloneqq -r \by{b^p}{m} \pmod{\by{m}{b^p}}.$$
 Notice that for an arbitrary remainder,
 this expected value is not always reachable by an element of the corresponding orbit.
+This happens, for example, if there is no state on layer $p$ with remainder $r$.
 
 
 Consider a state $\layer p s$ and let its remainder be $r = \rem(\layer p s)$.
@@ -990,32 +996,35 @@ there is no $p$ digit suffix starting with $k$ that takes the machine to a remai
 What the machine does, then, is to try longer suffixes representing the same remainder.
 This is a recursive procedure where it just copies the transitions from $\layer{p^+}{s^+}$
 where $s^+ = \expect'(p^+, \rem(\layer p s))$
-until the looking at layer N.
+until looking at layer $N$.
 There, the meaning of a state switches from "expected" to "remainder"
 and the information passed changes to acting as state
 $$\ca{\layer{N}{\Big[\rem(\layer{p}{s}) \mod \by{m}{b^N}}\Big]}.$$
 If even this layer cannot advance, it simply continues as a divisibility machine modulo $\by{m}{b^N}$.
 
 We can put the discussion above together into a definition for the transition.
-$$\delta(\layer{p}{s}) = \begin{cases}
-\cb{\layer{p^-}{s'}}, & s' < \by{b^{p-1}}{m}, \\
-\ca{\layer{N}{\left(r' \bmod \by{m}{b^N}\right)}}, & p = N, \\
-\delta(\ca{\layer N (r \bmod \by{m}{b^N})}, k), & p = N - 1, \\
-\delta(\cb{\layer{p^+}{\expect'(p^+, r)}}, k), & \text{otherwise},
-\end{cases}
-\\
-    \begin{array}{rrcl}
-      \text{ where }  & & \\
-        & r  &=& \rem(\layer p s) \\
-        & r' &=&  rb + k \pmod m \\
-        & s' &=& \expect'(p^-, r')
-    \end{array}
+$$
+\begin{align*}
+  \delta_4(\layer{p}{s}) &= \begin{cases}
+  \cb{\layer{p^-}{s'}}, & s' < \by{b^{p-1}}{m}, \\
+  \ca{\layer{N}{\left(r' \bmod \by{m}{b^N}\right)}}, & p = N, \\
+  \delta(\ca{\layer N (r \bmod \by{m}{b^N})}, k), & p = N - 1, \\
+  \delta(\cb{\layer{p^+}{\expect'(p^+, r)}}, k), & \text{otherwise},
+  \end{cases}
+  \\
+      &\begin{array}{rrcl}
+        \text{ where }  & & & \\
+          & r  &=& \rem(\layer p s) \\
+          & r' &=&  rb + k \pmod m \\
+          & s' &=& \expect'(p^-, r')
+      \end{array}
+\end{align*}
 $$
 
 That is the DFA recognizing divisibility while checking for $N$ digits.
-According Alexeev's formula, the minimal automaton is the choice of $N$ requiring the least states
+According to Alexeev's formula, the minimal automaton is the choice of $N$ requiring the least states
 among all such DFA.
-As previously commented, this subsumes constructions $I$, $II$, or $III$
+As previously commented, this subsumes constructions I, II, and III
 by choosing the right amount of layers.
 
 
