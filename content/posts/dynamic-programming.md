@@ -738,7 +738,7 @@ end
 The algorithm above comes from directly implementing the Fixed Point Theorem,
 and, because of this, is guaranteed to [converge linearly](https://en.wikipedia.org/wiki/Rate_of_convergence) to the optimum.
 At each iteration, we do one evaluation of the Bellman operator
-requiring $\bigO(|\States|\cdot||Actions|)$ operations.
+requiring $\bigO(|\States|\cdot|\Actions|)$ operations.
 Nevertheless, at each iteration, the minimization procedures happen independently
 for each state, making the evaluation of $\Bellman v$ embarrassingly parallel on the states.
 
