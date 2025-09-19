@@ -166,7 +166,7 @@
         \ifnum\cell>0
           \pgfmathsetmacro\ncol{iseven(\cell) ? "blueweak": "black"}
           \ifnum\s=\t
-            \path[action] (g\s) edge [loop arc]  (g\s);
+            \path[action, \ncol] (g\s) edge [loop arc]  (g\s);
           \else
             \path[action, \ncol] (g\s) edge [bend left=15]  (g\t);
           \fi
