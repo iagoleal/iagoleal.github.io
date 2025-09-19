@@ -27,12 +27,11 @@ Today let's investigate this same idea but focusing on the parallelization inste
 We will also switch from tensors to monoids,
 making it well-suited to a Haskell implementation.
 
-> import Data.Foldable
-> import Data.Monoid
-> import Control.Monad
-> import Control.Parallel
-> import Data.Map (Map)
-> import qualified Data.Map.Strict as Map
+> import           Data.Foldable     (foldMap')
+> import           Data.Monoid       (Endo (..))
+> import           Data.Array        (Ix, Array)
+> import qualified Data.Array.IArray as A
+> import qualified Data.Map.Strict   as Map
 
 Also, we will use a lot of "finite types".
 So, let's be precise about what we mean by it.
@@ -45,9 +44,6 @@ And their main operation is conjuring an ordered list of all their elements.
 
 > elems :: Finite s => [s]
 > elems = [minBound..maxBound]
->
-> bounds :: Finite s => (s, s)
-> bounds = (minBound, maxBound)
 
 
 Monoid Machines
@@ -101,16 +97,16 @@ is part of its target language.
 All it takes is to apply the monoid homomorphism,
 fold over it and check whether the final result is acceptable.
 
-> accept :: Monoid x => MonoidMachine x a -> [a] -> Bool
-> accept m = accepting m . foldMap' (generators m)
+> recognize :: Monoid x => MonoidMachine x a -> [a] -> Bool
+> recognize m = accepting m . foldMap' (generators m)
 
 The main advantage of this approach is that our `foldMap` is not constrained
 to read the input from start to finish.
 We can, thus, do it in parallel chunks,
 yield an algorithm similar to the one by @matos_monoid_2006.
 
-> acceptPar :: Monoid x => Int -> MonoidMachine x a -> [a] -> Bool
-> acceptPar chunkSize m = accepting m . foldMapPar chunkSize (generators m)
+> -- recognizePar :: Monoid x => Int -> MonoidMachine x a -> [a] -> Bool
+> -- recognizePar chunkSize m = accepting m . foldMapPar chunkSize (generators m)
 
 Also keep in mind that how many chunks you should use
 depends on how complicated your monoid is.
@@ -182,7 +178,7 @@ Maps, Matrices, and Parallelism
 For a regular language specified as a DFA, `dfaToMon`
 supposedly lets us recognize it in parallel using its monoid of endomorphisms.
 
-> asEndo :: DFA s a -> Bool
+> asEndo :: DFA s a -> [a] -> Bool
 > asEndo dfa = recognize (dfaToMon dfa)
 
 Now go on and run it in an example. I'll wait.
@@ -216,9 +212,9 @@ Now we can turn a DFA into a monoid
 for which all compositions are calculated instead of thunked.
 
 > asMap :: Finite s => DFA s a -> MonoidMachine (FinEndo s) a
-> asMap (DFA q0 t final) = MonoidMachine gen check
+> asMap (DFA q0 transition final) = MonoidMachine gen check
 >   where
->    gen a = finendo (t a)
+>    gen a = finendo (transition a)
 >    check (FinEndo m) = final (m Map.! q0)
 
 What about Matrices?
@@ -232,8 +228,75 @@ and use its adjacency matrices
 
 $$ T^a_{s s'} = \begin{cases} 1,& t(a, s) = s' \\ 0,& \text{otherwise}. \end{cases}$$
 
-Magically (or not), function composition becomes matrix multiplication in this setting.
+Or, in Haskell:
+
+> newtype Mat s t = Mat (Array (s, s) t)
+>
+> adjacency :: Finite s => (s -> s) -> Mat s Bool
+> adjacency f = Mat . A.genArray bounds $ \ (s, s') -> f s == s'
+>  where bounds = ((minBound, minBound), (maxBound, maxBound))
+
+Magically (or not, depending on where you come from),
+function composition becomes matrix multiplication in this setting.
+We just have to take the ["relational" version of it](/posts/algebraic-path#transitive-closures-of-relations),
+where sum becomes disjunction and product becomes conjunction.
+
+> instance Finite s => Semigroup (Mat s Bool) where
+>  (Mat f) <> (Mat g) = Mat $ A.genArray bounds combine
+>   where
+>    combine (x, y) = or [f A.! (x, k) && g A.! (k, y) | k <- elems]
+>    bounds = ((minBound, minBound), (maxBound, maxBound))
+>
+> instance Finite s => Monoid (Mat s Bool) where
+>  mempty = adjacency id
+
+Finally, running a DFA becomes a problem of multiplying a lot of binary matrices.
+The generators are just the transformation matrices
+while the accepting subset consists of those matrices
+having a `True` component $A_{f i}$ for any final state $f$ and initial $i$.[^matrix-version]
+This formulation is particularly suited for automata with few states
+being run over large strings, thus many multiplications of small matrices.
+
+> asMat :: Finite s => DFA s a -> MonoidMachine (Mat s Bool) a
+> asMat (DFA q0 transition final) = MonoidMachine gen check
+>   where
+>    gen a = adjacency (transition a)
+>    check (Mat m) = any (\s -> m A.! (s, q0)) (filter final elems)
+
+[^matrix-version]: A more familiar definition may be as $\braket{f | A | i}$ were $f$ and $i$ are the indicator vectors of final and initial states.
+
+I have chosen to use `Data.Array` in this post for simplicity.
+But bear in mind that to achieve optimal results,
+you will probably want a more robust numerical package such as `hmatrix`, `massiv` or even `accelerate`
+to make use of those shiny GPUs.
 
 
-It works for NFAs too!
-======================
+Parting thoughts on nondeterminism
+==================================
+
+Alright, this was fun and all but now it's time to go.
+One last point before wrapping this post though:
+In contrast with the Map one,
+when constructing the matrix monoid
+we didn't really use the "deterministic" part of a DFA.
+Therefore,
+it should be a straightforward adaptation to make it work for nondeterministic automata!
+All you have to do is alter `adjacency` to be a `s -> [s]` function
+that constructs the matrix one column at a time.
+Somewhat like this
+
+> adjacencyNFA :: Finite s => (s -> [s]) -> Mat s Bool
+> adjacencyNFA f = Mat $ A.accumArray (||) False bounds active
+>  where
+>   active = [((s, s'), True) | s <- elems, s' <- f s]
+>   bounds = ((minBound, minBound), (maxBound, maxBound))
+
+In fact,
+all of the automata from the [A Fistful of Automata](posts/automata-monads/) post
+admit a matrix representation as some kind of "generalized relation".
+Probabilistic automata yield stochastic matrices and quantum automata yield unitary matrices.
+I don't really know the condition on the monad `m` for `s -> m s` to be "matrixifiable"
+but many practical examples seem to be.
+Well, perhaps this will be a topic for a later post.
+
+Good bye and have fun contracting your monoids!
