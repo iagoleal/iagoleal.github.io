@@ -1,5 +1,5 @@
 ---
-title: Parallel Parsing of Regular Languages with Monoids
+title: Monoids Let You Run Automata in Parallel
 keywords: [haskell, automata]
 date: 2025-05-18
 description:
@@ -8,13 +8,13 @@ description:
 \def\A{\mathcal{A}}
 
 If you read this blog, you probably know how often I post about finite automata (FA).
-They are in a expressivity sweet stop
+They are in an expressivity sweet stop
 where they're simple enough to run fast while still solving a lot of real problems.
 Just look around and notice how often you see regex engines all over the programming world.
 
 My only grapple with finite automata is how inherently sequential
 their execution model is.
-To recognize a string, a FA consumes it one character after another
+To recognize a string, an FA consumes it one character after another
 while extracting the relevant information from it and storing in an internal state.
 This execution is fair and square but, unfortunately,
 not very amenable to today's age of multiple cores and GPUs.
@@ -30,6 +30,25 @@ making it well-suited to a Haskell implementation.
 > import Data.Foldable
 > import Data.Monoid
 > import Control.Monad
+> import Control.Parallel
+> import Data.Map (Map)
+> import qualified Data.Map.Strict as Map
+
+Also, we will use a lot of "finite types".
+So, let's be precise about what we mean by it.
+For this post, it means that we can use it as an index as well as order and enumerate all its elements.
+We achieve this via some standard typeclasses.
+
+> type Finite s = (Ix s, Bounded s, Enum s)
+
+And their main operation is conjuring an ordered list of all their elements.
+
+> elems :: Finite s => [s]
+> elems = [minBound..maxBound]
+>
+> bounds :: Finite s => (s, s)
+> bounds = (minBound, maxBound)
+
 
 Monoid Machines
 ===============
@@ -57,7 +76,7 @@ $$ w \in L \iff \phi(w) \in P.$$
 
 Let's unpack this definition a bit before proceeding to why it is useful.
 The function $\phi$ turns words over the alphabet into elements of a monoid.
-Think about the previous discussion of how a FA takes an initial string into a state,
+Think about the previous discussion of how an FA takes an initial string into a state,
 it is somewhat similar.
 The homomorphism requirement means that it does not matter how we form these words,
 only the characters constituting it.
@@ -68,7 +87,7 @@ We can view this $g$ as the monoid generators.
 
 Now its time for some code!
 From the previous discussion, we define a _Monoid Machine_ over an alphabet
-as a choice of generators and a accepting subset,
+as a choice of generators and an accepting subset,
 represented as a predicate:
 
 > data MonoidMachine m a = MonoidMachine
@@ -83,7 +102,19 @@ All it takes is to apply the monoid homomorphism,
 fold over it and check whether the final result is acceptable.
 
 > accept :: Monoid x => MonoidMachine x a -> [a] -> Bool
-> accept m = accepting m . foldMap (generators m)
+> accept m = accepting m . foldMap' (generators m)
+
+The main advantage of this approach is that our `foldMap` is not constrained
+to read the input from start to finish.
+We can, thus, do it in parallel chunks,
+yield an algorithm similar to the one by @matos_monoid_2006.
+
+> acceptPar :: Monoid x => Int -> MonoidMachine x a -> [a] -> Bool
+> acceptPar chunkSize m = accepting m . foldMapPar chunkSize (generators m)
+
+Also keep in mind that how many chunks you should use
+depends on how complicated your monoid is.
+As everything related to parallelism, it is somewhat of an art.
 
 Example: Binary Division by 3
 -----------------------------
@@ -123,7 +154,7 @@ We can keep the same subset as accepting.
 
 > monToDFA :: Monoid m => MonoidMachine m a -> DFA m a
 > monToDFA mm = DFA mempty act (accepting mm)
->   where act a m = m <> generators mm a
+>  where act a m = m <> generators mm a
 
 Notice that the DFA is finite as long as the monoid `m` is finite.
 
@@ -131,7 +162,7 @@ For the other direction,
 we use DFA's transition monoid --- a trick somewaht similar to difference lists.
 The transition can be viewed as a transformation `a -> (s -> s)`
 where `s -> s` has a natural monoid structure from composition.
-Thankfully all this lifting alreadys comes bundled with Haskell in the `Endo` type.
+Thankfully all this lifting already comes bundled with Haskell in the `Endo` type.
 Finally, to check if an endomorphism is accepted,
 we test whether it takes the initial states to a final one.
 
@@ -141,61 +172,68 @@ we test whether it takes the initial states to a final one.
 
 Again, the endomorphism type `s -> s` is finite if and only if `s` is itself finite.
 
-Altough these functions are not inverses,
+Although these functions are not inverses,
 you can check that they preserve the recognized language, which is enough for us.
 
 
 Maps, Matrices, and Parallelism
 ===============================
 
+For a regular language specified as a DFA, `dfaToMon`
+supposedly lets us recognize it in parallel using its monoid of endomorphisms.
+
+> asEndo :: DFA s a -> Bool
+> asEndo dfa = recognize (dfaToMon dfa)
+
+Now go on and run it in an example. I'll wait.
+And to be fair, I'll a lot, because the method above is pretty slow.
+The problem is that the monoid multiplication is too slow.
+All it is doing is composing a thunk of functions that will only actually be executed
+when checking the final state.
+We need a more strict representation --- something looking more like data than code.
+
+The description of `Data.Map.Map k v` in the [containers](https://hackage-content.haskell.org/package/containers-0.8/docs/Data-Map-Strict.html)
+package is as a finite partial map from `k` to `v`.
+This means we can use a `Map` instead of an `Endo` to represent the same monoid!
+Let's write it as a new type as well as defining how to memoize a finite function with it.
+
+> newtype FinEndo s = FinEndo (Map.Map s s)
+>
+> finendo :: Finite s => (s -> s) -> FinEndo s
+> finendo f = FinEndo $ Map.fromList [(s, f s) | s <- elems]
+
+For the monoid instance,
+everything is basically premade.
+All it takes is to assemble the blocks.
+
+> instance Finite s => Semigroup (FinEndo s) where
+>  (FinEndo f) <> (FinEndo g) = FinEndo (Map.compose f g)
+>
+> instance Finite s => Monoid (FinEndo s) where
+>  mempty = finendo id
+
+Now we can turn a DFA into a monoid
+for which all compositions are calculated instead of thunked.
+
+> asMap :: Finite s => DFA s a -> MonoidMachine (FinEndo s) a
+> asMap (DFA q0 t final) = MonoidMachine gen check
+>   where
+>    gen a = finendo (t a)
+>    check (FinEndo m) = final (m Map.! q0)
+
+What about Matrices?
+--------------------
+
+The `Map` construction works well
+but, to be fair, I could not go home without building the most classical monoid
+associated with an automaton: its transition matrices!
+The idea is to look at a finite function as a graph (or a relation)
+and use its adjacency matrices
+
+$$ T^a_{s s'} = \begin{cases} 1,& t(a, s) = s' \\ 0,& \text{otherwise}. \end{cases}$$
+
+Magically (or not), function composition becomes matrix multiplication in this setting.
 
 
-
-
-
-~~~
-  @article{bojanczyk_algorithms_2012,
-    title    = {Algorithms for regular languages that use algebra},
-    volume   = {41},
-    issn     = {0163-5808},
-    url      = {https://dl.acm.org/doi/10.1145/2350036.2350038},
-    doi      = {10.1145/2350036.2350038},
-    abstract = {This paper argues that an algebraic approach to regular languages, such as using monoids, can yield efﬁcient algorithms on strings and trees.},
-    language = {en},
-    number   = {2},
-    urldate  = {2025-05-08},
-    journal  = {ACM SIGMOD Record},
-    author   = {Bojańczyk, Mikołaj},
-    month    = aug,
-    year     = {2012},
-    keywords = {read},
-    pages    = {5--14},
-  }
-
-
-  @incollection{pin_finite_1995,
-    address    = {Dordrecht},
-    title      = {Finite {Semigroups} and {Recognizable} {Languages}: {An} {Introduction}},
-    isbn       = {978-94-010-4067-9 978-94-011-0149-3},
-    shorttitle = {Finite {Semigroups} and {Recognizable} {Languages}},
-    url        = {http://link.springer.com/10.1007/978-94-011-0149-3_1},
-    language   = {en},
-    urldate    = {2025-05-06},
-    booktitle  = {Semigroups, {Formal} {Languages} and {Groups}},
-    publisher  = {Springer Netherlands},
-    author     = {Pin, Jean-Eric},
-    editor     = {Fountain, John},
-    year       = {1995},
-    doi        = {10.1007/978-94-011-0149-3_1},
-    keywords   = {read-stack},
-    pages      = {1--32},
-  }
-
-@article{matos_monoid_nodate,
-  title    = {Monoid machines: a {O}(log n) parser for regular languages},
-  abstract = {A new method for parsing regular languages is presented; for each regular language L a monoid (S, ·) is deﬁned; in particular, every letter a of the alphabet is mapped into an element f (a) of S (in general S contains elements that are not images of letters). Parsing a word x = ab · · · c consists essentially in (i) ﬁnding a transition monoid associated with the language (O(1) time) and (ii) compute the monoid product x′ = f (a) · f (b) · · · f (c). We show that this method can be applied to every regular language but not (if only ﬁnite monoids are allowed) to the class of context-free languages. Consider a ﬁnite automaton A recognizing L; the elements of the monoid SL, which include the set \{f (a) : a ∈ Σ\}, correspond to functions from the set of states of A into the set of states of A. In general the cardinality of the monoid is exponential on the number of states of the minimum deterministic automaton recognizing the language.},
-  language = {en},
-  url      = {https://www.dcc.fc.up.pt/~acm/semigr.pdf},
-  author   = {Matos, Armando B},
-}
-~~~
+It works for NFAs too!
+======================
