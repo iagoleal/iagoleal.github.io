@@ -7,10 +7,11 @@ description:
 
 \def\A{\mathcal{A}}
 
-If you read this blog, you probably know how often I post about finite automata (FA).
-They are in an expressivity sweet stop
-where they're simple enough to run fast while still solving a lot of real problems.
-Just look around and notice how often you see regex engines all over the programming world.
+If you read this blog, you probably noticed how often I post about finite automata (FA).
+They are put in this expressivity sweet stop
+of being simple enough to run fast while still module a lot of real problems well.
+Just look around and notice how often you see regex engines all over the programming world
+or control systems assumed to be Markovian.
 
 My only grapple with finite automata is how inherently sequential
 their execution model is.
@@ -35,13 +36,12 @@ making it well-suited to a Haskell implementation.
 
 Also, we will use a lot of "finite types".
 So, let's be precise about what we mean by it.
-For this post, it means that we can use it as an index as well as order and enumerate all its elements.
-We achieve this via some standard typeclasses.
+For this post, it means that we can order and enumerate all its elements.
+as well as use it as an index.
+This amounts to some standard typeclasses.
 
 > type Finite s = (Ix s, Bounded s, Enum s)
-
-And their main operation is conjuring an ordered list of all their elements.
-
+>
 > elems :: Finite s => [s]
 > elems = [minBound..maxBound]
 
@@ -49,19 +49,11 @@ And their main operation is conjuring an ordered list of all their elements.
 Monoid Machines
 ===============
 
-Kleene's Theorem states a bunch of equivalent ways to define a regular language:
-DFAs, NFAs, regular expressions, regular grammars etc.
+There are many different ways to define a formal languages:
+subsets of strings, deterministic and nondeterministic automata, formal grammars etc.
 Recently, while reading a paper by @pin_finite_1995,
-I discovered yet another characterization.
-
-:::{.Theorem data-title="Kleene for Monoids"}
-A language is regular if and only if
-there is a finite monoid recognizing it.
-:::
-
-Of course, for this to make sense,
-we need to define what it means for a monoid to recognize a language.
-Also from that same paper we have that.
+I discovered yet another characterization with more of an algebraic flavour:
+being recognized by a monoid.
 
 :::Definition
 A monoid $M$ recognizes a language $L$ over alphabet $\A$
@@ -103,7 +95,7 @@ fold over it and check whether the final result is acceptable.
 The main advantage of this approach is that our `foldMap` is not constrained
 to read the input from start to finish.
 We can, thus, do it in parallel chunks,
-yield an algorithm similar to the one by @matos_monoid_2006.
+yielding an algorithm similar to the one by @matos_monoid_2006.
 
 > -- recognizePar :: Monoid x => Int -> MonoidMachine x a -> [a] -> Bool
 > -- recognizePar chunkSize m = accepting m . foldMapPar chunkSize (generators m)
@@ -112,8 +104,9 @@ Also keep in mind that how many chunks you should use
 depends on how complicated your monoid is.
 As everything related to parallelism, it is somewhat of an art.
 
-Example: Binary Division by 3
------------------------------
+Examples
+--------
+
 
 > data Z3 = N0 | N1 | N2
 
@@ -132,6 +125,17 @@ Example: Binary Division by 3
 From Monoids to Automata and Back Again
 =======================================
 
+You may wonder where do monoid machines fit in the Chomsky Hierarchy.
+The proper answer, as with automata, is that it depends on the monoid properties.
+Finite monoids --- which is the most computationally interesting case ---
+recognize precisely the regular languages,
+putting them on the same expressivity level of finite automata.
+
+:::{.Theorem data-title="Kleene's for Monoids"}
+A language is regular if and only if
+there is a finite monoid recognizing it.
+:::
+
 Consider a deterministic finite automaton. or DFA for short.
 
 > data DFA s a = DFA s (a -> s -> s) (s -> Bool)
@@ -145,26 +149,26 @@ To go from Monoids to DFA,
 we construct a machine that does the monoid transitions
 sequentially from the first to the last character.
 Its states are the monoid's underlying set
-and the transition consist of contracting the current state with the new generator read.
-We can keep the same subset as accepting.
+and the transitions consist of contracting the current state with the new generator read.
+We can keep the same accepting subset.
 
 > monToDFA :: Monoid m => MonoidMachine m a -> DFA m a
 > monToDFA mm = DFA mempty act (accepting mm)
 >  where act a m = m <> generators mm a
 
-Notice that the DFA is finite as long as the monoid `m` is finite.
+Notice that the automaton is finite as long as the monoid `m` is finite.
 
 For the other direction,
-we use DFA's transition monoid --- a trick somewaht similar to difference lists.
-The transition can be viewed as a transformation `a -> (s -> s)`
-where `s -> s` has a natural monoid structure from composition.
+we use the DFA's transition monoid --- a trick somewhat similar to difference lists.
+We view the transition as a transformation `a -> (s -> s)`,
+using that `s -> s` has a natural monoid structure from composition.
 Thankfully all this lifting already comes bundled with Haskell in the `Endo` type.
 Finally, to check if an endomorphism is accepted,
 we test whether it takes the initial states to a final one.
 
 > dfaToMon :: DFA s a -> MonoidMachine (Endo s) a
-> dfaToMon (DFA q0 next final) = MonoidMachine (Endo . next) accepting
->  where accepting (Endo f) = final (f q0)
+> dfaToMon (DFA q0 next final) = MonoidMachine (Endo . next) check
+>  where check (Endo f) = final (f q0)
 
 Again, the endomorphism type `s -> s` is finite if and only if `s` is itself finite.
 
@@ -178,44 +182,45 @@ Maps, Matrices, and Parallelism
 For a regular language specified as a DFA, `dfaToMon`
 supposedly lets us recognize it in parallel using its monoid of endomorphisms.
 
-> asEndo :: DFA s a -> [a] -> Bool
-> asEndo dfa = recognize (dfaToMon dfa)
+> endoRecognize :: DFA s a -> [a] -> Bool
+> endoRecognize dfa = recognize (dfaToMon dfa)
 
 Now go on and run it in an example. I'll wait.
-And to be fair, I'll a lot, because the method above is pretty slow.
+And to be fair, I'll wait a lot, because the method above is pretty slow.
 The problem is that the monoid multiplication is too slow.
-All it is doing is composing a thunk of functions that will only actually be executed
+All it is doing is composing a thunk of functions whose execution only happens
 when checking the final state.
 We need a more strict representation --- something looking more like data than code.
 
 The description of `Data.Map.Map k v` in the [containers](https://hackage-content.haskell.org/package/containers-0.8/docs/Data-Map-Strict.html)
-package is as a finite partial map from `k` to `v`.
-This means we can use a `Map` instead of an `Endo` to represent the same monoid!
-Let's write it as a new type as well as defining how to memoize a finite function with it.
+package is as a finite map from `k` to `v`.
+This fits perfectly into our application,
+meaning we can swap `Endo` for `Map` in the monoid representation!
+Let's write it as a new type as well as defining how to memoize a finite function using it.
 
-> newtype FinEndo s = FinEndo (Map.Map s s)
+> newtype AsMap s = AsMap (Map.Map s s)
 >
-> finendo :: Finite s => (s -> s) -> FinEndo s
-> finendo f = FinEndo $ Map.fromList [(s, f s) | s <- elems]
+> tabulate :: Finite s => (s -> s) -> AsMap s
+> tabulate f = AsMap $ Map.fromList [(s, f s) | s <- elems]
 
 For the monoid instance,
-everything is basically premade.
+everything already comes bundled into `Data.Map`.
 All it takes is to assemble the blocks.
 
-> instance Finite s => Semigroup (FinEndo s) where
->  (FinEndo f) <> (FinEndo g) = FinEndo (Map.compose f g)
+> instance Finite s => Semigroup (AsMap s) where
+>  (AsMap f) <> (AsMap g) = AsMap (Map.compose f g)
 >
-> instance Finite s => Monoid (FinEndo s) where
->  mempty = finendo id
+> instance Finite s => Monoid (AsMap s) where
+>  mempty = tabulate id
 
 Now we can turn a DFA into a monoid
 for which all compositions are calculated instead of thunked.
 
-> asMap :: Finite s => DFA s a -> MonoidMachine (FinEndo s) a
-> asMap (DFA q0 transition final) = MonoidMachine gen check
+> asMap :: Finite s => DFA s a -> MonoidMachine (AsMap s) a
+> asMap (DFA q0 next final) = MonoidMachine gen check
 >   where
->    gen a = finendo (transition a)
->    check (FinEndo m) = final (m Map.! q0)
+>    gen a = tabulate (next a)
+>    check (AsMap m) = final (m Map.! q0)
 
 What about Matrices?
 --------------------
@@ -228,16 +233,18 @@ and use its adjacency matrices
 
 $$ T^a_{s s'} = \begin{cases} 1,& t(a, s) = s' \\ 0,& \text{otherwise}. \end{cases}$$
 
-Or, in Haskell:
+Or in Haskell:
 
 > newtype Mat s t = Mat (Array (s, s) t)
 >
 > adjacency :: Finite s => (s -> s) -> Mat s Bool
-> adjacency f = Mat . A.genArray bounds $ \ (s, s') -> f s == s'
->  where bounds = ((minBound, minBound), (maxBound, maxBound))
+> adjacency f = Mat $ A.accumArray (||) False bounds active
+>  where
+>   active = [((s, f s), True) | s <- elems]
+>   bounds = ((minBound, minBound), (maxBound, maxBound))
 
 Magically (or not, depending on where you come from),
-function composition becomes matrix multiplication in this setting.
+function composition becomes matrix multiplication.
 We just have to take the ["relational" version of it](/posts/algebraic-path#transitive-closures-of-relations),
 where sum becomes disjunction and product becomes conjunction.
 
@@ -288,11 +295,11 @@ Somewhat like this
 > adjacencyNFA :: Finite s => (s -> [s]) -> Mat s Bool
 > adjacencyNFA f = Mat $ A.accumArray (||) False bounds active
 >  where
->   active = [((s, s'), True) | s <- elems, s' <- f s]
+>   active = [((s, s'), True) | s <- elems, s' <- f s] -- This line changes!
 >   bounds = ((minBound, minBound), (maxBound, maxBound))
 
 In fact,
-all of the automata from the [A Fistful of Automata](posts/automata-monads/) post
+all the automata from the [A Fistful of Automata](/posts/automata-monads/) post
 admit a matrix representation as some kind of "generalized relation".
 Probabilistic automata yield stochastic matrices and quantum automata yield unitary matrices.
 I don't really know the condition on the monad `m` for `s -> m s` to be "matrixifiable"
