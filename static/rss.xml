@@ -16,6 +16,14 @@
     <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
 
     <item>
+      <guid isPermaLink="false">1176588872</guid>
+      <title>Monoids Let You Run Automata in Parallel</title>
+      <link>https://iagoleal.com/posts/automata-monoids/</link>
+      <dc:creator>Iago Leal de Freitas</dc:creator>
+      <category>Blog</category>
+      <pubDate> 24 Sep 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
       <guid isPermaLink="false">1176588871</guid>
       <title>Arithmancia Automatorum</title>
       <link>https://iagoleal.com/posts/automata-divisibility/</link>

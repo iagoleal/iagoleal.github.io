@@ -384,6 +384,9 @@ Again, the endomorphism type `s -> s` is finite if and only if `s` is itself fin
 
 Although these functions are not inverses,
 you can check that they preserve the recognized language, which is enough for us.
+It is also worth noticing that `s -> s` has exponentially more elements than `s`.
+Nevertheless, the transition monoid is a submonoid of it that can be smaller.
+Also, if you are calculating the elements on the fly, it is not necessarily a problem.
 
 
 Maps, Matrices, and Parallelism
