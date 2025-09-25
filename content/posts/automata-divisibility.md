@@ -7,6 +7,7 @@ description:
   Did you know that Finite Automata can recognize divisibility?
   To find one such automaton, the procedure is simple
   but constructing the minimal one requires a lot of modular arithmetic.
+thumbnail: "300base10.svg"
 suppress-bibliography: true
 ---
 
@@ -480,7 +481,7 @@ Notice that the green part looks the same as our previous automaton for $m = 3$
 and that the purple states act the same as $\ca 0$
 for any input besides $0$.
 
-```tikz {tikzlibrary="automata"}
+```tikz {tikzlibrary="automata" id="300base10"}
 { [shorten >=1pt, node distance=2cm, on grid, auto, >={Stealth[round]},
     every edge quotes/.style = {font = {\scriptsize\tt}, sloped}
   ]
