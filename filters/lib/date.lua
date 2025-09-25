@@ -48,7 +48,7 @@ local months = {
 -- <pubDate> 23 May 2025 00:00:00 GMT</pubDate>
 function Date.rfc822(self)
   month = months[self.month]
-  return fmt("%3d %s %4d 00:00:00 GMT", self.day, month, self.year)
+  return fmt("%02d %s %4d 00:00:00 GMT", self.day, month, self.year)
 end
 
 return Date

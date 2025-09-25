@@ -1,5 +1,7 @@
 local M = {}
 
+local fmt = string.format
+
 --- Split a string at a delimiter
  function M.split(s, delimiter)
     result = {}

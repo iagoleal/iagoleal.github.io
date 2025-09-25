@@ -1,22 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
+<rss version="2.0"
+     xmlns:dc="http://purl.org/dc/elements/1.1/"
+     xmlns:atom="http://www.w3.org/2005/Atom">
    <channel>
-      <title>Iago's Blog</title>
-      <link>$site-url$</link>
-      <description>Iago Leal's blog about math, programming and everything more.</description>
-      <copyright>© $author-meta$, 2020-2025</copyright>
-      <language>en-us</language>
-      <image>
-        <url>$site-url$/static/img/me.jpg</url>
-        <link>$site-url$</link>
-        <title>Iago's Blog</title>
-      </image>
-      <managingEditor>hello@iagoleal.com</managingEditor>
-      <webMaster>hello@iagoleal.com</webMaster>
-      <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
-   </channel>
+     <title>Iago's Blog</title>
+     <link>$site-url$</link>
+     <description>Iago Leal's blog about math, programming and everything more.</description>
+     <copyright>© $author-meta$, 2020-2025</copyright>
+     <atom:link href="$site-url$/rss.xml" rel="self" type="application/rss+xml" />
+     <language>en-us</language>
+     <image>
+       <url>$site-url$/static/img/me.jpg</url>
+       <link>$site-url$</link>
+       <title>Iago's Blog</title>
+     </image>
+     <managingEditor>hello@iagoleal.com</managingEditor>
+     <webMaster>hello@iagoleal.com</webMaster>
+     <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
 
-  $for(items)$
-  $items$
-  $endfor$
+    $for(items)$
+    $items$
+    $endfor$
+  </channel>
 </rss>

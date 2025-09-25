@@ -1,5 +1,5 @@
 <item>
-  <title>$pagetitle$</title>
+  <title>$title$</title>
   <link>$url$</link>
   <guid isPermaLink="true">$url$</guid>
 $if(description)$
