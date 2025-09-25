@@ -1,3 +1,6 @@
+local Date = require "filters.lib.date"
+local fs   = require "filters.lib.fs"
+
 local fmt = string.format
 
 local function map(t, f)
@@ -20,56 +23,9 @@ local function take(t, n)
 
 end
 
-local Date = setmetatable({
-  __lt = function(self, b)
-    return os.time(self) < os.time(b)
-  end,
-  __eq = function(a, b)
-    return a.year == b.year and a.month == b.month and a.day == b.day
-  end,
-  __tostring = function(self)
-    local delimiter = "."
-    return fmt("%04d%s%02d%s%02d", self.year, delimiter, self.month, delimiter, self.day)
-  end
-}, {
-  __call = function(self, str)
-    local date = pandoc.utils.normalize_date(pandoc.utils.stringify(str))
-    local ya, ma, da = date:match("^(%d+)-(%d+)-(%d+)$")
-
-    return setmetatable({
-      day   = tonumber(da),
-      month = tonumber(ma),
-      year  = tonumber(ya),
-    }, self)
-  end,
-})
-
 local function getfilename(path)
   local fname = pandoc.path.split_extension(pandoc.path.split_extension(pandoc.path.filename(path)))
   return fname
-end
-
-function readfile(fname, mode)
-  local f = io.open(fname, "r")
-
-  if not f then
-    io.stderr:write(fmt("ERROR reading file %s\n", fname))
-    return nil
-  end
-
-  local content = f:read(mode)
-
-  f:close()
-
-  return content
-end
-
-function read_metadata(fname)
-  -- Read the entire file content
-  local content = readfile(fname, "*a")
-  local doc = pandoc.read(content, "markdown")
-
-  return doc.meta  -- We only need the metadata
 end
 
 local function makeitem(meta)
@@ -90,7 +46,7 @@ local function make_postlist(path, n)
   pandoc.log.info(fmt("Making post list with %d out of %d posts", n, #posts))
 
   local metadata = map(posts, function(post)
-    local meta = read_metadata(pandoc.path.join{path, post})
+    local meta = fs.read_metadata(pandoc.path.join{path, post})
 
     pandoc.log.info("Post list: reading post " .. post)
 
