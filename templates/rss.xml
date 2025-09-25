@@ -1,18 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
    <channel>
-      <title>Iago Leal</title>
-      <link>https://iagoleal.com/</link>
+      <title>Iago's Blog</title>
+      <link>$site-url$</link>
       <description>Iago Leal's blog about math, programming and everything more.</description>
-      <copyright>© Iago Leal de Freitas, 2020-2022</copyright>
+      <copyright>© $author-meta$, 2020-2025</copyright>
       <language>en-us</language>
       <image>
-        <url>https://iagoleal/static/img/me.jpg</url>
-        <link>https://iagoleal.com/</link>
-        <title>Iago Leal</title>
+        <url>$site-url$/static/img/me.jpg</url>
+        <link>$site-url$</link>
+        <title>Iago's Blog</title>
       </image>
       <managingEditor>hello@iagoleal.com</managingEditor>
       <webMaster>hello@iagoleal.com</webMaster>
       <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
    </channel>
+
+  $for(items)$
+  $items$
+  $endfor$
 </rss>
