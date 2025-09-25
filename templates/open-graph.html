@@ -1,5 +1,5 @@
 <!--Open Graph protocol-->
-<meta property="og:site_name" content="Iago Leal" />
+<meta property="og:site_name" content="Iago's page" />
 <meta property="og:url"       content="$url$" />
 
 $if(post)$
@@ -19,9 +19,14 @@ $if(description-meta)$
   <meta property="og:description" content="$description-meta$" />
 $endif$
 
+$if(thumbnail)$
+<meta property="og:image"        content="$url$$thumbnail$" />
+$else$
 <meta property="og:image"        content="$site-url$/img/banner.png" />
+$endif$
 <meta property="og:image:width"  content="1200" />
 <meta property="og:image:height" content="630" />
+<meta property="og:image:type" content="image/png" />
 
 <!--Twitter Social Tags-->
 <meta name="twitter:card"   content="summary_large_image" />
@@ -36,6 +41,9 @@ $if(description-meta)$
   <meta name="twitter:description" content="$description-meta$" />
 $endif$
 
-<meta name="twitter:image"        content="$site-url$/img/banner.png" />
+$if(thumbnail)$
+<meta name="twitter:image"        content="$url$$thumbnail$" />
+$else$
+$endif$
 <meta name="twitter:image:width"  content="1200" />
 <meta name="twitter:image:height" content="630" />
