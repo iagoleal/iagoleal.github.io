@@ -4,7 +4,7 @@ subtitle: An introduction to induction in programming
 keywords: [category-theory, recursion-schemes, functional-programming]
 date: 2020-09-10
 description: >
-  Most introduction to recursion schemes are aimed at functional programmers.
+  Most introductions to recursion schemes are aimed at functional programmers.
   But what if you are a functional entusiast mathematician?
   Don't worry, we have you covered in this one.
 ---
