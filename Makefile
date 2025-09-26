@@ -37,6 +37,8 @@ DEPENDENCIES = $(filters) $(templates) $(scripts) $(config)
 define generate_page
   $(shell [ ! -d $(@D) ] && mkdir -p $(@D))
   $(PANDOC) --defaults=pandoc.yaml \
+    --lua-filter=filters/post-list.lua \
+    --lua-filter=filters/url.lua \
     -f $(3) -o "$(2)" "$(1)"
 endef
 
@@ -45,6 +47,10 @@ define generate_post
   $(PANDOC) --defaults=pandoc.yaml         \
             --shift-heading-level-by=1     \
             -M post                        \
+            --lua-filter=filters/figure.lua \
+            --lua-filter=filters/wc.lua   \
+            --lua-filter=filters/date.lua \
+            --lua-filter=filters/url.lua  \
     -f $(3) -o "$(2)" "$(1)"
 endef
 
@@ -126,9 +132,9 @@ feed: $(build)/rss.xml
 
 $(build)/rss.xml: $(DEPENDENCIES)
 	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
-	$(PANDOC) --template=templates/rss.xml --lua-filter=filters/rss.lua \
+	$(PANDOC) --defaults=pandoc.yaml \
+	  --template=templates/rss.xml --lua-filter=filters/rss.lua \
 	  --to plain --standalone \
-	  -V site-url="https://iagoleal.com" -V author-meta="Iago Leal de Freitas" \
 	  -f markdown -o "$@" /dev/null
 
 stylesheets: $(css-result)

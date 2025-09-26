@@ -18,8 +18,18 @@
      <webMaster>hello@iagoleal.com</webMaster>
      <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
 
-    $for(items)$
-    $items$
+    $for(posts)$
+    <item>
+      <guid isPermaLink="true">$it.url$</guid>
+      <title>$it.title$</title>
+      <link>$it.url$</link>
+    $if(it.description)$
+      <description>$it.description$</description>
+    $endif$
+      <pubDate>$it.date-rfc822$</pubDate>
+      <dc:creator>$author-meta$</dc:creator>
+      <category>Blog</category>
+    </item>
     $endfor$
   </channel>
 </rss>

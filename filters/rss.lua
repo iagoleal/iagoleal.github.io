@@ -10,9 +10,6 @@ local function map(t, f)
   return out
 end
 
-local template_feed = pandoc.template.compile(pandoc.template.get("templates/rss.xml"))
-local template_item = pandoc.template.compile(pandoc.template.get("templates/rss-item.xml"))
-
 function template_variable(k)
   return tostring(PANDOC_WRITER_OPTIONS.variables[k])
 end
@@ -39,7 +36,6 @@ function makeitem(post)
     ["date-rfc822"] = date:rfc822(),
     description     = pandoc.utils.stringify(meta.description),
     url             = canonical_url(post),
-    ["author-meta"] = template_variable("author-meta")
   }
 
   return info
@@ -49,17 +45,11 @@ function Meta(m)
   local postdir = "content/posts"
   local posts   = pandoc.system.list_directory(postdir)
 
-  metadata = map(posts, function(post)
+  m.posts = map(posts, function(post)
     return makeitem(pandoc.path.join{postdir, post})
   end)
 
-  table.sort(metadata, function(a, b) return a.date > b.date end)
-
-  m.items = map(metadata, function(info)
-    info.date = info.date:rfc822()
-    local content = pandoc.template.apply(template_item, info)
-    return tostring(content)
-  end)
+  table.sort(m.posts, function(a, b) return a.date > b.date end)
 
   return m
 end

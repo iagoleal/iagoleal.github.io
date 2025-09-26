@@ -32,10 +32,3 @@ reference-links: false
 reference-location: document
 
 fail-if-warnings: true
-
-filters:
-- filters/figure.lua
-- filters/wc.lua
-- filters/date.lua
-- filters/post-list.lua
-- filters/url.lua
