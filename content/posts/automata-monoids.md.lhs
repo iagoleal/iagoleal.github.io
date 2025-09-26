@@ -62,7 +62,7 @@ while monoids turn chunks into states comes from @bojanczyk_algorithms_2012.
 ```
 
 For parallelism to work, we need an equivalent machine
-that let's independently calculate a state for arbitrary string chunks
+that can independently calculate a state for arbitrary string chunks
 and then piece them together into a coherent global state.
 
 ```tikz {tikzlibrary="fit,chains,bending,shapes.misc"}
@@ -149,7 +149,7 @@ being recognized by a monoid.
 A monoid $M$ recognizes a language $L$ over alphabet $\A$
 if there is a monoid homomorphism $\phi \colon A^\star \to M$
 and a subset $F \subset M$ such that
-$$ w \in L \iff \phi(w) \in P.$$
+$$ w \in L \iff \phi(w) \in F.$$
 :::
 
 Let's unpack this definition a bit before proceeding to why it is useful.
@@ -160,7 +160,7 @@ The homomorphism requirement means that it does not matter how we form these wor
 only the characters constituting it.
 In fact, since $\A^\star$ is the free monoid over $\A$,
 there is a unique mapping $g \colon \A \to M$
-such that $\phi = \mathrm{fmap}\ g$.
+such that $\phi = \mathrm{foldMap}\ g$.
 We can view this $g$ as the monoid generators.
 
 Now its time for some code!
@@ -273,7 +273,7 @@ Consider the language of all words ending with at least two letters `'e'`.
 It contains `"free"` and `"lychee"` but not `"monoid"` or `"cheese"`, for example.
 What is a finite monoid recognizing it?
 
-First of all, we need to differentiate between the character `'s'` and everything else.
+First of all, we need to differentiate between the character `'e'` and everything else.
 So let's start with the free monoid over two symbols: $b$ for the character of choice
 and $a$ for everything else.
 This monoid is subject to some equations.
@@ -309,7 +309,7 @@ To recognize the language, we use this monoid while accepting only `BB`.
 >   check BB = True
 >   check _  = False
 
-You can test it on GHCi for the two `'s'` case.
+You can test it on GHCi for the double `'e'` ending.
 
 ```ghci
 ghci> fmap (recognize (exTwoLast 'e')) ["free", "lychee", "monoid", "cheese"]
@@ -374,7 +374,7 @@ We view the transition as a transformation `a -> (s -> s)`,
 using that `s -> s` has a natural monoid structure from composition.
 Thankfully all this lifting already comes bundled with Haskell in the `Endo` type.
 Finally, to check if an endomorphism is accepted,
-we test whether it takes the initial states to a final one.
+we test whether it takes the initial state to a final one.
 
 > dfaToMon :: DFA s a -> MonoidMachine (Endo s) a
 > dfaToMon (DFA q0 next final) = MonoidMachine (Endo . next) check
@@ -454,7 +454,7 @@ Or in Haskell:
 > adjacency f = Mat $ A.accumArray (||) False bounds active
 >  where
 >   active = [((s, f s), True) | s <- elems]
->   bounds = ((minBound, minBound), (maxBound, maxBound))
+>   bounds = (minBound, maxBound)
 
 Magically (or not, depending on where you come from),
 function composition becomes matrix multiplication.
@@ -465,7 +465,7 @@ where sum becomes disjunction and product becomes conjunction.
 >  (Mat f) <> (Mat g) = Mat $ A.genArray bounds combine
 >   where
 >    combine (x, y) = or [f A.! (x, k) && g A.! (k, y) | k <- elems]
->    bounds = ((minBound, minBound), (maxBound, maxBound))
+>    bounds = (minBound, maxBound)
 >
 > instance Finite s => Monoid (Mat s Bool) where
 >  mempty = adjacency id
@@ -483,7 +483,7 @@ being run over large strings, thus many multiplications of small matrices.
 >    gen a = adjacency (transition a)
 >    check (Mat m) = any (\s -> m A.! (s, q0)) (filter final elems)
 
-[^matrix-version]: A more familiar definition may be as $\braket{f | A | i}$ were $f$ and $i$ are the indicator vectors of final and initial states.
+[^matrix-version]: A more familiar definition may be as $\braket{f | A | i}$ where $f$ and $i$ are the indicator vectors of final and initial states.
 
 I have chosen to use `Data.Array` in this post for simplicity.
 But bear in mind that to achieve optimal results,
@@ -509,7 +509,7 @@ Something like this should do:
 > adjacencyNFA f = Mat $ A.accumArray (||) False bounds active
 >  where
 >   active = [((s, s'), True) | s <- elems, s' <- f s] -- This line changes!
->   bounds = ((minBound, minBound), (maxBound, maxBound))
+>   bounds = (minBound, maxBound)
 
 In fact,
 all the automata from the [A Fistful of Automata](/posts/automata-monads/) post
@@ -525,5 +525,6 @@ Acknowledgements
 ================
 
 Thanks to Gustavo Freire for not just listening while I babbled this post's first sketch
-during a Friday night Uber ride but also putting my handwaves in check.
+during a Friday night Uber ride, but also putting my handwaves in check,
+and for pointing out a lot of typos and improvements once it was finally written.
 Also thanks to [Yossi Frenkel](https://abstractnonsense.xyz/) for recently motivating some automata applications back in my mind.
