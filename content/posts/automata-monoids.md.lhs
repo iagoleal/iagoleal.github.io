@@ -3,6 +3,8 @@ title: Monoids Let You Run Automata in Parallel
 keywords: [haskell, automata]
 date: 2025-09-24
 suppress-bibliography: true
+thumbnail: "monoid-machine.png"
+theme: haskell
 description:
   Finite automata are awesome but inherently sequential.
   On the other hand, finite monoid machines solve the same problems
@@ -35,7 +37,7 @@ not very amenable to today's age of multiple cores and GPUs.[^figure]
 [^figure]: The idea of DFAs turning prefixes into states
 while monoids turn chunks into states comes from @bojanczyk_algorithms_2012.
 
-```tikz {tikzlibrary="fit,chains,bending,shapes.misc"}
+```tikz {tikzlibrary="fit,chains,bending,shapes.misc" id="state-machine"}
 { [start chain=ctrl going right, node distance=5mm]
 
   { [minimum size=0.5cm,
@@ -65,7 +67,7 @@ For parallelism to work, we need an equivalent machine
 that can independently calculate a state for arbitrary string chunks
 and then piece them together into a coherent global state.
 
-```tikz {tikzlibrary="fit,chains,bending,shapes.misc"}
+```tikz {tikzlibrary="fit,chains,bending,shapes.misc" id="monoid-machine" png=true}
 { [ sblock/.style = { fill=orange!20, thick, draw=orange!30}
   , tmcell/.style={fill,draw=black, rounded corners=1.618, minimum size = 0.5cm},
   ]

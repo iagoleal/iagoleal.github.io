@@ -2,6 +2,8 @@
 title: A Uniform Probability over Probabilities
 keywords: [math, probability, simplex]
 date: 2024-05-21
+theme: math
+thumbnail: "stochastic-invariance.png"
 description:
   You may be used to sampling from probabilities, but what about sampling a random finite probability?
   As it turns out, this is a procedure rich in geometry and symmetries.
@@ -438,7 +440,7 @@ By linearity, the coordinates of $M x$ are
 
 $$ Mx = M(r\sigma) = r \underbrace{(M \sigma)}_{\in \Delta^N}.$$
 
-```tikz {tikzlibrary="decorations.pathreplacing"}
+```tikz {tikzlibrary="decorations.pathreplacing", id="stochastic-invariance" png=true}
 \begin{scope} [scale = 2, xscale = 1.5, rotate around y=45]
   \coordinate (O)  at (0, 0, 0);
   \coordinate (e1) at (1, 0, 0);

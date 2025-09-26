@@ -2,6 +2,8 @@
 title: Picturing Finite Relations as Graphs
 keywords: [math, theory]
 date: 2023-08-24
+theme: math
+thumbnail: "poset.png"
 description:
   A mostly visual post illustrating the graphs for many common kinds of relations.
 ---
@@ -289,7 +291,7 @@ By disallowing cycles in a preorder, what get what is called a partial order.
 These graphs flow in a certain direction,
 since a path cannot pass through the same vertices twice.
 
-```tikz
+```tikz {id="poset" png=true}
 \node [fill = cyan!20         ] (A) []                       {};
 \node [fill = orange!50       ] (B) [above right =     of A] {};
 \node [fill = red!30!blue!50  ] (C) [below right =     of A] {};

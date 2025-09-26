@@ -2,6 +2,8 @@
 title: Memoization via Representables
 keywords: [haskell, functional-programming]
 date: 2022-09-18
+theme: haskell
+thumbnail: "function-sequence.png"
 description: >
   By delving into the realm of abstraction,
   we can uncover practical applications.
@@ -39,7 +41,7 @@ to then emerge with a concept with clear and practical applications!
 Sequences are functions that do not forget
 ==========================================
 
-```dot
+```dot {id="function-sequence" png=true}
 digraph "Sequences are functions" {
   fontname = "monospace";
   rankdir  = TB;

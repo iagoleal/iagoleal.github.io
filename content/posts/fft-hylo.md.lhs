@@ -2,6 +2,7 @@
 title: FFT as a Hylomorphism
 keywords: [fft, haskell, recursion-schemes, functional-programming]
 date: 2020-09-20
+theme: haskell
 description:
   All divide-and-conquer algorithms can be separated
   into a construction part and a merge part.

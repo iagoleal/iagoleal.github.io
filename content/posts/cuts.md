@@ -1,8 +1,10 @@
 ---
 title: Approximation by a Thousand Cuts
 subtitle: An interactive guide to polyhedral representations
-keywords: [math]
+keywords: [math, cutting-planes, optimization]
 date: 2023-09-22
+theme: [math, interactive]
+thumbnail: "function-tight-cuts.png"
 description:
   An exploration of cutting-plane approximations,
   a technique for representing functions via polyhedra
@@ -177,7 +179,7 @@ In this case, it is usual to denote the cut as centered around $x_0$:
 $$ f(x) \ge f(x_0) + \inner<\lambda, x - x_0>. $$
 
 
-```tikz {name="function-tight-cuts"}
+```tikz {id="function-tight-cuts", png=true}
 { [domain=-1.8:2, xscale=1.8]
   \draw[very thin, opacity=0.2, color=gray, path fading=west] (-2.9,-1.9) grid (2.9,1.9);
 

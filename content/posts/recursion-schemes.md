@@ -3,6 +3,8 @@ title: Recursion Schemes for Mathematicians
 subtitle: An introduction to induction in programming
 keywords: [category-theory, recursion-schemes, functional-programming]
 date: 2020-09-10
+theme: math
+thumbnail: "hylo-diagram.png"
 description: >
   Most introductions to recursion schemes are aimed at functional programmers.
   But what if you are a functional entusiast mathematician?
@@ -1402,7 +1404,7 @@ we can assume that $\in$ and $\out$ are inverses to each other.
 By pasting together the diagrams defining the anamorphism and the catamorphism
 we get
 
-``` {.tikzcd usepackage="amsmath"}
+``` {.tikzcd usepackage="amsmath" id="hylo-diagram" png=true}
 F X \ar[r, "F(\operatorname{ana} g)"] & F S \ar[d, bend right=15, "\operatorname{in}"']  \ar[r, "F(\operatorname{cata} f)"] & F Y  \ar[d, "f"]\\
 X   \ar[u, "g"] \ar[r, dashed, "\operatorname{ana} g"'] & S \ar[u, bend right=15, "\operatorname{out}"']  \ar[r, dashed, "\operatorname{cata} f"'] & Y
 ```

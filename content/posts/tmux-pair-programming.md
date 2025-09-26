@@ -2,6 +2,7 @@
 title: Pair Programming in the Pandemic
 keywords: [linux, tmux, ssh]
 date: 2021-08-03
+theme: workflow
 description:
   Ever had to program together with someone via ssh?
   It can be confusing...

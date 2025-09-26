@@ -3,6 +3,7 @@ title: Let's Program a Calculus Student II
 subtitle: Turning Symbolic Differentiation Automatic
 keywords: [haskell, computer-algebra, functional-programming, automatic-differentiation]
 date: 2022-04-25
+theme: haskell
 description:
   What is the difference between automatic and symbolic differentiation?
   With enough polymorphism, it is possible to use one to calculate the other.

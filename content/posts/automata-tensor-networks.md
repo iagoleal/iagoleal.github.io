@@ -1,8 +1,10 @@
 ---
 title: Finite Automata as Quantum Tensor Networks
-keywords: [automata, quantum computing]
+keywords: [automata, quantum computing, tensor networks]
 date: 2025-05-14
 suppress-bibliography: true
+thumbnail: "mps-word.png"
+theme: math
 description:
   Finite automata accept a description using linear algebra
   that we can translate into a system of tensors or quantum circuits.
@@ -437,7 +439,7 @@ gives rise to our previous matrices: $T^\alpha = T \ket{\alpha}$,
 and we get a linear dependence on the input string.
 Substitute this into our previous tensor network.
 
-```tikz
+```tikz {id="mps-word" png=true}
 { [ tn chain, ]
 
   \node [covec, on chain] {$\Accepting$};

@@ -2,6 +2,7 @@
 title: Cuts for Mixed Integer Programs
 keywords: [math]
 date: 2023-12-15
+theme: [math, interactive]
 description:
   Approximations by cuts are common in convex optimization.
   How to leverage them in the presence of integer variables?

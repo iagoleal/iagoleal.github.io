@@ -2,6 +2,8 @@
 title: Cuts for Stochastic Programming
 keywords: [math]
 date: 2024-04-25
+theme: [math, interactive]
+thumbnail: "figure-tree-singlecut.png"
 description:
   Cutting planes are a powerful tool for solving stochastic programs.
   We focus on the possible ways to represent the cuts during algorithms
@@ -548,7 +550,7 @@ The nodes are optimization problems and the edges represent their communication.
 We represent $\Qfrak$ by a small diamond,
 which is the only thing the first stage's node sees of the future.
 
-```tikz {id="figure-tree-singlecut"}
+```tikz {id="figure-tree-singlecut", png=true}
 % First stage
 { [svgclass=stage1]
   \node[opt]   (t1) {};

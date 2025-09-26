@@ -1,7 +1,8 @@
 ---
 title: Shower Thoughts about Averages
-keywords: [math, statistics]
+keywords: [math, statistics, probability]
 date: 2021-12-29
+theme: math
 description:
   The standard definition of average can be rather opaque.
   Nevertheless, looking at it from the perspective of minimizing a square error,

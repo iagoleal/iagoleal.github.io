@@ -2,6 +2,7 @@
 title: The Lazy Way to Solve Differential Equations
 keywords: [haskell, functional-programming]
 date: 2022-07-17
+theme: haskell
 description:
  Looking at Taylor series as streams of real numbers,
  solving differential equations becomes as easy as writing them.

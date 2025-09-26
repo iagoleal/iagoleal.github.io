@@ -2,6 +2,7 @@
 title: Playing with Value Iteration in Haskell
 keywords: [math, dynamic-programming, Haskell]
 date: 2024-02-29
+theme: haskell
 description:
   From monads to stochastic control and from fixed points to value iteration.
   An exploration about using abstract concepts to construct concretes algorithms.

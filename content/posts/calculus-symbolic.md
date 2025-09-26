@@ -2,6 +2,7 @@
 title: Let's Program a Calculus Student
 keywords: [haskell, computer-algebra, functional-programming]
 date: 2022-04-05
+theme: haskell
 description:
   Writing a symbolic calculator for derivatives may sound like a hard task.
   It is feasible, however, in a few dozen lines of Haskell.

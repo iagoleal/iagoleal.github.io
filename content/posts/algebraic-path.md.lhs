@@ -3,6 +3,8 @@ title: Algebraic Path Finding
 keywords: [math, dynamic-programming, haskell]
 date: 2023-03-21
 suppress-bibliography: true
+thumbnail: "weighted-graph.png"
+theme: haskell
 description:
   By doing dynamic programming in an abstract Semiring,
   we discover that many classical algorithms
@@ -53,7 +55,7 @@ is also an alternative view on finding shortest paths.
 Classical Shortest Paths
 ========================
 
-```tikz
+```tikz {id="weighted-graph" png=true}
 { [every node/.style = {circle, draw=black, thin, outer sep=1mm, minimum size=2mm}]
   \node [fill = cyan!20         ] (A) []                       {};
   \node [fill = orange!50       ] (B) [above right =     of A] {};

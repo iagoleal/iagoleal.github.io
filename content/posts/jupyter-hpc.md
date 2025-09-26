@@ -2,6 +2,7 @@
 title: Running Jupyter Notebooks from a Supercomputer
 keywords: [linux, jupyter, ssh]
 date: 2025-04-06
+theme: workflow
 description:
   A simple ssh workflow for interacting
   with Jupyter notebooks from your browser

@@ -2,6 +2,8 @@
 title: A Tale of Dynamic Programming
 keywords: [dynamic-programming, markov-decision-processes, reinforcement-learning]
 date: 2022-06-25
+theme: math
+thumbnail: "backward-induction.png"
 description:
   From parsing text to controling robots, dynamic programming is everywhere.
   Let's explore its workings, which problems it solves, and its algorithms.
