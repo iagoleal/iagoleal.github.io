@@ -11,7 +11,7 @@
 
 Note: Tex code blocks use any environment previously declared as raw tex blocks.
 --]]
-local path   = require "pandoc.path"
+local path = require "pandoc.path"
 
 local fmt = string.format
 
@@ -160,22 +160,42 @@ illustrators.tikz = {
 -- Actual figure making
 ------------------------------------------
 
-local function make_figure(svg_maker, content, block)
+local function make_png_thumbnail(fpath)
+  os.execute(fmt([[
+    inkscape %s \
+      --export-type=png \
+      --export-background=white \
+      --export-width 1200 \
+      --export-height 630
+  ]], fpath))
+end
+
+local function make_figure(illustrator, block, content)
   -- Assumes all outputs are of the form 'build/path/to/page/index.html'
   local page_path = path.make_relative(path.directory(PANDOC_STATE.output_file), "build")
-  local hashed    = pandoc.sha1(content) .. ".svg"
-  local outname   = block.identifier ~= "" and (block.identifier .. ".svg") or hashed
-  local cachefile = path.join {"cache", page_path, hashed}
-  local buildfile = path.join {"build", page_path, outname}
+  local hashed    = pandoc.sha1(content)
+  local outname   = block.identifier ~= "" and block.identifier or hashed
+  local cachefile = path.join {"cache", page_path, hashed} .. ".svg"
+  local buildfile = path.join {"build", page_path, outname} .. ".svg"
 
+  print(fmt("Drawing figure: %s\n\thash: %s\n\tIllustrator: %s", buildfile, hashed, illustrator.ext))
   if not file_exists(cachefile) then
+    print("\tNo cache found")
     mkparent(cachefile)
-    svg_maker(cachefile, content)
+    illustrator.convert(cachefile, content)
   end
-
   copy(cachefile, buildfile)
 
-  return format_tag(outname, block)
+  if block.attributes["png"] then
+    local cachepng = path.join {"cache", page_path, hashed} .. ".png"
+    local buildpng = path.join {"build", page_path, outname} .. ".png"
+
+    print(fmt("\tpng export: %s", buildpng))
+    make_png_thumbnail(cachefile)
+    copy(cachepng, buildpng)
+  end
+
+  return format_tag(outname .. ".svg", block)
 end
 
 return {
@@ -196,7 +216,7 @@ return {
       for _, illustrator in pairs(illustrators) do
         if illustrator.match(block.classes[1]) then
           local text = illustrator.format(block)
-          return make_figure(illustrator.convert, text, block)
+          return make_figure(illustrator, block, text)
         end
       end
     end,

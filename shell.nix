@@ -9,7 +9,7 @@ let
   }) {};
   tex = (pkgs.texlive.combine {
     inherit (pkgs.texlive) scheme-basic
-      dvisvgm
+      dvisvgm dvipng
       luatex luatex85 standalone
       lm amsmath amsfonts xcolor etoolbox
       pgf tikz-cd;
@@ -29,6 +29,7 @@ pkgs.mkShell {
       scour    # 0.38.2
       tex
       ttfautohint
+      inkscape
     ];
 
   LOCALE_ARCHIVE = /usr/lib/locale/locale-archive;
