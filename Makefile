@@ -39,7 +39,8 @@ define generate_page
   $(PANDOC) --defaults=pandoc.yaml \
     --lua-filter=filters/post-list.lua \
     --lua-filter=filters/url.lua \
-    -f $(3) -o "$(2)" "$(1)"
+    -f $(3) -o "$(2)" "$(1)" \
+    $(4)
 endef
 
 define generate_post
@@ -51,7 +52,8 @@ define generate_post
             --lua-filter=filters/wc.lua   \
             --lua-filter=filters/date.lua \
             --lua-filter=filters/url.lua  \
-    -f $(3) -o "$(2)" "$(1)"
+    -f $(3) -o "$(2)" "$(1)" \
+    $(4)
 endef
 
 ############
@@ -105,22 +107,16 @@ $(build)/posts/%/index.html: $(content)/posts/%.md.lhs $(DEPENDENCIES)
 pages: $(pages-result)
 
 $(build)/index.html: $(content)/index.html $(DEPENDENCIES) $(posts-src)
-	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
-	$(PANDOC) --defaults=pandoc.yaml \
-	   -f html -o "$@" "$<" \
-	   -M title:'Home'
+	$(call generate_page,$<,$@,html,-M title:'Home')
 
 $(build)/404.html: $(content)/404.html   $(DEPENDENCIES)
-	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
-	$(PANDOC) --defaults=pandoc.yaml \
-	   -f html -o "$@" "$<" \
-	   -M title:'Are you lost?'
+	$(call generate_page,$<,$@,html,-M title:'Are you lost?')
 
 $(build)/%/index.html: $(content)/%.md   $(DEPENDENCIES)
-	$(call generate_page,"$<","$@",markdown,'')
+	$(call generate_page,$<,$@,markdown)
 
 $(build)/%/index.html: $(content)/%.html $(DEPENDENCIES)
-	$(call generate_page,"$<","$@",html,'')
+	$(call generate_page,$<,$@,html)
 
 ###################
 # Other processes #
