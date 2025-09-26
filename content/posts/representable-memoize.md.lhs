@@ -66,16 +66,12 @@ digraph "Sequences are functions" {
     rank = same;
     style = invis;
 
-    ldots [fontsize=20 color = "#00000000" fillcolor= "#00000000" label = ". . ."];
-
-    subgraph cluster_ldots {
-      ldots;
-    }
-
     0 [label = "f 0"];
     1 [label = "f 1"];
     2 [label = "f 2"];
     3 [label = "f 3"];
+
+    ldots [fontsize=20 color = "#00000000" fillcolor= "#00000000" label = ". . ."];
 
     0 -> 1 -> 2 -> 3 -> ldots;
   }

@@ -277,7 +277,7 @@ The idea on Dan Piponi's post is to write a Quantum Monad
 as a Distribution Monad where the probabilities (or amplitudes) are complex numbers.
 
 > -- Quantum Amplitudes over C
-> -- The coefficients are assumed to lie in a unity circle, i.e., C |c_i|^2 = 1.
+> -- The coefficients are assumed to lie in a unit circle, i.e., Σ |c_i|^2 = 1.
 > type Quantum = Dist (Complex Double)
 
 Among the main characteristics of a Quantum system is [wavefunction collapse](http://en.wikipedia.org/wiki/Wavefunction_collapse).
