@@ -527,6 +527,6 @@ Acknowledgements
 ================
 
 Thanks to Gustavo Freire for not just listening while I babbled this post's first sketch
-during a Friday night Uber ride, but also putting my handwaves in check,
-and for pointing out a lot of typos and improvements once it was finally written.
-Also thanks to [Yossi Frenkel](https://abstractnonsense.xyz/) for recently motivating some automata applications back in my mind.
+during a Friday night Uber ride, but also putting my handwaves in check.
+Also thank you to Gustavo and Bastien Louërat for pointing out improvements and typos on this post's first version.
+And thanks to [Yossi Frenkel](https://abstractnonsense.xyz/) for recently motivating some automata applications back in my mind.
