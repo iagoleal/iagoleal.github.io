@@ -5,7 +5,7 @@
 $if(description)$
   <description>$description$</description>
 $endif$
-  <pubDate>$date$</pubDate>
+  <pubDate>$date-rfc822$</pubDate>
   <dc:creator>$author-meta$</dc:creator>
   <category>Blog</category>
 </item>

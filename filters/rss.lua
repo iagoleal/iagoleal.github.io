@@ -34,10 +34,11 @@ function makeitem(post)
   local date = Date(meta.date)
 
   local info = {
-    title = pandoc.utils.stringify(meta.title),
-    date  = date:rfc822(),
-    description = pandoc.utils.stringify(meta.description),
-    url  = canonical_url(post),
+    title           = pandoc.utils.stringify(meta.title),
+    date            = date,
+    ["date-rfc822"] = date:rfc822(),
+    description     = pandoc.utils.stringify(meta.description),
+    url             = canonical_url(post),
     ["author-meta"] = template_variable("author-meta")
   }
 
@@ -55,6 +56,7 @@ function Meta(m)
   table.sort(metadata, function(a, b) return a.date > b.date end)
 
   m.items = map(metadata, function(info)
+    info.date = info.date:rfc822()
     local content = pandoc.template.apply(template_item, info)
     return tostring(content)
   end)

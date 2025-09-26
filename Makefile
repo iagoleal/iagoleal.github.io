@@ -124,6 +124,13 @@ $(build)/%/index.html: $(content)/%.html $(DEPENDENCIES)
 
 feed: $(build)/rss.xml
 
+$(build)/rss.xml: $(DEPENDENCIES)
+	$(shell [ ! -d $(@D) ] && mkdir -p $(@D))
+	$(PANDOC) --template=templates/rss.xml --lua-filter=filters/rss.lua \
+	  --to plain --standalone \
+	  -V site-url="https://iagoleal.com" -V author-meta="Iago Leal de Freitas" \
+	  -f markdown -o "$@" /dev/null
+
 stylesheets: $(css-result)
 
 $(build)/css/%: css/%
