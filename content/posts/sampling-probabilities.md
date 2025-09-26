@@ -440,7 +440,7 @@ By linearity, the coordinates of $M x$ are
 
 $$ Mx = M(r\sigma) = r \underbrace{(M \sigma)}_{\in \Delta^N}.$$
 
-```tikz {tikzlibrary="decorations.pathreplacing", id="stochastic-invariance" png=true}
+```tikz {tikzlibrary="decorations.pathreplacing" id="stochastic-invariance" png=true}
 \begin{scope} [scale = 2, xscale = 1.5, rotate around y=45]
   \coordinate (O)  at (0, 0, 0);
   \coordinate (e1) at (1, 0, 0);
