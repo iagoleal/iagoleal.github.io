@@ -3,7 +3,7 @@ title: A Tale of Dynamic Programming
 keywords: [dynamic-programming, markov-decision-processes, reinforcement-learning]
 date: 2022-06-25
 theme: math
-thumbnail: "backward-induction.png"
+thumbnail: "finite-horizon.png"
 description:
   From parsing text to controling robots, dynamic programming is everywhere.
   Let's explore its workings, which problems it solves, and its algorithms.
@@ -96,8 +96,7 @@ This description may seem overly complicated on text,
 but fortunately the nice folks in the Comp Sci department
 already invented diagrams that show these transitions nicely.
 
-<object data="state-machine.svg" type="image/svg+xml">
-</object>
+![](state-machine.svg)
 
 Our modeling above is an instance of something called
 a _state machine_ or _automata_ if you're into Greek words.
@@ -997,8 +996,7 @@ Essentially, we work for $N$ stages and then reach $\blacksquare$,
 where we can just relax and do nothing for the rest of eternity.
 
 
-<object data="finite-horizon.svg" type="image/svg+xml" width="100%">
-</object>
+![](finite-horizon.svg){png=true}
 
 
 If you prefer equations to figures,
@@ -1029,14 +1027,7 @@ We repeat this procedure until we reach the first stage.
 This calculates an optimal policy by induction,
 but moving "backwards" in time.
 
-```{=html}
-<object data="backward-induction.svg" type="image/svg+xml" width="100%">
-  <img src="backward-induction.svg"
-       alt=""
-       title="Backward induction algorithm"
-       width="100%" />
-</object>
-```
+![](backward-induction.svg "Backward induction algorithm")
 
 In Julia code, the algorithm looks like this:
 
@@ -1285,9 +1276,7 @@ This is illustrated in the diagram below.[^ref-diagram-mdp]
 
 [^ref-diagram-mdp]: Loosely based on the diagram found in @{rl2018}.
 
-<object data="mdp.svg" type="image/svg+xml">
-  <img src="mdp.svg" alt="" title="Markov Decision Processes" />
-</object>
+![](mdp.svg "Markov Decision Processes")
 
 Allowing stochasticity opens the way for modeling a lot more cool situations.
 For example, robots that play video games!

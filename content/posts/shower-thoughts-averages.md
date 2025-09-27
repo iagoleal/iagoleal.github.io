@@ -3,6 +3,7 @@ title: Shower Thoughts about Averages
 keywords: [math, statistics, probability]
 date: 2021-12-29
 theme: math
+thumbnail: "variance.png"
 description:
   The standard definition of average can be rather opaque.
   Nevertheless, looking at it from the perspective of minimizing a square error,
@@ -133,10 +134,7 @@ $$
 
 In two dimensions, we can also visualize this as a figure:
 
-<object type="image/svg+xml"
-        data="basis-decomposition.svg"
-        width="100%">
-</object>
+![](basis-decomposition.svg)
 
 Because we are interested in a geometrical definition for the mean,
 let's consider a special example:
@@ -155,10 +153,7 @@ $$
 
 Or, as a figure:
 
-<object type="image/svg+xml"
-        data="constants.svg"
-        width="100%">
-</object>
+![](constants.svg)
 
 From this we see that all constants lie on the same line (one-dimensional space),
 given by the diagonal of all indicators.
@@ -298,10 +293,7 @@ the result of the _orthogonal projection_ of $X$ on $\sum_j \Id_j$.
 (which is a unitary vector)
 What we really want to calculate can be summarized as a picture:
 
-<object type="image/svg+xml"
-        data="projection.svg"
-        width="100%">
-</object>
+![](projection.svg)
 
 In order to represent this as a closed formula,
 we must remember that squaring a non-negative function does not change
@@ -367,10 +359,7 @@ Although in probability textbooks it appears as the concise but opaque formula
 $\Std{X} = \sqrt{\E{(X - \E{X})^2}}$, here it naturally appears as
 the size of the least squares' error from approximating $X$ by a constant.
 
-<object type="image/svg+xml"
-        data="variance.svg"
-        width="100%">
-</object>
+![](variance.svg){png=true}
 
 In real world probability, one of the most widely used kinds of random variables
 are certainly the _Gaussian Random Variables_.

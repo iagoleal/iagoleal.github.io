@@ -49,8 +49,7 @@ end
 local template_tag = [[
 <object data="%s" type="image/svg+xml">
   Browser lacks SVG support.
-</object>
-]]
+</object>]]
 
 local function format_tag(fname, block)
   return pandoc.Figure(
@@ -178,9 +177,9 @@ local function make_figure(illustrator, block, content)
   local cachefile = path.join {"cache", page_path, hashed} .. ".svg"
   local buildfile = path.join {"build", page_path, outname} .. ".svg"
 
-  print(fmt("Drawing figure: %s\n\thash: %s\n\tIllustrator: %s", buildfile, hashed, illustrator.ext))
+  pandoc.log.info(fmt("Drawing figure: %s\n\thash: %s\n\tIllustrator: %s", buildfile, hashed, illustrator.ext))
   if not file_exists(cachefile) then
-    print("\tNo cache found")
+    pandoc.log.info("No cache found")
     mkparent(cachefile)
     illustrator.convert(cachefile, content)
   end
@@ -190,7 +189,7 @@ local function make_figure(illustrator, block, content)
     local cachepng = path.join {"cache", page_path, hashed} .. ".png"
     local buildpng = path.join {"build", page_path, outname} .. ".png"
 
-    print(fmt("\tpng export: %s", buildpng))
+    pandoc.log.info(fmt("png export: %s", buildpng))
     make_png_thumbnail(cachefile)
     copy(cachepng, buildpng)
   end
@@ -207,6 +206,18 @@ return {
       for _, illustrator in pairs(illustrators) do
         if illustrator.snippet then
           illustrator.snippet(block)
+        end
+      end
+    end,
+
+    Block = function(block)
+      -- Turn blocks containing only a svg into a figure with a raw <object> tag
+      if block.content and #block.content == 1 and block.content[1].tag == "Image" then
+        local img = block.content[1]
+        local _, ext = path.split_extension(img.src)
+
+        if ext == ".svg" then
+          return format_tag(img.src, img)
         end
       end
     end,
