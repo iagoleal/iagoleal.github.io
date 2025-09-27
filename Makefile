@@ -49,7 +49,6 @@ define generate_post
             --shift-heading-level-by=1     \
             -M post                        \
             --lua-filter=filters/figure.lua \
-            --lua-filter=filters/wc.lua   \
             --lua-filter=filters/date.lua \
             --lua-filter=filters/url.lua  \
     -f $(3) -o "$(2)" "$(1)" \
