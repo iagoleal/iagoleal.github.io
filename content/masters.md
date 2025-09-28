@@ -1,11 +1,8 @@
 ---
 title: Convexification by Averages
+subtitle: Master's thesis
+post: true
 ---
-# Convexification by Averages
-
-<header class="subheading">
-<p>Master's thesis</p>
-</header>
 
 <img src="/img/cvxavg-thumbnail.svg"
      alt="Average of non-convex functions"

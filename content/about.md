@@ -1,8 +1,7 @@
 ---
-title: About
+title: About me
+post: true
 ---
-
-# About me
 
 I am Iago Leal de Freitas,
 a mathematician and software developer.
