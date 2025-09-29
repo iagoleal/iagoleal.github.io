@@ -3,6 +3,7 @@ title: Cuts for Stochastic Programming
 keywords: [math]
 date: 2024-04-25
 theme: [math, interactive]
+requisites: [cuts]
 thumbnail: "figure-tree-singlecut.png"
 description:
   Cutting planes are a powerful tool for solving stochastic programs.
