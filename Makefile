@@ -48,9 +48,11 @@ define generate_post
   $(PANDOC) --defaults=pandoc.yaml         \
             --shift-heading-level-by=1     \
             -M post                        \
-            --lua-filter=filters/figure.lua \
             --lua-filter=filters/date.lua \
             --lua-filter=filters/url.lua  \
+            --lua-filter=filters/bib.lua  \
+            --lua-filter=filters/figure.lua \
+            --citeproc \
     -f $(3) -o "$(2)" "$(1)" \
     $(4)
 endef

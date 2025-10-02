@@ -1,27 +1,9 @@
 local Date = require "filters.lib.date"
 local fs   = require "filters.lib.fs"
+local core = require "filters.lib.core"
+local map, take = core.map, core.take
 
 local fmt = string.format
-
-local function map(t, f)
-  out = {}
-  for k, v in pairs(t) do
-    out[k] = f(v)
-  end
-
-  return out
-end
-
-local function take(t, n)
-  out = {}
-
-  for i=1,n do
-    out[i] = t[i]
-  end
-
-  return out
-
-end
 
 local function getfilename(path)
   local fname = pandoc.path.split_extension(pandoc.path.split_extension(pandoc.path.filename(path)))

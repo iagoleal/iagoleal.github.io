@@ -1121,3 +1121,24 @@ Now I bid you farewell and hope you have enjoyed
 this trip over automata and numbers.
 
 See ya next time!
+
+~~~{=bibtex}
+@article{alexeev_2004,
+  author     = {Alexeev, Boris},
+  title      = {Minimal DFA for testing divisibility},
+  year       = {2004},
+  issue_date = {September 2004},
+  publisher  = {Academic Press, Inc.},
+  address    = {USA},
+  volume     = {69},
+  number     = {2},
+  issn       = {0022-0000},
+  url        = {https://doi.org/10.1016/j.jcss.2004.02.001},
+  doi        = {10.1016/j.jcss.2004.02.001},
+  abstract   = {We present and prove a theorem answering the question "how many states does a minimal deterministic finite automaton (DFA) recognizing the set of base-<i>b</i> numbers divisible by <i>k</i> have?"},
+  journal    = {J. Comput. Syst. Sci.},
+  month      = sep,
+  pages      = {235–243},
+  numpages   = {9}
+}
+~~~

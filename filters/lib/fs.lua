@@ -61,9 +61,6 @@ function readfile(fname, mode)
   return content
 end
 
-
-
-
 function M.read_metadata(fname)
   -- Read the entire file content
   local content = readfile(fname, "*a")

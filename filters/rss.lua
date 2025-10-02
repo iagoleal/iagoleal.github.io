@@ -1,14 +1,6 @@
 local Date = require "filters.lib.date"
 local fs   = require "filters.lib.fs"
-
-local function map(t, f)
-  out = {}
-  for k, v in pairs(t) do
-    out[k] = f(v)
-  end
-
-  return out
-end
+local core = require "filters.lib.core"
 
 function template_variable(k)
   return tostring(PANDOC_WRITER_OPTIONS.variables[k])
@@ -45,7 +37,7 @@ function Meta(m)
   local postdir = "content/posts"
   local posts   = pandoc.system.list_directory(postdir)
 
-  m.posts = map(posts, function(post)
+  m.posts = core.map(posts, function(post)
     return makeitem(pandoc.path.join{postdir, post})
   end)
 
