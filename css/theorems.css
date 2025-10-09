@@ -33,31 +33,27 @@
   border-left-color: #00c395;
 }
 
-.Lemma {
-  border-left-color: #d78c00;
-}
-.Definition {
-  border-left-color: #26cd00;
-}
-
-.Aside {
-  border-left-color: var(--color-lightning);
+.Theorem::before {
+  content: "Theorem.";
 }
 
 .Theorem[data-title]::before {
   content: 'Theorem (' attr(data-title) ').';
 }
 
-.Theorem::before {
-  content: "Theorem.";
+.Lemma {
+  border-left-color: #d78c00;
+}
+.Lemma::before {
+  content: "Lemma.";
 }
 
 .Lemma[data-title]::before {
   content: 'Lemma (' attr(data-title) ').';
 }
 
-.Lemma::before {
-  content: "Lemma.";
+.Definition {
+  border-left-color: #26cd00;
 }
 
 .Definition[data-title]::before {
@@ -80,8 +76,12 @@
   font-style: italic;
 }
 
-/* A proof only truly ends with QED square */
+/* A proof only truly ends with a QED square */
 .Proof > p:last-child:after {
   content: "\25FB";
   float:   right;
+}
+
+.Aside {
+  border-left-color: var(--color-lightning);
 }
