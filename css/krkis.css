@@ -271,7 +271,7 @@ td, th {
 /* ~*~ Header ~*~ */
 
 #top-bar {
-  width: min(var(--article-width), calc(100% - 32px));
+  width: calc(var(--article-width));
   margin: 16px auto 3rem;
 }
 
@@ -341,7 +341,7 @@ body {
 */
 
 article {
-  width: min(var(--article-width), calc(100% - 32px));
+  width: calc(var(--article-width));
   margin: auto;
   margin-bottom: 40px;
 }
@@ -369,40 +369,6 @@ h1.title {
   text-align: center;
   font-size:  1.3rem;
   color:      var(--color-faded);
-}
-
-#share-this-page {
-  max-width:  var(--article-width);
-  text-align: right;
-}
-
-.share-link {
-  display: inline-block;
-  margin:  1rem 1rem 0 1rem;
-}
-
-.hr-text {
-  display:        flex;
-  align-items:    center;
-  text-align:     center;
-  color:          var(--color-faded);
-  font-size:      1rem;
-  font-variant:   small-caps;
-  letter-spacing: 0.05rem;
-}
-
-.hr-text::before, .hr-text::after {
-  content:       '';
-  flex:          1;
-  border-bottom: 1px solid var(--color-faded);
-}
-
-.hr-text::before {
-  margin-right: .25rem;
-}
-
-.hr-text::after {
-  margin-left: .25rem;
 }
 
 /*

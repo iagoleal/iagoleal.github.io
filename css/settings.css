@@ -1,4 +1,3 @@
-
 /*
   ~*~ Color palette ~*~
 */
@@ -14,7 +13,7 @@
   --color-opposite:   hsl(39 100% 50%);
 
   --base-padding:     16px;
-  --article-width:    40rem;
+  --article-width:    min(40rem, 100% - 32px); /* ~80 chars or full page with 16px margin */
 }
 
 /*
