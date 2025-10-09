@@ -190,7 +190,9 @@ local function make_figure(illustrator, block, content)
     local buildpng = path.join {"build", page_path, outname} .. ".png"
 
     pandoc.log.info(fmt("png export: %s", buildpng))
-    make_png_thumbnail(cachefile)
+    if not file_exists(cachepng) then
+      make_png_thumbnail(cachepng)
+    end
     copy(cachepng, buildpng)
   end
 
