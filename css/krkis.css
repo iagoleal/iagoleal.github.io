@@ -158,7 +158,6 @@ svg {
 pre {
   display:          block;
   background-color: initial;
-  border-radius:    12px;
   font-family:      var(--font-code);
   overflow-x:       auto;
 }

@@ -108,7 +108,7 @@ $(build)/posts/%/index.html: $(content)/posts/%.md.lhs $(DEPENDENCIES)
 pages: $(pages-result)
 
 $(build)/index.html: $(content)/index.md $(DEPENDENCIES) $(posts-src)
-	$(call generate_page,$<,$@,markdown-markdown_in_html_blocks,-M title:'Home')
+	$(call generate_page,$<,$@,markdown,-M title:'Home')
 
 $(build)/404.html: $(content)/404.html   $(DEPENDENCIES)
 	$(call generate_page,$<,$@,html,-M title:'Are you lost?')

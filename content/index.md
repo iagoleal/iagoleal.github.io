@@ -3,21 +3,21 @@
 :::layout
 
 <div style="grid-column: 1 / -1;" class="hero panel">
-  <div class="description">
-    <div class="name">
-      <h1 class="title">Iago Leal de&nbsp;Freitas</h1>
-      <span class="ipa">
-        [iˈago leˈaʊ̯ d͡ʒi ˈfɾej.tajʃ]
-      </span>
-    </div>
-    <div class="salute">
-      <span>
-        Hello! I'm Iago, a programmer and mathematician.
-        Welcome to my blog about mathematics, programming
-        and everything in between.
-      </span>
-    </div>
-  </div>
+<div class="description">
+<div class="name">
+<h1 class="title">Iago Leal de&nbsp;Freitas</h1>
+<span class="ipa">
+[iˈago leˈaʊ̯ d͡ʒi ˈfɾej.tajʃ]
+</span>
+</div>
+<div class="salute">
+<span>
+Hello! I'm Iago, a programmer and mathematician.
+Welcome to my blog about mathematics, programming
+and everything in between.
+</span>
+</div>
+</div>
 </div>
 
 
@@ -81,7 +81,7 @@
             </div>
             <div class="lib-body">
               <div class="lib-name">DeformableBodies.jl</div>
-              <div class="lib-desc">Model and solve the change of reference frame problem for self-deforming bodies.</div>
+              <div class="lib-desc">Dynamics simulator for the change of reference frame problem of self-deforming bodies.</div>
             </div>
           </a>
         </li>
