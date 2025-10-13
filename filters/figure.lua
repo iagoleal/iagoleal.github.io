@@ -191,7 +191,7 @@ local function make_figure(illustrator, block, content)
 
     pandoc.log.info(fmt("png export: %s", buildpng))
     if not file_exists(cachepng) then
-      make_png_thumbnail(cachepng)
+      make_png_thumbnail(cachefile)
     end
     copy(cachepng, buildpng)
   end
