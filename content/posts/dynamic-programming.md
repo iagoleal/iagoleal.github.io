@@ -20,7 +20,7 @@ suppress-bibliography: true
 \def\powerset{\mathcal{P}}
 \def\dummy{\blacklozenge}
 \def\bigO{\mathrm{O}}
-\def\terminal\blacksquare
+\def\terminal{\blacksquare}
 
 What if I told you that some of the most used algorithms to
 find the shortest path in a graph,
@@ -991,51 +991,50 @@ where we can just relax and do nothing for the rest of eternity.
 Hence its name.
 Also, since all its actions are dull, it is customary to draw it without arrows.
 
-```dot
-digraph "Terminal State" {
-  rankdir=LR;
-  size="8,5"
-
-  T [label = "" style=filled, color = black, fillcolor = black, shape = square];
-
-  node [fontsize=20 color = "#00000000" fillcolor= "#00000000" label = ". . ."];
-
-
-  {A B C} -> T;
-  B -> T;
-}
-```
-
 When it is guaranteed that, for any policy,
 the dynamics will reach a terminal state after a finite number of steps,
 we say that it has a _finite horizon_.
 In this case, the state machine underlying graph is acyclic.
 That is, any trajectory visits a non-terminal state at most once.
 
-```dot
-digraph "Finite Horizon Automaton" {
-  rankdir=LR;
-  size="8,5"
+```tikz {tikzlibrary="graphs,arrows,arrows.meta"}
+{ [ node distance=2.5cm, on grid, auto,
+    state/.style    = { circle, minimum width = 0.7cm, fill = gray!20, draw = gray!40, very thick, outer sep = 2 },
+    action/.style   = {
+      opacity = 0.8,
+      thin,
+      gray!80,
+      ->,
+      -{Kite[length=4pt,width=2.5pt,inset=1.5pt]},
+    },
+    every edge/.style = {draw, action},
+  ]
+  \node[state] (7) at (0, 0) {};
+  \node[state] (6) [above right = of 7] {};
+  \node[state] (5) [below right = of 6] {};
+  \node[state] (4) [above right = of 5] {};
+  \node[state] (3) [below right = of 5] {};
+  \node[state] (2) [right       = of 3] {};
+  \node[state] (1) [right       = of 2] {};
+  \node[state] (0) [above       = of 1] {};
 
-  node [shape     = circle
-        style     = "solid,filled"
-        width     = 0.7
-        color     = black
-        fixedsize = shape
-        fillcolor = "#fdfdfd"
-        label     = ""];
-
-  {A C} -> B;
-  C -> B;
-  C -> A -> D;
-  A -> E -> F -> G;
-  {F B} -> D;
-  E -> F [shape=curved];
-  H -> {A C E};
+  \graph {
+    (7) -> { (5), (6) },
+    (7) -> [bend right] (3),
+    (6) -> { (5), (4) },
+    (6) -> [bend left] (4),
+    (6) -> [bend right] (4),
+    (5) -> { (4), (3), (0) },
+    (4) -> (0),
+    (3) -> [bend left] (2),
+    (3) -> [bend right] (2),
+    (2) -> { (0), (1) },
+  };
 }
 ```
 
-### Backwards Induction
+
+### The Backwards Induction Algorithm
 
 We can improve the algorithms for Dynamic Programming with a clever traversal of the states.
 On all algorithms we've seem,
@@ -1044,75 +1043,70 @@ there was no assumption on which order we traversed the state space at each iter
 and, consequently, there where also no guarantees arising from this order.
 Nevertheless, in the in-place algorithm distinct orderings produce distinct flows of information.
 
-In a finite horizon problem we can exploit the graph being acyclic
-to get an optimal ordering that makes value iteration converge in a single iteration!
+In a finite horizon problem we can exploit the acyclic structure
+to get an optimal ordering such that value iteration converges in a single iteration!
 It is the graph's [topological ordering](https://en.wikipedia.org/wiki/Topological_sorting)
 and consists of sorting natural number labels for the states
 such that $s$ comes before all states that can transition to it.
 Although this seems like a hard task,
-there are standard methods to calculate it linearly in the size of the automaton,
+there are standard methods to calculate it linearly in the size of the process,
 i.e., taking $\bigO(|\States| + |\Actions|)$ steps.
+See below a topological ordering for the previous example.
 
-```dot
-digraph "Finite Horizon Automaton" {
-  rankdir=LR;
-  size="8,5"
 
-  node [shape     = circle
-        style     = "solid,filled"
-        width     = 0.7
-        color     = black
-        fixedsize = shape
-        fillcolor = "#fdfdfd"];
+```tikz {tikzlibrary="graphs,arrows,arrows.meta"}
+{ [ node distance=2.5cm, on grid, auto,
+    state/.style    = { circle, minimum width = 0.7cm, fill = gray!20, draw = gray!40, very thick, outer sep = 2 },
+    action/.style   = {
+      opacity = 0.8,
+      thin,
+      gray!80,
+      ->,
+      -{Kite[length=4pt,width=2.5pt,inset=1.5pt]},
+    },
+    every edge/.style = {draw, action},
+  ]
+  \node[state] (7) at (0, 0) {7};
+  \node[state] (6) [above right = of 7] {6};
+  \node[state] (5) [below right = of 6] {5};
+  \node[state] (4) [above right = of 5] {4};
+  \node[state] (3) [below right = of 5] {3};
+  \node[state] (2) [right       = of 3] {2};
+  \node[state] (1) [right       = of 2] {1};
+  \node[state] (0) [above       = of 1] {0};
 
-  {5 6} -> 4;
-  6 -> 4;
-  6 -> 5 -> 0;
-  5 -> 3 -> 2 -> 1;
-  {2 4} -> 0;
-  3 -> 2 [shape=curved];
-  7 -> {5 6 3};
+  \graph {
+    (7) -> { (5), (6) },
+    (7) -> [bend right] (3),
+    (6) -> { (5), (4) },
+    (6) -> [bend left] (4),
+    (6) -> [bend right] (4),
+    (5) -> { (4), (3), (0) },
+    (4) -> (0),
+    (3) -> [bend left] (2),
+    (3) -> [bend right] (2),
+    (2) -> { (0), (1) },
+  };
 }
 ```
 
-The figure above exemplifies a topological sort for our example automaton.
-Notice that the earliest indices go to the terminal states
+Notice that it is not unique.
+Also notice that the earliest indices go to the terminal states
 and then get distributed "backwards" through the arrows.
 This is the origin of our next algorithm's name: _Backwards Induction_.
 
 Backwards Induction is a variation of Value Iteration
-that uses a topological sort to better traverse the state space.
-It is the same as the in-place algorithm but has exact convergence in a single iteration.
+using a topological sort to better traverse the state space.
+It is the same as the in-place algorithm but with exact convergence in a single iteration.
 What about an improvement!
-The following animation illustrates how it converges to the optimum one state at a time.
+<!-- The following animation illustrates how it converges to the optimum one state at a time. -->
 
-<!-- TODO: Animate the figure below -->
-```dot
-digraph "Backwards Induction" {
-  rankdir=LR;
-  size="8,5"
-
-  node [shape     = circle
-        style     = "solid,filled"
-        width     = 0.7
-        color     = black
-        fixedsize = shape
-        fillcolor = "#fdfdfd"];
-
-  {5 6} -> 4;
-  6 -> 4;
-  6 -> 5 -> 0;
-  5 -> 3 -> 2 -> 1;
-  {2 4} -> 0;
-  3 -> 2 [shape=curved];
-  7 -> {5 6 3};
-}
-```
+<!-- TODO: Animate the previous figure-->
 
 We can prove by induction that this indeed converges in a single pass.
 The base case consists of terminal states:
 their cost is zero and the automaton never leaves them,
-implying that the optimal value function is $v^\star(\terminal) = (\Bellman v^\star)(\terminal) = 0$.
+implying that $v^\star(\terminal) = (\Bellman v^\star)(\terminal) = 0$.
 
 On a non-terminal state $s$, assume by induction that our calculated value function $v$
 is optimal for any lower-indexed state.
@@ -1132,7 +1126,7 @@ $$
 
 The previous discussion proves that we can get convergence in a single pass.
 Now, all that is left is to arrange the proof into an algorithm.
-It works the same as value iteration except that it it first sorts the states
+It works the same as value iteration except that it first sorts the states
 and only performs a single pass.
 
 ```julia
@@ -1155,6 +1149,8 @@ One thing should be clear:
 backward induction does the exact same operation as value iteration for each state,
 but only requires a single pass over the state space.
 This makes it much more efficient.
+I know I'm repeating this phrase a lot, but it is _important enough to deserve it_.
+
 Another more subtle detail is that since there is more structure to exploit in the dynamics,
 the algorithm doesn't have to assume so much about the Bellman operator.
 For example, our proof of convergence had no dependence on the Banach fixed-point theorem,
@@ -1182,16 +1178,16 @@ The figure below illustrates backwards induction running for this kind of proces
 
 ![](backward-induction.svg "Backward induction algorithm")
 
-When this stagewise structure is available to us,
-we can back it into the algorithm to spare the trouble of sorting the states.
+When this stagewise structure is available,
+we can bake it into the algorithm to spare the trouble of sorting the states.
 
 ```julia
 function backward_induction_in_time(p :: Process)
   v  = Values{States}()
   π  = Policy{States, Actions}()
 
-  for t in N:1         # <-- Equivalent to a topological sort
-    for s in States(t)
+  for t in N:1           # <-- Equivalent to a topological sort
+    for s in States(t)   # <-- Embarassingly parallel
       v[s], π[s] = minimize(a -> total_cost(p)(v, s, a), Actions(s))
     end
   end
@@ -1201,8 +1197,8 @@ end
 ```
 
 The above is no more than a specialized version of our previous algorithms.
-Its computational effort is $\bigO(|\States|\cdot|\Actions|)$,
-because it consists of a Value Iteration with a single pass and no need for preprocessing.
+Its computational effort is exactly $|\States|\cdot|\Actions|$
+because it amounts to a single Value Iteration pass with no need for preprocessing.
 Different from ordinary backwards induction,
 the above is also embarrassingly parallel on the inner loop,
 because there are no intra-stage dependencies.
@@ -1528,8 +1524,8 @@ $$
 is a _monotone contraction_ over the space of bounded continuous functions.
 
 We begin our proof with _monotonicity_.
-For that, let's introduce a partial order on the space of value function $\States \to \R$
-given via uniform ordering on all states,
+For that, let's introduce a partial order on the space of value functions $\States \to \R$
+given by uniform ordering on all states,
 
 $$ v \le w \iff \forall s \in \States,\, v(s) \le w(s).$$
 
@@ -1553,14 +1549,14 @@ $$
 (\Bellman v)(s) \le (\Bellman w)(s).
 $$
 
-The line above is valid for all states, thus concluding the proof.
+The line above is valid for all states, concluding the proof.
 :::
 
 Another important property of $\Bellman$ is that uniform translations
 of the input $v$ also translate the output uniformly.
 
 :::Theorem
-For any constant $k$, $\Bellman(v + k) = \Bellman v + \gamma k$.
+For any constant $k,\,\Bellman(v + k) = \Bellman v + \gamma k$.
 :::
 
 :::Proof
@@ -1588,11 +1584,8 @@ Finally, let's prove that the Bellman operator
 contracts the space of bounded continuous functions by the discount factor.
 
 ::: {.Theorem data-title="Contraction"}
-the Bellman Operator contracts the space of continuous bounded functions
-with Lipschitz constant $\gamma$,
-
+The Bellman Operator is continuous with Lipschitz constant $\gamma$,
 $$ \|\Bellman v - \Bellman w\|_\infty \le \gamma \|v - w\|_\infty.$$
-
 When $\gamma < 1$, it is a contraction.
 :::
 
@@ -1622,7 +1615,7 @@ $$
 Using that the norm is symmetric, we can do the same derivation
 in the opposite direction (for $w - v$)
 to get an inequality for the absolute value.
-Finally, applying the supremum, it becomes the result we want.
+Taking the supremum, it becomes the result we want.
 
 $$ \begin{aligned}
       |(\Bellman v)(s) - (\Bellman w)(s)| &\le \gamma \|v - w\|_\infty \\
