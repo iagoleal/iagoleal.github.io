@@ -1,8 +1,7 @@
 <div class="hero">
   <div class="description">
-    <h1 class="salute">Hello there! I'm</h1>
     <div class="name">
-      <h1 class="title">Iago Leal de Freitas</h1>
+      <h1 class="title">IAGO<br>LEAL</h1>
       <span class="ipa">
         [iˈago leˈaʊ̯ d͡ʒi ˈfɾej.tajʃ]
       </span>
@@ -10,35 +9,204 @@
   </div>
 </div>
 
-<h1>Recent Posts</h1>
+<div class="presentation">
+  <div class="presentation-block">
+    <h2>Recent Posts</h2>
+    {{ post-list 4 }}
+  </div>
 
-{{ post-list 4 }}
+  <div class="presentation-block">
+    <h2>Publications</h2>
+    <div class="paper-list">
+      <ul>
+        <li>
+          <b>Quantum-Inspired Tensor Network Methods for Quadratic Unconstrained Binary Optimization</b>
+          <br>
+          <span>
+            <i>Iago Leal de Freitas, João Victor Paim de Cerqueira Melo Souza, David E. Bernal Neira</i>
+          </span>
+          <br>
+          <span>
+            Accepted at NeurIPS 2025 ScaleOpt Workshop
+          </span>
+        </li>
 
-<h1>Highlighted Projects</h1>
+        <li>
+          <b>Generalizing the Invertible Matrix Theorem with Linear Relations using Graphical Linear Algebra</b>
+          <br>
+          <span>
+            <i>Iago Leal de Freitas, Júlia Mota, João Paixão, Lucas Rufino</i>
+          </span>
+        </li>
 
-<div class="portfolio">
-  <a class="portfolio-item transparent" href="https://arxiv.org/abs/2307.13190">
-    <img class="image" src="/img/portfolio/cvarub.svg" alt="A Multicut Approach to Compute Upper Bounds for Risk-Averse SDDP">
-    <span class="caption">Upper Bounds for SDDP with CVaR</span>
-  </a>
-  <a class="portfolio-item transparent" href="https://iagoleal.github.io/RankRevealing.jl">
-    <img class="image" src="/img/portfolio/rank-revealing.svg" alt="RankRevealing.jl">
-    <span class="caption">RankRevealing.jl</span>
-  </a>
-  <a class="portfolio-item" href="https://github.com/iagoleal/eliza#README.md">
-    <img class="image" src="img/portfolio/eliza.png" alt="Eliza chatbot">
-    <span class="caption">Eliza chatbot</span>
-  </a>
-  <a class="portfolio-item" href="/masters">
-    <img class="image transparent" src="img/portfolio/cvx-avg.svg" alt="Convexification by Averages">
-    <span class="caption">Convexification by Averages</span>
-  </a>
-  <a class="portfolio-item" href="https://iagoleal.github.io/Hodge.jl">
-    <img class="image" src="/img/portfolio/hodge.svg" alt="Hodge.jl">
-    <span class="caption">Hodge.jl</span>
-  </a>
-  <a class="portfolio-item" href="https://iagoleal.github.io/DeformableBodies.jl/stable/">
-    <img class="image" src="/img/portfolio/deformable-bodies.svg" alt="DeformableBodies.jl">
-    <span class="caption">DeformableBodies.jl</span>
-  </a>
+        <li>
+          <b>Federated Learning in Chemical Engineering: A Tutorial on a Framework for Privacy-Preserving Collaboration across Distributed Data Sources</b>
+          <br>
+          <span>Siddhant Dutta, Iago Leal de Freitas, Pedro Maciel Xavier,Claudio Miceli de Farias, David E. Bernal Neira</span>
+        </li>
+
+        <li>
+          <b>Federated Learning with Quantum Computing and Fully Homomorphic Encryption: A Novel Computing Paradigm Shift in Privacy-Preserving ML</b>
+          <br>
+          <span>
+            <i>Siddhant Dutta, Pavana P Karanth, Pedro Maciel Xavier, Iago Leal de Freitas, Nouhaila Innan, Sadok Ben Yahia, Muhammad Shafique, David E. Bernal Neira</i>
+          </span>
+        </li>
+
+        <li>
+          <b>A Multicut Approach to Compute Upper Bounds for Risk-Averse SDDP</b>
+          <br>
+          <span>
+            <i>Joaquim Dias Garcia, Iago Leal de Freitas, Raphael Chabar, Mario Veiga Pereira</i>
+          </span>
+        </li>
+
+        <li>
+          <b>Convexification by Averages</b>
+          <br>
+          <span>Master's Thesis</span>
+        </li>
+      </ul>
+    </div>
+
+
+
+  <div class="layout">
+    <!-- Publications panel -->
+    <section class="panel" aria-labelledby="pubs-heading">
+      <div class="section-head">
+        <div class="section-dot" aria-hidden="true"></div>
+        <h2 id="pubs-heading" class="section-title">Selected Publications</h2>
+      </div>
+
+      <ul class="pub-list" aria-label="Publications">
+        <li class="pub-item" tabindex="0">
+          <div class="pub-title">
+            <a href="https://www.cvxgrp.org/scaleopt/" target="_blank" rel="noopener noreferrer">
+              Quantum-Inspired Tensor Network Methods for Quadratic Unconstrained Binary Optimization
+            </a>
+          </div>
+          <div class="pub-meta">
+            <span class="pub-authors">
+              Iago Leal de Freitas, João Victor Paim de Cerqueira Melo Souza, David E. Bernal Neira
+            </span>
+            <span class="pub-venue">Accepted at NeurIPS 2025 ScaleOpt Workshop</span>
+          </div>
+        </li>
+
+        <li class="pub-item" tabindex="0">
+          <div class="pub-title">
+            <a href="" target="_blank" rel="noopener noreferrer">
+              Generalizing the Invertible Matrix Theorem with Linear Relations using Graphical Linear Algebra 
+            </a>
+          </div>
+          <div class="pub-meta">
+            <span class="pub-authors">Iago Leal de Freitas, Júlia Mota, João Paixão, Lucas Rufino</span>
+            <a class="pub-arxiv" href="https://arxiv.org/abs/2208.12345" target="_blank" rel="noopener noreferrer">arXiv:2208.12345</a>
+          </div>
+        </li>
+
+        <li class="pub-item" tabindex="0">
+          <div class="pub-title">
+            <a href="https://arxiv.org/abs/2411.16737" target="_blank" rel="noopener noreferrer">
+              Federated Learning in Chemical Engineering: A Tutorial on a Framework for Privacy-Preserving Collaboration across Distributed Data Sources
+            </a>
+          </div>
+          <div class="pub-meta">
+            <span class="pub-authors">Siddhant Dutta, Iago Leal de Freitas, Pedro Maciel Xavier,Claudio Miceli de Farias, David E. Bernal Neira</span>
+            <span class="pub-venue"></span>
+            <a class="pub-arxiv" href="https://arxiv.org/abs/2411.16737" target="_blank" rel="noopener noreferrer">arxiv:2411.16737</a>
+          </div>
+        </li>
+
+        <li class="pub-item" tabindex="0">
+          <div class="pub-title">
+            <a href="https://arxiv.org/abs/2409.11430" target="_blank" rel="noopener noreferrer">
+              Federated Learning with Quantum Computing and Fully Homomorphic Encryption: A Novel Computing Paradigm Shift in Privacy-Preserving ML
+            </a>
+          </div>
+          <div class="pub-meta">
+            <span class="pub-authors">Siddhant Dutta, Pavana P Karanth, Pedro Maciel Xavier, Iago Leal de Freitas, Nouhaila Innan, Sadok Ben Yahia, Muhammad Shafique, David E. Bernal Neira</span>
+            <span class="pub-venue">NeurIPS 2024 ML with New Compute Paradigms Workshop</span>
+            <a class="pub-arxiv" href="https://arxiv.org/abs/2409.11430" target="_blank" rel="noopener noreferrer">arxiv:2409.11430</a>
+          </div>
+        </li>
+
+        <li class="pub-item" tabindex="0">
+          <div class="pub-title">
+            <a href="https://arxiv.org/abs/2307.13190" target="_blank" rel="noopener noreferrer">
+              A Multicut Approach to Compute Upper Bounds for Risk-Averse SDDP
+            </a>
+          </div>
+          <div class="pub-meta">
+            <span class="pub-authors">Joaquim Dias Garcia, Iago Leal de Freitas, Raphael Chabar, Mario Veiga Pereira</span>
+            <a class="pub-arxiv" href="https://arxiv.org/abs/2307.13190" target="_blank" rel="noopener noreferrer">arxiv:2307.13190</a>
+          </div>
+        </li>
+
+        <li class="pub-item" tabindex="0">
+          <div class="pub-title">
+            <a href="https://arxiv.org/abs/1802.33456" target="_blank" rel="noopener noreferrer">
+              Convexification by Averages
+            </a>
+          </div>
+          <div class="pub-meta">
+            <span class="pub-authors">Iago Leal de Freitas</span>
+            <a class="pub-venue" href="/data/mscthesis.pdf">Master's Thesis</a>
+          </div>
+        </li>
+      </ul>
+    </section>
+      <section class="panel">
+        <div class="section-head">
+          <div class="section-dot" aria-hidden="true"></div>
+          <h2 id="libs-heading" class="section-title">Scientific Libraries</h2>
+        </div>
+
+        <ul class="lib-list" aria-label="Scientific libraries">
+          <li>
+            <a class="lib-link" href="https://github.com/SECQUOIA/TenSolver.jl">
+              <div class="lib-icon" aria-hidden="true">TS</div>
+              <div class="lib-body">
+                <div class="lib-name">TenSolver.jl</div>
+                <div class="lib-desc">Quantum-Inspired Tensor Network Solver for Quadratic Unconstrained Binary Optimization.</div>
+              </div>
+            </a>
+          </li>
+
+          <li>
+            <a class="lib-link" href="https://iagoleal.github.io/RankRevealing.jl">
+              <img class="lib-icon" src="/img/portfolio/rank-revealing.svg" alt="RR">
+              <div class="lib-body">
+                <div class="lib-name">RankRevealing.jl</div>
+                <div class="lib-desc">Rank-sensitive algorithms for matrix decompositions over arbitrary fields.</div>
+              </div>
+            </a>
+          </li>
+
+          <li>
+            <a class="lib-link" href="https://iagoleal.github.io/Hodge.jl">
+              <div class="lib-icon" aria-hidden="true">
+                <img style="display: inline-block;" class="" src="/img/portfolio/hodge.svg" alt="H">
+              </div>
+              <div class="lib-body">
+                <div class="lib-name">Hodge.jl</div>
+                <div class="lib-desc">A clean way to calculate Betti numbers of simplicial complexes and (discrete) Hodge decompositions of cochains.</div>
+              </div>
+            </a>
+          </li>
+
+          <li>
+            <a class="lib-link" href="https://iagoleal.github.io/DeformableBodies.jl/stable/">
+              <img class="lib-icon" src="/img/portfolio/deformable-bodies.svg" alt="DB">
+              <div class="lib-body">
+                <div class="lib-name">DeformableBodies.jl</div>
+                <div class="lib-desc">Model and solve the change of reference frame problem for self-deforming bodies.</div>
+              </div>
+            </a>
+          </li>
+        </ul>
+      </section>
+    </div>
+  </div>
 </div>

@@ -9,3 +9,4 @@ content/unposts
 # Workflow
 .direnv
 .envrc
+.harper-dictionary.txt

@@ -16,14 +16,14 @@ html {
   /* font-size:       62.5%; */
   position:        relative;
   min-height:      100%;
-  font-family:     'Montserrat', 'Avenir', 'Avenir Next LT Pro', 'Corbel', 'URW Gothic', source-sans-pro, sans-serif;
+  font-family:     var(--font-base);
 }
 
 body {
   background-color: var(--color-background);
   color:            var(--color-typography);
-  margin:           auto;
-  font-size:        1rem;
+  margin:           0;
+  font-size:        var(--font-size-base);
   line-height:      1.618;
   overflow-wrap:    break-word;
   word-wrap:        break-word;
@@ -61,8 +61,8 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   line-height:   1.1;
-  font-family:   'Montserrat', 'Lato', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', 'Noto Sans', sans-serif;
-  font-weight:   500;
+  font-family:   var(--font-heading);
+  font-weight:   400;
   margin-top:    2rem;
   margin-bottom: 1rem;
 }
@@ -93,8 +93,9 @@ h6 {
 }
 
 p {
-  margin-top:    0;
-  margin-bottom: 1rem;
+  margin-top:    0.3rem;
+  margin-bottom: 0.7rem;
+  font-variant-numeric: oldstyle-nums;
   /* Hiphenate on desktop but not on mobile.
    There is too little space on small screens for this to look good. */
   text-align: justify;
@@ -158,7 +159,7 @@ pre {
   display:          block;
   background-color: initial;
   border-radius:    12px;
-  font-family:      'IBM Plex Mono', Consolas, Monaco, monospace;
+  font-family:      var(--font-code);
   overflow-x:       auto;
 }
 
@@ -189,7 +190,7 @@ hr {
 ul {
   padding-left:    1.4rem;
   margin-top:      0;
-  margin-bottom:   2.5rem;
+  margin-bottom:   1.4rem;
   list-style-type: square;
 }
 
@@ -372,108 +373,6 @@ h1.title {
 }
 
 /*
-  ~*~ Post List ~*~
-*/
-
-.post-list ul {
-  max-width:       var(--article-width);
-  margin:          0 auto;
-  padding:         0;
-  list-style-type: none;
-}
-
-.post-list li {
-  display: block;
-  margin:  0;
-}
-
-.post-list a {
-  color:           var(--color-typography);
-  font-weight:     500;
-  display:         flex;
-  flex-direction:  row;
-  justify-content: space-between;
-  align-content:   center;
-  align-items:     center;
-  padding:         0.6rem 0.6rem;
-  border-radius:   10px;
-  transition:      background 0.3s ease-in-out;
-}
-
-.post-list a:hover {
-/* TODO: custom property */
-  background-color: var(--color-crystal);
-  transition:       background 0.3s ease-in-out;
-
-}
-
-.post-list .date {
-  font-family: monospace;
-  color:       var(--color-faded);
-  margin-left: 2rem;
-  text-align:  center;
-  white-space: nowrap;
-}
-
-
-/*
-  ~*~ About Me Page ~*~
-*/
-
-.hero {
-  max-width:    60rem;
-  display:      block;
-  justify-self: center;
-  height:       80vh;
-}
-
-.hero .profile {
-  object-fit:    cover;
-  margin:        0 auto;
-  border-radius: 50%;
-  display:       block;
-  max-height:    50vh;
-  aspect-ratio:  1 / 1;
-  min-height: 0;
-  height: 80vw;
-}
-
-.hero .description {
-  margin:          0;
-  display:         flex;
-  justify-content: flex-start;
-  flex-direction:  column;
-  padding:         20px;
-  gap:             1rem;
-}
-
-.name {
-  display:         flex;
-  flex-direction:  column;
-  justify-content: flex-start;
-  align-items:     flex-end;
-  justify-self:    center;
-}
-
-.name .title {
-  font-size:     min(8vw, 48pt);
-  margin-top:    0;
-  margin-bottom: 0;
-}
-
-.ipa {
-  text-align: right;
-  font-size:  1.3rem;
-  color:      var(--color-faded);
-}
-
-.hero .salute {
-  text-align:    left;
-  margin-top:    0;
-  margin-bottom: 0;
-}
-
-/*
   ~*~ Toggle Button for Checkbox ~*~
 */
 
@@ -524,4 +423,6 @@ input[type="checkbox"]:hover {
 /* make equations scrollable */
 .katex-display {
   overflow: auto hidden;
+  margin-top: 0;
+  margin-bottom: 0;
 }
