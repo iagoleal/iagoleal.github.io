@@ -551,7 +551,7 @@ The nodes are optimization problems and the edges represent their communication.
 We represent $\Qfrak$ by a small diamond,
 which is the only thing the first stage's node sees of the future.
 
-```tikz {id="figure-tree-singlecut", png=true}
+```tikz {id="figure-tree-singlecut" png=true}
 % First stage
 { [svgclass=stage1]
   \node[opt]   (t1) {};

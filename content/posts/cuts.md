@@ -179,7 +179,7 @@ In this case, it is usual to denote the cut as centered around $x_0$:
 $$ f(x) \ge f(x_0) + \inner<\lambda, x - x_0>. $$
 
 
-```tikz {id="function-tight-cuts", png=true}
+```tikz {id="function-tight-cuts" png=true}
 { [domain=-1.8:2, xscale=1.8]
   \draw[very thin, opacity=0.2, color=gray, path fading=west] (-2.9,-1.9) grid (2.9,1.9);
 
