@@ -1,5 +1,3 @@
-
-
 :::layout
 
 <div style="grid-column: 1 / -1;" class="hero panel">
@@ -42,7 +40,9 @@ and everything in between.
       <ul class="lib-list">
         <li>
           <a class="lib-link" href="https://github.com/SECQUOIA/TenSolver.jl">
-            <div class="lib-icon">TS</div>
+            <div class="lib-icon">
+              <img style="display: inline-block;" class="" src="/img/portfolio/secquoia.png" alt="TS">
+            </div>
             <div class="lib-body">
               <div class="lib-name">TenSolver.jl</div>
               <div class="lib-desc">Quantum-Inspired Tensor Network Solver for Quadratic Unconstrained Binary Optimization.</div>
@@ -100,6 +100,7 @@ and everything in between.
     <ul class="pub-list" aria-label="Publications">
       <li class="pub-item">
         <div class="pub-title">
+          <span class="pub-year">2025</span>
           <a href="https://www.cvxgrp.org/scaleopt/">
             Quantum-Inspired Tensor Network Methods for Quadratic Unconstrained Binary Optimization
           </a>
@@ -114,18 +115,21 @@ and everything in between.
 
       <li class="pub-item">
         <div class="pub-title">
+          <span class="pub-year">2025</span>
           <a href="https://arxiv.org/abs/2502.16783">
             Generalizing the Invertible Matrix Theorem with Linear Relations using Graphical Linear Algebra 
           </a>
         </div>
         <div class="pub-meta">
           <span class="pub-authors">Iago Leal de Freitas, Júlia Mota, João Paixão, Lucas Rufino</span>
+          <span class="pub-venue">Submitted to Fundamenta Informaticae</span>
           <a class="pub-venue pub-arxiv" href="https://arxiv.org/abs/2502.16783">arXiv:2502.16783</a>
         </div>
       </li>
 
       <li class="pub-item">
         <div class="pub-title">
+          <span class="pub-year">2025</span>
           <a href="https://pubs.acs.org/doi/10.1021/acs.iecr.4c03805">
             Federated Learning in Chemical Engineering: A Tutorial on a Framework for Privacy-Preserving Collaboration across Distributed Data Sources
           </a>
@@ -139,6 +143,7 @@ and everything in between.
 
       <li class="pub-item">
         <div class="pub-title">
+          <span class="pub-year">2024</span>
           <a href="https://arxiv.org/abs/2409.11430">
             Federated Learning with Quantum Computing and Fully Homomorphic Encryption: A Novel Computing Paradigm Shift in Privacy-Preserving ML
           </a>
@@ -152,6 +157,7 @@ and everything in between.
 
       <li class="pub-item">
         <div class="pub-title">
+          <span class="pub-year">2023</span>
           <a href="https://arxiv.org/abs/2307.13190">
             A Multicut Approach to Compute Upper Bounds for Risk-Averse SDDP
           </a>
@@ -164,6 +170,7 @@ and everything in between.
 
       <li class="pub-item">
         <div class="pub-title">
+          <span class="pub-year">2019</span>
           <a href="/data/mscthesis.pdf">
             Convexification by Averages
           </a>

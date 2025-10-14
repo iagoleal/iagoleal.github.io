@@ -5,6 +5,7 @@ pandoc-log.json
 
 # Not ready to commit
 content/unposts
+unposts/
 
 # Workflow
 .direnv
