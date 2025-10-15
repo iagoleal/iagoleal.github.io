@@ -7,6 +7,34 @@
 * but eventually converged to something different.
 * Check Sakura out if you are interested in something more polished,
 * and less specific to this site.
+*/
+
+/*
+  ~*~ CSS Reset ~*~
+Adapted from 
+  - https://www.joshwcomeau.com/css/custom-css-reset/
+  - https://meyerweb.com/eric/tools/css/reset/
+*/
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin:  0;
+  padding: 0;
+}
+
+input, button, textarea, select {
+  font: inherit;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    interpolate-size: allow-keywords;
+  }
+}
+
 /*
   ~*~ General Styles ~*~
 */
@@ -33,36 +61,36 @@ body {
   font-kerning:     normal;
 }
 
-@media print {
-  html {
-    background-color: white;
-  }
-
-  body {
-    background-color: transparent;
-    color:            black;
-    font-size:        12pt;
-  }
-
-  p, h2, h3 {
-    orphans:          3;
-    widows:           3;
-  }
-
-  h2, h3, h4 {
-    page-break-after: avoid;
-  }
-}
 
 ::selection {
   color:            var(--color-typography);
-  background-color: var(--color-accent);
+  background-color: var(--color-crystal);
+}
+
+/* ~*~ Typography ~*~ */
+
+p {
+  margin-top:    0.3rem;
+  margin-bottom: 0.7rem;
+  text-wrap:     pretty;
+  font-variant-numeric: oldstyle-nums;
+  /* Hiphenate on desktop but not on mobile.
+   There is too little space on small screens for this to look good. */
+  text-align: justify;
+}
+
+@media (max-width: 382px) {
+  p {
+    text-align: left;
+    hyphens:    none;
+  }
 }
 
 h1, h2, h3, h4, h5, h6 {
   line-height:   1.1;
   font-family:   var(--font-heading);
   font-weight:   400;
+  text-wrap:     balance;
   margin-top:    2rem;
   margin-bottom: 1rem;
 }
@@ -92,22 +120,6 @@ h6 {
   font-size: 1rem;
 }
 
-p {
-  margin-top:    0.3rem;
-  margin-bottom: 0.7rem;
-  font-variant-numeric: oldstyle-nums;
-  /* Hiphenate on desktop but not on mobile.
-   There is too little space on small screens for this to look good. */
-  text-align: justify;
-}
-
-@media (max-width: 382px) {
-  p {
-    text-align: left;
-    hyphens:    none;
-  }
-}
-
 small, sub, sup {
   font-size: 75%;
 }
@@ -115,6 +127,27 @@ small, sub, sup {
 label, legend, fieldset {
   margin-bottom: 0.5rem;
   font-weight:   600;
+}
+
+@media print {
+  html {
+    background-color: white;
+  }
+
+  body {
+    background-color: transparent;
+    color:            black;
+    font-size:        12pt;
+  }
+
+  p, h2, h3 {
+    orphans:          3;
+    widows:           3;
+  }
+
+  h2, h3, h4 {
+    page-break-after: avoid;
+  }
 }
 
 /* Links */
@@ -135,18 +168,15 @@ figure {
   margin:    auto;
 }
 
-img, video, object {
-  display:   block;
+img, picture, video, canvas, svg, object {
+  display: block;
+  max-width: 100%;
+}
+
+img, video, object, svg {
   height:    auto;
   margin:    0 auto;
-  max-width: 100%;
 }
-
-svg {
-  height:    auto;
-  max-width: 100%;
-}
-
 
 /* Verbatim Code */
 

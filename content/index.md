@@ -39,7 +39,7 @@ and everything in between.
 
       <ul class="lib-list">
         <li>
-          <a class="lib-link" href="https://github.com/SECQUOIA/TenSolver.jl">
+          <a class="lib-item" href="https://github.com/SECQUOIA/TenSolver.jl">
             <div class="lib-icon">
               <img style="display: inline-block;" class="" src="/img/portfolio/secquoia.png" alt="TS">
             </div>
@@ -51,7 +51,7 @@ and everything in between.
         </li>
 
         <li>
-          <a class="lib-link" href="https://iagoleal.github.io/RankRevealing.jl">
+          <a class="lib-item" href="https://iagoleal.github.io/RankRevealing.jl">
             <div class="lib-icon">
               <img class="lib-icon" src="/img/portfolio/rank-revealing.svg" alt="RR">
             </div>
@@ -63,7 +63,7 @@ and everything in between.
         </li>
 
         <li>
-          <a class="lib-link" href="https://iagoleal.github.io/Hodge.jl">
+          <a class="lib-item" href="https://iagoleal.github.io/Hodge.jl">
             <div class="lib-icon">
               <img style="display: inline-block;" class="" src="/img/portfolio/hodge.svg" alt="H">
             </div>
@@ -75,7 +75,7 @@ and everything in between.
         </li>
 
         <li>
-          <a class="lib-link" href="https://iagoleal.github.io/DeformableBodies.jl/stable/">
+          <a class="lib-item" href="https://iagoleal.github.io/DeformableBodies.jl/stable/">
             <div class="lib-icon">
               <img class="lib-icon" src="/img/portfolio/deformable-bodies.svg" alt="DB">
             </div>
