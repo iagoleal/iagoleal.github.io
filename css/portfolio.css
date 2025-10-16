@@ -1,8 +1,8 @@
 /* Page */
 
 .layout {
-  margin: 20px 36px;
-  display:grid;
+  padding: 20px 36px;
+  display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: auto;
   grid-template-areas: 
@@ -26,25 +26,14 @@
 .panel {
   background: var(--color-background);
   border:     1px solid var(--color-faded);
-  box-shadow: none;
-  padding:    20px;
-  min-width:  0;
+  padding:    1.5rem;
   /* max-width: 60vw; */
   align-self: stretch;
 }
 
-.section-head{
-  margin: 0 0 12px 0;
-  background: var(--color-background);
-}
-
 .section-title {
-  font-size:   1.5rem;
-  font-weight: 400;
-  margin:  0;
-  padding: 0;
+  margin-top:  0;
 }
-
 
 /* Libraries as cards */
 .lib-list {
@@ -52,18 +41,17 @@
   margin:     0;
   padding:    0;
   display:    grid;
-  gap:        8px;
+  gap:        0.5rem;
 }
 
-.lib-item {
+.lib-item, .lib-item:visited {
   display:         flex;
-  gap:             12px;
+  gap:             0.75rem;
   align-items:     center;
   text-decoration: none;
-  color:           inherit;
-  padding:         10px;
+  color:           var(--color-typography);
+  padding:         0.75rem;
   border:          1px solid var(--color-faded);
-  background:      transparent;
   transition:      box-shadow .12s ease, border-color .12s ease, transform .08s ease;
   min-width:       0;
 }
@@ -73,32 +61,20 @@
   box-shadow:   5px 4px 4px rgba(36, 36, 36, 0.5);
   transform:    translateY(-2px);
   outline:      none;
+  color:           currentColor;
 }
 
 .lib-icon {
-  display: inline-block;
+  display:         flex;
+  flex:            0 0 5cqw;
   width:           5cqw;
   height:          5cqw;
-  flex:            0 0 5cqw;
-  border-radius:   8px;
-  display:         flex;
   align-items:     center;
   justify-content: center;
-  font-weight:     700;
-  color:           var(--color-accent);
-  font-size:       0.95rem;
-}
-
-.lib-body {
-  display:        flex;
-  flex-direction: column;
-  gap:            4px;
-  min-width:      0;
 }
 
 .lib-name {
   font-weight:   700;
-  font-size:     0.95rem;
   color:         var(--title);
   white-space:   nowrap;
   overflow:      hidden;
@@ -106,7 +82,7 @@
 }
 
 .lib-desc {
-  font-size:  0.86rem;
+  font-size:  var(--font-size-small);
   color:      var(--color-faded);
 }
 
@@ -115,7 +91,6 @@
     width:     40px;
     height:    40px;
     flex:      0 0 40px;
-    font-size: 0.9rem;
   }
 }
 
@@ -130,7 +105,7 @@
   margin:     0;
   padding:    0;
   display:    grid;
-  gap:        6px;
+  gap:        0.5rem;
 }
 
 .pub-item {
@@ -140,7 +115,7 @@
 
 .pub-title {
   font-weight: 600;
-  margin:      0 0 6px 0;
+  padding:      0 0 6px 0;
   line-height: 1.3;
 }
 
@@ -152,9 +127,8 @@
 .pub-meta {
   display:     flex;
   flex-wrap:   wrap;
-  gap:         8px 16px;
+  gap:         0.5rem 1rem;
   align-items: center;
-  min-width:   0;
 }
 
 .pub-authors {
@@ -167,6 +141,7 @@
   font-weight:  600;
   font-size:    var(--font-size-small);
   padding:      4px 8px;
+  text-wrap:     balance;
 }
 
 .pub-year {
@@ -175,7 +150,7 @@
   font-weight:  600;
   font-size:    var(--font-size-small);
   padding:      4px 8px;
-  margin: 0px 2px 2px 0px;
+  margin:       0 2px 0 0;
 }
 
 .pub-arxiv {
@@ -265,10 +240,9 @@ a.pub-venue:hover {
 }
 
 .name .title {
-  font-size:     min(8vw, 48pt);
-  margin-top:    0;
-  margin-bottom: 0;
-  text-align: right;
+  font-size:      min(8vw, 48pt);
+  margin:         0;
+  text-align:     right;
   text-transform: uppercase;
 }
 
@@ -279,13 +253,9 @@ a.pub-venue:hover {
 }
 
 .hero .salute {
-  text-align:    left;
-  margin-top:    0;
-  margin-bottom: 0;
-  max-width: min(15rem, var(--article-width));
+  max-width:  min(15rem, var(--article-width));
   text-align: justify;
   word-break: normal;
-  hyphens: none;
-  font-size: var(--font-size-small);
+  hyphens:    none;
+  font-size:  var(--font-size-small);
 }
-

@@ -22,7 +22,7 @@ and everything in between.
 :::{.panel}
 ```{=html}
 <div class="section-head">
-  <h2 id="pubs-heading" class="section-title">Recent Posts</h2>
+  <h2 class="section-title">Recent Posts</h2>
 </div>
 ```
 
@@ -34,7 +34,7 @@ and everything in between.
 ```{=html}
     <section class="panel">
       <div class="section-head">
-        <span id="libs-heading" class="section-title">Scientific Libraries</span>
+        <h2 class="section-title">Scientific Libraries</h2>
       </div>
 
       <ul class="lib-list">
