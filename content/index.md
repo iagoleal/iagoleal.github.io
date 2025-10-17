@@ -1,29 +1,29 @@
 :::layout
 
-<div style="grid-column: 1 / -1;" class="hero panel">
-<div class="description">
-<div class="name">
-<h1 class="title">Iago Leal de&nbsp;Freitas</h1>
-<span class="ipa">
-[iˈago leˈaʊ̯ d͡ʒi ˈfɾej.tajʃ]
-</span>
-</div>
-<div class="salute">
-<span>
-Hello! I'm Iago, a programmer and mathematician.
-Welcome to my blog about mathematics, programming
-and everything in between.
-</span>
-</div>
-</div>
-</div>
-
-
-:::{.panel}
 ```{=html}
-<div class="section-head">
-  <h2 class="section-title">Recent Posts</h2>
+<div style="grid-column: 1 / -1;" class="hero panel">
+  <div class="description">
+    <div class="name">
+      <h1 class="title">iago leal de&nbsp;freitas</h1>
+      <span class="ipa">
+        [iˈago leˈaʊ̯ d͡ʒi ˈfɾej.tajʃ]
+      </span>
+    </div>
+    <div class="salute">
+    <span>
+      Hello! I'm Iago, a programmer and mathematician.
+      Welcome to my blog about mathematics, programming
+      and everything in between.
+    </span>
+    </div>
+  </div>
 </div>
+```
+
+
+:::{.panel id="posts"}
+```{=html}
+<h2 class="section-title">Recent Posts</h2>
 ```
 
 {{ post-list 7 }}
@@ -32,10 +32,8 @@ and everything in between.
 :::
 
 ```{=html}
-    <section class="panel">
-      <div class="section-head">
-        <h2 class="section-title">Scientific Libraries</h2>
-      </div>
+    <section id="libraries" class="panel">
+      <h2 class="section-title">Scientific Libraries</h2>
 
       <ul class="lib-list">
         <li>
@@ -92,10 +90,8 @@ and everything in between.
 
 ```{=html}
   <!-- Publications panel -->
-  <section class="panel" style="grid-column: 1 / -1;">
-    <div class="section-head">
-      <h2 id="pubs-heading" class="section-title">Publications</h2>
-    </div>
+  <section id="publications" class="panel" style="grid-column: 1 / -1;">
+    <h2 class="section-title">Publications</h2>
 
     <ul class="pub-list" aria-label="Publications">
       <li class="pub-item">
