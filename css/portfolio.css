@@ -26,7 +26,7 @@
 .panel {
   background: var(--color-background);
   border:     1px solid var(--color-faded);
-  padding:    1.5rem;
+  padding:    24px;
   /* max-width: 60vw; */
   align-self: stretch;
 }
@@ -50,7 +50,7 @@
   align-items:     center;
   text-decoration: none;
   color:           var(--color-typography);
-  padding:         0.75rem;
+  padding:         12px;
   border:          1px solid var(--color-faded);
   transition:      box-shadow .12s ease, border-color .12s ease, transform .08s ease;
   min-width:       0;
@@ -190,7 +190,7 @@ a.pub-venue:hover {
   justify-content: space-between;
   align-content:   center;
   align-items:     left;
-  padding:         0.6rem 0;
+  padding:         10px 0;
   border-radius:   10px;
   transition:      background 0.3s ease-in-out;
 }

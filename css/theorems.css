@@ -11,16 +11,10 @@
 */
 
 .Theorem, .Lemma, .Definition, .Aside {
-  display:        block;
-  margin-top:     12px;
-  margin-bottom:  12px;
-  margin-left:    0px;
-  margin-right:   0px;
-  padding-left:   1em;
-  padding-right:  0.2em;
-  padding-top:    0.1em;
-  padding-bottom: 0em;
-  border-left:    5px solid;
+  display:     block;
+  margin:      12px 0 12px 0;
+  padding:     2px 0 2px 1em;
+  border-left: 5px solid;
 }
 
 .Theorem::before, .Lemma::before, .Definition::before {
@@ -84,4 +78,9 @@
 
 .Aside {
   border-left-color: var(--color-lightning);
+}
+
+/* It is better to let the Theorem block itself handle the marging. */
+:is(.Theorem, .Lemma, .Definition, .Aside) :is(h1, h2, h3, h4, h5, h6, p):first-child {
+  margin-top: 0;
 }
