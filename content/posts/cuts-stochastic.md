@@ -10,45 +10,11 @@ description:
   We focus on the possible ways to represent the cuts during algorithms
   and their consequences for parallelization.
 suppress-bibliography: true
+css: "/css/plots.css"
 ---
 
 <style>
-.Missing {
-  text-align: center;
-  width:  100%;
-  height: 300px;
-  background-color: gray;
-  border: black 1px;
-}
-</style>
-
-<style>
 /* CSS for styling */
-.diagram-container {
-  flex:      auto 1 1;
-  max-width: 100%;
-  margin-top: 16px;
-  margin-bottom: 16px;
-}
-
-svg.diagram {
-  width:            100%;
-  height:           100%;
-  border-radius:    5px;
-  box-shadow:       rgba(0, 0, 0, 0.1) 0px 4px 12px;
-  margin-left:      auto;
-  margin-right:     auto;
-}
-
-.hyperplane {
-  stroke:       var(--color-opposite);
-  stroke-width: 1pt;
-}
-
-.mark {
-  fill: var(--color-opposite);
-}
-
 .function-graph {
   stroke: var(--color-accent, hsl(147 42% 64%));
   fill:   none;
@@ -79,11 +45,6 @@ svg.diagram {
   stroke:       var(--color-opposite);
   stroke-width: 2pt;
 }
-
-.epigraph {
-  fill: var(--color-crystal, hsl(147 42% 64%));
-}
-
 </style>
 
 \def\E#1{\mathbb{E}\left[ #1 \right]}

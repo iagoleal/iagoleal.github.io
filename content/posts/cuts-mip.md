@@ -9,64 +9,12 @@ description:
   Approximations by cuts are common in convex optimization.
   How to leverage them in the presence of integer variables?
 suppress-bibliography: true
+css: "/css/plots.css"
 ---
 
 \def\cont#1{{#1}_C}
 \def\cvx\check
 \def\inner<#1,#2>{\left\langle#1,\,#2\right\rangle}
-
-
-<style>
-/* CSS for styling */
-.diagram-container {
-  flex:      auto 1 1;
-  max-width: 100%;
-  margin-top: 16px;
-  margin-bottom: 16px;
-}
-
-svg.diagram {
-  width:            100%;
-  height:           100%;
-  border-radius:    5px;
-  box-shadow:       rgba(0, 0, 0, 0.1) 0px 4px 12px;
-  margin-left:      auto;
-  margin-right:     auto;
-}
-
-.hyperplane {
-  stroke:       var(--color-opposite);
-  stroke-width: 1pt;
-}
-
-.mark {
-  fill: var(--color-opposite);
-}
-
-.function-graph {
-  stroke: black;
-  fill:   none;
-}
-
-.relaxation-continuous {
-  stroke: var(--color-attention);
-  fill:   none;
-}
-
-.relaxation-dual {
-  stroke:       var(--color-attention);
-  stroke-width: 2pt;
-  fill:         none;
-}
-
-.epigraph {
-  fill: var(--color-crystal, hsl(147 42% 64%));
-}
-
-.epigraph-component {
-  fill: var(--color-attention, hsl(180 43% 51%));
-}
-</style>
 
 Some people's mind, upon hearing about optimization, start to wander through continuous variables, gradients and such.
 But there is much more out there.

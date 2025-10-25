@@ -10,29 +10,16 @@ description:
   a technique for representing functions via polyhedra
   that nicely fits into optimization problems.
 suppress-bibliography: true
+css: "/css/plots.css"
 ---
 
 <style>
 /* CSS for styling */
-.diagram-container {
-  flex: auto 1 1;
-  max-width: 100%;
-}
-
-svg.diagram {
-  width:            100%;
-  height:           100%;
-  border-radius:    5px;
-  box-shadow:       rgba(0, 0, 0, 0.1) 0px 4px 12px;
-  margin-left:      auto;
-  margin-right:     auto;
-}
-
 .multi-figure-container {
   display:         flex;
   flex-direction:  row;
   flex-wrap:       wrap;
-  gap:             1.5rem;
+  gap:             24px;
   justify-content: space-between;
 }
 
@@ -52,22 +39,7 @@ svg.diagram {
   fill: #de82a2 !important;
 }
 
-.hyperplane {
-  stroke:       var(--color-opposite) !important;
-  stroke-width: 1pt;
-}
-
-.mark {
-  fill: var(--color-opposite);
-}
-
-.function-graph {
-  stroke: var(--color-typography, #fdfdfd);
-  fill: none;
-}
-
 .epigraph {
-  fill: var(--color-crystal, hsl(147 42% 64%));
   transition: fill 400ms;
 }
 
@@ -76,18 +48,11 @@ svg.diagram {
 }
 
 .draggable {
-  cursor:move;
+  cursor: move;
 }
 
 .draggable:hover {
-  cursor:move;
   fill: var(--color-attention, #ffd700);
-}
-
-.relaxation-dual {
-  stroke:       var(--color-attention);
-  stroke-width: 2pt;
-  fill:         none;
 }
 </style>
 
