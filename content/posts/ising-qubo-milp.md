@@ -269,12 +269,15 @@ Binarize All the Variables
 --------------------------
 
 The first step in our conversion is to make all variables binary.
-There are some ways to do this,
-but we will focus on the most straightforward ones.
+There are many other ways to encode to do this,
+each with their own pros and cons.
+For reasons of scope, we will focus on the (in my opinion) most straightforward ones:
+one-hot and binary expansion.
+But there are great surveys in the literature about all methods.[@qubojl] [@tamura_performance_2021]
 
-### One-hot encoding
+### One-Hot Encoding
 
-This an old friend for anyone who did some machine learning.
+This is an old friend for anyone who's ever done some machine learning.
 The idea is to create disjoint states representing
 each possible value together with a restriction that only one of them can be "on" at a time.
 
@@ -318,7 +321,23 @@ $$
   \end{array}
 $$
 
-### Binary Expansion
+### Binary Expansion Encoding
+
+For variables taking many values, the one-hot encoding can produce too many variables.
+An alternative is to use a binary expansion,
+since it only requires a logarithm amount of variables.
+Again, let's start with an integer decision variable $x_i \in \Z$.
+First write it as the lower bound plus an increment, $x_i = L_i + \Delta$.
+To expand this increment in binary,
+we only need $K_i \coloneqq \ceil{\log_2(U_i - L_i)}$ binary variables $x_i^{(j)}$.
+This representation amounts to the system
+$$
+\begin{aligned}
+  x_i &= L_i + \Delta, \\
+  \Delta &= \sum_{j = 0}^{K_i} 2^j x_i^{(j)} \\
+  0 &\le \Delta \le U_i - L_i
+\end{aligned}
+$$
 
 Equalities Become Penalties
 ---------------------------
@@ -335,10 +354,10 @@ $$
 
 This problem becomes a QUBO by turning the constraints into a quadratic regularization term.
 More formally,
-we choose a _penalty factor_ $\lambda > 0$ and move the constraint into the objective as
+we choose a _penalty factor_ $\rho > 0$ and move the constraint into the objective as
 $$
   \begin{array}{rl}
-    \min\limits_{x} & c^\top z  + \lambda (Az - b)^\top (A z - b)\\
+    \min\limits_{x} & c^\top z  + \rho (Az - b)^\top (A z - b)\\
     \textrm{s.t.}   & z \in \{0, 1\}^N.
   \end{array}
 $$
@@ -346,9 +365,9 @@ $$
 This is already a QUBO!
 But we can find an explicit formula for the $Q$ matrix with some high school algebra.
 $$ \begin{aligned}
-  && c^\top z  + \lambda (Az - b)^\top (A z - b)\\
-  &=& c^\top z + \lambda \Big[ z^\top (A^\top A) z - 2b^\top A z + b^\top b \Big] \\
-  &=& z^\top (\lambda A^\top A) z + (c - 2\lambda A^\top b )^\top z + \lambda b^\top b
+  && c^\top z  + \rho (Az - b)^\top (A z - b)\\
+  &=& c^\top z + \rho \Big[ z^\top (A^\top A) z - 2b^\top A z + b^\top b \Big] \\
+  &=& z^\top (\rho A^\top A) z + (c - 2\rho A^\top b )^\top z + \rho b^\top b
   \end{aligned}
 $$
 
@@ -357,9 +376,9 @@ and you can safely ignore it.
 And, as before, being binary makes the linear term equivalent to a quadratic diagonal.
 Taking all this into account,
 the final Q matrix is
-$$ Q = \lambda A^\top A + \mathrm{Diag}(c - 2\lambda A^\top b ).$$
+$$ Q = \rho A^\top A + \mathrm{Diag}(c - 2\rho A^\top b ).$$
 
-The only thing missing is how to properly choose the parameter $lambda$.
+The only thing missing is how to properly choose the parameter $rho$.
 We want to preserve the original solutions,
 so it should be large enough to force the minimum to "cancel it"
 by being at an originally feasible point.
@@ -449,4 +468,19 @@ they accompanying paper [@qubojl] is a great place to further understand the tec
   pages      = {335--371},
 }
 
+
+@article{tamura_performance_2021,
+  title    = {Performance {Comparison} of {Typical} {Binary}-{Integer} {Encodings} in an {Ising} {Machine}},
+  volume   = {9},
+  issn     = {2169-3536},
+  url      = {https://ieeexplore.ieee.org/document/9435359/},
+  doi      = {10.1109/ACCESS.2021.3081685},
+  abstract = {The differences in performance among binary-integer encodings in an Ising machine, which can solve combinatorial optimization problems, are investigated. Many combinatorial optimization problems can be mapped to find the lowest-energy (ground) state of an Ising model or its equivalent model, the Quadratic Unconstrained Binary Optimization (QUBO). Since the Ising model and QUBO consist of binary variables, they often express integers as binary when using Ising machines. A typical example is the combinatorial optimization problem under inequality constraints. Here, the quadratic knapsack problem is adopted as a prototypical problem with an inequality constraint. It is solved using typical binary-integer encodings: one-hot encoding, binary encoding, and unary encoding. Unary encoding shows the best performance for large-sized problems.},
+  urldate  = {2025-11-01},
+  journal  = {IEEE Access},
+  author   = {Tamura, Kensuke and Shirai, Tatsuhiko and Katsura, Hosho and Tanaka, Shu and Togawa, Nozomu},
+  year     = {2021},
+  keywords = {binary-integer encoding, combinatorial optimization problem, Computational modeling, Encoding, Ising machine, Ising model, Linear programming, Optimization, Physics, quadratic knapsack problem, quadratic unconstrained binary optimization, Stationary state},
+  pages    = {81032--81039},
+}
 ```
