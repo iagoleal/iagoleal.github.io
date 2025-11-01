@@ -11,6 +11,11 @@ suppress-bibliography: true
 css: "/css/plots.css"
 ---
 
+\def\ceil#1{\lceil #1 \rceil}
+\def\floor#1{\lfloor #1 \rfloor}
+\def\B{\{0, 1\}}
+\def\Is{\{-1, +1\}}
+
 ```{=tex}
 \pgfdeclarelayer{background}
 \pgfdeclarelayer{foreground}
@@ -56,7 +61,7 @@ Somewhat like the diagram below.
       mark=at position 0.5 with {\arrow{>}}}
       ] 
     \draw[postaction={decorate}]  (i.east) -- (q.west) node [writeup] {Ising\\Model};
-    \draw[postaction={decorate}]  (q.east) -- (s.west) node [writeup] {Optimum};
+    \draw[postaction={decorate}]  (q.east) -- (s.west) node [writeup] {Solution};
   }
 }
 ```
@@ -64,10 +69,10 @@ Somewhat like the diagram below.
 Today, I don't want to discuss how these solvers work[^later-post]
 but rather the question of how to put them to good use.
 After all, if the problems I care about are all classical,
-what is the difference this quantum machine can in my life?
+what is the difference this quantum machine can make in my life?
 Since we are doing optimization,
 let's focus on MILP --- a NP-hard problem that is everywhere ---
-and see how a quantum computer to solve it.
+and see how a quantum computer helps us solve it.
 
 $$
 \begin{equation}
@@ -87,7 +92,7 @@ Unfortunately, the Ising model is rather different
 from the kind of optimization problems we generally want to solve.
 Hence, to take advantage of these machines
 it is necessary to employ a preprocessing step that "rewrites" our programs into the appropriate format.
-This is today's theme.
+This is our theme.
 
   ```tikz {tikzlibrary="quotes,decorations.markings,shapes.geometric"}
 { [every node/.style = {align = center},
@@ -106,17 +111,16 @@ This is today's theme.
       ] 
     \draw[postaction={decorate}]  (i.east) -- (r.west) node [writeup] {MILP};
     \draw[postaction={decorate}]  (r.east) -- (q.west) node [writeup] {Ising\\Model};
-    \draw[postaction={decorate}]  (q.east) -- (s.west) node [writeup] {Optimum};
+    \draw[postaction={decorate}]  (q.east) -- (s.west) node [writeup] {Solution};
   }
 }
 ```
 
 Even if you haven't jumped on the quantum bandwagon,
 these rewriting techniques can still be a useful addition to your toolbelt.
-this post still should have something for you.
 There are other (classical) hardware tailor-made to solving the Ising model,
 such as [Fujitsu's Digital Annealers](https://www.fujitsu.com/us/services/business-services/digital-annealer/).
-Or even algorithms and solvers for classical machines such as [Simulated Annealing](https://en.wikipedia.org/wiki/Simulated_annealing)
+Or even algorithms and solvers for traditional machines such as [Simulated Annealing](https://en.wikipedia.org/wiki/Simulated_annealing)
 or my own [TenSolver.jl](https://github.com/SECQUOIA/TenSolver.jl).
 
 The Ising Model in a Graph
@@ -127,7 +131,14 @@ that can be in one of two states $s_i \in \{-1, +1\}$ called their _spin_.
 The graph's edges represent an interacting pair of particles
 and we say that they are _aligned_ whenever their spin is equal.
 To make equations simpler,
-alignment is concisely represented by the product $s_i s_j \in \{-1, +1\}$.
+we use the product of states $s_i s_j$ as a concise way to represent alignment.
+Notice that for $\pm 1$ variables it satisfies
+$$
+s_i s_j = \begin{cases}
+  +1,& s_i = s_j \\
+  -1,& s_i \ne s_j.
+\end{cases}
+$$
 
 :::Missing
 Figure with graph and spin system.
@@ -162,10 +173,10 @@ Every time you click in a node, the spin flips.
 
 
 We can write the Ising model as a MIP by enumerating its nodes from $1$ to $N$,
-and defining an upper-triangular matrix $J$
-whose components are $J_{ij}$ for $i > j$ and $(i, j) \in \mathrm{Edges}$ or zero otherwise.
+and defining a symmetric $J$ whose components are
+$\frac{1}{2} J_{ij}$ for $(i, j) \in \mathrm{Edges}$ and zero otherwise.
 This way, finding the minimum energy configuration of an Ising model
-amounts to the integer quadratic optimization program
+amounts to the integer quadratic optimization program (IQP)
 $$
 \begin{equation}
 \tag{Ising}
@@ -216,8 +227,12 @@ you can get rid of the linear terms by noticing that for binary variables,
 $x_i^2 = x_i$.
 This lets you absorb the linear part into the quadratic one's diagonal by defining
 $$ Q =  4J  -2\mathrm{Diag}\left((J + J^\top) 1 + h\right) $$
-
 Of course, the equivalence's other direction is equally straightforward.
+
+:::Missing
+Graph for a QUBO. Two nodes must be on to turn an edge on.
+Every time you click in a node, the spin flips.
+:::
 
 Knowing this equivalence,
 in the next section we will focus on transforming
@@ -225,7 +240,7 @@ combinatorial problems to a QUBO format.
 The QUBO to Ising can be done as a final postprocessing.
 
 
-Rwriting MILP into QUBO and Ising
+Rewriting MILP into QUBO and Ising
 =================================
 
 Now that you know what an Ising model is and why it is useful,
@@ -233,7 +248,7 @@ it's time to learn how to convert more "classical" problems into it.
 Because of their modeling expressivity and ubiquity,
 we will focus on mixed-integer linear programs.
 Let's just add one restriction to make our life easier:
-all variables should be bounded.[^bigM]
+all variables should be bounded.
 This way, the problem takes the form below.
 $$
   \begin{array}{rl}
@@ -244,24 +259,194 @@ $$
   \end{array}
 $$
 
-[^bigM]: This restriction is common in real-world problems and is somewhat similar to a big M.
+This restriction is common in real-world problems and is somewhat similar to a big M.
+This amounts to constraining the feasibility region to a large parallelepiped.
+For most problems,
+you can find appropriate bounds that every variable should satisfy at the minimum,
+so it is not a big deal of an assumption.
 
-Binarization
-------------
+Binarize All the Variables
+--------------------------
+
+The first step in our conversion is to make all variables binary.
+There are some ways to do this,
+but we will focus on the most straightforward ones.
+
+### One-hot encoding
+
+This an old friend for anyone who did some machine learning.
+The idea is to create disjoint states representing
+each possible value together with a restriction that only one of them can be "on" at a time.
+
+Take an integer variable $x_i \in \Z$.
+Since it is bounded,
+there are exactly ${K_i\coloneqq\floor{U_i} - \ceil{L_i}}$ values it can take.
+Let's write these values as constants $Y_i^{(j)}$.
+The plan is to add $K_i$ binary variables
+$x_i^{(j)} \in \B$ for $i \in \{1,\ldots,K_i\}$
+together with constraints
+$$
+\begin{aligned}
+  \sum_{j = 1}^{K_i} x_i^{(j)} &= 1, \\
+  x_i &= \sum_{j=1}^{K_i} Y_i^{(j)} x_i^{(j)}.
+\end{aligned}
+$$
+
+These constraints are an integer programming way of restating
+what we said in the previous paragraph.
+The variable $x_i$ can take any of the $Y_i^{(j)}$ values
+but is constrained to only choose one of them.
+
+When the decision variable is real,
+we will be required to make an approximation compromise.
+Discretize the interval $[L_i, U_i]$ uniformly into an appropriate amount $K_i$ of points
+--- written as $Y_i^{(j)}$.
+The maximum error induced by such a discretization in $(U_i - L_i) / K_i$.
+Now we can proceed as for the integer variables implementing the "choice" constraints
+among the $Y_i^{(j)} values.
+
+The form of the second constraints lets you get rid of the variable $x_i$.
+Since it is decoupled, you can just substitute the rhs for it
+and work with only the binary variables $x_i^{(j)}$.
+After this step, the problem becomes a pure integer linear program (ILP),
+$$
+  \begin{array}{rl}
+    \min\limits_{x} & \sum_{i = 1}^{m + k} c_i \left( \sum_{j=1}^{K_i} Y_i^{(j)} x_i^{(j)} \right) \\
+    \textrm{s.t.}   & A_i \left( \sum_{j=1}^{K_i} Y_i^{(j)} x_i^{(j)} \right) = b_i, \\
+                    & \sum_{j = 1}^{K_i} x_i^{(j)} = 1, \\
+                    & x_i^{(j)} \in \B.
+  \end{array}
+$$
+
+### Binary Expansion
+
+Equalities Become Penalties
+---------------------------
+
+At this point,
+we are left with a pure binary LP with only equality constraints.
+$$
+  \begin{array}{rl}
+    \min\limits_{x} & c^\top z \\
+    \textrm{s.t.}   & A z = b, \\
+                    & z \in \{0, 1\}^N.
+  \end{array}
+$$
+
+This problem becomes a QUBO by turning the constraints into a quadratic regularization term.
+More formally,
+we choose a _penalty factor_ $\lambda > 0$ and move the constraint into the objective as
+$$
+  \begin{array}{rl}
+    \min\limits_{x} & c^\top z  + \lambda (Az - b)^\top (A z - b)\\
+    \textrm{s.t.}   & z \in \{0, 1\}^N.
+  \end{array}
+$$
+
+This is already a QUBO!
+But we can find an explicit formula for the $Q$ matrix with some high school algebra.
+$$ \begin{aligned}
+  && c^\top z  + \lambda (Az - b)^\top (A z - b)\\
+  &=& c^\top z + \lambda \Big[ z^\top (A^\top A) z - 2b^\top A z + b^\top b \Big] \\
+  &=& z^\top (\lambda A^\top A) z + (c - 2\lambda A^\top b )^\top z + \lambda b^\top b
+  \end{aligned}
+$$
+
+The constant $b^\top b$ is irrelevant for the minimization
+and you can safely ignore it.
+And, as before, being binary makes the linear term equivalent to a quadratic diagonal.
+Taking all this into account,
+the final Q matrix is
+$$ Q = \lambda A^\top A + \mathrm{Diag}(c - 2\lambda A^\top b ).$$
+
+The only thing missing is how to properly choose the parameter $lambda$.
+We want to preserve the original solutions,
+so it should be large enough to force the minimum to "cancel it"
+by being at an originally feasible point.
+That is, whenever $Az = b$ the penalization term disappears and we are left with the original objective.
+
+The discussion above works for a general equality constraint,
+but more specific constraint there are simpler ways to penalize.
+I recommend seeing the paper by @{glover_quantum_2019}
+for more details.
 
 Inequalities to Equalities
 --------------------------
 
-Penalization
-------------
+If your MILP also have inequality constraints,
+you can use _slack variables_ to put it into QUBO form.
+Consider a constraint of the form $M x \le w$.
+This is the same as an equality constraint together with an additional variable
+representing the "inequality gap",
+$$
+\begin{aligned}
+  M x + s &= w, \\
+  s &\ge 0.
+\end{aligned}
+$$
+Furthermore, since we're assuming $x$ to be bounded,
+we can bound the components $s_i$ from above
+by checking the maximum possible value for $w_i - \sum_{j}M_{ij}x_j$.
+Binarize $s$ and penalize the equality constraint to get a QUBO.
 
 
+Conclusion
+==========
+
+Although the Ising Model is in general NP-hard,
+there are some recent solver and hardware advancements
+that treat it very well.
+In particular, it is a formulation much more amenable to parallelism
+and non-classic computing paradigms than your everyday MILP.
+So, when you find a hard problem that doesn't scale with your hardware,
+it is worth it to try these conversions.
+
+As a parting remark,
+keep in mind that these rewriting steps are all automatable.
+There are ready-to-use software
+that take a MILP and compiles it into a QUBO/Ising model
+while transparently calculating all discretizations and penalty factors for you.
+If you are using Julia,
+I recommend checking [ToQUBO.jl](https://github.com/JuliaQUBO/ToQUBO.jl) for that.
+And if you are not using it,
+I recommend converting your models to Julia just so you can put this lib into good use.
+It is this great.
+In fact,
+they accompanying paper [@qubojl] is a great place to further understand the techniques we discussed here.
+
+```{=bibtex}
+@misc{qubojl,
+  title      = {{QUBO}.jl: {A} {Julia} {Ecosystem} for {Quadratic} {Unconstrained} {Binary} {Optimization}},
+  shorttitle = {{QUBO}.jl},
+  url        = {http://arxiv.org/abs/2307.02577},
+  abstract   = {We present QUBO.jl, an end-to-end Julia package for working with QUBO (Quadratic Unconstrained Binary Optimization) instances. This tool aims to convert a broad range of JuMP problems for straightforward application in many physics and physics-inspired solution methods whose standard optimization form is equivalent to the QUBO. These methods include quantum annealing, quantum gate-circuit optimization algorithms (Quantum Optimization Alternating Ansatz, Variational Quantum Eigensolver), other hardwareaccelerated platforms, such as Coherent Ising Machines and Simulated Bifurcation Machines, and more traditional methods such as simulated annealing. Besides working with reformulations, QUBO.jl allows its users to interface with the aforementioned hardware, sending QUBO models in various file formats and retrieving results for subsequent analysis. QUBO.jl was written as a JuMP / MathOptInterface (MOI) layer that automatically maps between the input and output frames, thus providing a smooth modeling experience.},
+  language   = {en},
+  urldate    = {2023-07-07},
+  publisher  = {arXiv},
+  author     = {Xavier, Pedro Maciel and Ripper, Pedro and Andrade, Tiago and Garcia, Joaquim Dias and Maculan, Nelson and Neira, David E. Bernal},
+  month      = jul,
+  year       = {2023},
+  note       = {arXiv:2307.02577 [quant-ph]},
+  keywords   = {Quantum Physics, Mathematics - Optimization and Control},
+}
 
 
-References:
+@article{glover_quantum_2019,
+  title      = {Quantum {Bridge} {Analytics} {I}: a tutorial on formulating and using {QUBO} models},
+  volume     = {17},
+  issn       = {1619-4500, 1614-2411},
+  shorttitle = {Quantum {Bridge} {Analytics} {I}},
+  url        = {http://link.springer.com/10.1007/s10288-019-00424-y},
+  doi        = {10.1007/s10288-019-00424-y},
+  abstract   = {Quantum Bridge Analytics relates generally to methods and systems for hybrid classical-quantum computing, and more particularly is devoted to developing tools for bridging classical and quantum computing to gain the beneﬁts of their alliance in the present and enable enhanced practical application of quantum computing in the future. This is the ﬁrst of a two-part tutorial that surveys key elements of Quantum Bridge Analytics and its applications, with an emphasis on supplementing models with numerical illustrations. In Part 1 (the present paper) we focus on the Quadratic Unconstrained Binary Optimization model which is presently the most widely applied optimization model in the quantum computing area, and which uniﬁes a rich variety of combinatorial optimization problems.},
+  language   = {en},
+  number     = {4},
+  urldate    = {2025-11-01},
+  journal    = {4OR},
+  author     = {Glover, Fred and Kochenberger, Gary and Du, Yu},
+  month      = dec,
+  year       = {2019},
+  pages      = {335--371},
+}
 
-https://personal.lse.ac.uk/anthony/Quadratization_web.pdf
-
-A Brief introduction of Fourier Analysis on the Boolean Cube
-
-https://github.com/JuliaQUBO/ToQUBO.jl
+```
