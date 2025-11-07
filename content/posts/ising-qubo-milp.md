@@ -11,6 +11,22 @@ suppress-bibliography: true
 css: "/css/plots.css"
 ---
 
+<style>
+.site {
+  stroke: var(--color-typography);
+  stroke-width: 2pt;
+  transition: fill 0.3s ease;
+  cursor: pointer;
+}
+
+.interaction {
+  stroke: var(--color-typography);
+  stroke-width: 2pt;
+}
+</style>
+
+
+
 \def\ceil#1{\lceil #1 \rceil}
 \def\floor#1{\lfloor #1 \rfloor}
 \def\B{\{0, 1\}}
@@ -140,10 +156,10 @@ s_i s_j = \begin{cases}
 \end{cases}
 $$
 
-:::Missing
-Figure with graph and spin system.
-Every time you click in a node, the spin flips.
-:::
+<figure id="figure-spin" class="diagram-container">
+  <svg class="diagram" viewBox="0 0 1000 500" width="100%" height="100%">
+  </svg>
+</figure>
 
 For each edge there is an interaction energy $J_{ij} \in \R$
 indicating how costly it is for them to remain aligned.
@@ -283,7 +299,7 @@ each possible value together with a restriction that only one of them can be "on
 
 Take an integer variable $x_i \in \Z$.
 Since it is bounded,
-there are exactly ${K_i\coloneqq\floor{U_i} - \ceil{L_i}}$ values it can take.
+there are exactly ${K_i\coloneqq\floor{U_i} - \ceil{L_i}} + 1$ values it can take.
 Let's write these values as constants $Y_i^{(j)}$.
 The plan is to add $K_i$ binary variables
 $x_i^{(j)} \in \B$ for $i \in \{1,\ldots,K_i\}$
@@ -326,18 +342,31 @@ $$
 For variables taking many values, the one-hot encoding can produce too many variables.
 An alternative is to use a binary expansion,
 since it only requires a logarithm amount of variables.
-Again, let's start with an integer decision variable $x_i \in \Z$.
-First write it as the lower bound plus an increment, $x_i = L_i + \Delta$.
-To expand this increment in binary,
-we only need $K_i \coloneqq \ceil{\log_2(U_i - L_i)}$ binary variables $x_i^{(j)}$.
-This representation amounts to the system
-$$
-\begin{aligned}
-  x_i &= L_i + \Delta, \\
-  \Delta &= \sum_{j = 0}^{K_i} 2^j x_i^{(j)} \\
-  0 &\le \Delta \le U_i - L_i
-\end{aligned}
-$$
+Again, let's start with an integer decision variable $x \in \Z$
+bounded as $0 \le x \le U$
+and call $K \coloneqq \floor{\log_2 U}$.
+To represent all integers from $0$ to $U$ in binary,
+we need a boolean vector $z$ with only $K + 1$ components.
+The straightforward representation amounts to $x = \sum_{j = 0}^{K} 2^j z_j$.
+
+Notice, however, that if the most significant bit is on,
+the variable may go above its upper bound $U$.
+To prevent that, we shift the last coefficient by ($2^{K-1} - 1$),
+thus capping the values.
+This corrects the encoding to
+$$ x = \sum_{j = 0}^{K-2} 2^j z_j + (U - 2^{K-1} + 1) z_{K-1}.$$
+
+You can play with turning the bits on and off in the graph below.
+
+:::Missing
+Binary Encoding
+:::
+
+For real numbers, we can add negative power of 2 to represent the number's fractional part.
+Suppose you want to allocate $R$ bits for this and call $\Delta = \sum_{j=1}^R 2^{-j}$.
+The representation taking account the upper bound correction becomes
+$$ x = \sum_{j = -R}^{K-2} 2^j z_j + (U - 2^{K-1} + 1 - \Delta) z_{K-1}.$$
+
 
 Equalities Become Penalties
 ---------------------------
@@ -484,3 +513,12 @@ they accompanying paper [@qubojl] is a great place to further understand the tec
   pages    = {81032--81039},
 }
 ```
+
+<script type="module">
+  import * as figures from "./figures.js";
+
+  const adjacency = [[0, 1], [1, 2], [1, 3], [2, 3], [3, 4], [4, 5], [2, 5]];
+  const states    = [1, 1, 1, -1, 1, 1];
+
+  new figures.Diagram("#figure-spin", adjacency, states);
+</script>
