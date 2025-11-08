@@ -156,6 +156,9 @@ s_i s_j = \begin{cases}
 \end{cases}
 $$
 
+In the figure below, we represent an Ising model with 6 particles.
+The graph is interactive and you can click on the nodes to flip their spin
+and see the interactions alignments.
 <figure id="figure-spin" class="diagram-container">
   <svg class="diagram" viewBox="0 0 1000 500" width="100%" height="100%">
   </svg>
@@ -520,5 +523,6 @@ they accompanying paper [@qubojl] is a great place to further understand the tec
   const adjacency = [[0, 1], [1, 2], [1, 3], [2, 3], [3, 4], [4, 5], [2, 5]];
   const states    = [1, 1, 1, -1, 1, 1];
 
-  new figures.Diagram("#figure-spin", adjacency, states);
+  new figures.Diagram("#figure-spin", adjacency, states)
+    .graph();
 </script>
