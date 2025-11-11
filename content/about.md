@@ -33,7 +33,7 @@ a scalable GPU-accelerated solver for Integer Programming.
 If you want to discuss something I wrote on the blog or just say "hi",
 please send me an email at `hello[at]iagoleal[dot]com`.
 
-Most of my personal projects are open source (including [this site](github.com/iagoleal/iagoleal.github.io)!)
+Most of my personal projects are open source (including [this site](https://github.com/iagoleal/iagoleal.github.io)!)
 and you can find the repositories in my [Github profile](https://github.com/iagoleal).
 
 I am also a regular member of [PowerPointers](https://powerpointers.github.io) (indefinite hiatus).
