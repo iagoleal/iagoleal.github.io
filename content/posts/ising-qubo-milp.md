@@ -19,10 +19,25 @@ css: "/css/plots.css"
   cursor: pointer;
 }
 
+.tense {
+  stroke: red;
+  animation: shake 0.25s infinite;
+}
+
 .interaction {
   stroke: var(--color-typography);
   stroke-width: 2pt;
 }
+
+@keyframes shake {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(1px, 1px) rotate(1deg); }
+  50% { transform: translate(0, 0) rotate(0eg); }
+  75% { transform: translate(-1px, 1px) rotate(-1deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+
 </style>
 
 
@@ -174,10 +189,10 @@ The system's total energy is the sum of all interaction energies
 considering the particles' alignment,
 $$H(s) \coloneqq \sum_{(i,j)} J_{ij} s_i s_j.$$
 
-:::Missing
-Figure with spin system and weights.
-Every time you click in a node, the spin flips.
-:::
+<figure id="figure-ising" class="diagram-container">
+  <svg class="diagram" viewBox="0 0 1000 500" width="100%" height="100%">
+  </svg>
+</figure>
 
 One also considers a _magnetic field_ interacting with this system.
 It acts on each particle with a factor $h_i \in \R$
@@ -185,10 +200,10 @@ that biases it towards one of the states.
 With this field, the total energy becomes
 $$H(s) \coloneqq \sum_{(i, j)} J_{ij} s_i s_j + \sum_{i} h_i s_i.$$
 
-:::Missing
-Figure with graph and spin system + external field.
-Every time you click in a node, the spin flips.
-:::
+<figure id="figure-ising-complete" class="diagram-container">
+  <svg class="diagram" viewBox="0 0 1000 500" width="100%" height="100%">
+  </svg>
+</figure>
 
 
 We can write the Ising model as a MIP by enumerating its nodes from $1$ to $N$,
@@ -520,9 +535,26 @@ they accompanying paper [@qubojl] is a great place to further understand the tec
 <script type="module">
   import * as figures from "./figures.js";
 
-  const adjacency = [[0, 1], [1, 2], [1, 3], [2, 3], [3, 4], [4, 5], [2, 5]];
-  const states    = [1, 1, 1, -1, 1, 1];
+  const adjacency = [
+    [[0, 1], 2],
+    [[1, 2], -1],
+    [[1, 3], -3],
+    [[2, 3], 6],
+    [[3, 4], -2],
+    [[4, 5], 1],
+    [[2, 5], 2],
+  ];
+  const states = [1, 1, -1, -1, 1, 1];
 
   new figures.Diagram("#figure-spin", adjacency, states)
     .graph();
+
+  new figures.Diagram("#figure-ising", adjacency, states)
+    .graph()
+    .weights();
+
+  new figures.Diagram("#figure-ising-complete", adjacency, states)
+    .graph()
+    .weights()
+    .externalField();
 </script>

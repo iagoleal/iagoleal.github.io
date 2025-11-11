@@ -1,22 +1,12 @@
-import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
-
-function addLine (el, x1, y1, x2, y2) {
-  const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-
-  line.setAttribute("x1", x1);
-  line.setAttribute("y1", y1);
-  line.setAttribute("x2", x2);
-  line.setAttribute("y2", y2);
-  line.setAttribute("stroke", "black");
-
-  return el.appendChild(line);
-}
-
-function draw(el, tag, attrs) {
+function draw(el, tag, attrs, styles) {
   const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
 
   for (const prop in attrs) {
     node.setAttribute(prop, attrs[prop]);
+  }
+
+  for (const prop in styles) {
+    node.style[prop] = styles[prop];
   }
 
   return el.appendChild(node);
@@ -56,16 +46,17 @@ function zeros(rows, cols) {
 export class Diagram {
   constructor(id, edges, states) {
     this.id     = id;
-    // this.svg    = d3.select(`${id} svg`);
     this.svg    = document.querySelector(`${id} svg`);
     this.mode   = "ising";
-    this.edges  = edges;
+    this.edges  = [];
     this.states = ArrayListener(states);
 
-    this.adjacency = zeros(states.length, states.length);
-    for (const [i, j] of edges) {
-      this.adjacency[i][j] = 1;
-      this.adjacency[j][i] = 1;
+    this.J = zeros(states.length, states.length);
+    for (const [[i, j], w] of edges) {
+      this.J[i][j] = w;
+      this.J[j][i] = w;
+
+      this.edges.push([i, j]);
     }
 
   return this;
@@ -82,24 +73,12 @@ export class Diagram {
       {x: 900, y: 350},
     ];
 
-    // Draw edges
-    for (const [s, t] of this.edges) {
-      const edge = draw(this.svg, "line", {
-        class: "interaction",
-        x1: pos[s].x,
-        y1: pos[s].y,
-        x2: pos[t].x,
-        y2: pos[t].y,
-      });
-
-      spins.observe([s, t], () => {
-        edge.setAttribute("stroke", spins[s] == spins[t] ? "green" : "red");
-      })
-    }
+    const ge = draw(this.svg, "g");
+    const gs = draw(this.svg, "g");
 
     // Draw Nodes
     for (const [i, site] of pos.entries()) {
-      const node = draw(this.svg, "circle", {
+      const node = draw(gs, "circle", {
         cx: site.x,
         cy: site.y,
         r: 20,
@@ -114,6 +93,39 @@ export class Diagram {
       node.addEventListener("click", () => flip(this.states, i));
     }
 
+    // Draw edges
+    for (const [s, t] of this.edges) {
+      const w = this.J[s][t]
+      const edge = draw(ge, "line",
+        {
+          class: "interaction",
+          x1: pos[s].x,
+          y1: pos[s].y,
+          x2: pos[t].x,
+          y2: pos[t].y,
+        },
+        {
+          "stroke-width": Math.abs(w),
+        });
+
+      const redrawEdge = function() {
+        const align = w * spins[s] * spins[t] > 0;
+        edge.style["stroke"] =  align ? "green" : "red";
+        edge.classList.toggle("tense", !align);
+      }
+
+      spins.observe([s, t], redrawEdge)
+      redrawEdge()
+    }
+
+    return this;
+  }
+
+  weights() {
+    return this;
+  }
+
+  externalField() {
     return this;
   }
 }
