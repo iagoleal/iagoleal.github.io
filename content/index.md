@@ -97,7 +97,7 @@
       <li class="pub-item">
         <div class="pub-title">
           <span class="pub-year">2025</span>
-          <a href="https://www.cvxgrp.org/scaleopt/">
+          <a href="https://openreview.net/forum?id=EL002DTBRA">
             Quantum-Inspired Tensor Network Methods for Quadratic Unconstrained Binary Optimization
           </a>
         </div>
@@ -105,7 +105,7 @@
           <span class="pub-authors">
             Iago Leal de Freitas, João Victor Paim de Cerqueira Melo Souza, David E. Bernal Neira
           </span>
-          <span class="pub-venue">Accepted at NeurIPS 2025 ScaleOpt Workshop</span>
+          <a class="pub-venue" href="https://openreview.net/forum?id=EL002DTBRA">NeurIPS 2025 ScaleOpt Workshop</a>
         </div>
       </li>
 
