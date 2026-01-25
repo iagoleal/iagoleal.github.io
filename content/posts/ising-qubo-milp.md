@@ -61,14 +61,15 @@ css: "/css/plots.css"
         (atom) ellipse [x radius = 0.5cm, y radius = 0.2cm]
         (atom) ellipse [x radius = 0.5cm, y radius = 0.2cm, rotate = 60]
         (atom) ellipse [x radius = 0.5cm, y radius = 0.2cm, rotate = -60];
-  }
+  },
+  writeup/.style = { midway, above=1mm, align=center, font=\small },
 }
 ```
 
 Quantum computing is on the rise and with it the promise
 of faster solvers for currently hard problems.
 These machines come in many colours and flavours --- each with its own (dis)advantages ---
-but for the folks in operations research there a kind that is particularly exciting:
+but for the folks in operations research a particularly exciting kind is
 the _Quantum Annealer_.
 
 Forget about your Hadamard gates, circuits, and quantum Turing completeness.
@@ -79,7 +80,6 @@ Somewhat like the diagram below.
 
 ```tikz {tikzlibrary="quotes,decorations.markings,shapes.geometric"}
 { [every node/.style = {align = center},
-   writeup/.style = { midway, above, align=center, font=\small },
   ]
   \node[minimum width=1.2cm] (q) at (0, 0) {};
   \pic at (q) {atom};
@@ -90,19 +90,19 @@ Somewhat like the diagram below.
   { [thick,decoration={
       markings,
       mark=at position 0.5 with {\arrow{>}}}
-      ] 
+      ]
     \draw[postaction={decorate}]  (i.east) -- (q.west) node [writeup] {Ising\\Model};
     \draw[postaction={decorate}]  (q.east) -- (s.west) node [writeup] {Solution};
   }
 }
 ```
 
-Today, I don't want to discuss how these solvers work[^later-post]
-but rather the question of how to put them to good use.
-After all, if the problems I care about are all classical,
-what is the difference this quantum machine can make in my life?
+Today, I don't want to discuss how these machines work[^later-post]
+but rather how to put them to good use.
+After all, if the problems you care about are all classical,
+what is the difference this quantum machine can make in your life?
 Since we are doing optimization,
-let's focus on MILP --- a NP-hard problem that is everywhere ---
+let's focus on MILP --- an NP-hard problem found everywhere ---
 and see how a quantum computer helps us solve it.
 
 $$
@@ -123,11 +123,10 @@ Unfortunately, the Ising model is rather different
 from the kind of optimization problems we generally want to solve.
 Hence, to take advantage of these machines
 it is necessary to employ a preprocessing step that "rewrites" our programs into the appropriate format.
-This is our theme.
+_This is today's theme_.
 
   ```tikz {tikzlibrary="quotes,decorations.markings,shapes.geometric"}
 { [every node/.style = {align = center},
-   writeup/.style = { midway, above, align=center, font=\small },
   ]
   \node[minimum width=1.2cm] (q) at (0, 0) {};
   \pic at (q) {atom};
@@ -185,7 +184,7 @@ A positive factor $J_{ij} > 0$
 means that the particles require energy to stay aligned,
 while a negative factor $J_{ij} < 0$ means that the particles "pull each other",
 and thus want to align.
-The system's total energy is the sum of all interaction energies
+The system's total energy --- called its _Hamiltonian_ --- is the sum of all interaction energies
 considering the particles' alignment,
 $$H(s) \coloneqq \sum_{(i,j)} J_{ij} s_i s_j.$$
 
@@ -194,9 +193,10 @@ $$H(s) \coloneqq \sum_{(i,j)} J_{ij} s_i s_j.$$
   </svg>
 </figure>
 
-One also considers a _magnetic field_ interacting with this system.
-It acts on each particle with a factor $h_i \in \R$
-that biases it towards one of the states.
+One also considers external influences
+biasing each particle towards one of the states.
+Keeping up with the physics theme,
+it is called a _magnetic field_ and amounts to factors $h_i \in \R$.
 With this field, the total energy becomes
 $$H(s) \coloneqq \sum_{(i, j)} J_{ij} s_i s_j + \sum_{i} h_i s_i.$$
 
@@ -207,8 +207,8 @@ $$H(s) \coloneqq \sum_{(i, j)} J_{ij} s_i s_j + \sum_{i} h_i s_i.$$
 
 
 We can write the Ising model as a MIP by enumerating its nodes from $1$ to $N$,
-and defining a symmetric $J$ whose components are
-$\frac{1}{2} J_{ij}$ for $(i, j) \in \mathrm{Edges}$ and zero otherwise.
+and defining an upper-triangular $J$ whose components are
+$J_{ij}$ for $(i, j) \in \mathrm{Edges}$ and zero otherwise.
 This way, finding the minimum energy configuration of an Ising model
 amounts to the integer quadratic optimization program (IQP)
 $$
@@ -226,10 +226,11 @@ As you soon shall see, we can convert any MILP to this form.
 QUBO: Quadratic Unconstrained Binary Optimization
 -------------------------------------------------
 
-The Ising model has an intuitive physical interpretation
+The Ising model has an intuitive physical interpretation,
 but from a more computational point of view,
 the $\pm1$ variables are not so common.
-Their product $s_i s_j$ represent variable alignments while in OR we tend to consider variable activation,
+The products $s_i s_j$ represent variable alignments
+while in OR it's more natural to consider variable activation,
 formulated with the product of binary (0 or 1) variables.
 Thus, it is customary to use an equivalent formulation with a Boolean domain.
 These are _Quadratic Unconstrained Binary Optimization_ problems,
@@ -259,7 +260,7 @@ $$
 The constant part does not affect the optimization process and
 you can get rid of the linear terms by noticing that for binary variables,
 $x_i^2 = x_i$.
-This lets you absorb the linear part into the quadratic one's diagonal by defining
+This lets you absorb the linear part into the matrix' diagonal by defining
 $$ Q =  4J  -2\mathrm{Diag}\left((J + J^\top) 1 + h\right) $$
 Of course, the equivalence's other direction is equally straightforward.
 
@@ -270,7 +271,7 @@ Every time you click in a node, the spin flips.
 
 Knowing this equivalence,
 in the next section we will focus on transforming
-combinatorial problems to a QUBO format.
+combinatorial problems to QUBO format.
 The QUBO to Ising can be done as a final postprocessing.
 
 
@@ -278,7 +279,7 @@ Rewriting MILP into QUBO and Ising
 =================================
 
 Now that you know what an Ising model is and why it is useful,
-it's time to learn how to convert more "classical" problems into it.
+it's time to learn how to convert "classical" problems into it.
 Because of their modeling expressivity and ubiquity,
 we will focus on mixed-integer linear programs.
 Let's just add one restriction to make our life easier:
@@ -293,19 +294,18 @@ $$
   \end{array}
 $$
 
-This restriction is common in real-world problems and is somewhat similar to a big M.
 This amounts to constraining the feasibility region to a large parallelepiped.
+This restriction is common in real-world problems since every resource or action has its limits.
 For most problems,
-you can find appropriate bounds that every variable should satisfy at the minimum,
+you can estimate appropriate bounds that every variable should satisfy,
 so it is not a big deal of an assumption.
 
 Binarize All the Variables
 --------------------------
 
 The first step in our conversion is to make all variables binary.
-There are many other ways to encode to do this,
-each with their own pros and cons.
-For reasons of scope, we will focus on the (in my opinion) most straightforward ones:
+There are many other available encodings each with their own pros and cons.
+For reasons of scope, we will focus on the (in my opinion) most straightforward and useful ones:
 one-hot and binary expansion.
 But there are great surveys in the literature about all methods.[@qubojl] [@tamura_performance_2021]
 
@@ -318,14 +318,14 @@ each possible value together with a restriction that only one of them can be "on
 Take an integer variable $x_i \in \Z$.
 Since it is bounded,
 there are exactly ${K_i\coloneqq\floor{U_i} - \ceil{L_i}} + 1$ values it can take.
-Let's write these values as constants $Y_i^{(j)}$.
+Let's write these values as constants $Y_i^{(j)} = \ceil{L_i} + j$
+for $j \in \{0,\ldots,K_i-1\}$.
 The plan is to add $K_i$ binary variables
-$x_i^{(j)} \in \B$ for $i \in \{1,\ldots,K_i\}$
-together with constraints
+$x_i^{(j)} \in \B$ together with constraints
 $$
 \begin{aligned}
-  \sum_{j = 1}^{K_i} x_i^{(j)} &= 1, \\
-  x_i &= \sum_{j=1}^{K_i} Y_i^{(j)} x_i^{(j)}.
+  \textstyle\sum_{j = 0}^{K_i-1} x_i^{(j)} &= 1, \\
+  \textstyle\sum_{j = 0}^{K_i-1} Y_i^{(j)} x_i^{(j)} &= x_i.
 \end{aligned}
 $$
 
@@ -334,23 +334,23 @@ what we said in the previous paragraph.
 The variable $x_i$ can take any of the $Y_i^{(j)}$ values
 but is constrained to only choose one of them.
 
-When the decision variable is real,
-we will be required to make an approximation compromise.
-Discretize the interval $[L_i, U_i]$ uniformly into an appropriate amount $K_i$ of points
---- written as $Y_i^{(j)}$.
-The maximum error induced by such a discretization in $(U_i - L_i) / K_i$.
-Now we can proceed as for the integer variables implementing the "choice" constraints
-among the $Y_i^{(j)} values.
+For a real decision variable,
+we will have to make a compromise.
+Discretize the interval $[L_i, U_i]$ into $K_i$ points of choice,
+$$ L_i \le Y_i^{(0)} < Y_i^{(j)}  < Y_i^{(K_i-1)} \le U_i.$$
+A common choice is uniformly with $Y_i^{(j)} =  L_i + j\frac{U_i - L_i}{K_i}.$
+Now we can proceed as before by implementing the "choice" constraints
+for the $Y_i^{(j)}$ values.
 
 The form of the second constraints lets you get rid of the variable $x_i$.
-Since it is decoupled, you can just substitute the rhs for it
+Since it is decoupled, you can just substitute the right-hand side for it
 and work with only the binary variables $x_i^{(j)}$.
 After this step, the problem becomes a pure integer linear program (ILP),
 $$
   \begin{array}{rl}
-    \min\limits_{x} & \sum_{i = 1}^{m + k} c_i \left( \sum_{j=1}^{K_i} Y_i^{(j)} x_i^{(j)} \right) \\
-    \textrm{s.t.}   & A_i \left( \sum_{j=1}^{K_i} Y_i^{(j)} x_i^{(j)} \right) = b_i, \\
-                    & \sum_{j = 1}^{K_i} x_i^{(j)} = 1, \\
+    \min\limits_{x} & \sum_{i = 1}^{m + k} \sum_{j=0}^{K_i-1} c_i Y_i^{(j)} x_i^{(j)} \\
+    \textrm{s.t.}   & A_i \left( \sum_{j=0}^{K_i-1} Y_i^{(j)} x_i^{(j)} \right) = b_i, \\
+                    & \sum_{j = 0}^{K_i-1} x_i^{(j)} = 1, \\
                     & x_i^{(j)} \in \B.
   \end{array}
 $$
@@ -361,18 +361,18 @@ For variables taking many values, the one-hot encoding can produce too many vari
 An alternative is to use a binary expansion,
 since it only requires a logarithm amount of variables.
 Again, let's start with an integer decision variable $x \in \Z$
-bounded as $0 \le x \le U$
-and call $K \coloneqq \floor{\log_2 U}$.
-To represent all integers from $0$ to $U$ in binary,
-we need a boolean vector $z$ with only $K + 1$ components.
-The straightforward representation amounts to $x = \sum_{j = 0}^{K} 2^j z_j$.
+bounded as $L \le x \le U$
+and call $K \coloneqq \floor{\log_2 (U - L)}$.
+To represent all integers from $L$ to $U$ in binary,
+we need a boolean vector $z$ with $K + 1$ components.
+The straightforward representation amounts to $x = L + \sum_{j = 0}^{K} 2^j z_j$.
 
 Notice, however, that if the most significant bit is on,
 the variable may go above its upper bound $U$.
 To prevent that, we shift the last coefficient by ($2^{K-1} - 1$),
-thus capping the values.
+capping the values.
 This corrects the encoding to
-$$ x = \sum_{j = 0}^{K-2} 2^j z_j + (U - 2^{K-1} + 1) z_{K-1}.$$
+$$ x = L + \sum_{j = 0}^{K-2} 2^j z_j + (U - 2^{K-1} + 1) z_{K-1}.$$
 
 You can play with turning the bits on and off in the graph below.
 
@@ -382,12 +382,13 @@ Binary Encoding
 
 For real numbers, we can add negative power of 2 to represent the number's fractional part.
 Suppose you want to allocate $R$ bits for this and call $\Delta = \sum_{j=1}^R 2^{-j}$.
-The representation taking account the upper bound correction becomes
-$$ x = \sum_{j = -R}^{K-2} 2^j z_j + (U - 2^{K-1} + 1 - \Delta) z_{K-1}.$$
+The representation taking account the upper bound correction is
+$$ x = L + \sum_{j = -R}^{K-2} 2^j z_j + (U - 2^{K-1} + 1 - \Delta) z_{K-1}.$$
+Similarly to one-hot encoding,
+you can eliminate the $x$ variable by substituting this constraint everywhere in the program.
 
-
-Equalities Become Penalties
----------------------------
+Equality Penalization
+---------------------
 
 At this point,
 we are left with a pure binary LP with only equality constraints.
@@ -411,11 +412,11 @@ $$
 
 This is already a QUBO!
 But we can find an explicit formula for the $Q$ matrix with some high school algebra.
-$$ \begin{aligned}
-  && c^\top z  + \rho (Az - b)^\top (A z - b)\\
+$$ \begin{array}{rcl}
+  & &c^\top z  + \rho (Az - b)^\top (A z - b)\\
   &=& c^\top z + \rho \Big[ z^\top (A^\top A) z - 2b^\top A z + b^\top b \Big] \\
   &=& z^\top (\rho A^\top A) z + (c - 2\rho A^\top b )^\top z + \rho b^\top b
-  \end{aligned}
+  \end{array}
 $$
 
 The constant $b^\top b$ is irrelevant for the minimization
@@ -425,21 +426,20 @@ Taking all this into account,
 the final Q matrix is
 $$ Q = \rho A^\top A + \mathrm{Diag}(c - 2\rho A^\top b ).$$
 
-The only thing missing is how to properly choose the parameter $rho$.
+The only thing missing is how to properly choose the parameter $\rho$.
 We want to preserve the original solutions,
 so it should be large enough to force the minimum to "cancel it"
 by being at an originally feasible point.
 That is, whenever $Az = b$ the penalization term disappears and we are left with the original objective.
 
 The discussion above works for a general equality constraint,
-but more specific constraint there are simpler ways to penalize.
-I recommend seeing the paper by @{glover_quantum_2019}
-for more details.
+but for more specific constraint there are simpler penalizations.
+I recommend the paper by @{glover_quantum_2019} for more details.
 
 Inequalities to Equalities
 --------------------------
 
-If your MILP also have inequality constraints,
+If your MILP also has inequality constraints,
 you can use _slack variables_ to put it into QUBO form.
 Consider a constraint of the form $M x \le w$.
 This is the same as an equality constraint together with an additional variable
@@ -452,7 +452,7 @@ $$
 $$
 Furthermore, since we're assuming $x$ to be bounded,
 we can bound the components $s_i$ from above
-by checking the maximum possible value for $w_i - \sum_{j}M_{ij}x_j$.
+by checking the maximum possible value for ${w_i - \sum_{j}M_{ij}x_j}$.
 Binarize $s$ and penalize the equality constraint to get a QUBO.
 
 
