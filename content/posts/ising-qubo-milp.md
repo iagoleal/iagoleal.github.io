@@ -12,16 +12,47 @@ css: "/css/plots.css"
 ---
 
 <style>
-.site {
-  stroke: var(--color-typography);
-  stroke-width: 2pt;
-  transition: fill 0.3s ease;
-  cursor: pointer;
+svg.diagram {
+  background: #181a1b;
+  border: 3px solid #90caf9;
+  box-sizing: border-box;
 }
 
-.tense {
-  stroke: red;
-  animation: shake 0.25s infinite;
+.site {
+  stroke-width: 4;
+  stroke-dasharray: 50 10; /* 60 units dash, 40 units gap */
+  stroke-linecap: round;
+  transition: filter 0.3s;
+}
+
+.spin-group[data-spin="1"] .site {
+  stroke: #90caf9; /* blue accent */
+  filter: drop-shadow(0 0 6px #90caf9);
+}
+
+.spin-group[data-spin="-1"] .site {
+  stroke: #ffcc80; /* orange accent */
+  filter: drop-shadow(0 0 6px #ffcc80);
+}
+
+@keyframes spin-ccw {
+  0%   { transform: rotate(0deg);}
+  100% { transform: rotate(-360deg);}
+}
+@keyframes spin-cw {
+  0%   { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
+}
+
+.spin-group[data-spin="1"] {
+  animation: spin-ccw 5s linear infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+.spin-group[data-spin="-1"] {
+  animation: spin-cw 5s linear infinite;
+  transform-origin: center;
+  transform-box: fill-box;
 }
 
 .interaction {
@@ -29,17 +60,64 @@ css: "/css/plots.css"
   stroke-width: 2pt;
 }
 
-@keyframes shake {
-  0% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(1px, 1px) rotate(1deg); }
-  50% { transform: translate(0, 0) rotate(0eg); }
-  75% { transform: translate(-1px, 1px) rotate(-1deg); }
-  100% { transform: translate(0, 0) rotate(0deg); }
+.tense {
+  stroke: #e53935;
+  filter: drop-shadow(0 0 6px #e57373) drop-shadow(0 0 12px #e57373);
+  animation: tension-glow 1s cubic-bezier(.4,0,.2,1) infinite alternate;
 }
 
+@keyframes tension-glow {
+  0% {
+    stroke: #e53935;
+    filter: drop-shadow(0 0 6px #e57373) drop-shadow(0 0 12px #e57373);
+  }
+  100% {
+    stroke: #ff8a80;
+    filter: drop-shadow(0 0 12px #ff8a80) drop-shadow(0 0 24px #ff8a80);
+  }
+}
+
+.harmony {
+  stroke: #43a047;
+  filter: drop-shadow(0 0 4px #a5d6a7);
+  animation: harmony-pulse 1.8s cubic-bezier(.4,0,.2,1) infinite alternate;
+  transition: stroke 0.3s cubic-bezier(.4,0,.2,1), filter 0.3s cubic-bezier(.4,0,.2,1);
+}
+
+@keyframes harmony-pulse {
+  0%   {
+    stroke: #43a047;
+    filter: drop-shadow(0 0 4px #a5d6a7);
+  }
+  100% {
+    stroke: #81c784;
+    filter: drop-shadow(0 0 10px #c8e6c9);
+  }
+}
+
+.diagram-container .popup {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  padding: 4px 9px;
+  background: var(--color-typography);
+  color: var(--color-background, #fff);
+  font-size: var(--font-size-base);
+  font-family: var(--font-base, sans-serif);
+  border-radius: 2px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  transition: opacity 0.25s cubic-bezier(.4,0,.2,1);
+  display: block;
+  white-space: nowrap;
+  opacity: 0;
+}
+
+.diagram-container .popup.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
 
 </style>
-
 
 
 \def\ceil#1{\lceil #1 \rceil}
