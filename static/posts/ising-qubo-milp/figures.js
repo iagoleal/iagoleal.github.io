@@ -13,9 +13,12 @@ function draw(el, tag, attrs, styles) {
 }
 
 function flip(a, i) {
-  return (a[i] *= -1);
+  return (a[i] = !a[i]);
 }
 
+function spin(b) {
+  return b ? +1 : -1;
+}
 
 function ArrayListener(xs) {
   const listeners = Array.from(Array(xs.length), () => []);
@@ -67,7 +70,7 @@ function createPopup({ container, className = "popup" } = {}) {
   return { show, hide, destroy: () => popup.remove(), element: popup };
 }
 
-function wavyPath(x1, y1, x2, y2, t, amplitude = 6, frequency = 2) {
+function wavyPath(x1, y1, x2, y2, t, amplitude = 3, frequency = 2) {
   // Midpoint
   const mx = (x1 + x2) / 2;
   const my = (y1 + y2) / 2;
@@ -109,12 +112,44 @@ function edgeTensionController(edge, a, b) {
   };
 }
 
+function isingObj(states, J, h = null) {
+  const N = states.length;
+  let energy = 0;
+
+  for (let i = 0; i < N; ++i) {
+    // pairwise interactions
+    for (let j = i + 1; j < N; ++j) {
+      energy += J[i][j] * states[i] * states[j];
+    }
+
+    // External field
+    if (h) {
+      energy += h[i] * states[i];
+    }
+  }
+
+  return energy;
+}
+
+function quboObj(states, Q) {
+  const N = states.length;
+  let energy = 0;
+
+  for (let i = 0; i < N; i++) {
+    for (let j = i ; j < N; j++) {
+      energy += Q[i][j] * states[i] * states[j];
+    }
+  }
+
+  return energy;
+}
+
 export class Diagram {
-  constructor(id, edges, states) {
+  constructor(id, mode, states, edges) {
     this.id     = id;
     this.svg    = document.querySelector(`${id} svg`);
-    this.mode   = "ising";
-    this.edges  = [];
+    this.mode   = mode;
+    this.edges  = edges;
     this.states = ArrayListener(states);
 
     this.pos = [
@@ -130,78 +165,86 @@ export class Diagram {
     for (const [[i, j], w] of edges) {
       this.J[i][j] = w;
       this.J[j][i] = w;
-
-      this.edges.push([i, j]);
     }
-
-    this.h = [-5, 3, 2, 1, -2, 4];
 
   return this;
   }
 
+  graph() {
+    return this
+      .#drawEdges()
+      .#drawNodes();
+  }
+
+  externalField(h = null) {
+    this.h = h;
+
+    return this
+      .#fieldValues()
+      .#drawField();
+  }
+
   #drawNodes() {
-    const spins = this.states;
-    const pos = this.pos;
+    const {states, pos} = this;
     const gs = draw(this.svg, "g");
 
     for (const [i, site] of pos.entries()) {
-      // Create a group for each node
-      const group = draw(gs, "g", {
-        class: "spin-group",
-        "data-spin": spins[i],
-      });
+      const g = draw(gs, "g", {});
 
-      // Draw the circle inside the group
-      const node = draw(group, "circle", {
+      const node = draw(g, "circle", {
         cx: site.x,
         cy: site.y,
         r: 20,
-        class: "site",
-      });
+        class: 'site'
+        },
+      );
 
-      spins.observe(i, (_, v) => {
-        group.setAttribute("data-spin", v);
+      node.classList.add(this.mode);
+      node.classList.toggle("active", states[i]);
+
+      states.observe(i, (_, v) => {
+        node.classList.toggle("active", v);
       });
 
       node.addEventListener("click", () => flip(this.states, i));
     }
+
+    return this;
   }
 
 
   #drawEdges() {
-    const spins = this.states;
-    const pos = this.pos;
+    const {states, pos} = this;
     const ge = draw(this.svg, "g");
     const maxAbsJ = Math.max(...Object.values(this.J).flatMap(row => Object.values(row).map(Math.abs)));
 
-    this.edges.forEach(([s, t]) => {
-      const w = this.J[s][t];
+    for (const [[s, t], w] of this.edges) {
       const edge = draw(ge, "path", {
-        class: "interaction",
+        class: `edge`,
         d: `M${pos[s].x},${pos[s].y} ${pos[t].x},${pos[t].y}`,
       }, {
         "stroke-width": 1 + Math.abs(w) / maxAbsJ,
         fill: "none"
       });
+      edge.classList.add(this.mode);
 
-      const tension = edgeTensionController(edge, pos[s], pos[t]);
+      const tension = this.mode === "ising"
+          ? edgeTensionController(edge, pos[s], pos[t])
+          : () => {};
 
       const redrawEdge = () => {
-        const align = w * spins[s] * spins[t] > 0;
-        edge.classList.toggle("harmony", align);
-        edge.classList.toggle("tense", !align);
+        const aligned = (this.mode === "ising")
+          ? w * spin(states[s]) * spin(states[t]) > 0
+          : (states[s] && states[t]);
 
-        tension(align);
+        edge.classList.toggle("aligned", aligned);
+        tension(aligned);
       };
 
-      spins.observe([s, t], redrawEdge);
+      states.observe([s, t], redrawEdge);
       redrawEdge();
-    });
-  }
+    }
 
-  graph() {
-    this.#drawEdges();
-    this.#drawNodes();
     return this;
   }
 
@@ -211,8 +254,7 @@ export class Diagram {
     // Create a group for weights
     const gw = draw(this.svg, "g");
 
-    for (const [s, t] of this.edges) {
-      const w = this.J[s][t];
+    for (const [[s, t], w] of this.edges) {
       const mx = (pos[s].x + pos[t].x) / 2;
       const my = (pos[s].y + pos[t].y) / 2;
       const dx = pos[t].y - pos[s].y;
@@ -236,101 +278,133 @@ export class Diagram {
     return this;
   }
 
-  externalField() {
+  #drawField() {
+    // Remove previous field group if any
+    let fieldGroup = this.svg.querySelector("g.magnetic-field");
+    if (fieldGroup) fieldGroup.remove();
+
+    // Create a new group as the first child
+    fieldGroup = this.svg.insertBefore(
+      document.createElementNS('http://www.w3.org/2000/svg', 'g'),
+      this.svg.firstChild
+    );
+    fieldGroup.classList.add("magnetic-field");
+
+    // Get SVG dimensions
     const svgRect = this.svg.getBoundingClientRect();
     const width   = this.svg.viewBox.baseVal.width || svgRect.width;
     const height  = this.svg.viewBox.baseVal.height || svgRect.height;
 
-    const g = this.svg.insertBefore(
-      document.createElementNS('http://www.w3.org/2000/svg', 'g'),
-      this.svg.firstChild
-    );
+    // Level curve parameters
+    const nCurves = 6;
+    const amplitude = height * 0.10;
+    const frequency = 2 * Math.PI / width * 1.5; // 1.5 full waves across width
+    const color = "#90caf9";
+    const opacity = 0.13;
+    const blur = 1.5;
+    const step = 14;
 
-    // Arrow grid parameters
-    const arrowLength  = 18;
-    const arrowHead    = 5;
-    const arrowStroke  = "#3399ff";
-    const arrowOpacity = 0.25;
-    const arrowWidth   = 2;
-    const xStep        = 32;
-    const yStep        = 32;
-    const baseSpeed    = 34; // px/sec along diagonal
-    const speedJitter  = 8;  // px/sec, random per arrow
-    const phaseJitter  = 2000; // ms, random per arrow
+    // Create SVG filter for blur if not present
+    let defs = this.svg.querySelector("defs");
+    if (!defs) {
+      defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      this.svg.insertBefore(defs, this.svg.firstChild);
+    }
+    if (!this.svg.querySelector("#level-curve-blur")) {
+      const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+      filter.setAttribute("id", "level-curve-blur");
+      filter.innerHTML = `<feGaussianBlur stdDeviation="${blur}" />`;
+      defs.appendChild(filter);
+    }
 
-    // Diagonal unit vector
-    const diagNorm = Math.sqrt(width * width + height * height);
-    const ux = width / diagNorm;
-    const uy = height / diagNorm;
-    const moveDist = diagNorm + Math.max(width, height);
-
-    // Grid: cover the SVG with arrows, offset so they fill the area as they move
-    const nX = Math.ceil((width + moveDist) / xStep);
-    const nY = Math.ceil((height + moveDist) / yStep);
-
-    const arrows = Array.from({length: nY}, (_, j) => j * yStep - moveDist / 2)
-      .flatMap(y =>
-        Array.from({length: nX}, (_, i) => i * xStep - moveDist / 2)
-          .map(x => {
-            const speed = baseSpeed;
-            const phase = Math.random() * phaseJitter;
-            const arrowGroup = draw(g, "g", {}, {});
-            arrowGroup.setAttribute("transform", `rotate(45)`);
-            draw(arrowGroup, "line", {
-              x1: 0,
-              y1: 0,
-              x2: arrowLength,
-              y2: 0,
-              stroke: arrowStroke,
-              "stroke-width": arrowWidth,
-              "stroke-linecap": "round",
-              opacity: arrowOpacity,
-            }, {});
-            draw(arrowGroup, "polygon", {
-              points: `${arrowLength},0 ${arrowLength-arrowHead},${-arrowHead/2} ${arrowLength-arrowHead},${arrowHead/2}`,
-              fill: arrowStroke,
-              opacity: arrowOpacity,
-            }, {});
-            return {g: arrowGroup, baseX: x, baseY: y, speed, phase};
-          })
-      );
-
-    // Animate all arrows along the diagonal
-    (function animate() {
-      const t = performance.now();
-      arrows.forEach(({g, baseX, baseY, speed, phase}) => {
-        // Move along the diagonal, wrap around
-        const dist = ((t + phase) / 1000 * speed) % moveDist;
-        const x = baseX + ux * dist;
-        const y = baseY + uy * dist;
-        g.setAttribute("transform", `translate(${x},${y}) rotate(45)`);
-      });
-      requestAnimationFrame(animate);
-    })();
-
-    this.#fieldValues();
+    // Draw the static level curves
+    for (let i = 0; i < nCurves; ++i) {
+      const y0 = height * (0.18 + 0.64 * i / (nCurves - 1));
+      let d = "";
+      for (let x = 0; x <= width; x += step) {
+        const y = y0 + amplitude * Math.sin(frequency * x + i * 0.7);
+        d += (x === 0 ? "M" : "L") + x + "," + y;
+      }
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute("d", d);
+      path.setAttribute("stroke", color);
+      path.setAttribute("stroke-width", "2.2");
+      path.setAttribute("fill", "none");
+      path.setAttribute("opacity", opacity);
+      path.setAttribute("filter", "url(#level-curve-blur)");
+      fieldGroup.appendChild(path);
+    }
 
     return this;
   }
 
-  #fieldValues() {
-    const { pos, h, svg, id } = this;
-    const container = document.querySelector(id);
-    const popup = createPopup({ container });
 
-    Array.from(svg.querySelectorAll("circle.site")).forEach((node, i) => {
-      node.addEventListener("mouseenter", () => {
-        const pt = svg.createSVGPoint();
-        pt.x = pos[i].x + 32;
-        pt.y = pos[i].y - 24;
-        const ctm = svg.getScreenCTM();
-        if (ctm) {
-          const { left, top } = container.getBoundingClientRect();
-          const { x, y } = pt.matrixTransform(ctm);
-          popup.show(x - left, y - top, `h = ${h[i]}`);
-        }
+  #fieldValues() {
+      const { pos, h, svg, id } = this;
+      const container = document.querySelector(id);
+      const popup = createPopup({ container });
+
+      Array.from(svg.querySelectorAll("circle.site")).forEach((node, i) => {
+        node.addEventListener("mouseenter", () => {
+          const pt = svg.createSVGPoint();
+          pt.x = pos[i].x + 32;
+          pt.y = pos[i].y - 24;
+          const ctm = svg.getScreenCTM();
+          if (ctm) {
+            const { left, top } = container.getBoundingClientRect();
+            const { x, y } = pt.matrixTransform(ctm);
+            popup.show(x - left, y - top, `h = ${h[i]}`);
+          }
+        });
+        node.addEventListener("mouseleave", popup.hide);
       });
-      node.addEventListener("mouseleave", popup.hide);
-    });
+
+      return this;
+    }
+
+  isingEnergy() {
+    const container = document.querySelector(this.id);
+    const svg = this.svg;
+
+    let label = container.querySelector(".ising-energy-label");
+    if (!label) {
+      label = document.createElement("div");
+      label.className = "ising-energy-label";
+      svg.insertAdjacentElement("afterend", label);
+    }
+
+    const redraw = () => {
+      let energy, formula;
+      if (this.mode === "qubo") {
+        energy = quboObj(this.states, this.J);
+        formula = "f(x) = x^T Q x = ";
+      } else if (Array.isArray(this.h)) {
+        energy = isingObj(this.states, this.J, this.h);
+        formula = "H(s) = s^T J s + h^T s = ";
+      } else {
+        energy = isingObj(this.states, this.J);
+        formula = "H(s) = s^T J s = ";
+      }
+
+      // Animate if energy changed
+      const valueSpan = document.createElement('span');
+      valueSpan.className   = 'energy-value';
+      valueSpan.textContent = energy;
+      valueSpan.classList.add("energy-changed");
+      setTimeout(() => valueSpan.classList.remove("energy-changed"), 180);
+
+      // Render formula with KaTeX, then append the value span
+      if (window.katex) {
+        window.katex.render(formula, label, { displayMode: false });
+      } else {
+        label.innerHTML = formula;
+      }
+      label.appendChild(valueSpan);
+    };
+
+    this.states.observe([...Array(this.states.length).keys()], redraw);
+    redraw();
+
+    return this;
   }
 }

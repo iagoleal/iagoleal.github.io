@@ -14,27 +14,79 @@ css: "/css/plots.css"
 <style>
 svg.diagram {
   background: #181a1b;
-  border: 3px solid #90caf9;
-  box-sizing: border-box;
 }
 
+/* Master node style */
 .site {
-  stroke-width: 4;
-  stroke-dasharray: 50 10; /* 60 units dash, 40 units gap */
-  stroke-linecap: round;
-  transition: filter 0.3s;
+  stroke-width: 4pt;
+  cursor: pointer;
+  transition: filter 0.3s, stroke 0.3s;
 }
 
-.spin-group[data-spin="1"] .site {
-  stroke: #90caf9; /* blue accent */
+/* Ising nodes */
+.ising.site {
+  stroke: #ffcc80;
+  stroke-dasharray: 50 10;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px #ffcc80);
+}
+.ising.site.active {
+  stroke: #90caf9;
+  filter: drop-shadow(0 0 6px #90caf9);
+  animation: spin-ccw 10s linear infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+.ising.site:not(.active) {
+  animation: spin-cw 10s linear infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+/* QUBO nodes */
+.qubo.site {
+  fill: #666;
+  stroke: #333;
+  filter: none;
+  opacity: 1;
+}
+.qubo.site.active {
+  fill: #90caf9;
+  stroke: #1976d2;
   filter: drop-shadow(0 0 6px #90caf9);
 }
 
-.spin-group[data-spin="-1"] .site {
-  stroke: #ffcc80; /* orange accent */
-  filter: drop-shadow(0 0 6px #ffcc80);
+/* Master edge style */
+.edge {
+  stroke-width: 2pt;
+  fill: none;
+  transition: stroke 0.3s, filter 0.3s;
 }
 
+.ising.edge {
+  /* nothing here except maybe transition/filter */
+  transition: stroke 0.3s, filter 0.3s;
+}
+.ising.edge.aligned {
+  stroke: #43a047;
+  filter: drop-shadow(0 0 4px #a5d6a7);
+}
+.ising.edge:not(.aligned) {
+  stroke: #e53935;
+  filter: drop-shadow(0 0 6px #e57373) drop-shadow(0 0 12px #e57373);
+}
+
+/* QUBO edges */
+.qubo.edge {
+  stroke: #666;
+  stroke-width: 5pt;
+}
+.qubo.edge.aligned {
+  stroke: #43a047;
+  filter: drop-shadow(0 0 4px #a5d6a7);
+}
+
+/* Spin animations */
 @keyframes spin-ccw {
   0%   { transform: rotate(0deg);}
   100% { transform: rotate(-360deg);}
@@ -44,55 +96,28 @@ svg.diagram {
   100% { transform: rotate(360deg);}
 }
 
-.spin-group[data-spin="1"] {
-  animation: spin-ccw 5s linear infinite;
-  transform-origin: center;
-  transform-box: fill-box;
-}
-.spin-group[data-spin="-1"] {
-  animation: spin-cw 5s linear infinite;
-  transform-origin: center;
-  transform-box: fill-box;
-}
-
-.interaction {
-  stroke: var(--color-typography);
-  stroke-width: 2pt;
+/* Energy label and value (optional, for completeness) */
+.ising-energy-label {
+  margin-top:    12px;
+  background:    #181a1b;
+  color:         var(--color-background);
+  font-size:     1.1em;
+  padding:       6px 14px;
+  border-radius: 6px;
+  display:       inline-block;
+  box-shadow:    0 2px 8px rgba(0,0,0,0.10);
+  transition: background 0.18s, box-shadow 0.4s;
 }
 
-.tense {
-  stroke: #e53935;
-  filter: drop-shadow(0 0 6px #e57373) drop-shadow(0 0 12px #e57373);
-  animation: tension-glow 1s cubic-bezier(.4,0,.2,1) infinite alternate;
+.energy-value {
+  transition: background 0.18s, color 0.18s;
+  border-radius: 3px;
+  padding: 0 3px;
 }
 
-@keyframes tension-glow {
-  0% {
-    stroke: #e53935;
-    filter: drop-shadow(0 0 6px #e57373) drop-shadow(0 0 12px #e57373);
-  }
-  100% {
-    stroke: #ff8a80;
-    filter: drop-shadow(0 0 12px #ff8a80) drop-shadow(0 0 24px #ff8a80);
-  }
-}
-
-.harmony {
-  stroke: #43a047;
-  filter: drop-shadow(0 0 4px #a5d6a7);
-  animation: harmony-pulse 1.8s cubic-bezier(.4,0,.2,1) infinite alternate;
-  transition: stroke 0.3s cubic-bezier(.4,0,.2,1), filter 0.3s cubic-bezier(.4,0,.2,1);
-}
-
-@keyframes harmony-pulse {
-  0%   {
-    stroke: #43a047;
-    filter: drop-shadow(0 0 4px #a5d6a7);
-  }
-  100% {
-    stroke: #81c784;
-    filter: drop-shadow(0 0 10px #c8e6c9);
-  }
+.energy-value.energy-changed {
+  background: #fffde7 !important;
+  color: #222 !important;
 }
 
 .diagram-container .popup {
@@ -116,7 +141,6 @@ svg.diagram {
   opacity: 1;
   pointer-events: auto;
 }
-
 </style>
 
 
@@ -250,7 +274,7 @@ $$
 
 In the figure below, we represent an Ising model with 6 particles.
 The graph is interactive and you can click on the nodes to flip their spin
-and see the interactions alignments.
+and see how the interactions change.
 <figure id="figure-spin" class="diagram-container">
   <svg class="diagram" viewBox="0 0 1000 500" width="100%" height="100%">
   </svg>
@@ -338,17 +362,17 @@ $$
 The constant part does not affect the optimization process and
 you can get rid of the linear terms by noticing that for binary variables,
 $x_i^2 = x_i$.
-This lets you absorb the linear part into the matrix' diagonal by defining
+This lets you absorb the linear part into the diagonal of the matrix by defining
 $$ Q =  4J  -2\mathrm{Diag}\left((J + J^\top) 1 + h\right) $$
 Of course, the equivalence's other direction is equally straightforward.
 
-:::Missing
-Graph for a QUBO. Two nodes must be on to turn an edge on.
-Every time you click in a node, the spin flips.
-:::
+<figure id="figure-qubo" class="diagram-container">
+  <svg class="diagram" viewBox="0 0 1000 500" width="100%" height="100%">
+  </svg>
+</figure>
 
 Knowing this equivalence,
-in the next section we will focus on transforming
+in the next section we focus on transforming
 combinatorial problems to QUBO format.
 The QUBO to Ising can be done as a final postprocessing.
 
@@ -359,7 +383,7 @@ Rewriting MILP into QUBO and Ising
 Now that you know what an Ising model is and why it is useful,
 it's time to learn how to convert "classical" problems into it.
 Because of their modeling expressivity and ubiquity,
-we will focus on mixed-integer linear programs.
+we focus on mixed-integer linear programs.
 Let's just add one restriction to make our life easier:
 all variables should be bounded.
 This way, the problem takes the form below.
@@ -383,7 +407,7 @@ Binarize All the Variables
 
 The first step in our conversion is to make all variables binary.
 There are many other available encodings each with their own pros and cons.
-For reasons of scope, we will focus on the (in my opinion) most straightforward and useful ones:
+For reasons of scope, we focus on the (in my opinion) most straightforward and useful ones:
 one-hot and binary expansion.
 But there are great surveys in the literature about all methods.[@qubojl] [@tamura_performance_2021]
 
@@ -413,7 +437,7 @@ The variable $x_i$ can take any of the $Y_i^{(j)}$ values
 but is constrained to only choose one of them.
 
 For a real decision variable,
-we will have to make a compromise.
+we have to make a compromise.
 Discretize the interval $[L_i, U_i]$ into $K_i$ points of choice,
 $$ L_i \le Y_i^{(0)} < Y_i^{(j)}  < Y_i^{(K_i-1)} \le U_i.$$
 A common choice is uniformly with $Y_i^{(j)} =  L_i + j\frac{U_i - L_i}{K_i}.$
@@ -556,7 +580,7 @@ And if you are not using it,
 I recommend converting your models to Julia just so you can put this lib into good use.
 It is this great.
 In fact,
-they accompanying paper [@qubojl] is a great place to further understand the techniques we discussed here.
+the accompanying paper [@qubojl] is a great place to further understand the techniques we discussed here.
 
 ```{=bibtex}
 @misc{qubojl,
@@ -622,17 +646,29 @@ they accompanying paper [@qubojl] is a great place to further understand the tec
     [[4, 5], 1],
     [[2, 5], 2],
   ];
-  const states = [1, 1, -1, -1, 1, 1];
 
-  new figures.Diagram("#figure-spin", adjacency, states)
+  const states = [1, 1, 0, 0, 1, 1].map(Boolean);
+
+  const h = [-5, 3, 2, 1, -2, 4];
+
+
+
+  new figures.Diagram("#figure-spin", "ising", states, adjacency)
     .graph();
 
-  new figures.Diagram("#figure-ising", adjacency, states)
-    .graph()
-    .weights();
-
-  new figures.Diagram("#figure-ising-complete", adjacency, states)
+  new figures.Diagram("#figure-ising", "ising", states, adjacency)
     .graph()
     .weights()
-    .externalField();
+    .isingEnergy();
+
+  new figures.Diagram("#figure-ising-complete", "ising", states, adjacency)
+    .graph()
+    .weights()
+    .externalField(h)
+    .isingEnergy();
+
+  new figures.Diagram("#figure-qubo", "qubo", states, adjacency)
+    .graph()
+    .weights()
+    .isingEnergy();
 </script>
