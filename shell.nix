@@ -1,11 +1,11 @@
 let
   pkgs = import (builtins.fetchTarball {
     # Descriptive name to make the store path easier to identify
-    name = "nixos-24.11";
-    # Commit hash for nixos-unstable as of 2018-09-12
-    url = "https://github.com/NixOS/nixpkgs/archive/a39ed32a651fdee6842ec930761e31d1f242cb94.tar.gz";
+    name = "nixos-25.11";
+    # Commit hash for nixos-unstable as of 2025-12-15
+    url = "https://github.com/NixOS/nixpkgs/archive/c8cfcd6ccd422e41cc631a0b73ed4d5a925c393d.tar.gz";
     # Hash obtained using `nix-prefetch-url --unpack <url>`
-    sha256 = "16pw0f94nr3j91z0wm4ndjm44xfd238vcdkg07s2l74znkaavnwk";
+    sha256 = "1fdjh5jd5jx246fhfq13q5752nw9il5dwv36nqbcj4pa6kzwq9fy";
   }) {};
   tex = (pkgs.texlive.combine {
     inherit (pkgs.texlive) scheme-basic
@@ -21,7 +21,7 @@ pkgs.mkShell {
   packages = with pkgs; [
       # Workhorse
       gnumake
-      pandoc_3_5
+      pandoc
       lua5_4
 
       # Figures

@@ -13,7 +13,7 @@ css: "/css/plots.css"
 
 <style>
 svg.diagram {
-  background: #181a1b;
+  background: var(--color-typography);
 }
 
 /* Master node style */
