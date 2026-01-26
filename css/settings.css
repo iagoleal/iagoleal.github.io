@@ -13,6 +13,9 @@
   --color-attention:  hsl(188 49% 55%);
   --color-opposite:   hsl(39 100% 50%);
 
+  --color-background-dark: var(--color-typography, #222222);
+  --color-typography-dark: var(--color-background, #fdfdfd);
+
   --base-padding:     16px;
   --article-width:    min(40rem, 100% - 32px); /* ~80 chars or full page with 16px margin */
 

@@ -13,7 +13,7 @@ css: "/css/plots.css"
 
 <style>
 svg.diagram {
-  background: var(--color-typography);
+  background: var(--color-background-dark);
 }
 
 /* Master node style */
@@ -99,8 +99,8 @@ svg.diagram {
 /* Energy label and value (optional, for completeness) */
 .ising-energy-label {
   margin-top:    12px;
-  background:    #181a1b;
-  color:         var(--color-background);
+  background:    var(--color-background-dark);
+  color:         var(--color-typography-dark);
   font-size:     1.1em;
   padding:       6px 14px;
   border-radius: 6px;
@@ -121,26 +121,33 @@ svg.diagram {
 }
 
 .diagram-container .popup {
-  position: absolute;
-  z-index: 10;
+  position:       absolute;
+  z-index:        10;
   pointer-events: none;
-  padding: 4px 9px;
-  background: var(--color-typography);
-  color: var(--color-background, #fff);
-  font-size: var(--font-size-base);
-  font-family: var(--font-base, sans-serif);
-  border-radius: 2px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-  transition: opacity 0.25s cubic-bezier(.4,0,.2,1);
-  display: block;
-  white-space: nowrap;
-  opacity: 0;
+  padding:        4px 9px;
+  background:     var(--color-background-dark);
+  color:          var(--color-typography-dark, #fff);
+  border-radius:  2px;
+  box-shadow:     0 2px 12px rgba(0,0,0,0.3);
+  transition:     opacity 0.25s cubic-bezier(.4,0,.2,1);
+  display:        block;
+  white-space:    nowrap;
+  opacity:        0;
 }
 
 .diagram-container .popup.visible {
   opacity: 1;
   pointer-events: auto;
 }
+
+.weight {
+  text-anchor:        middle;
+  alignment-baseline: middle;
+  font-size:          1.2rem;
+  fill:               var(--color-background, white);
+  pointer-events:     none;
+}
+
 </style>
 
 

@@ -144,11 +144,26 @@ function quboObj(states, Q) {
   return energy;
 }
 
+const Modes = {
+  ising: {
+    name: "ising",
+    energy: isingObj,
+    edgeAnim: (edge, p, q) => edgeTensionController(edge, p, q),
+    alignment: (x, y, w) => w * spin(x) * spin(y) > 0,
+  },
+  qubo: {
+    name: "qubo",
+    energy: quboObj,
+    edgeAnim: () => () => {},
+    alignment: (x, y, _) => x && y,
+  }
+}
+
 export class Diagram {
   constructor(id, mode, states, edges) {
     this.id     = id;
     this.svg    = document.querySelector(`${id} svg`);
-    this.mode   = mode;
+    this.mode   = Modes[mode];
     this.edges  = edges;
     this.states = ArrayListener(states);
 
@@ -199,7 +214,7 @@ export class Diagram {
         },
       );
 
-      node.classList.add(this.mode);
+      node.classList.add(this.mode.name);
       node.classList.toggle("active", states[i]);
 
       states.observe(i, (_, v) => {
@@ -216,7 +231,7 @@ export class Diagram {
   #drawEdges() {
     const {states, pos} = this;
     const ge = draw(this.svg, "g");
-    const maxAbsJ = Math.max(...Object.values(this.J).flatMap(row => Object.values(row).map(Math.abs)));
+    const maxAbsJ = Math.max(...this.edges.map(([[,], w]) => Math.abs(w)));
 
     for (const [[s, t], w] of this.edges) {
       const edge = draw(ge, "path", {
@@ -224,21 +239,16 @@ export class Diagram {
         d: `M${pos[s].x},${pos[s].y} ${pos[t].x},${pos[t].y}`,
       }, {
         "stroke-width": 1 + Math.abs(w) / maxAbsJ,
-        fill: "none"
+        fill: "none",
       });
-      edge.classList.add(this.mode);
+      edge.classList.add(this.mode.name);
 
-      const tension = this.mode === "ising"
-          ? edgeTensionController(edge, pos[s], pos[t])
-          : () => {};
+      const anim = this.mode.edgeAnim(edge, pos[s], pos[t]);
 
       const redrawEdge = () => {
-        const aligned = (this.mode === "ising")
-          ? w * spin(states[s]) * spin(states[t]) > 0
-          : (states[s] && states[t]);
-
+        const aligned = this.mode.alignment(states[s], states[t], w);
         edge.classList.toggle("aligned", aligned);
-        tension(aligned);
+        anim(aligned);
       };
 
       states.observe([s, t], redrawEdge);
@@ -267,11 +277,7 @@ export class Diagram {
       draw(gw, "text", {
         x: ox,
         y: oy,
-        "text-anchor": "middle",
-        "alignment-baseline": "middle",
-        "font-size": 22,
-        "fill": "var(--color-background, white)",
-        "pointer-events": "none",
+        class: "weight",
       }, {}).textContent = w;
     }
 
@@ -279,16 +285,11 @@ export class Diagram {
   }
 
   #drawField() {
-    // Remove previous field group if any
-    let fieldGroup = this.svg.querySelector("g.magnetic-field");
-    if (fieldGroup) fieldGroup.remove();
-
-    // Create a new group as the first child
-    fieldGroup = this.svg.insertBefore(
+    const g = this.svg.insertBefore(
       document.createElementNS('http://www.w3.org/2000/svg', 'g'),
       this.svg.firstChild
     );
-    fieldGroup.classList.add("magnetic-field");
+    g.classList.add("magnetic-field");
 
     // Get SVG dimensions
     const svgRect = this.svg.getBoundingClientRect();
@@ -296,13 +297,13 @@ export class Diagram {
     const height  = this.svg.viewBox.baseVal.height || svgRect.height;
 
     // Level curve parameters
-    const nCurves = 6;
+    const nCurves   = 6;
     const amplitude = height * 0.10;
     const frequency = 2 * Math.PI / width * 1.5; // 1.5 full waves across width
-    const color = "#90caf9";
-    const opacity = 0.13;
-    const blur = 1.5;
-    const step = 14;
+    const color     = "#90caf9";
+    const opacity   = 0.13;
+    const blur      = 1.5;
+    const step      = 14;
 
     // Create SVG filter for blur if not present
     let defs = this.svg.querySelector("defs");
@@ -325,14 +326,15 @@ export class Diagram {
         const y = y0 + amplitude * Math.sin(frequency * x + i * 0.7);
         d += (x === 0 ? "M" : "L") + x + "," + y;
       }
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute("d", d);
-      path.setAttribute("stroke", color);
-      path.setAttribute("stroke-width", "2.2");
-      path.setAttribute("fill", "none");
-      path.setAttribute("opacity", opacity);
-      path.setAttribute("filter", "url(#level-curve-blur)");
-      fieldGroup.appendChild(path);
+      // Use draw() to create the path element and set attributes
+      draw(g, 'path', {
+        d,
+        stroke: color,
+        'stroke-width': '2.2',
+        fill: 'none',
+        opacity,
+        filter: 'url(#level-curve-blur)'
+      });
     }
 
     return this;
@@ -352,7 +354,8 @@ export class Diagram {
           const ctm = svg.getScreenCTM();
           if (ctm) {
             const { left, top } = container.getBoundingClientRect();
-            const { x, y } = pt.matrixTransform(ctm);
+            const { x, y }      = pt.matrixTransform(ctm);
+
             popup.show(x - left, y - top, `h = ${h[i]}`);
           }
         });
@@ -374,17 +377,15 @@ export class Diagram {
     }
 
     const redraw = () => {
-      let energy, formula;
-      if (this.mode === "qubo") {
-        energy = quboObj(this.states, this.J);
+      let formula;
+      if (this.mode.name === "qubo") {
         formula = "f(x) = x^T Q x = ";
       } else if (Array.isArray(this.h)) {
-        energy = isingObj(this.states, this.J, this.h);
         formula = "H(s) = s^T J s + h^T s = ";
       } else {
-        energy = isingObj(this.states, this.J);
         formula = "H(s) = s^T J s = ";
       }
+      const energy = this.mode.energy(this.states, this.J, this.h);
 
       // Animate if energy changed
       const valueSpan = document.createElement('span');
