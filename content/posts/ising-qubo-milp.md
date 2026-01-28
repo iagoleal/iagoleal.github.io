@@ -13,30 +13,36 @@ css: "/css/plots.css"
 
 <style>
 svg.diagram {
-  background: var(--color-background-dark);
+  /* background: var(--color-background-dark); */
+  background: #f9f9fb;
 }
 
-/* Master node style */
+/* Node styles */
 .site {
-  stroke-width: 4pt;
+  stroke-width: 3px;
   cursor: pointer;
   transition: filter 0.3s, stroke 0.3s;
+  fill: #fff;
+  stroke: #b0b6c1;
+  filter: none;
 }
 
 /* Ising nodes */
 .ising.site {
-  stroke: #ffcc80;
-  stroke-dasharray: 50 10;
+  stroke: #3b4a6b; /* deep blue accent */
+  stroke-dasharray: 40 8;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 6px #ffcc80);
+  filter: drop-shadow(0 0 4px #b3c6e0);
 }
+
 .ising.site.active {
-  stroke: #90caf9;
+  stroke: #1976d2; /* blue highlight */
   filter: drop-shadow(0 0 6px #90caf9);
   animation: spin-ccw 10s linear infinite;
   transform-origin: center;
   transform-box: fill-box;
 }
+
 .ising.site:not(.active) {
   animation: spin-cw 10s linear infinite;
   transform-origin: center;
@@ -44,46 +50,56 @@ svg.diagram {
 }
 
 /* QUBO nodes */
+
 .qubo.site {
-  fill: #666;
-  stroke: #333;
+  fill: #e9ecf3;
+  stroke: #b0b6c1;
   filter: none;
   opacity: 1;
 }
 .qubo.site.active {
-  fill: #90caf9;
+  fill: #1976d2;
   stroke: #1976d2;
   filter: drop-shadow(0 0 6px #90caf9);
 }
 
-/* Master edge style */
+/* Edges style */
+
+.weight {
+  text-anchor:        middle;
+  alignment-baseline: middle;
+  font-size:          1.2rem;
+  fill:               var(--color-typography, #222);
+  pointer-events:     none;
+}
+
 .edge {
-  stroke-width: 2pt;
+  stroke-width: 2px;
   fill: none;
   transition: stroke 0.3s, filter 0.3s;
+  stroke: #b0b6c1;
 }
 
 .ising.edge {
-  /* nothing here except maybe transition/filter */
   transition: stroke 0.3s, filter 0.3s;
 }
 .ising.edge.aligned {
-  stroke: #43a047;
-  filter: drop-shadow(0 0 4px #a5d6a7);
+  stroke: #388e3c; /* green for aligned */
+  filter: drop-shadow(0 0 4px #b7e1cd);
 }
 .ising.edge:not(.aligned) {
-  stroke: #e53935;
-  filter: drop-shadow(0 0 6px #e57373) drop-shadow(0 0 12px #e57373);
+  stroke: #d32f2f; /* red for misaligned */
+  filter: drop-shadow(0 0 6px #ffcdd2) drop-shadow(0 0 12px #ffcdd2);
 }
 
 /* QUBO edges */
 .qubo.edge {
-  stroke: #666;
-  stroke-width: 5pt;
+  stroke: #b0b6c1;
+  stroke-width: 4px;
 }
 .qubo.edge.aligned {
-  stroke: #43a047;
-  filter: drop-shadow(0 0 4px #a5d6a7);
+  stroke: #388e3c;
+  filter: drop-shadow(0 0 4px #b7e1cd);
 }
 
 /* Spin animations */
@@ -96,18 +112,29 @@ svg.diagram {
   100% { transform: rotate(360deg);}
 }
 
-/* Energy label and value (optional, for completeness) */
-.ising-energy-label {
-  margin-top:    12px;
-  background:    var(--color-background-dark);
-  color:         var(--color-typography-dark);
-  font-size:     1.1em;
-  padding:       6px 14px;
-  border-radius: 6px;
-  display:       inline-block;
-  box-shadow:    0 2px 8px rgba(0,0,0,0.10);
-  transition: background 0.18s, box-shadow 0.4s;
+/* Popup */
+.diagram-container .popup {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  padding: 4px 10px;
+  background: #fff;
+  color: #222;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px rgba(60, 60, 80, 0.08);
+  border: 1px solid #e0e3ea;
+  font-size: 1em;
+  transition: opacity 0.25s cubic-bezier(.4,0,.2,1);
+  display: block;
+  white-space: nowrap;
+  opacity: 0;
 }
+.diagram-container .popup.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Energy label and value (optional, for completeness) */
 
 .energy-value {
   transition: background 0.18s, color 0.18s;
@@ -116,36 +143,70 @@ svg.diagram {
 }
 
 .energy-value.energy-changed {
-  background: #fffde7 !important;
-  color: #222 !important;
+  background: #e3f2fd !important;
+  color: #1976d2 !important;
 }
 
-.diagram-container .popup {
-  position:       absolute;
-  z-index:        10;
-  pointer-events: none;
-  padding:        4px 9px;
-  background:     var(--color-background-dark);
-  color:          var(--color-typography-dark, #fff);
-  border-radius:  2px;
-  box-shadow:     0 2px 12px rgba(0,0,0,0.3);
-  transition:     opacity 0.25s cubic-bezier(.4,0,.2,1);
-  display:        block;
-  white-space:    nowrap;
-  opacity:        0;
+.encoding-diagram {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  width: 100%;
+  gap: 12px;
 }
 
-.diagram-container .popup.visible {
-  opacity: 1;
-  pointer-events: auto;
+.encoding-button {
+  width:           38px;
+  height:          38px;
+  min-width:       38px;
+  min-height:      38px;
+  flex-shrink:     0;
+  border-radius:   50%;
+  border:          2.5px solid var(--color-faded);
+  background:      var(--color-super);
+  color:           var(--color-faded);
+  cursor:          pointer;
+  transition:      box-shadow 0.2s, background 0.2s, color 0.2s, border 0.2s, outline 0.2s;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  font-size:       1.2em;
+  position:        relative;
+  font-weight:     normal;
 }
 
-.weight {
-  text-anchor:        middle;
-  alignment-baseline: middle;
-  font-size:          1.2rem;
-  fill:               var(--color-background, white);
-  pointer-events:     none;
+
+.encoding-button.active {
+  background:     var(--color-lightning);
+  color:          var(--color-background-dark);
+  border-color:   var(--color-accent);
+  outline:        3px solid var(--color-lightning);
+  outline-offset: 2px;
+  font-weight:    bold;
+  z-index:        1;
+  box-shadow:     none;
+}
+
+.math-label {
+  display: inline-block;
+  background: var(--color-background, #f9f9fb);
+  color: var(--color-typography, #222);
+  font-size: 1.1em;
+  padding: 6px 14px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(60, 60, 80, 0.07);
+  border: 1px solid var(--color-border, #e0e3ea);
+  margin-top: 12px;
+  transition: background 0.18s, box-shadow 0.4s;
+}
+
+.math-label-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em;
 }
 
 </style>
@@ -424,45 +485,48 @@ This is an old friend for anyone who's ever done some machine learning.
 The idea is to create disjoint states representing
 each possible value together with a restriction that only one of them can be "on" at a time.
 
-Take an integer variable $x_i \in \Z$.
-Since it is bounded,
-there are exactly ${K_i\coloneqq\floor{U_i} - \ceil{L_i}} + 1$ values it can take.
-Let's write these values as constants $Y_i^{(j)} = \ceil{L_i} + j$
-for $j \in \{0,\ldots,K_i-1\}$.
-The plan is to add $K_i$ binary variables
-$x_i^{(j)} \in \B$ together with constraints
+Consider a variable $x$ taking values
+in a set of $K$ possibilities,
+yielding an abstract constraint
+$$x \in \{Y^{1},\ldots, Y^{K}\}.$$
+To binarize it,
+we associate a new variable $z_j \in \B$ to each $Y^j$,
+with the constraints that exactly one $z_j$ equals $1$
+and that $x$ equals to corresponding $Y^j$ value,
 $$
 \begin{aligned}
-  \textstyle\sum_{j = 0}^{K_i-1} x_i^{(j)} &= 1, \\
-  \textstyle\sum_{j = 0}^{K_i-1} Y_i^{(j)} x_i^{(j)} &= x_i.
+  \textstyle\sum_{j = 1}^{K} z_j &= 1, \\
+  \textstyle\sum_{j = 1}^{K} Y^{j} z_j &= x, \\
+z_j &\in \B.
 \end{aligned}
 $$
 
 These constraints are an integer programming way of restating
 what we said in the previous paragraph.
-The variable $x_i$ can take any of the $Y_i^{(j)}$ values
+The variable $x$ can take any of the $Y^{j}$ values
 but is constrained to only choose one of them.
 
-For a real decision variable,
-we have to make a compromise.
-Discretize the interval $[L_i, U_i]$ into $K_i$ points of choice,
-$$ L_i \le Y_i^{(0)} < Y_i^{(j)}  < Y_i^{(K_i-1)} \le U_i.$$
-A common choice is uniformly with $Y_i^{(j)} =  L_i + j\frac{U_i - L_i}{K_i}.$
-Now we can proceed as before by implementing the "choice" constraints
-for the $Y_i^{(j)}$ values.
+This is a general framework we can apply to any kind of variable.
+Suppose $x \in \Z$ bounded by $L \le x \le U$.
+There are exactly ${K \coloneqq \floor{U} - \ceil{L}} + 1$
+values it can take.
+All you must do is to apply the procedure to
+$V = \{\ceil{L}, \ceil{L} + 1,\ldots, \floor{U}\}$.
 
-The form of the second constraints lets you get rid of the variable $x_i$.
-Since it is decoupled, you can just substitute the right-hand side for it
-and work with only the binary variables $x_i^{(j)}$.
-After this step, the problem becomes a pure integer linear program (ILP),
-$$
-  \begin{array}{rl}
-    \min\limits_{x} & \sum_{i = 1}^{m + k} \sum_{j=0}^{K_i-1} c_i Y_i^{(j)} x_i^{(j)} \\
-    \textrm{s.t.}   & A_i \left( \sum_{j=0}^{K_i-1} Y_i^{(j)} x_i^{(j)} \right) = b_i, \\
-                    & \sum_{j = 0}^{K_i-1} x_i^{(j)} = 1, \\
-                    & x_i^{(j)} \in \B.
-  \end{array}
-$$
+The graph below is a visualization of one-hot encoding
+for an integer variable $-4 \le x \le 5$.
+Click the buttons to see how the value change.
+
+<figure id="figure-one-hot" class="diagram-container">
+</figure>
+
+For a bounded real decision variable $x$,
+we have to make a compromise regarding precision.
+Discretize the interval $[L, U]$ into $K$ points of choice,
+$$ L \le Y^{1} < Y^{j} < Y^{K} \le U.$$
+A common choice is uniformly with $Y^{j} =  L + j\frac{U - L}{K}.$
+Now we can proceed as before by implementing the "choice" constraints
+for the $Y^{j}$ values.
 
 ### Binary Expansion Encoding
 
@@ -483,11 +547,13 @@ capping the values.
 This corrects the encoding to
 $$ x = L + \sum_{j = 0}^{K-2} 2^j z_j + (U - 2^{K-1} + 1) z_{K-1}.$$
 
-You can play with turning the bits on and off in the graph below.
+The graph below is a visualization of binary encoding
+for an integer variable $-4 \le x \le 5$.
+You can play with turning the bits on and off to see how the value changes.
 
-:::Missing
-Binary Encoding
-:::
+
+<figure id="figure-binary" class="diagram-container">
+</figure>
 
 For real numbers, we can add negative power of 2 to represent the number's fractional part.
 Suppose you want to allocate $R$ bits for this and call $\Delta = \sum_{j=1}^R 2^{-j}$.
@@ -659,23 +725,33 @@ the accompanying paper [@qubojl] is a great place to further understand the tech
   const h = [-5, 3, 2, 1, -2, 4];
 
 
-
   new figures.Diagram("#figure-spin", "ising", states, adjacency)
     .graph();
 
   new figures.Diagram("#figure-ising", "ising", states, adjacency)
     .graph()
     .weights()
-    .isingEnergy();
+    .isingEnergy("H(s) = s^T J s");
 
   new figures.Diagram("#figure-ising-complete", "ising", states, adjacency)
     .graph()
     .weights()
     .externalField(h)
-    .isingEnergy();
+    .isingEnergy("H(s) = s^T J s + h^T s");
 
   new figures.Diagram("#figure-qubo", "qubo", states, adjacency)
     .graph()
     .weights()
-    .isingEnergy();
+    .isingEnergy("f(x) = x^T Q x");
+
+  new figures.EncodingElement("#figure-one-hot", -4, 5, 2, "onehot")
+    .buttons()
+    .labelNvar()
+    .label();
+
+  new figures.EncodingElement("#figure-binary", -4, 5, 2, "binary")
+    .buttons()
+    .labelNvar()
+    .label();
+
 </script>

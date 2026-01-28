@@ -1,5 +1,13 @@
+function renderMath(el, expr) {
+  if (window.katex) {
+    window.katex.render(expr, el, { displayMode: false });
+  } else {
+    el.textContent = expr;
+  }
+}
+
 function draw(el, tag, attrs, styles) {
-  const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
 
   for (const prop in attrs) {
     node.setAttribute(prop, attrs[prop]);
@@ -22,11 +30,19 @@ function spin(b) {
 
 function ArrayListener(xs) {
   const listeners = Array.from(Array(xs.length), () => []);
-  xs.observe = function(ks, f) {
-    for (const i of (Array.isArray(ks) ? ks : [ks])) {
-      listeners[i].push(f)
+
+  xs.observe = function(arg1, arg2 = null) {
+    let ks, f;
+    if (arg2 === null) {
+      ks = xs.map((_, i) => i);
+      f = arg1;
+    } else {
+      ks = Array.isArray(arg1) ? arg1 : [arg1];
+      f = arg2;
     }
-  }
+
+    ks.forEach((i) => listeners[i].push(f));
+  };
 
   return new Proxy(xs, {
       set(target, k, v) {
@@ -46,28 +62,42 @@ function zeros(rows, cols) {
   return Array.from(Array(rows), () => new Array(cols).fill(0));
 }
 
+class Popup {
+  constructor({ container, className = "popup" } = {}) {
+    this.container = container;
+    this.className = className;
 
-function createPopup({ container, className = "popup" } = {}) {
-  let popup = container.querySelector(`.${className}`);
-  if (!popup) {
-    popup = document.createElement("div");
-    popup.className = className;
+    this.popup     = this.#createPopup();
+  }
+
+  #createPopup() {
+    const popup = document.createElement("div");
+    popup.className = this.className;
     popup.style.position = "absolute";
-    container.style.position = "relative";
-    container.appendChild(popup);
+
+    this.container.style.position = "relative";
+    this.container.appendChild(popup);
+    return popup;
   }
 
-  function show(x, y, text) {
-    popup.textContent = text;
-    popup.style.left = `${x}px`;
-    popup.style.top = `${y}px`;
-    popup.classList.add("visible");
+  show(x, y, text) {
+    this.popup.textContent = text;
+    this.popup.style.left = `${x}px`;
+    this.popup.style.top  = `${y}px`;
+    this.popup.classList.add("visible");
   }
 
-  function hide() {
-    popup.classList.remove("visible");
+  hide() {
+    this.popup.classList.remove("visible");
   }
-  return { show, hide, destroy: () => popup.remove(), element: popup };
+
+  destroy() {
+    this.popup.remove();
+  }
+
+  get element() {
+    return this.popup;
+  }
 }
 
 function wavyPath(x1, y1, x2, y2, t, amplitude = 3, frequency = 2) {
@@ -210,7 +240,7 @@ export class Diagram {
         cx: site.x,
         cy: site.y,
         r: 20,
-        class: 'site'
+        class: "site"
         },
       );
 
@@ -286,7 +316,7 @@ export class Diagram {
 
   #drawField() {
     const g = this.svg.insertBefore(
-      document.createElementNS('http://www.w3.org/2000/svg', 'g'),
+      document.createElementNS("http://www.w3.org/2000/svg", "g"),
       this.svg.firstChild
     );
     g.classList.add("magnetic-field");
@@ -308,11 +338,11 @@ export class Diagram {
     // Create SVG filter for blur if not present
     let defs = this.svg.querySelector("defs");
     if (!defs) {
-      defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
       this.svg.insertBefore(defs, this.svg.firstChild);
     }
     if (!this.svg.querySelector("#level-curve-blur")) {
-      const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+      const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
       filter.setAttribute("id", "level-curve-blur");
       filter.innerHTML = `<feGaussianBlur stdDeviation="${blur}" />`;
       defs.appendChild(filter);
@@ -327,13 +357,13 @@ export class Diagram {
         d += (x === 0 ? "M" : "L") + x + "," + y;
       }
       // Use draw() to create the path element and set attributes
-      draw(g, 'path', {
+      draw(g, "path", {
         d,
         stroke: color,
-        'stroke-width': '2.2',
-        fill: 'none',
+        "stroke-width": "2.2",
+        fill: "none",
         opacity,
-        filter: 'url(#level-curve-blur)'
+        filter: "url(#level-curve-blur)"
       });
     }
 
@@ -344,7 +374,7 @@ export class Diagram {
   #fieldValues() {
       const { pos, h, svg, id } = this;
       const container = document.querySelector(id);
-      const popup = createPopup({ container });
+      const popup = new Popup({ container });
 
       Array.from(svg.querySelectorAll("circle.site")).forEach((node, i) => {
         node.addEventListener("mouseenter", () => {
@@ -359,52 +389,187 @@ export class Diagram {
             popup.show(x - left, y - top, `h = ${h[i]}`);
           }
         });
-        node.addEventListener("mouseleave", popup.hide);
+
+        node.addEventListener("mouseleave", () => popup.hide());
       });
 
       return this;
     }
 
-  isingEnergy() {
+  isingEnergy(formula) {
     const container = document.querySelector(this.id);
-    const svg = this.svg;
+    const {svg, states, J, h} = this;
 
-    let label = container.querySelector(".ising-energy-label");
-    if (!label) {
-      label = document.createElement("div");
-      label.className = "ising-energy-label";
-      svg.insertAdjacentElement("afterend", label);
-    }
+    const mathLabel = new MathLabel(container, `${formula} =`);
+    svg.insertAdjacentElement("afterend", mathLabel.element);
+
+    const valueSpan = document.createElement("span");
+    valueSpan.className = "energy-value";
+    mathLabel.element.appendChild(valueSpan);
 
     const redraw = () => {
-      let formula;
-      if (this.mode.name === "qubo") {
-        formula = "f(x) = x^T Q x = ";
-      } else if (Array.isArray(this.h)) {
-        formula = "H(s) = s^T J s + h^T s = ";
-      } else {
-        formula = "H(s) = s^T J s = ";
-      }
-      const energy = this.mode.energy(this.states, this.J, this.h);
+      const energy = this.mode.energy(states, J, h);
 
-      // Animate if energy changed
-      const valueSpan = document.createElement('span');
-      valueSpan.className   = 'energy-value';
-      valueSpan.textContent = energy;
+      renderMath(valueSpan, energy.toString());
+
       valueSpan.classList.add("energy-changed");
-      setTimeout(() => valueSpan.classList.remove("energy-changed"), 180);
-
-      // Render formula with KaTeX, then append the value span
-      if (window.katex) {
-        window.katex.render(formula, label, { displayMode: false });
-      } else {
-        label.innerHTML = formula;
-      }
-      label.appendChild(valueSpan);
+      setTimeout(() => {
+        return valueSpan.classList.remove("energy-changed")
+      }, 180);
     };
 
-    this.states.observe([...Array(this.states.length).keys()], redraw);
+    states.observe(redraw);
     redraw();
+
+    return this;
+  }
+}
+
+class MathLabel {
+  constructor(container, formula = "") {
+    this.element = document.createElement("div");
+    this.element.className = "math-label";
+    container.appendChild(this.element);
+
+    if (formula) {
+      this.set(formula);
+    }
+  }
+
+  set(formula) {
+    if (window.katex) {
+      window.katex.render(formula, this.element, { displayMode: false });
+    } else {
+      this.element.textContent = formula;
+    }
+  }
+}
+
+
+function binaryCoeffs(lb, ub) {
+  const bits = Math.ceil(Math.log2(ub - lb + 1));
+  const coeffs = Array.from({ length: bits }, (_, j) => {
+    return j < bits - 1 ? 2 ** j : (ub - lb - (2 ** (bits - 1)) + 1)
+  });
+
+  return coeffs;
+}
+
+const EncodingModes = {
+  onehot: {
+    init(lb, ub, initial) {
+      const K = ub - lb + 1;
+      const state = Array(K).fill(false);
+      state[initial] = true;
+
+      return state;
+    },
+
+    toggle(state, j) {
+      state.fill(false);
+      state[j] = true;
+    },
+
+    value(state, lb) {
+      return lb + state.findIndex(Boolean);
+    },
+  },
+  binary: {
+    init(lb, ub, initial) {
+      const coeffs = binaryCoeffs(lb, ub);
+      const bits   = coeffs.length;
+      const state  = Array(bits).fill(false);
+
+      let value = initial;
+      for (let j = bits - 1; j >= 0; j--) {
+        if (value >= coeffs[j]) {
+          state[j] = true;
+          value -= coeffs[j];
+        }
+      }
+      return state;
+    },
+
+    toggle(state, j) {
+      state[j] = !state[j];
+    },
+
+    value(state, lb, ub) {
+      const coeffs = binaryCoeffs(lb, ub);
+      return lb + state.reduce((sum, bit, i) => sum + (bit ? coeffs[i] : 0), 0);
+    }
+  }
+};
+
+export class EncodingElement {
+  #container;
+  #states;
+  #mode;
+  #lb;
+  #ub;
+
+  constructor(id, lower, upper, initial = 0, mode = "onehot") {
+    this.#container = document.querySelector(id);
+    this.#mode = EncodingModes[mode];
+    this.#lb   = lower;
+    this.#ub   = upper;
+    this.#states = ArrayListener(this.#mode.init(lower, upper, initial));
+  }
+
+  buttons() {
+    const row = document.createElement("div");
+    row.className = "encoding-diagram";
+
+    const buttons = this.#states.map((state, j) => {
+      const button = document.createElement("div");
+      button.className   = "encoding-button";
+      renderMath(button, `z_{${j+1}}`);
+      button.classList.toggle("active", state);
+
+      button.addEventListener("click", () => {
+        this.#mode.toggle(this.#states, j);
+        buttons.forEach((button, i) => button.classList.toggle("active", this.#states[i]));
+      });
+
+      row.appendChild(button);
+
+      this.#states.observe(j, () => button.classList.toggle("active", this.#states[j]));
+
+      return button;
+    });
+
+    this.#container.appendChild(row);
+
+    return this;
+  }
+
+  #addLabel(writer) {
+    // Container for math labels (x= ... , K = ...)
+    let div = this.#container.querySelector('.math-label-container');
+    if (!div) {
+      div = document.createElement('div');
+      div.className = 'math-label-container';
+      this.#container.appendChild(div);
+    }
+
+    const label = new MathLabel(div, "");
+    const update = () => label.set(writer());
+    update();
+    this.#states.observe(update);
+    return label;
+  }
+
+  label() {
+    this.#addLabel(() =>
+      `x = ${this.#mode.value(this.#states, this.#lb, this.#ub)}`
+    );
+    return this;
+  }
+
+  labelNvar() {
+    this.#addLabel(() =>
+      `K = ${this.#states.length}`
+    );
 
     return this;
   }
