@@ -214,7 +214,8 @@ const Modes = {
     alignment: (x, y, w) => w * spin(x) * spin(y) > 0,
     prod: (states, x, y) => spin(states[x]) * spin(states[y]),
     show: (states, i) => states[i] ? "+1" : "-1",
-    varname: "s",
+    varName: "s",
+    matName: "J",
   },
   qubo: {
     name: "qubo",
@@ -223,17 +224,22 @@ const Modes = {
     alignment: (x, y, _) => x && y,
     prod: (states, x, y) => states[x] * states[y],
     show: (states, i) => states[i] ? "1" : "0",
-    varname: "x",
+    varName: "x",
+    matName: "Q",
   }
 }
 
 export class Diagram {
+  #messages;
+
   constructor(id, mode, states, edges) {
     this.id     = id;
     this.svg    = document.querySelector(`${id} svg`);
+    this.svg.classList.add(mode);
     this.mode   = Modes[mode];
     this.edges  = edges;
     this.states = ArrayListener(states);
+    this.#messages = { nodes: [], edges: [] };
 
     this.pos = [
       {x: 100, y: 350},
@@ -249,12 +255,16 @@ export class Diagram {
 
   graph() {
     return this
-      .#drawEdges()
+      .edgeSketch()
       .#drawNodes();
   }
 
   externalField(h = null) {
     this.h = h;
+
+    this.#messages.nodes.push(
+      "h_{i} {var}_{i} = {field}"
+    );
 
     return this.#drawField();
   }
@@ -275,7 +285,6 @@ export class Diagram {
         },
       );
 
-      node.classList.add(this.mode.name);
       node.classList.toggle("active", states[i]);
 
       states.observe(i, (_, v) => {
@@ -285,49 +294,77 @@ export class Diagram {
       node.addEventListener("click", () => flip(this.states, i));
     }
 
+    this.#messages.nodes.push(
+      "{var}_{i} = {state}"
+    );
+
     return this;
   }
 
+  edgeSketch() {
+    const { pos, edges, svg } = this;
+    const ge = draw(svg, "g");
+    const gh = draw(svg, "g");
 
-  #drawEdges() {
-    const {states, pos} = this;
-    const ge = draw(this.svg, "g");
-    const gh = draw(this.svg, "g");
-    const maxAbsJ = Math.max(...this.edges.map(([_, w]) => Math.abs(w)));
-
-    for (const [[s, t], w] of this.edges) {
-      const edge = draw(ge, "path", {
-        class: `edge`,
+    for (const [[s, t], _] of edges) {
+      draw(ge, "path", {
+        class: "edge",
         d: `M${pos[s].x},${pos[s].y} ${pos[t].x},${pos[t].y}`,
       }, {
-        "stroke-width": 3 + Math.abs(w) / maxAbsJ,
-        fill: "none",
       });
-      edge.classList.add(this.mode.name);
 
-      // Hack for larger hitbox
-      const hoverEdge = draw(gh, "path", {
+      // Hack for larger hover zones
+      draw(gh, "path", {
         class: "edge-hover",
         d: `M${pos[s].x},${pos[s].y} ${pos[t].x},${pos[t].y}`,
       }, {
-        "stroke-width": 18, // Large enough for easy hovering
+        "stroke-width": 18,
         fill: "none",
         stroke: "#000",
         opacity: 0,
         cursor: "pointer",
         "pointer-events": "stroke"
       });
+    }
 
-      const anim = this.mode.edgeAnim(edge, pos[s], pos[t]);
+    this.#messages.edges.push(
+      "{v1} {v2} = {prod}"
+    );
 
+    return this;
+  }
+
+  edgeActivate() {
+    const { states, pos, mode, edges } = this;
+    const maxAbsJ = Math.max(...edges.map(([_, w]) => Math.abs(w)));
+
+    // Update all visible edges
+    this.svg.querySelectorAll('.edge').forEach((edge, i) => {
+      const [[s, t], w] = edges[i];
+
+      edge.classList.add("styled");
+
+      edge.setAttribute("stroke-width", 3 + Math.abs(w) / maxAbsJ);
+
+      const anim = mode.edgeAnim(edge, pos[s], pos[t]);
       const redrawEdge = () => {
-        const aligned = this.mode.alignment(states[s], states[t], w);
+        const aligned = mode.alignment(states[s], states[t], w);
         edge.classList.toggle("aligned", aligned);
         anim(aligned);
       };
 
       states.observe([s, t], redrawEdge);
       redrawEdge();
+    });
+
+    this.#messages.edges.push(
+      "{mat} {v1} {v2} = {value}"
+    );
+
+    if (this.edges.some(([[s, t], _]) => s === t)) {
+      this.#messages.nodes.push(
+        "{var}_{i} {mat}_{{i}{i}} {var}_{i} = {selfval}"
+      );
     }
 
     return this;
@@ -371,7 +408,7 @@ export class Diagram {
       }
     }
 
-    return this;
+    return this.edgeActivate();
   }
 
   #drawField() {
@@ -430,7 +467,7 @@ export class Diagram {
     return this;
   }
 
-  isingEnergy(formula) {
+  energyLabel(formula) {
     const container = document.querySelector(this.id);
     const {svg, states, edges, h} = this;
 
@@ -458,26 +495,54 @@ export class Diagram {
     return this;
   }
 
-  statePopup() {
+  popup() {
     const popup = new Popup(document.querySelector(this.id));
-    const { states, svg, mode } = this;
+    return this
+      .#statesPopup(popup)
+      .#edgesPopup(popup);
+  }
+
+  #statesPopup(popup) {
+    const { states, svg, mode, h } = this;
 
     svg.querySelectorAll('.site').forEach((node, i) => {
+      const getVars = () => ({
+        var: mode.varName,
+        i: i + 1,
+        state: mode.show(states, i),
+        field: h ? h[i] * spin(states[i]) : "",
+        mat: mode.matName,
+        selfval: (() => {
+          // Find self-edge for node i
+          const selfEdge = this.edges.find(([pair]) => pair[0] === i && pair[1] === i);
+          if (selfEdge) {
+            const w = selfEdge[1];
+            return w * (mode.name === "ising" ? spin(states[i]) : states[i]);
+          }
+          return "";
+        })(),
+      });
+
+      const processMessages = () => {
+        const vars = getVars();
+        return this.#messages.nodes
+          .map(tmpl => tmpl.replace(/\{(\w+)\}/g, (_, k) => vars[k]))
+          .join(' \\\\ ');
+      };
+
       node.addEventListener('mousemove', (e) => {
         const containerRect = popup.container.getBoundingClientRect();
         popup.show(
-          `${mode.varname}_{${i+1}} = ${mode.show(states, i)}`,
+          processMessages(),
           e.clientX - containerRect.left,
-          e.clientY - containerRect.top,
+          e.clientY - containerRect.top
         );
       });
       node.addEventListener('mouseleave', () => popup.hide());
 
-      // Reactively update popup for this node only if hovered and visible
       states.observe(i, () => {
-        if (popup.visible  && node.matches(':hover')) {
-          const value = `${mode.varname}_{${i+1}} = ${mode.show(states, i)}`;
-          popup.show(value);
+        if (popup.visible && node.matches(':hover')) {
+          popup.show(processMessages());
         }
       });
     });
@@ -485,21 +550,35 @@ export class Diagram {
     return this;
   }
 
-  edgesPopup() {
-    const popup = new Popup(document.querySelector(this.id));
+  #edgesPopup(popup) {
     const { states, svg, mode, edges } = this;
 
     svg.querySelectorAll('.edge-hover').forEach((el, i) => {
       const [[s, t], w] = edges[i];
 
-      el.addEventListener('mousemove', (e) => {
-        const prod = this.mode.prod(states,s, t);
+      const getVars = () => {
+        const prod = mode.prod(states, s, t);
         const value = w * prod;
-        const label = `${mode.varname}_{${s+1}} ${mode.varname}_{${t+1}} = ${prod} \\\\ J_{${s+1}${t+1}} ${mode.varname}_{${s+1}} ${mode.varname}_{${t+1}} = ${value}`;
+        return {
+          v1: `${mode.varName}_{${s+1}}`,
+          v2: `${mode.varName}_{${t+1}}`,
+          prod,
+          mat: `${mode.matName}_{${s+1}${t+1}}`,
+          value
+        };
+      };
 
+      const processMessages = () => {
+        const vars = getVars();
+        return this.#messages.edges
+          .map(tmpl => tmpl.replace(/\{(\w+)\}/g, (_, k) => vars[k]))
+          .join(' \\\\ ');
+      };
+
+      el.addEventListener('mousemove', (e) => {
         const containerRect = popup.container.getBoundingClientRect();
         popup.show(
-          label,
+          processMessages(),
           e.clientX - containerRect.left,
           e.clientY - containerRect.top
         );
@@ -510,10 +589,7 @@ export class Diagram {
       // Reactively update popup for this edge only if hovered and visible
       states.observe([s, t], () => {
         if (popup.visible && el.matches(':hover')) {
-          const prod = mode.prod(states, s, t);
-          const value = w * prod;
-          const label = `${mode.varname}_{${s+1}} ${mode.varname}_{${t+1}} = ${prod} \\\\ J_{${s+1}${t+1}} ${mode.varname}_{${s+1}} ${mode.varname}_{${t+1}} = ${w} \\times ${prod} = ${value}`;
-          popup.show(label);
+          popup.show(processMessages());
         }
       });
     });

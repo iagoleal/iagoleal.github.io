@@ -1,7 +1,7 @@
 ---
 title: Your Favorite Problem is an Ising Model
 keywords: [math, optimization, quantum-computing]
-date: 2025-10-21
+date: 2026-01-28
 thumbnail: ""
 theme: math
 description:
@@ -40,14 +40,14 @@ svg.diagram {
 }
 
 /* Ising nodes */
-.ising.site {
+.ising .site {
   stroke:           #3b4a6b;
   stroke-dasharray: 42 8;
   stroke-linecap:   round;
   filter:           drop-shadow(0 0 4px #b3c6e0);
 }
 
-.ising.site.active {
+.ising .site.active {
   stroke:           #1976d2;
   filter:           drop-shadow(0 0 6px #90caf9);
   animation:        spin-ccw 10s linear infinite;
@@ -55,21 +55,21 @@ svg.diagram {
   transform-box:    fill-box;
 }
 
-.ising.site:not(.active) {
+.ising .site:not(.active) {
   animation:        spin-cw 10s linear infinite;
   transform-origin: center;
   transform-box:    fill-box;
 }
 
 /* QUBO nodes */
-.qubo.site {
+.qubo .site {
   fill:    #e9ecf3;
   stroke:  #b0b6c1;
   filter:  none;
   opacity: 1;
 }
 
-.qubo.site.active {
+.qubo .site.active {
   stroke: #1976d2;
   stroke-width: 5px;
   filter: drop-shadow(0 0 6px #90caf9);
@@ -77,30 +77,31 @@ svg.diagram {
 
 /* Edges style */
 .edge {
-  stroke-width: 2px;
+  stroke-width: 3px;
   fill: none;
   transition: stroke 0.3s, filter 0.3s;
   stroke: #b0b6c1;
 }
 
-.ising.edge {
+.ising .edge {
   transition: stroke 0.3s, filter 0.3s;
 }
-.ising.edge.aligned {
-  stroke: #388e3c; /* green for aligned */
+
+.ising .edge.styled.aligned {
+  stroke: #388e3c;
   filter: drop-shadow(0 0 4px #b7e1cd);
 }
-.ising.edge:not(.aligned) {
-  stroke: #d32f2f; /* red for misaligned */
+.ising .edge.styled:not(.aligned) {
+  stroke: #d32f2f;
   filter: drop-shadow(0 0 6px #ffcdd2) drop-shadow(0 0 12px #ffcdd2);
 }
 
 /* QUBO edges */
-.qubo.edge {
+.qubo .edge {
   stroke: #b0b6c1;
   stroke-width: 4px;
 }
-.qubo.edge.aligned {
+.qubo .edge.aligned {
   stroke: #388e3c;
   filter: drop-shadow(0 0 4px #b7e1cd);
 }
@@ -732,29 +733,26 @@ the accompanying paper [@qubojl] is a great place to further understand the tech
 
   new figures.Diagram("#figure-spin", "ising", states, J)
     .graph()
-    .statePopup();
+    .popup();
 
   new figures.Diagram("#figure-ising", "ising", states, J)
     .graph()
     .weights()
-    .statePopup()
-    .edgesPopup()
-    .isingEnergy("H(s)");
+    .energyLabel("H(s)")
+    .popup();
 
   new figures.Diagram("#figure-ising-complete", "ising", states, J)
     .graph()
     .externalField(h)
     .weights()
-    .statePopup()
-    .edgesPopup()
-    .isingEnergy("H(s)");
+    .energyLabel("H(s)")
+    .popup();
 
   new figures.Diagram("#figure-qubo", "qubo", states, Q)
     .graph()
     .weights()
-    .statePopup()
-    .edgesPopup()
-    .isingEnergy("x^T Q x");
+    .energyLabel("x^T Q x")
+    .popup();
 
   new figures.EncodingElement("#figure-one-hot", -4, 5, 2, "onehot")
     .buttons()
