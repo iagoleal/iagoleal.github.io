@@ -13,66 +13,69 @@ css: "/css/plots.css"
 
 <style>
 svg.diagram {
-  /* background: var(--color-background-dark); */
   background: #f9f9fb;
+}
+
+.weight {
+  font-size:         1.25em;
+  font-weight:       bold;
+  paint-order:       stroke fill;
+  pointer-events:    none;
+  dominant-baseline: middle;
+  text-anchor:       middle;
+  background:        none;
+  stroke:            none;
+  opacity:           1;
+  transition:        fill 0.2s, opacity 0.2s;
 }
 
 /* Node styles */
 .site {
   stroke-width: 3px;
-  cursor: pointer;
-  transition: filter 0.3s, stroke 0.3s;
-  fill: #fff;
-  stroke: #b0b6c1;
-  filter: none;
+  cursor:       pointer;
+  transition:   filter 0.3s, stroke 0.3s;
+  fill:         #fff;
+  stroke:       #b0b6c1;
+  filter:       none;
 }
 
 /* Ising nodes */
 .ising.site {
-  stroke: #3b4a6b; /* deep blue accent */
-  stroke-dasharray: 40 8;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 4px #b3c6e0);
+  stroke:           #3b4a6b;
+  stroke-dasharray: 42 8;
+  stroke-linecap:   round;
+  filter:           drop-shadow(0 0 4px #b3c6e0);
 }
 
 .ising.site.active {
-  stroke: #1976d2; /* blue highlight */
-  filter: drop-shadow(0 0 6px #90caf9);
-  animation: spin-ccw 10s linear infinite;
+  stroke:           #1976d2;
+  filter:           drop-shadow(0 0 6px #90caf9);
+  animation:        spin-ccw 10s linear infinite;
   transform-origin: center;
-  transform-box: fill-box;
+  transform-box:    fill-box;
 }
 
 .ising.site:not(.active) {
-  animation: spin-cw 10s linear infinite;
+  animation:        spin-cw 10s linear infinite;
   transform-origin: center;
-  transform-box: fill-box;
+  transform-box:    fill-box;
 }
 
 /* QUBO nodes */
-
 .qubo.site {
-  fill: #e9ecf3;
-  stroke: #b0b6c1;
-  filter: none;
+  fill:    #e9ecf3;
+  stroke:  #b0b6c1;
+  filter:  none;
   opacity: 1;
 }
+
 .qubo.site.active {
-  fill: #1976d2;
   stroke: #1976d2;
+  stroke-width: 5px;
   filter: drop-shadow(0 0 6px #90caf9);
 }
 
 /* Edges style */
-
-.weight {
-  text-anchor:        middle;
-  alignment-baseline: middle;
-  font-size:          1.2rem;
-  fill:               var(--color-typography, #222);
-  pointer-events:     none;
-}
-
 .edge {
   stroke-width: 2px;
   fill: none;
@@ -123,7 +126,7 @@ svg.diagram {
   border-radius: 4px;
   box-shadow: 0 2px 12px rgba(60, 60, 80, 0.08);
   border: 1px solid #e0e3ea;
-  font-size: 1em;
+  font-size: 1rem;
   transition: opacity 0.25s cubic-bezier(.4,0,.2,1);
   display: block;
   white-space: nowrap;
@@ -134,19 +137,18 @@ svg.diagram {
   pointer-events: auto;
 }
 
-/* Energy label and value (optional, for completeness) */
-
+/* Energy label and value */
 .energy-value {
   transition: background 0.18s, color 0.18s;
   border-radius: 3px;
   padding: 0 3px;
 }
-
 .energy-value.energy-changed {
   background: #e3f2fd !important;
   color: #1976d2 !important;
 }
 
+/* Encoding diagram and buttons */
 .encoding-diagram {
   display: flex;
   flex-wrap: wrap;
@@ -172,11 +174,10 @@ svg.diagram {
   display:         flex;
   align-items:     center;
   justify-content: center;
-  font-size:       1.2em;
+  font-size:       1.2rem;
   position:        relative;
   font-weight:     normal;
 }
-
 
 .encoding-button.active {
   background:     var(--color-lightning);
@@ -189,11 +190,12 @@ svg.diagram {
   box-shadow:     none;
 }
 
+/* Math label */
 .math-label {
   display: inline-block;
   background: var(--color-background, #f9f9fb);
   color: var(--color-typography, #222);
-  font-size: 1.1em;
+  font-size: 1.1rem;
   padding: 6px 14px;
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(60, 60, 80, 0.07);
@@ -206,9 +208,8 @@ svg.diagram {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5em;
+  gap: 0.5rem;
 }
-
 </style>
 
 
@@ -341,8 +342,10 @@ s_i s_j = \begin{cases}
 $$
 
 In the figure below, we represent an Ising model with 6 particles.
-The graph is interactive and you can click on the nodes to flip their spin
-and see how the interactions change.
+The graph is interactive and you can click on the nodes to flip their spin.
+Nodes rotating counterclockwise represent spin $+1$ particles,
+and rotating clockwise represent spin $-1$ particles.
+
 <figure id="figure-spin" class="diagram-container">
   <svg class="diagram" viewBox="0 0 1000 500" width="100%" height="100%">
   </svg>
@@ -710,7 +713,7 @@ the accompanying paper [@qubojl] is a great place to further understand the tech
 <script type="module">
   import * as figures from "./figures.js";
 
-  const adjacency = [
+  const J = [
     [[0, 1], 2],
     [[1, 2], -1],
     [[1, 3], -3],
@@ -724,25 +727,34 @@ the accompanying paper [@qubojl] is a great place to further understand the tech
 
   const h = [-5, 3, 2, 1, -2, 4];
 
+  const Q = figures.isingToQubo(J, h);
 
-  new figures.Diagram("#figure-spin", "ising", states, adjacency)
-    .graph();
 
-  new figures.Diagram("#figure-ising", "ising", states, adjacency)
+  new figures.Diagram("#figure-spin", "ising", states, J)
+    .graph()
+    .statePopup();
+
+  new figures.Diagram("#figure-ising", "ising", states, J)
     .graph()
     .weights()
-    .isingEnergy("H(s) = s^T J s");
+    .statePopup()
+    .edgesPopup()
+    .isingEnergy("H(s)");
 
-  new figures.Diagram("#figure-ising-complete", "ising", states, adjacency)
+  new figures.Diagram("#figure-ising-complete", "ising", states, J)
     .graph()
-    .weights()
     .externalField(h)
-    .isingEnergy("H(s) = s^T J s + h^T s");
+    .weights()
+    .statePopup()
+    .edgesPopup()
+    .isingEnergy("H(s)");
 
-  new figures.Diagram("#figure-qubo", "qubo", states, adjacency)
+  new figures.Diagram("#figure-qubo", "qubo", states, Q)
     .graph()
     .weights()
-    .isingEnergy("f(x) = x^T Q x");
+    .statePopup()
+    .edgesPopup()
+    .isingEnergy("x^T Q x");
 
   new figures.EncodingElement("#figure-one-hot", -4, 5, 2, "onehot")
     .buttons()

@@ -63,40 +63,44 @@ function zeros(rows, cols) {
 }
 
 class Popup {
-  constructor({ container, className = "popup" } = {}) {
+  constructor(container, className = "popup") {
     this.container = container;
     this.className = className;
 
-    this.popup     = this.#createPopup();
+    this.element = this.#createPopup();
   }
 
   #createPopup() {
-    const popup = document.createElement("div");
-    popup.className = this.className;
-    popup.style.position = "absolute";
+    const el = document.createElement("div");
+    el.className = this.className;
+    el.style.position = "absolute";
 
     this.container.style.position = "relative";
-    this.container.appendChild(popup);
-    return popup;
+    this.container.appendChild(el);
+    return el;
   }
 
-  show(x, y, text) {
-    this.popup.textContent = text;
-    this.popup.style.left = `${x}px`;
-    this.popup.style.top  = `${y}px`;
-    this.popup.classList.add("visible");
+  show(text, x, y) {
+    renderMath(this.element, text);
+    if (x) {
+      this.element.style.left = `${x}px`;
+    }
+    if (y) {
+      this.element.style.top  = `${y}px`;
+    }
+    this.element.classList.add("visible");
   }
 
   hide() {
-    this.popup.classList.remove("visible");
+    this.element.classList.remove("visible");
   }
 
   destroy() {
-    this.popup.remove();
+    this.element.remove();
   }
 
-  get element() {
-    return this.popup;
+  get visible() {
+    return this.element.classList.contains("visible");
   }
 }
 
@@ -142,36 +146,64 @@ function edgeTensionController(edge, a, b) {
   };
 }
 
-function isingObj(states, J, h = null) {
+function isingObj(states, adjacency, h = null) {
   const N = states.length;
   let energy = 0;
 
-  for (let i = 0; i < N; ++i) {
-    // pairwise interactions
-    for (let j = i + 1; j < N; ++j) {
-      energy += J[i][j] * states[i] * states[j];
-    }
+  // pairwise interactions
+  for (const [[s, t], w] of adjacency) {
+    energy += w * states[s] * states[t];
+  }
 
-    // External field
-    if (h) {
-      energy += h[i] * states[i];
+  // External field
+  if (h) {
+    for (let i = 0; i < N; ++i) {
+        energy += h[i] * states[i];
     }
   }
 
   return energy;
 }
 
-function quboObj(states, Q) {
-  const N = states.length;
+function quboObj(states, adjacency) {
   let energy = 0;
-
-  for (let i = 0; i < N; i++) {
-    for (let j = i ; j < N; j++) {
-      energy += Q[i][j] * states[i] * states[j];
-    }
+  for (const [[s, t], w] of adjacency) {
+    energy += w * states[s] * states[t];
   }
 
   return energy;
+}
+
+export function isingToQubo(adjacency, h) {
+  // Determine number of nodes
+  const N = h.length;
+  // Build full J matrix (symmetric)
+  const J = Array.from({ length: N }, () => Array(N).fill(0));
+  for (const [[i, j], w] of adjacency) {
+    J[i][j] = w;
+    J[j][i] = w;
+  }
+  // Compute Q = 4J - 2*Diag((J + J^T)1 + h)
+  // (J + J^T)1 is just 2 * row sums (since J is symmetric)
+  const diag = [];
+  for (let i = 0; i < N; ++i) {
+    let rowSum = 0;
+    for (let j = 0; j < N; ++j)
+      rowSum += J[i][j];
+    diag[i] = -2 * (2 * rowSum + h[i]);
+  }
+  // Build QUBO adjacency list (upper triangle)
+  const qubo = [];
+  for (let i = 0; i < N; ++i) {
+    for (let j = i; j < N; ++j) {
+      let val = 4 * J[i][j];
+      if (i === j)
+        val += diag[i];
+      if (val !== 0)
+        qubo.push([[i, j], val]);
+    }
+  }
+  return qubo;
 }
 
 const Modes = {
@@ -180,12 +212,18 @@ const Modes = {
     energy: isingObj,
     edgeAnim: (edge, p, q) => edgeTensionController(edge, p, q),
     alignment: (x, y, w) => w * spin(x) * spin(y) > 0,
+    prod: (states, x, y) => spin(states[x]) * spin(states[y]),
+    show: (states, i) => states[i] ? "+1" : "-1",
+    varname: "s",
   },
   qubo: {
     name: "qubo",
     energy: quboObj,
     edgeAnim: () => () => {},
     alignment: (x, y, _) => x && y,
+    prod: (states, x, y) => states[x] * states[y],
+    show: (states, i) => states[i] ? "1" : "0",
+    varname: "x",
   }
 }
 
@@ -206,12 +244,6 @@ export class Diagram {
       {x: 900, y: 350},
     ];
 
-    this.J = zeros(states.length, states.length);
-    for (const [[i, j], w] of edges) {
-      this.J[i][j] = w;
-      this.J[j][i] = w;
-    }
-
   return this;
   }
 
@@ -224,10 +256,9 @@ export class Diagram {
   externalField(h = null) {
     this.h = h;
 
-    return this
-      .#fieldValues()
-      .#drawField();
+    return this.#drawField();
   }
+
 
   #drawNodes() {
     const {states, pos} = this;
@@ -239,7 +270,7 @@ export class Diagram {
       const node = draw(g, "circle", {
         cx: site.x,
         cy: site.y,
-        r: 20,
+        r: "32px",
         class: "site"
         },
       );
@@ -261,17 +292,31 @@ export class Diagram {
   #drawEdges() {
     const {states, pos} = this;
     const ge = draw(this.svg, "g");
-    const maxAbsJ = Math.max(...this.edges.map(([[,], w]) => Math.abs(w)));
+    const gh = draw(this.svg, "g");
+    const maxAbsJ = Math.max(...this.edges.map(([_, w]) => Math.abs(w)));
 
     for (const [[s, t], w] of this.edges) {
       const edge = draw(ge, "path", {
         class: `edge`,
         d: `M${pos[s].x},${pos[s].y} ${pos[t].x},${pos[t].y}`,
       }, {
-        "stroke-width": 1 + Math.abs(w) / maxAbsJ,
+        "stroke-width": 3 + Math.abs(w) / maxAbsJ,
         fill: "none",
       });
       edge.classList.add(this.mode.name);
+
+      // Hack for larger hitbox
+      const hoverEdge = draw(gh, "path", {
+        class: "edge-hover",
+        d: `M${pos[s].x},${pos[s].y} ${pos[t].x},${pos[t].y}`,
+      }, {
+        "stroke-width": 18, // Large enough for easy hovering
+        fill: "none",
+        stroke: "#000",
+        opacity: 0,
+        cursor: "pointer",
+        "pointer-events": "stroke"
+      });
 
       const anim = this.mode.edgeAnim(edge, pos[s], pos[t]);
 
@@ -290,25 +335,40 @@ export class Diagram {
 
   weights() {
     const pos = this.pos;
-
-    // Create a group for weights
     const gw = draw(this.svg, "g");
 
     for (const [[s, t], w] of this.edges) {
-      const mx = (pos[s].x + pos[t].x) / 2;
-      const my = (pos[s].y + pos[t].y) / 2;
-      const dx = pos[t].y - pos[s].y;
-      const dy = pos[s].x - pos[t].x;
-      const len = Math.sqrt(dx*dx + dy*dy) || 1;
-      const offset = 18;
-      const ox = mx + offset * dx / len;
-      const oy = my + offset * dy / len;
+      let x, y;
+      if (s === t) { // Node center
+        x = pos[s].x;
+        y = pos[s].y;
+      } else { // Edge midpoint
+        const mx = (pos[s].x + pos[t].x) / 2;
+        const my = (pos[s].y + pos[t].y) / 2;
+        const dx = pos[t].y - pos[s].y;
+        const dy = pos[s].x - pos[t].x;
+        const len = Math.sqrt(dx*dx + dy*dy) || 1;
+        const offset = 28;
+        x = mx + offset * dx / len;
+        y = my + offset * dy / len;
+      }
 
       draw(gw, "text", {
-        x: ox,
-        y: oy,
-        class: "weight",
+        x: x,
+        y: y,
+        class: "weight"
       }, {}).textContent = w;
+    }
+
+    // Draw magnetic field weights if present (as node weights)
+    if (this.h) {
+      for (let i = 0; i < pos.length; ++i) {
+        draw(gw, "text", {
+          x: pos[i].x,
+          y: pos[i].y,
+          class: "weight"
+        }, {}).textContent = this.h[i];
+      }
     }
 
     return this;
@@ -356,7 +416,7 @@ export class Diagram {
         const y = y0 + amplitude * Math.sin(frequency * x + i * 0.7);
         d += (x === 0 ? "M" : "L") + x + "," + y;
       }
-      // Use draw() to create the path element and set attributes
+
       draw(g, "path", {
         d,
         stroke: color,
@@ -370,35 +430,9 @@ export class Diagram {
     return this;
   }
 
-
-  #fieldValues() {
-      const { pos, h, svg, id } = this;
-      const container = document.querySelector(id);
-      const popup = new Popup({ container });
-
-      Array.from(svg.querySelectorAll("circle.site")).forEach((node, i) => {
-        node.addEventListener("mouseenter", () => {
-          const pt = svg.createSVGPoint();
-          pt.x = pos[i].x + 32;
-          pt.y = pos[i].y - 24;
-          const ctm = svg.getScreenCTM();
-          if (ctm) {
-            const { left, top } = container.getBoundingClientRect();
-            const { x, y }      = pt.matrixTransform(ctm);
-
-            popup.show(x - left, y - top, `h = ${h[i]}`);
-          }
-        });
-
-        node.addEventListener("mouseleave", () => popup.hide());
-      });
-
-      return this;
-    }
-
   isingEnergy(formula) {
     const container = document.querySelector(this.id);
-    const {svg, states, J, h} = this;
+    const {svg, states, edges, h} = this;
 
     const mathLabel = new MathLabel(container, `${formula} =`);
     svg.insertAdjacentElement("afterend", mathLabel.element);
@@ -408,7 +442,7 @@ export class Diagram {
     mathLabel.element.appendChild(valueSpan);
 
     const redraw = () => {
-      const energy = this.mode.energy(states, J, h);
+      const energy = this.mode.energy(states, edges, h);
 
       renderMath(valueSpan, energy.toString());
 
@@ -420,6 +454,69 @@ export class Diagram {
 
     states.observe(redraw);
     redraw();
+
+    return this;
+  }
+
+  statePopup() {
+    const popup = new Popup(document.querySelector(this.id));
+    const { states, svg, mode } = this;
+
+    svg.querySelectorAll('.site').forEach((node, i) => {
+      node.addEventListener('mousemove', (e) => {
+        const containerRect = popup.container.getBoundingClientRect();
+        popup.show(
+          `${mode.varname}_{${i+1}} = ${mode.show(states, i)}`,
+          e.clientX - containerRect.left,
+          e.clientY - containerRect.top,
+        );
+      });
+      node.addEventListener('mouseleave', () => popup.hide());
+
+      // Reactively update popup for this node only if hovered and visible
+      states.observe(i, () => {
+        if (popup.visible  && node.matches(':hover')) {
+          const value = `${mode.varname}_{${i+1}} = ${mode.show(states, i)}`;
+          popup.show(value);
+        }
+      });
+    });
+
+    return this;
+  }
+
+  edgesPopup() {
+    const popup = new Popup(document.querySelector(this.id));
+    const { states, svg, mode, edges } = this;
+
+    svg.querySelectorAll('.edge-hover').forEach((el, i) => {
+      const [[s, t], w] = edges[i];
+
+      el.addEventListener('mousemove', (e) => {
+        const prod = this.mode.prod(states,s, t);
+        const value = w * prod;
+        const label = `${mode.varname}_{${s+1}} ${mode.varname}_{${t+1}} = ${prod} \\\\ J_{${s+1}${t+1}} ${mode.varname}_{${s+1}} ${mode.varname}_{${t+1}} = ${value}`;
+
+        const containerRect = popup.container.getBoundingClientRect();
+        popup.show(
+          label,
+          e.clientX - containerRect.left,
+          e.clientY - containerRect.top
+        );
+      });
+
+      el.addEventListener('mouseleave', () => popup.hide());
+
+      // Reactively update popup for this edge only if hovered and visible
+      states.observe([s, t], () => {
+        if (popup.visible && el.matches(':hover')) {
+          const prod = mode.prod(states, s, t);
+          const value = w * prod;
+          const label = `${mode.varname}_{${s+1}} ${mode.varname}_{${t+1}} = ${prod} \\\\ J_{${s+1}${t+1}} ${mode.varname}_{${s+1}} ${mode.varname}_{${t+1}} = ${w} \\times ${prod} = ${value}`;
+          popup.show(label);
+        }
+      });
+    });
 
     return this;
   }
