@@ -714,6 +714,8 @@ the accompanying paper [@qubojl] is a great place to further understand the tech
 <script type="module">
   import * as figures from "./figures.js";
 
+  const states = [1, 1, 0, 0, 1, 1].map(Boolean);
+
   const J = [
     [[0, 1], 2],
     [[1, 2], -1],
@@ -724,31 +726,30 @@ the accompanying paper [@qubojl] is a great place to further understand the tech
     [[2, 5], 2],
   ];
 
-  const states = [1, 1, 0, 0, 1, 1].map(Boolean);
+  const Jh = Array.from(J);
+  Jh.h = [-5, 3, 2, 1, -2, 4];
 
-  const h = [-5, 3, 2, 1, -2, 4];
-
-  const Q = figures.isingToQubo(J, h);
+  const Q = figures.isingToQubo(J, Jh.h);
 
 
-  new figures.Diagram("#figure-spin", "ising", states, J)
+  new figures.Diagram("#figure-spin", states, J)
     .graph()
     .popup();
 
-  new figures.Diagram("#figure-ising", "ising", states, J)
+  new figures.Diagram("#figure-ising", states, J)
     .graph()
     .weights()
     .energyLabel("H(s)")
     .popup();
 
-  new figures.Diagram("#figure-ising-complete", "ising", states, J)
+  new figures.Diagram("#figure-ising-complete", states, Jh)
     .graph()
-    .externalField(h)
+    .externalField()
     .weights()
     .energyLabel("H(s)")
     .popup();
 
-  new figures.Diagram("#figure-qubo", "qubo", states, Q)
+  new figures.Diagram("#figure-qubo", states, Q, "qubo")
     .graph()
     .weights()
     .energyLabel("x^T Q x")

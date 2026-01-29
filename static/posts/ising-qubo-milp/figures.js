@@ -20,12 +20,9 @@ function draw(el, tag, attrs, styles) {
   return el.appendChild(node);
 }
 
-function flip(a, i) {
-  return (a[i] = !a[i]);
-}
-
-function spin(b) {
-  return b ? +1 : -1;
+function weight(edges, i, j) {
+    const se = edges.find(([[s, t], _]) => s === i && t === j);
+      return se ? se[1] : 0;
 }
 
 function ArrayListener(xs) {
@@ -146,34 +143,6 @@ function edgeTensionController(edge, a, b) {
   };
 }
 
-function isingObj(states, adjacency, h = null) {
-  const N = states.length;
-  let energy = 0;
-
-  // pairwise interactions
-  for (const [[s, t], w] of adjacency) {
-    energy += w * states[s] * states[t];
-  }
-
-  // External field
-  if (h) {
-    for (let i = 0; i < N; ++i) {
-        energy += h[i] * states[i];
-    }
-  }
-
-  return energy;
-}
-
-function quboObj(states, adjacency) {
-  let energy = 0;
-  for (const [[s, t], w] of adjacency) {
-    energy += w * states[s] * states[t];
-  }
-
-  return energy;
-}
-
 export function isingToQubo(adjacency, h) {
   // Determine number of nodes
   const N = h.length;
@@ -206,39 +175,92 @@ export function isingToQubo(adjacency, h) {
   return qubo;
 }
 
-const Modes = {
-  ising: {
-    name: "ising",
-    energy: isingObj,
-    edgeAnim: (edge, p, q) => edgeTensionController(edge, p, q),
-    alignment: (x, y, w) => w * spin(x) * spin(y) > 0,
-    prod: (states, x, y) => spin(states[x]) * spin(states[y]),
-    show: (states, i) => states[i] ? "+1" : "-1",
-    varName: "s",
-    matName: "J",
-  },
-  qubo: {
-    name: "qubo",
-    energy: quboObj,
-    edgeAnim: () => () => {},
-    alignment: (x, y, _) => x && y,
-    prod: (states, x, y) => states[x] * states[y],
-    show: (states, i) => states[i] ? "1" : "0",
-    varName: "x",
-    matName: "Q",
+class StateVector {
+  constructor(states) {
+    this.d = ArrayListener(states);
+  }
+
+  observe(...xs) {
+    return this.d.observe(...xs);
+  }
+
+  at(i) {
+    return this.d[i];
+  }
+
+  flip(i) {
+    return (this.d[i] = !this.d[i]);
+  }
+
+  prod(...is) {
+    return is.reduce((acc, j) => acc * this.spin(j), 1);
+  }
+
+  alignment(w, ...indices) {
+    return w * this.prod(...indices) > 0;
+  }
+
+  energy(edges) {
+    let energy = 0;
+    for (const [[s, t], w] of edges) {
+      energy += w * this.spin(s) * this.spin(t);
+    }
+
+    if (edges.h) {
+      for (let i = 0; i < edges.h.length; i++) {
+        energy += edges.h[i] * this.spin(i);
+      }
+    }
+
+    return energy;
+  }
+
+  static edgeAnim() {
+    return () => {};
+  }
+}
+
+class IsingStateVector extends StateVector {
+  static mode = "ising";
+  static varName = "s";
+  static matName = "J";
+
+  static edgeAnim(edge, p, q) {
+    return edgeTensionController(edge, p, q);
+  }
+
+  show(i) {
+    return this.at(i) ? "+1" : "-1";
+  }
+  spin(i) {
+    return this.at(i) ? 1 : -1;
+  }
+}
+
+class QuboStateVector extends StateVector {
+  static mode = "qubo";
+  static varName = "x";
+  static matName = "Q";
+
+  show(i) {
+    return this.at(i) ? "1" : "0";
+  }
+  spin(i) {
+    return this.at(i) ? 1 : 0;
   }
 }
 
 export class Diagram {
   #messages;
 
-  constructor(id, mode, states, edges) {
+  constructor(id, states, edges, mode="ising") {
     this.id     = id;
     this.svg    = document.querySelector(`${id} svg`);
-    this.svg.classList.add(mode);
-    this.mode   = Modes[mode];
     this.edges  = edges;
-    this.states = ArrayListener(states);
+    this.states = (mode === "ising")
+      ? new IsingStateVector(states)
+      : new QuboStateVector(states);
+
     this.#messages = { nodes: [], edges: [] };
 
     this.pos = [
@@ -250,7 +272,13 @@ export class Diagram {
       {x: 900, y: 350},
     ];
 
+  this.svg.classList.add(this.mode.mode);
+
   return this;
+  }
+
+  get mode() {
+    return this.states.constructor;
   }
 
   graph() {
@@ -259,11 +287,9 @@ export class Diagram {
       .#drawNodes();
   }
 
-  externalField(h = null) {
-    this.h = h;
-
+  externalField() {
     this.#messages.nodes.push(
-      "h_{i} {var}_{i} = {field}"
+      (i) => `h_{${i}} ${this.mode.varName}_${i} = ${this.edges.h[i]}`,
     );
 
     return this.#drawField();
@@ -285,17 +311,17 @@ export class Diagram {
         },
       );
 
-      node.classList.toggle("active", states[i]);
+      node.classList.toggle("active", states.at(i));
 
       states.observe(i, (_, v) => {
         node.classList.toggle("active", v);
       });
 
-      node.addEventListener("click", () => flip(this.states, i));
+      node.addEventListener("click", () => this.states.flip(i));
     }
 
     this.#messages.nodes.push(
-      "{var}_{i} = {state}"
+      (i) => `${this.mode.varName}_${i} = ${this.states.show(i)}`,
     );
 
     return this;
@@ -322,13 +348,12 @@ export class Diagram {
         fill: "none",
         stroke: "#000",
         opacity: 0,
-        cursor: "pointer",
         "pointer-events": "stroke"
       });
     }
 
     this.#messages.edges.push(
-      "{v1} {v2} = {prod}"
+      (i, j) => `${this.mode.varName}_${i} ${this.mode.varName}_${j} = ${this.states.prod(i, j)}`,
     );
 
     return this;
@@ -346,9 +371,9 @@ export class Diagram {
 
       edge.setAttribute("stroke-width", 3 + Math.abs(w) / maxAbsJ);
 
-      const anim = mode.edgeAnim(edge, pos[s], pos[t]);
+      const anim = this.mode.edgeAnim(edge, pos[s], pos[t]);
       const redrawEdge = () => {
-        const aligned = mode.alignment(states[s], states[t], w);
+        const aligned = this.states.alignment(w, s, t);
         edge.classList.toggle("aligned", aligned);
         anim(aligned);
       };
@@ -358,12 +383,12 @@ export class Diagram {
     });
 
     this.#messages.edges.push(
-      "{mat} {v1} {v2} = {value}"
+      (i, j, w) => `${this.mode.matName}_{${i}${j}} ${this.mode.varName}_${i} ${this.mode.varName}_${j} = ${w}`,
     );
 
     if (this.edges.some(([[s, t], _]) => s === t)) {
       this.#messages.nodes.push(
-        "{var}_{i} {mat}_{{i}{i}} {var}_{i} = {selfval}"
+        (i, w) => ` ${this.mode.matName}_{${i}${i}} ${this.mode.varName}_${i} = ${w}`
       );
     }
 
@@ -398,13 +423,13 @@ export class Diagram {
     }
 
     // Draw magnetic field weights if present (as node weights)
-    if (this.h) {
+    if (this.edges.h) {
       for (let i = 0; i < pos.length; ++i) {
         draw(gw, "text", {
           x: pos[i].x,
           y: pos[i].y,
           class: "weight"
-        }, {}).textContent = this.h[i];
+        }, {}).textContent = this.edges.h[i];
       }
     }
 
@@ -469,7 +494,7 @@ export class Diagram {
 
   energyLabel(formula) {
     const container = document.querySelector(this.id);
-    const {svg, states, edges, h} = this;
+    const {svg, states, edges} = this;
 
     const mathLabel = new MathLabel(container, `${formula} =`);
     svg.insertAdjacentElement("afterend", mathLabel.element);
@@ -479,7 +504,7 @@ export class Diagram {
     mathLabel.element.appendChild(valueSpan);
 
     const redraw = () => {
-      const energy = this.mode.energy(states, edges, h);
+      const energy = states.energy(edges);
 
       renderMath(valueSpan, energy.toString());
 
@@ -498,80 +523,18 @@ export class Diagram {
   popup() {
     const popup = new Popup(document.querySelector(this.id));
     return this
-      .#statesPopup(popup)
+      .#nodesPopup(popup)
       .#edgesPopup(popup);
   }
 
-  #statesPopup(popup) {
-    const { states, svg, mode, h } = this;
+  #popupFor(popup, selector, messages, getVars) {
+    const { svg, states } = this;
 
-    svg.querySelectorAll('.site').forEach((node, i) => {
-      const getVars = () => ({
-        var: mode.varName,
-        i: i + 1,
-        state: mode.show(states, i),
-        field: h ? h[i] * spin(states[i]) : "",
-        mat: mode.matName,
-        selfval: (() => {
-          // Find self-edge for node i
-          const selfEdge = this.edges.find(([pair]) => pair[0] === i && pair[1] === i);
-          if (selfEdge) {
-            const w = selfEdge[1];
-            return w * (mode.name === "ising" ? spin(states[i]) : states[i]);
-          }
-          return "";
-        })(),
-      });
-
+    svg.querySelectorAll(selector).forEach((el, i) => {
       const processMessages = () => {
-        const vars = getVars();
-        return this.#messages.nodes
-          .map(tmpl => tmpl.replace(/\{(\w+)\}/g, (_, k) => vars[k]))
-          .join(' \\\\ ');
-      };
-
-      node.addEventListener('mousemove', (e) => {
-        const containerRect = popup.container.getBoundingClientRect();
-        popup.show(
-          processMessages(),
-          e.clientX - containerRect.left,
-          e.clientY - containerRect.top
-        );
-      });
-      node.addEventListener('mouseleave', () => popup.hide());
-
-      states.observe(i, () => {
-        if (popup.visible && node.matches(':hover')) {
-          popup.show(processMessages());
-        }
-      });
-    });
-
-    return this;
-  }
-
-  #edgesPopup(popup) {
-    const { states, svg, mode, edges } = this;
-
-    svg.querySelectorAll('.edge-hover').forEach((el, i) => {
-      const [[s, t], w] = edges[i];
-
-      const getVars = () => {
-        const prod = mode.prod(states, s, t);
-        const value = w * prod;
-        return {
-          v1: `${mode.varName}_{${s+1}}`,
-          v2: `${mode.varName}_{${t+1}}`,
-          prod,
-          mat: `${mode.matName}_{${s+1}${t+1}}`,
-          value
-        };
-      };
-
-      const processMessages = () => {
-        const vars = getVars();
-        return this.#messages.edges
-          .map(tmpl => tmpl.replace(/\{(\w+)\}/g, (_, k) => vars[k]))
+        return messages
+          .map(f => f(...getVars(i)))
+          .filter(Boolean)
           .join(' \\\\ ');
       };
 
@@ -583,11 +546,9 @@ export class Diagram {
           e.clientY - containerRect.top
         );
       });
-
       el.addEventListener('mouseleave', () => popup.hide());
 
-      // Reactively update popup for this edge only if hovered and visible
-      states.observe([s, t], () => {
+      states.observe(() => {
         if (popup.visible && el.matches(':hover')) {
           popup.show(processMessages());
         }
@@ -595,6 +556,29 @@ export class Diagram {
     });
 
     return this;
+  }
+
+  #nodesPopup(popup) {
+    const {states, edges } = this;
+    return this.#popupFor(
+      popup,
+      '.site',
+      this.#messages.nodes,
+      (i) => [i + 1, weight(edges, i, i) * states.spin(i)],
+    );
+  }
+
+  #edgesPopup(popup) {
+    const { mode, states, edges } = this;
+    return this.#popupFor(
+      popup,
+      '.edge-hover',
+      this.#messages.edges,
+      (i) => {
+        const [[s, t], w] = edges[i];
+        return [s+1, t+1, w]
+      },
+    );
   }
 }
 
