@@ -1,12 +1,12 @@
 ---
 title: Your Favorite Problem is an Ising Model
 keywords: [math, optimization, quantum-computing]
-date: 2026-01-28
-thumbnail: ""
-theme: math
+date: 2026-01-29
+thumbnail: "thumbnail.png"
+theme: [math, interactive]
 description:
   Quantum Computers are advancing and one should know
-  how to fit classical problems into it.
+  how to fit classical problems into them.
 suppress-bibliography: true
 css: "/css/plots.css"
 ---
@@ -14,10 +14,11 @@ css: "/css/plots.css"
 <style>
 svg.diagram {
   background: #f9f9fb;
+  perspective: 600px;
 }
 
 .weight {
-  font-size:         1.25em;
+  font-size:         1.25rem;
   font-weight:       bold;
   paint-order:       stroke fill;
   pointer-events:    none;
@@ -25,7 +26,6 @@ svg.diagram {
   text-anchor:       middle;
   background:        none;
   stroke:            none;
-  opacity:           1;
   transition:        fill 0.2s, opacity 0.2s;
 }
 
@@ -33,10 +33,11 @@ svg.diagram {
 .site {
   stroke-width: 3px;
   cursor:       pointer;
-  transition:   filter 0.3s, stroke 0.3s;
   fill:         #fff;
   stroke:       #b0b6c1;
   filter:       none;
+  transition:   filter 0.3s, stroke 0.3s, transform 0.6s cubic-bezier(0.4,0.2,0.2,1), color 1s;
+  transform-style: preserve-3d;
 }
 
 /* Ising nodes */
@@ -88,11 +89,11 @@ svg.diagram {
 }
 
 .ising .edge.styled.aligned {
-  stroke: #388e3c;
+  stroke: #4f7751;
   filter: drop-shadow(0 0 4px #b7e1cd);
 }
 .ising .edge.styled:not(.aligned) {
-  stroke: #d32f2f;
+  stroke: #9a6868;
   filter: drop-shadow(0 0 6px #ffcdd2) drop-shadow(0 0 12px #ffcdd2);
 }
 
@@ -102,7 +103,7 @@ svg.diagram {
   stroke-width: 4px;
 }
 .qubo .edge.aligned {
-  stroke: #388e3c;
+  stroke: #1976d2;
   filter: drop-shadow(0 0 4px #b7e1cd);
 }
 
@@ -118,46 +119,36 @@ svg.diagram {
 
 /* Popup */
 .diagram-container .popup {
-  position: absolute;
-  z-index: 10;
+  position:       absolute;
+  z-index:        10;
   pointer-events: none;
-  padding: 4px 10px;
-  background: #fff;
-  color: #222;
-  border-radius: 4px;
-  box-shadow: 0 2px 12px rgba(60, 60, 80, 0.08);
-  border: 1px solid #e0e3ea;
-  font-size: 1rem;
-  transition: opacity 0.25s cubic-bezier(.4,0,.2,1);
-  display: block;
-  white-space: nowrap;
-  opacity: 0;
-}
-.diagram-container .popup.visible {
-  opacity: 1;
-  pointer-events: auto;
+  padding:        4px 10px;
+  background:     #fff;
+  color:          #222;
+  border-radius:  4px;
+  box-shadow:     0 2px 12px rgba(60, 60, 80, 0.08);
+  border:         1px solid #e0e3ea;
+  font-size:      1rem;
+  transition:     opacity 0.25s cubic-bezier(.4,0,.2,1);
+  display:        block;
+  white-space:    nowrap;
+  opacity:        0;
 }
 
-/* Energy label and value */
-.energy-value {
-  transition: background 0.18s, color 0.18s;
-  border-radius: 3px;
-  padding: 0 3px;
-}
-.energy-value.energy-changed {
-  background: #e3f2fd !important;
-  color: #1976d2 !important;
+.diagram-container .popup.visible {
+  opacity:        1;
+  pointer-events: auto;
 }
 
 /* Encoding diagram and buttons */
 .encoding-diagram {
-  display: flex;
-  flex-wrap: wrap;
+  display:         flex;
+  flex-wrap:       wrap;
   justify-content: center;
-  align-items: center;
-  margin: 0;
-  width: 100%;
-  gap: 12px;
+  align-items:     center;
+  margin:          0;
+  width:           100%;
+  gap:             12px;
 }
 
 .encoding-button {
@@ -192,6 +183,13 @@ svg.diagram {
 }
 
 /* Math label */
+.math-label-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .math-label {
   display: inline-block;
   background: var(--color-background, #f9f9fb);
@@ -205,11 +203,14 @@ svg.diagram {
   transition: background 0.18s, box-shadow 0.4s;
 }
 
-.math-label-container {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
+/* Energy label and value */
+.energy-value {
+  transition: background 0.18s, color 0.18s;
+  border-radius: 3px;
+  padding: 0 3px;
+}
+.energy-value.energy-changed {
+  color: #1976d2 !important;
 }
 </style>
 
@@ -218,21 +219,26 @@ svg.diagram {
 \def\floor#1{\lfloor #1 \rfloor}
 \def\B{\{0, 1\}}
 \def\Is{\{-1, +1\}}
+\def\norm#1{\left\lVert#1\right\rVert}
+\def\abs#1{\left|#1\right|}
 
 ```{=tex}
 \pgfdeclarelayer{background}
 \pgfdeclarelayer{foreground}
 \pgfsetlayers{background,main,foreground}
 
+\usetikzlibrary{shadows,animations}
+
 \tikzset{
   atom/.pic={
-      \node (atom) at (0, 0) {};
-      \node[rectangle, shading=axis, right color=white, left color=gray!40, shading angle=180, draw, minimum width = 1.2cm, minimum height = 1.2cm, rounded corners] (qbox) at (atom) {};
-      \node[circle, fill=black, inner sep = 0.7mm] at (atom) {};
-      \path[draw]
-        (atom) ellipse [x radius = 0.5cm, y radius = 0.2cm]
-        (atom) ellipse [x radius = 0.5cm, y radius = 0.2cm, rotate = 60]
-        (atom) ellipse [x radius = 0.5cm, y radius = 0.2cm, rotate = -60];
+    % Box
+    \node[rectangle, draw=gray!60, fill=white, rounded corners=6pt, minimum width=1.2cm, minimum height=1.2cm, drop shadow] (qbox) at (0,0) {};
+    % Orbits (darker)
+    \draw[black!60, thin] (0,0) ellipse [x radius=0.48cm, y radius=0.18cm];
+    \draw[black!60, thin, rotate=60] (0,0) ellipse [x radius=0.48cm, y radius=0.18cm];
+    \draw[black!60, thin, rotate=-60] (0,0) ellipse [x radius=0.48cm, y radius=0.18cm];
+    % Nucleus
+    \fill[black!80] (0,0) circle (0.09cm);
   },
   writeup/.style = { midway, above=1mm, align=center, font=\small },
 }
@@ -303,14 +309,25 @@ _This is today's theme_.
   \node[minimum width=1.2cm] (q) at (0, 0) {};
   \pic at (q) {atom};
 
-  \node[rectangle, fill=green!40, draw=green!60, very thick, minimum height=1.2cm] (r) at (-3, 0) {Rewrite};
+  \node[
+    rectangle,
+    draw=gray!60,
+    fill=white,
+    rounded corners=6pt,
+    minimum width=1.6cm,
+    minimum height=1.2cm,
+    thick,
+    drop shadow,
+    font=\sffamily,
+  ] (r) at (-3, 0) {\textcolor{black!80}{rewrite}};
+
   \node[align=center] (i) at (-6, 0) {};
   \node[align=center] (s) at (+3, 0) {};
 
-  { [thick,decoration={
+  { [thick, black!80, decoration={
       markings,
-      mark=at position 0.5 with {\arrow{>}}}
-      ] 
+      mark=at position 0.5 with {\arrow{Stealth}}}
+      ]
     \draw[postaction={decorate}]  (i.east) -- (r.west) node [writeup] {MILP};
     \draw[postaction={decorate}]  (r.east) -- (q.west) node [writeup] {Ising\\Model};
     \draw[postaction={decorate}]  (q.east) -- (s.west) node [writeup] {Solution};
@@ -367,10 +384,9 @@ $$H(s) \coloneqq \sum_{(i,j)} J_{ij} s_i s_j.$$
   </svg>
 </figure>
 
-One also considers external influences
+One also considers external influences $h_i \in \R$
 biasing each particle towards one of the states.
-Keeping up with the physics theme,
-it is called a _magnetic field_ and amounts to factors $h_i \in \R$.
+Keeping up with the physics theme, we call it a _magnetic field_.
 With this field, the total energy becomes
 $$H(s) \coloneqq \sum_{(i, j)} J_{ij} s_i s_j + \sum_{i} h_i s_i.$$
 
@@ -413,21 +429,21 @@ $$
 \begin{equation}
 \tag{QUBO}
   \begin{array}{rl}
-    \min\limits_{x} & x^\top Q x \\
-    \textrm{s.t.} & x \in \{0, 1\}^N.
+    \min\limits_{z} & z^\top Q z \\
+    \textrm{s.t.} & z \in \{0, 1\}^N.
   \end{array}
 \end{equation}
 $$
 
 To go from an Ising problem to a QUBO one,
-all you need is a change of variables $s = 2x - 1$,
+all you need is a change of variables $s = 2z - 1$,
 where we also write $1$ for the vector whose components are all one.
 Then, open the objective function and rearrange the terms:
 $$ \begin{aligned}
-  &&(2x - 1)^\top J (2x - 1) + h^\top (2x - 1) \\
-  &=& 4 x^\top J x - 2x^\top J 1 - 1^\top J (2 x) - 1^\top J 1 + 2h^\top x -h^\top 1 \\
-  &=& \underbrace{x^\top (4 J) x}_{\text{quadratic}}
-     - \underbrace{2((J + J^\top) 1 + h)^\top x}_{\text{linear}}
+  &&(2z - 1)^\top J (2z - 1) + h^\top (2z - 1) \\
+  &=& 4 z^\top J z - 2z^\top J 1 - 1^\top J (2 z) - 1^\top J 1 + 2h^\top z -h^\top 1 \\
+  &=& \underbrace{z^\top (4 J) z}_{\text{quadratic}}
+     - \underbrace{2((J + J^\top) 1 + h)^\top z}_{\text{linear}}
      + \underbrace{(1^\top J 1 - h^\top 1)}_{\text{constant}}
   \end{aligned}
 $$
@@ -478,7 +494,7 @@ Binarize All the Variables
 --------------------------
 
 The first step in our conversion is to make all variables binary.
-There are many other available encodings each with their own pros and cons.
+There are many other available encodings with their own pros and cons.
 For reasons of scope, we focus on the (in my opinion) most straightforward and useful ones:
 one-hot and binary expansion.
 But there are great surveys in the literature about all methods.[@qubojl] [@tamura_performance_2021]
@@ -534,7 +550,7 @@ for the $Y^{j}$ values.
 
 ### Binary Expansion Encoding
 
-For variables taking many values, the one-hot encoding can produce too many variables.
+For variables taking multiple values, the one-hot encoding can produce too many variables.
 An alternative is to use a binary expansion,
 since it only requires a logarithm amount of variables.
 Again, let's start with an integer decision variable $x \in \Z$
@@ -611,6 +627,27 @@ so it should be large enough to force the minimum to "cancel it"
 by being at an originally feasible point.
 That is, whenever $Az = b$ the penalization term disappears and we are left with the original objective.
 
+More rigorously,
+let $M$ be the maximum attainable objective value,
+$M = \max_{z \in \{0,1\}^N} |c^\top z|$
+and $v$ be the constraint's _minimal squared violation_,
+$$ v =
+  \begin{array}{rl}
+    \min\limits_{z} & \norm{Az - b}^2_2 \\
+                    & A z \ne b \\
+    \textrm{s.t.}   & z \in \{0, 1\}^N,
+  \end{array}
+$$
+Choosing any penalty $\rho > \frac{M}{v}$
+guarantees that the QUBO objective function coincides with the MILP.
+
+Furthermore,
+we can always estimate $M \le \sum_i \abs{c_i}$.
+Also, if $A$ and $b$ have only integer components,
+the minimal violation must be at least one, i.e., $v \ge 1$.
+Thus, for integer programs a safe choice of penalty is
+$\rho  = \textstyle\sum_i \abs{c_i} + 1$.
+
 The discussion above works for a general equality constraint,
 but for more specific constraint there are simpler penalizations.
 I recommend the paper by @{glover_quantum_2019} for more details.
@@ -629,8 +666,8 @@ $$
   s &\ge 0.
 \end{aligned}
 $$
-Furthermore, since we're assuming $x$ to be bounded,
-we can bound the components $s_i$ from above
+Moreover, since we're assuming $x$ to be bounded,
+we can calculate upper bounds for the components $s_i$
 by checking the maximum possible value for ${w_i - \sum_{j}M_{ij}x_j}$.
 Binarize $s$ and penalize the equality constraint to get a QUBO.
 
@@ -664,7 +701,6 @@ the accompanying paper [@qubojl] is a great place to further understand the tech
   title      = {{QUBO}.jl: {A} {Julia} {Ecosystem} for {Quadratic} {Unconstrained} {Binary} {Optimization}},
   shorttitle = {{QUBO}.jl},
   url        = {http://arxiv.org/abs/2307.02577},
-  abstract   = {We present QUBO.jl, an end-to-end Julia package for working with QUBO (Quadratic Unconstrained Binary Optimization) instances. This tool aims to convert a broad range of JuMP problems for straightforward application in many physics and physics-inspired solution methods whose standard optimization form is equivalent to the QUBO. These methods include quantum annealing, quantum gate-circuit optimization algorithms (Quantum Optimization Alternating Ansatz, Variational Quantum Eigensolver), other hardwareaccelerated platforms, such as Coherent Ising Machines and Simulated Bifurcation Machines, and more traditional methods such as simulated annealing. Besides working with reformulations, QUBO.jl allows its users to interface with the aforementioned hardware, sending QUBO models in various file formats and retrieving results for subsequent analysis. QUBO.jl was written as a JuMP / MathOptInterface (MOI) layer that automatically maps between the input and output frames, thus providing a smooth modeling experience.},
   language   = {en},
   urldate    = {2023-07-07},
   publisher  = {arXiv},
@@ -683,7 +719,6 @@ the accompanying paper [@qubojl] is a great place to further understand the tech
   shorttitle = {Quantum {Bridge} {Analytics} {I}},
   url        = {http://link.springer.com/10.1007/s10288-019-00424-y},
   doi        = {10.1007/s10288-019-00424-y},
-  abstract   = {Quantum Bridge Analytics relates generally to methods and systems for hybrid classical-quantum computing, and more particularly is devoted to developing tools for bridging classical and quantum computing to gain the beneﬁts of their alliance in the present and enable enhanced practical application of quantum computing in the future. This is the ﬁrst of a two-part tutorial that surveys key elements of Quantum Bridge Analytics and its applications, with an emphasis on supplementing models with numerical illustrations. In Part 1 (the present paper) we focus on the Quadratic Unconstrained Binary Optimization model which is presently the most widely applied optimization model in the quantum computing area, and which uniﬁes a rich variety of combinatorial optimization problems.},
   language   = {en},
   number     = {4},
   urldate    = {2025-11-01},
@@ -701,7 +736,6 @@ the accompanying paper [@qubojl] is a great place to further understand the tech
   issn     = {2169-3536},
   url      = {https://ieeexplore.ieee.org/document/9435359/},
   doi      = {10.1109/ACCESS.2021.3081685},
-  abstract = {The differences in performance among binary-integer encodings in an Ising machine, which can solve combinatorial optimization problems, are investigated. Many combinatorial optimization problems can be mapped to find the lowest-energy (ground) state of an Ising model or its equivalent model, the Quadratic Unconstrained Binary Optimization (QUBO). Since the Ising model and QUBO consist of binary variables, they often express integers as binary when using Ising machines. A typical example is the combinatorial optimization problem under inequality constraints. Here, the quadratic knapsack problem is adopted as a prototypical problem with an inequality constraint. It is solved using typical binary-integer encodings: one-hot encoding, binary encoding, and unary encoding. Unary encoding shows the best performance for large-sized problems.},
   urldate  = {2025-11-01},
   journal  = {IEEE Access},
   author   = {Tamura, Kensuke and Shirai, Tatsuhiko and Katsura, Hosho and Tanaka, Shu and Togawa, Nozomu},
@@ -764,5 +798,4 @@ the accompanying paper [@qubojl] is a great place to further understand the tech
     .buttons()
     .labelNvar()
     .label();
-
 </script>

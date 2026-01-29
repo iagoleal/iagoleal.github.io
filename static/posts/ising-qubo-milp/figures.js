@@ -55,10 +55,6 @@ function ArrayListener(xs) {
   );
 }
 
-function zeros(rows, cols) {
-  return Array.from(Array(rows), () => new Array(cols).fill(0));
-}
-
 class Popup {
   constructor(container, className = "popup") {
     this.container = container;
@@ -71,6 +67,9 @@ class Popup {
     const el = document.createElement("div");
     el.className = this.className;
     el.style.position = "absolute";
+
+    el.setAttribute("role", "tooltip");
+    el.setAttribute("aria-live", "polite");
 
     this.container.style.position = "relative";
     this.container.appendChild(el);
@@ -144,16 +143,17 @@ function edgeTensionController(edge, a, b) {
 }
 
 export function isingToQubo(adjacency, h) {
-  // Determine number of nodes
   const N = h.length;
+
   // Build full J matrix (symmetric)
   const J = Array.from({ length: N }, () => Array(N).fill(0));
   for (const [[i, j], w] of adjacency) {
     J[i][j] = w;
     J[j][i] = w;
   }
-  // Compute Q = 4J - 2*Diag((J + J^T)1 + h)
-  // (J + J^T)1 is just 2 * row sums (since J is symmetric)
+
+  // Q = 4J - 2*Diag((J + J^T)1 + h)
+  // (J + J^T)1 = 2 * row sums (since J is symmetric)
   const diag = [];
   for (let i = 0; i < N; ++i) {
     let rowSum = 0;
@@ -161,7 +161,8 @@ export function isingToQubo(adjacency, h) {
       rowSum += J[i][j];
     diag[i] = -2 * (2 * rowSum + h[i]);
   }
-  // Build QUBO adjacency list (upper triangle)
+
+  // QUBO adjacency list
   const qubo = [];
   for (let i = 0; i < N; ++i) {
     for (let j = i; j < N; ++j) {
@@ -196,10 +197,6 @@ class StateVector {
     return is.reduce((acc, j) => acc * this.spin(j), 1);
   }
 
-  alignment(w, ...indices) {
-    return w * this.prod(...indices) > 0;
-  }
-
   energy(edges) {
     let energy = 0;
     for (const [[s, t], w] of edges) {
@@ -222,11 +219,19 @@ class StateVector {
 
 class IsingStateVector extends StateVector {
   static mode = "ising";
-  static varName = "s";
-  static matName = "J";
+  static varName(i) {
+    return `s_{${i+1}}`;
+  }
+  static matName(i, j) {
+    return `J_{${i+1}${j+1}}`;
+  }
 
   static edgeAnim(edge, p, q) {
     return edgeTensionController(edge, p, q);
+  }
+
+  alignment(w, ...indices) {
+    return w * this.prod(...indices) > 0;
   }
 
   show(i) {
@@ -239,8 +244,16 @@ class IsingStateVector extends StateVector {
 
 class QuboStateVector extends StateVector {
   static mode = "qubo";
-  static varName = "x";
-  static matName = "Q";
+  static varName(i) {
+    return `z_{${i+1}}`;
+  }
+  static matName(i, j) {
+    return `Q_{${i+1}${j+1}}`;
+  }
+
+  alignment(w, ...indices) {
+    return this.prod(...indices);
+  }
 
   show(i) {
     return this.at(i) ? "1" : "0";
@@ -258,8 +271,8 @@ export class Diagram {
     this.svg    = document.querySelector(`${id} svg`);
     this.edges  = edges;
     this.states = (mode === "ising")
-      ? new IsingStateVector(states)
-      : new QuboStateVector(states);
+      ? new IsingStateVector([...states])
+      : new QuboStateVector([...states]);
 
     this.#messages = { nodes: [], edges: [] };
 
@@ -287,15 +300,6 @@ export class Diagram {
       .#drawNodes();
   }
 
-  externalField() {
-    this.#messages.nodes.push(
-      (i) => `h_{${i}} ${this.mode.varName}_${i} = ${this.edges.h[i]}`,
-    );
-
-    return this.#drawField();
-  }
-
-
   #drawNodes() {
     const {states, pos} = this;
     const gs = draw(this.svg, "g");
@@ -307,7 +311,8 @@ export class Diagram {
         cx: site.x,
         cy: site.y,
         r: "32px",
-        class: "site"
+        class: "site",
+        tabindex: "0",
         },
       );
 
@@ -321,7 +326,7 @@ export class Diagram {
     }
 
     this.#messages.nodes.push(
-      (i) => `${this.mode.varName}_${i} = ${this.states.show(i)}`,
+      (i) => `${this.mode.varName(i)} = ${this.states.show(i)}`,
     );
 
     return this;
@@ -353,7 +358,7 @@ export class Diagram {
     }
 
     this.#messages.edges.push(
-      (i, j) => `${this.mode.varName}_${i} ${this.mode.varName}_${j} = ${this.states.prod(i, j)}`,
+      (i, j) => `${this.mode.varName(i)} ${this.mode.varName(j)} = ${this.states.prod(i, j)}`,
     );
 
     return this;
@@ -369,7 +374,7 @@ export class Diagram {
 
       edge.classList.add("styled");
 
-      edge.setAttribute("stroke-width", 3 + Math.abs(w) / maxAbsJ);
+      edge.setAttribute("stroke-width", 2 + Math.abs(w) / maxAbsJ);
 
       const anim = this.mode.edgeAnim(edge, pos[s], pos[t]);
       const redrawEdge = () => {
@@ -383,12 +388,18 @@ export class Diagram {
     });
 
     this.#messages.edges.push(
-      (i, j, w) => `${this.mode.matName}_{${i}${j}} ${this.mode.varName}_${i} ${this.mode.varName}_${j} = ${w}`,
+      (i, j) => {
+        const w = this.states.prod(i, j) * weight(this.edges, i, j);
+        return `${this.mode.matName(i, j)} ${this.mode.varName(i)} ${this.mode.varName(j)} = ${w}`
+      }
     );
 
     if (this.edges.some(([[s, t], _]) => s === t)) {
       this.#messages.nodes.push(
-        (i, w) => ` ${this.mode.matName}_{${i}${i}} ${this.mode.varName}_${i} = ${w}`
+        (i) => {
+          const w = this.states.spin(i) * weight(this.edges, i, i);
+          return `${this.mode.matName(i,i)} ${this.mode.varName(i)} = ${w}`;
+        }
       );
     }
 
@@ -434,6 +445,17 @@ export class Diagram {
     }
 
     return this.edgeActivate();
+  }
+
+  externalField() {
+    this.#messages.nodes.push(
+      (i) => {
+        const w = this.states.spin(i) * this.edges.h[i];
+        return `h_{${i+1}} ${this.mode.varName(i)} = ${w}`
+      }
+    );
+
+    return this.#drawField();
   }
 
   #drawField() {
@@ -496,35 +518,40 @@ export class Diagram {
     const container = document.querySelector(this.id);
     const {svg, states, edges} = this;
 
-    const mathLabel = new MathLabel(container, `${formula} =`);
+    const mathLabel = new MathLabel(container, formula, states.energy(edges));
     svg.insertAdjacentElement("afterend", mathLabel.element);
-
-    const valueSpan = document.createElement("span");
-    valueSpan.className = "energy-value";
-    mathLabel.element.appendChild(valueSpan);
 
     const redraw = () => {
       const energy = states.energy(edges);
-
-      renderMath(valueSpan, energy.toString());
-
-      valueSpan.classList.add("energy-changed");
-      setTimeout(() => {
-        return valueSpan.classList.remove("energy-changed")
-      }, 180);
+      mathLabel.setValue(energy);
     };
 
     states.observe(redraw);
-    redraw();
 
     return this;
   }
 
   popup() {
     const popup = new Popup(document.querySelector(this.id));
-    return this
-      .#nodesPopup(popup)
-      .#edgesPopup(popup);
+
+    this.#popupFor(
+      popup,
+      '.site',
+      this.#messages.nodes,
+      (i) => [i]
+    );
+
+    this.#popupFor(
+      popup,
+      '.edge-hover',
+      this.#messages.edges,
+      (i) => {
+        const [[s, t], w] = this.edges[i];
+        return [s, t, w];
+      },
+    );
+
+    return this;
   }
 
   #popupFor(popup, selector, messages, getVars) {
@@ -532,10 +559,12 @@ export class Diagram {
 
     svg.querySelectorAll(selector).forEach((el, i) => {
       const processMessages = () => {
-        return messages
+        const lines = messages
           .map(f => f(...getVars(i)))
           .filter(Boolean)
-          .join(' \\\\ ');
+          .map(line => line.replace(/=/, '&='));
+
+        return `\\begin{aligned} ${lines.join(' \\\\[1ex] ')} \\end{aligned}`;
       };
 
       el.addEventListener('mousemove', (e) => {
@@ -557,51 +586,55 @@ export class Diagram {
 
     return this;
   }
-
-  #nodesPopup(popup) {
-    const {states, edges } = this;
-    return this.#popupFor(
-      popup,
-      '.site',
-      this.#messages.nodes,
-      (i) => [i + 1, weight(edges, i, i) * states.spin(i)],
-    );
-  }
-
-  #edgesPopup(popup) {
-    const { mode, states, edges } = this;
-    return this.#popupFor(
-      popup,
-      '.edge-hover',
-      this.#messages.edges,
-      (i) => {
-        const [[s, t], w] = edges[i];
-        return [s+1, t+1, w]
-      },
-    );
-  }
 }
 
 class MathLabel {
-  constructor(container, formula = "") {
+  #label;
+  #value;
+
+  constructor(container, label = "", value = "") {
     this.element = document.createElement("div");
     this.element.className = "math-label";
     container.appendChild(this.element);
 
-    if (formula) {
-      this.set(formula);
-    }
+    // Create label and value spans
+    this.labelSpan = document.createElement("span");
+    this.valueSpan = document.createElement("span");
+    this.valueSpan.className = "energy-value";
+
+    this.element.appendChild(this.labelSpan);
+    this.element.appendChild(document.createTextNode(" = "));
+    this.element.appendChild(this.valueSpan);
+
+    this.#value = value;
+    this.#label = label;
+    this.show();
   }
 
-  set(formula) {
-    if (window.katex) {
-      window.katex.render(formula, this.element, { displayMode: false });
-    } else {
-      this.element.textContent = formula;
-    }
+  setLabel(label) {
+    this.#label = label;
+    this.show();
+  }
+
+  setValue(val) {
+    if (val === this.#value)
+      return;
+    this.#value = val;
+    this.show();
+
+    // Blink
+    this.valueSpan.classList.remove("energy-changed");
+    this.valueSpan.classList.add("energy-changed");
+    setTimeout(() => {
+      this.valueSpan.classList.remove("energy-changed");
+    }, 180);
+  }
+
+  show() {
+    renderMath(this.labelSpan, this.#label);
+    renderMath(this.valueSpan, this.#value.toString());
   }
 }
-
 
 function binaryCoeffs(lb, ub) {
   const bits = Math.ceil(Math.log2(ub - lb + 1));
@@ -700,8 +733,8 @@ export class EncodingElement {
     return this;
   }
 
+
   #addLabel(writer) {
-    // Container for math labels (x= ... , K = ...)
     let div = this.#container.querySelector('.math-label-container');
     if (!div) {
       div = document.createElement('div');
@@ -709,25 +742,23 @@ export class EncodingElement {
       this.#container.appendChild(div);
     }
 
-    const label = new MathLabel(div, "");
-    const update = () => label.set(writer());
-    update();
+    const [formula, cb] = writer();
+    const label = new MathLabel(div, formula, cb());
+
+    // Define the callback ONCE
+    const update = () => label.setValue(cb());
     this.#states.observe(update);
+
     return label;
   }
 
   label() {
-    this.#addLabel(() =>
-      `x = ${this.#mode.value(this.#states, this.#lb, this.#ub)}`
-    );
+    this.#addLabel(() => ["x", () => this.#mode.value(this.#states, this.#lb, this.#ub)]);
     return this;
   }
 
   labelNvar() {
-    this.#addLabel(() =>
-      `K = ${this.#states.length}`
-    );
-
+    this.#addLabel(() => ["K", () => this.#states.length]);
     return this;
   }
 }
