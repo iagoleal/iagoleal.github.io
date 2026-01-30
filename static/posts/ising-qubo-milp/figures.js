@@ -251,7 +251,7 @@ class QuboStateVector extends StateVector {
     return `Q_{${i+1}${j+1}}`;
   }
 
-  alignment(w, ...indices) {
+  alignment(_, ...indices) {
     return this.prod(...indices);
   }
 
@@ -296,7 +296,7 @@ export class Diagram {
 
   graph() {
     return this
-      .edgeSketch()
+      .edgesSketch()
       .#drawNodes();
   }
 
@@ -310,9 +310,8 @@ export class Diagram {
       const node = draw(g, "circle", {
         cx: site.x,
         cy: site.y,
-        r: "32px",
         class: "site",
-        tabindex: "0",
+        tabindex: 0,
         },
       );
 
@@ -332,7 +331,7 @@ export class Diagram {
     return this;
   }
 
-  edgeSketch() {
+  edgesSketch() {
     const { pos, edges, svg } = this;
     const ge = draw(svg, "g");
     const gh = draw(svg, "g");
@@ -364,8 +363,8 @@ export class Diagram {
     return this;
   }
 
-  edgeActivate() {
-    const { states, pos, mode, edges } = this;
+  edgesActivate() {
+    const { states, pos, edges } = this;
     const maxAbsJ = Math.max(...edges.map(([_, w]) => Math.abs(w)));
 
     // Update all visible edges
@@ -444,7 +443,7 @@ export class Diagram {
       }
     }
 
-    return this.edgeActivate();
+    return this.edgesActivate();
   }
 
   externalField() {
