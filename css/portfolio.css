@@ -179,41 +179,88 @@ a.pub-venue:hover {
   }
 
   li {
-    display: block;
-    margin:  0;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    margin: 0;
   }
 
   a {
+    display:         flex;
+    align-items:     center;
+    flex:            1 1 0;
+    justify-content: space-between;
+    width:           100%;
+    gap:             1rem;
     color:           var(--color-typography);
     font-weight:     500;
-    display:         flex;
-    flex-direction:  row;
-    justify-content: space-between;
-    align-content:   center;
-    align-items:     flex-start;
-    padding:         10px 0;
+    text-decoration: none;
     border-radius:   10px;
-    transition:      background 0.3s ease-in-out;
+    transition:      background 0.15s, color 0.15s;
+    padding:         10px 7px;
 
-    &:hover {
-      background-color: var(--color-crystal);
-      transition:       background 0.3s ease-in-out;
+    &:hover, &:focus {
+      z-index:    2;
+      transition: background 1.2s cubic-bezier(.4,1.7,.7,1.1), color 0.18s;
+    }
+
+    &::before {
+      content:        '';
+      position:       absolute;
+      top:            0;
+      left:           0;
+      width:          100%;
+      height:         100%;
+      border-top:     2px solid var(--color-typography);
+      border-bottom:  2px solid var(--color-typography);
+      transform:      scaleY(2);
+      opacity:        0;
+      transition:     0.5s;
+      pointer-events: none;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      width: 0;
+      height: 100%;
+      background-color: none;
+      opacity: 0;
+      transition: width 1.2s cubic-bezier(.4,1.7,.7,1.1), left 1.2s cubic-bezier(.4,1.7,.7,1.1), opacity 0.5s;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    &:hover::before,
+    &:focus::before {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+
+    &:hover::after,
+    &:focus::after {
+      left: 0;
+      width: 100%;
+      opacity: 1;
     }
   }
 
+  .theme-circle {
+    flex: 0 0 auto;
+  }
+
+  .title {
+    flex: 1 1 auto;
+  }
+
   .date {
+    flex:        0 0 auto;
+    text-align:  right;
+    white-space: nowrap;
     font-family: monospace;
     color:       var(--color-faded);
-    margin-left: 2rem;
-    text-align:  center;
-    white-space: nowrap;
   }
-}
-
-.post-title-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
 }
 
 .theme-circle {

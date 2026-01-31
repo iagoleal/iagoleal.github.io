@@ -19,13 +19,11 @@ end
 
 local function makeitem(meta)
   return pandoc.List {
-    pandoc.Plain { -- This is a <li>
-      pandoc.Link ({
-        pandoc.Span({
-          theme_circle(meta.theme),
-          pandoc.Span(meta.title, {class = "title"}),
-        }, {class = "post-title-row"}),
-        pandoc.Span(tostring(meta.date), {class = "date"}),
+    pandoc.Plain {
+      theme_circle(meta.theme),
+      pandoc.Link({
+        pandoc.Span(meta.title, {class = "title"}),
+        pandoc.Span(tostring(meta.date), {class = "date"})
       }, meta.href)
     }
   }
