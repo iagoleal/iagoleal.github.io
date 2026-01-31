@@ -8,7 +8,7 @@ description:
   Quantum Computers are advancing and one should know
   how to fit classical problems into them.
 suppress-bibliography: true
-css: ["/css/plots.css", "./index.css"]
+css: ["/css/plots.css", "index.css"]
 ---
 
 \def\ceil#1{\lceil #1 \rceil}

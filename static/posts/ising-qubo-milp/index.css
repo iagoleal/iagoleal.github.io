@@ -1,7 +1,24 @@
 svg.diagram {
-  background: #f9f9fb;
-  perspective: 600px;
-  --color-active: hsl(140 50% 40%);
+  background:      #f9f9fb;
+  perspective:     600px;
+  --color-active:  hsl(140 50% 40%);
+}
+
+.site {
+  r:            32px;
+  stroke-width: 3px;
+  cursor:       pointer;
+  fill:         #fff;
+  stroke:       #b0b6c1;
+  filter:       none;
+  transition:   filter 0.3s, stroke 0.3s, color 1s;
+}
+
+.edge {
+  stroke-width: 3px;
+  stroke:       #b0b6c1;
+  fill:         none;
+  transition:   stroke 0.3s, filter 0.3s;
 }
 
 .weight {
@@ -16,122 +33,106 @@ svg.diagram {
   transition:        fill 0.2s, opacity 0.2s;
 }
 
-/* Node styles */
-.site {
-  r: 32px;
-  stroke-width: 3px;
-  cursor:       pointer;
-  fill:         #fff;
-  stroke:       #b0b6c1;
-  filter:       none;
-  transition:   filter 0.3s, stroke 0.3s, color 1s;
+.ising {
+  .site {
+    stroke-dasharray: 40 10;
+    stroke-linecap:   round;
+    filter:           drop-shadow(0 0 4px #b3c6e0);
+    transform-origin: center;
+    transform-box:    fill-box;
+
+    &[state="1"] {
+      stroke:    #1976d2;
+      animation: spin-ccw 10s linear infinite;
+    }
+
+    &[state="-1"] {
+      stroke:    #3b4a6b;
+      animation: spin-cw 10s linear infinite;
+    }
+  }
+
+  .edge {
+    &[product="1"] {
+      stroke: #9a6868;
+      filter: drop-shadow(0 0 6px #ffcdd2) drop-shadow(0 0 12px #ffcdd2);
+    }
+
+    &[product="-1"] {
+      stroke: #4f7751;
+      filter: drop-shadow(0 0 4px #b7e1cd);
+    }
+  }
 }
 
-/* Ising nodes */
-.ising .site {
-  stroke:           #3b4a6b;
-  stroke-dasharray: 40 10;
-  stroke-linecap:   round;
-  filter:           drop-shadow(0 0 4px #b3c6e0);
-  transform-origin: center;
-  transform-box:    fill-box;
+.qubo {
+  .site {
+    fill:    #e9ecf3;
+    stroke:  #b0b6c1;
+    filter:  none;
+
+    &[state="1"] {
+      stroke:       var(--color-active);
+      stroke-width: 5px;
+      filter:       drop-shadow(0 0 4px hsl(142 71% 45% / 50%));
+      animation:    pulse-shadow 1.2s infinite;
+    }
+  }
+
+  .edge {
+    stroke:       #b0b6c1;
+    stroke-width: 4px;
+
+    &[product="1"] {
+      stroke:    var(--color-active);
+      filter:    drop-shadow(0 0 4px hsl(142 71% 45% / 50%));
+      animation: pulse-shadow 1.2s infinite;
+    }
+  }
 }
 
-.ising .site[state="1"] {
-  stroke:           #1976d2;
-  filter:           drop-shadow(0 0 6px #90caf9);
-  animation:        spin-ccw 10s linear infinite;
+/* Spin animations */
+@keyframes spin-ccw {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
 }
 
-.ising .site[state="-1"] {
-  animation:        spin-cw 10s linear infinite;
+@keyframes spin-cw {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-/* QUBO nodes */
-.qubo .site {
-  fill:    #e9ecf3;
-  stroke:  #b0b6c1;
-  filter:  none;
-}
-
-.qubo .site[state="1"] {
-  stroke:       var(--color-active);
-  stroke-width: 5px;
-  filter: drop-shadow(0 0 4px hsl(142 71% 45% / 50%));
-  animation: pulse-shadow 1.2s infinite;
-}
-
+/* QUBO animations */
 @keyframes pulse-shadow {
   0%   { filter: drop-shadow(0 0 4px  hsl(142 71% 45% / 50%)); }
   50%  { filter: drop-shadow(0 0 12px hsl(142 71% 45% / 30%)); }
   100% { filter: drop-shadow(0 0 4px  hsl(142 71% 45% / 50%)); }
 }
 
-/* Edges style */
-.edge {
-  stroke-width: 3px;
-  fill:         none;
-  transition:   stroke 0.3s, filter 0.3s;
-  stroke:       #b0b6c1;
-}
-
-.ising .edge {
-  transition: stroke 0.3s, filter 0.3s;
-}
-
-.ising .edge[product="1"] {
-  stroke: #9a6868;
-  filter: drop-shadow(0 0 6px #ffcdd2) drop-shadow(0 0 12px #ffcdd2);
-}
-
-.ising .edge[product="-1"] {
-  stroke: #4f7751;
-  filter: drop-shadow(0 0 4px #b7e1cd);
-}
-
-/* QUBO edges */
-.qubo .edge {
-  stroke:       #b0b6c1;
-  stroke-width: 4px;
-}
-
-.qubo .edge[product="1"] {
-  stroke: var(--color-active);
-  filter: drop-shadow(0 0 4px hsl(142 71% 45% / 50%));
-  animation: pulse-shadow 1.2s infinite;
-}
-
-/* Spin animations */
-@keyframes spin-ccw {
-  0%   { transform: rotate(0deg);}
-  100% { transform: rotate(-360deg);}
-}
-@keyframes spin-cw {
-  0%   { transform: rotate(0deg);}
-  100% { transform: rotate(360deg);}
-}
 
 /* Popup */
-.diagram-container .popup {
-  position:       absolute;
-  z-index:        10;
-  pointer-events: none;
-  padding:        4px 10px;
-  background:     #fff;
-  color:          #222;
-  border-radius:  4px;
-  box-shadow:     0 2px 12px rgba(60, 60, 80, 0.08);
-  border:         1px solid #e0e3ea;
-  font-size:      1rem;
-  transition:     opacity 0.25s cubic-bezier(.4,0,.2,1);
-  display:        block;
-  white-space:    nowrap;
-  opacity:        0;
-}
+.diagram-container {
+  .popup {
+    position:       absolute;
+    z-index:        10;
+    pointer-events: none;
+    padding:        4px 10px;
+    background:     #fff;
+    color:          #222;
+    border-radius:  4px;
+    box-shadow:     0 2px 12px rgba(60, 60, 80, 0.08);
+    border:         1px solid #e0e3ea;
+    font-size:      1rem;
+    transition:     opacity 0.25s cubic-bezier(.4,0,.2,1);
+    display:        block;
+    white-space:    nowrap;
+    opacity:        0;
 
-.diagram-container .popup.visible {
-  opacity:        1;
-  pointer-events: auto;
+    &.visible {
+      opacity:        1;
+      pointer-events: auto;
+    }
+  }
 }
 
 /* Encoding diagram and buttons */
@@ -163,17 +164,17 @@ svg.diagram {
   font-size:       1.2rem;
   position:        relative;
   font-weight:     normal;
-}
 
-.encoding-button.active {
-  background:     var(--color-lightning);
-  color:          var(--color-background-dark);
-  border-color:   var(--color-accent);
-  outline:        3px solid var(--color-lightning);
-  outline-offset: 2px;
-  font-weight:    bold;
-  z-index:        1;
-  box-shadow:     none;
+  &.active {
+    background:     var(--color-lightning);
+    color:          var(--color-background-dark);
+    border-color:   var(--color-accent);
+    outline:        3px solid var(--color-lightning);
+    outline-offset: 2px;
+    font-weight:    bold;
+    z-index:        1;
+    box-shadow:     none;
+  }
 }
 
 /* Math label */
@@ -202,8 +203,8 @@ svg.diagram {
   transition:    background 0.18s, color 0.18s;
   border-radius: 3px;
   padding:       0 3px;
-}
 
-.energy-value.energy-changed {
-  color: var(--color-lightning) !important;
+  &.energy-changed {
+    color: var(--color-lightning) !important;
+  }
 }
