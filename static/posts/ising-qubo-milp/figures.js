@@ -130,9 +130,11 @@ function edgeTensionController(edge, a, b) {
     animId = requestAnimationFrame(animate);
   };
 
-  return (align) => {
-    if (align) {
-      if (animId) cancelAnimationFrame(animId);
+  return (interaction) => {
+    if (interaction < 0) { // Negative spin
+      if (animId) {
+        cancelAnimationFrame(animId);
+      }
       animId = null;
       setShape(false);
       return;
@@ -190,7 +192,8 @@ class StateVector {
   }
 
   flip(i) {
-    return (this.d[i] = !this.d[i]);
+    this.d[i] = !this.d[i];
+    return this.spin(i);
   }
 
   prod(...is) {
@@ -231,7 +234,7 @@ class IsingStateVector extends StateVector {
   }
 
   alignment(w, ...indices) {
-    return w * this.prod(...indices) > 0;
+    return Math.sign(w * this.prod(...indices));
   }
 
   show(i) {
@@ -315,10 +318,10 @@ export class Diagram {
         },
       );
 
-      node.classList.toggle("active", states.at(i));
+      node.setAttribute("state", states.spin(i))
 
       states.observe(i, (_, v) => {
-        node.classList.toggle("active", v);
+        node.setAttribute("state", this.states.spin(i)) // TODO: adjust status such that v = +/- 1
       });
 
       node.addEventListener("click", () => this.states.flip(i));
@@ -378,7 +381,7 @@ export class Diagram {
       const anim = this.mode.edgeAnim(edge, pos[s], pos[t]);
       const redrawEdge = () => {
         const aligned = this.states.alignment(w, s, t);
-        edge.classList.toggle("aligned", aligned);
+        edge.setAttribute("product", aligned);
         anim(aligned);
       };
 
