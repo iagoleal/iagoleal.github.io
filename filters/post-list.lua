@@ -10,15 +10,36 @@ local function getfilename(path)
   return fname
 end
 
+local function theme_circle(themes)
+  local classes = {"theme-circle", table.unpack(themes)}
+
+  return pandoc.RawInline("html", string.format(
+    '<span class="%s"></span>', table.concat(classes, " ")))
+end
+
 local function makeitem(meta)
   return pandoc.List {
     pandoc.Plain { -- This is a <li>
       pandoc.Link ({
-        pandoc.Span(meta.title, {class = "title"}),
+        pandoc.Span({
+          theme_circle(meta.theme),
+          pandoc.Span(meta.title, {class = "title"}),
+        }, {class = "post-title-row"}),
         pandoc.Span(tostring(meta.date), {class = "date"}),
       }, meta.href)
     }
   }
+end
+
+--- Extracts a list of themes as strings from a pandoc List or single element.
+--- @param mthemes pandoc.List|string A pandoc List of themes or a single theme
+--- @return string[] List of theme names as strings
+local function extract_themes(mthemes)
+  if pandoc.utils.type(mthemes) ~= "List" then
+    mthemes = pandoc.List({mthemes})
+  end
+
+  return mthemes:map(pandoc.utils.stringify)
 end
 
 local function make_postlist(path, n)
@@ -29,11 +50,13 @@ local function make_postlist(path, n)
 
   local metadata = map(posts, function(post)
     local meta = fs.read_metadata(pandoc.path.join{path, post})
+    print(post)
 
     pandoc.log.info("Post list: reading post " .. post)
 
-    meta.href = fmt("/posts/%s/", getfilename(post))
-    meta.date = Date(meta.date)
+    meta.href  = fmt("/posts/%s/", getfilename(post))
+    meta.date  = Date(meta.date)
+    meta.theme = extract_themes(meta.theme)
 
     return meta
   end)
