@@ -10,8 +10,8 @@ local function getfilename(path)
   return fname
 end
 
-local function theme_circle(themes)
-  local classes = {"theme-circle", table.unpack(themes)}
+local function theme_marker(themes)
+  local classes = {"theme-marker", table.unpack(themes)}
 
   return pandoc.RawInline("html", string.format(
     '<span class="%s"></span>', table.concat(classes, " ")))
@@ -20,7 +20,7 @@ end
 local function makeitem(meta)
   return pandoc.List {
     pandoc.Plain {
-      theme_circle(meta.theme),
+      theme_marker(meta.theme),
       pandoc.Link({
         pandoc.Span(meta.title, {class = "title"}),
         pandoc.Span(tostring(meta.date), {class = "date"})
@@ -30,14 +30,14 @@ local function makeitem(meta)
 end
 
 --- Extracts a list of themes as strings from a pandoc List or single element.
---- @param mthemes pandoc.List|string A pandoc List of themes or a single theme
+--- @param xs pandoc.List|string A pandoc List of themes or a single theme
 --- @return string[] List of theme names as strings
-local function extract_themes(mthemes)
-  if pandoc.utils.type(mthemes) ~= "List" then
-    mthemes = pandoc.List({mthemes})
+local function extract_strings(xs)
+  if pandoc.utils.type(xs) ~= "List" then
+    xs = pandoc.List({xs})
   end
 
-  return mthemes:map(pandoc.utils.stringify)
+  return xs:map(pandoc.utils.stringify)
 end
 
 local function make_postlist(path, n)
@@ -46,15 +46,16 @@ local function make_postlist(path, n)
 
   pandoc.log.info(fmt("Making post list with %d out of %d posts", n, #posts))
 
+
   local metadata = map(posts, function(post)
     local meta = fs.read_metadata(pandoc.path.join{path, post})
-    print(post)
 
     pandoc.log.info("Post list: reading post " .. post)
 
-    meta.href  = fmt("/posts/%s/", getfilename(post))
-    meta.date  = Date(meta.date)
-    meta.theme = extract_themes(meta.theme)
+    meta.href       = fmt("/posts/%s/", getfilename(post))
+    meta.date       = Date(meta.date)
+    meta.theme      = extract_strings(meta.theme)
+    meta.requisites = extract_strings(meta.requisites)
 
     return meta
   end)
