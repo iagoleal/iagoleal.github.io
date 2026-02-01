@@ -11,7 +11,7 @@
 
 /*
   ~*~ CSS Reset ~*~
-Adapted from 
+Adapted from
   - https://www.joshwcomeau.com/css/custom-css-reset/
   - https://meyerweb.com/eric/tools/css/reset/
 */
@@ -288,57 +288,51 @@ td, th {
 }
 
 /*
-  ~*~ Class-dependent ~*~
+  ~*~ Class-dependent ~*~ ======================================================
 */
-
-.illustration {
-  display:   block;
-  margin:    0 auto;
-  height:    auto;
-  max-width: 100%;
-}
 
 /* ~*~ Header ~*~ */
 
 #top-bar {
   width: calc(var(--article-width));
   margin: 16px auto 3rem;
+
+  ul {
+    font-size:       1.2rem;
+    margin:          0;
+    padding:         0;
+    overflow:        hidden;
+    list-style-type: none;
+    display:         flex;
+    flex-wrap:       wrap;
+    column-gap:      5%;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--color-typography);
+  }
+
+  li {
+    display: inline;
+    margin-bottom: 0;
+  }
+
+  .home-button {
+    margin-right: auto;
+  }
+
+  a {
+    text-decoration: none;
+    color:           var(--color-faded);
+    transition: color 0.3s ease-in;
+
+    &:hover,
+    &:active {
+      border: none;
+      color:  var(--color-typography);
+      transition: color 0.3s ease-out;
+    }
+  }
 }
 
-#top-bar ul {
-  font-size:       1.2rem;
-  margin:          0;
-  padding:         0;
-  overflow:        hidden;
-  list-style-type: none;
-  display:         flex;
-  flex-wrap:       wrap;
-  column-gap:      5%;
-  justify-content: space-between;
-
-  border-bottom: 1px solid var(--color-typography);
-}
-
-#top-bar li {
-  display: inline;
-  margin-bottom: 0;
-}
-
-#top-bar .home-button {
-  margin-right: auto;
-}
-
-#top-bar a {
-  text-decoration: none;
-  color:           var(--color-faded);
-  transition: color 0.3s ease-in;
-}
-
-#top-bar a:hover, #top-bar a:active {
-  border: none;
-  color:  var(--color-typography);
-  transition: color 0.3s ease-out;
-}
 
 /*
   ~*~ Footer ~*~
