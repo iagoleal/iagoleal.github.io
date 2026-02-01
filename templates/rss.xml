@@ -6,7 +6,7 @@
      <title>Iago's Blog</title>
      <link>$site-url$</link>
      <description>Iago Leal's blog about math, programming and everything more.</description>
-     <copyright>© $author-meta$, 2020-2025</copyright>
+     <copyright>© $author-meta$, 2020-2026</copyright>
      <atom:link href="$site-url$/rss.xml" rel="self" type="application/rss+xml" />
      <language>en-us</language>
      <image>
