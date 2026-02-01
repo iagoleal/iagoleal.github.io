@@ -195,57 +195,30 @@ a.pub-venue:hover {
     color:           var(--color-typography);
     font-weight:     500;
     text-decoration: none;
-    border-radius:   10px;
     transition:      background 0.15s, color 0.15s;
     padding:         10px 7px;
 
-    &:hover, &:focus {
-      transition: background 1.2s cubic-bezier(.4,1.7,.7,1.1), color 0.18s;
-    }
-
-    &::before,
     &::after {
-      content:        '';
-      position:       absolute;
-      top:            0;
-      left:           0;
-      width:          100%;
-      height:         100%;
+      content: '';
+      position: absolute;
+      left: 10px;
+      bottom: 6px;
+      height: 2px;
+      width: 0;
+      background: var(--theme-color, var(--color-typography));
+      transition: width 0.44s cubic-bezier(.33,1,.68,1);
+      z-index: 2;
+      opacity: 0.7;
       pointer-events: none;
-      z-index:        1;
-      box-sizing:     border-box;
-      transition:     clip-path 0.3s cubic-bezier(.4,0,1,1);
-    }
-
-    &::before {
-      border-top:  2px solid var(--color-typography);
-      border-left: 2px solid var(--color-typography);
-      box-sizing:  border-box;
-      /* Start hidden */
-      clip-path:   polygon(0 0, 0 0, 0 0, 0 0);
-    }
-
-    &::after {
-      border-bottom: 2px solid var(--color-typography);
-      border-right:  2px solid var(--color-typography);
-      /* Start hidden */
-      clip-path:     polygon(100% 100%, 100% 100%, 100% 100%, 100% 100%);
-    }
-
-    &:hover::before,
-    &:focus::before {
-      /* Draw top border to 50% width, left border full */
-      clip-path: polygon(0 0, 20% 0, 0 70%, 0 0);
     }
 
     &:hover::after,
     &:focus::after {
-      /* Draw bottom border from right to 50%, right border full */
-      clip-path: polygon(100% 100%, 80% 100%, 100% 30%, 100% 100%);
+      width: 66%;
     }
   }
 
-  .theme-circle {
+  .theme-marker {
     flex: 0 0 auto;
   }
 
@@ -262,30 +235,57 @@ a.pub-venue:hover {
   }
 }
 
-.theme-circle {
+.theme-marker {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.6em;
+  border-radius: 50%;
+  border: 2px solid var(--color-dot, #bbb);
+  background: transparent;
   vertical-align: middle;
-  display:        inline-block;
-  width:          0.8rem;
-  height:         0.8rem;
-  margin-right:   0.5em;
-  border-radius:  50%;
-  border:         2px solid var(--color-typography);
-  background:     var(--color-dot, #fff);
+  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.06);
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 0;
+    height: 0;
+    background: var(--color-dot);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    transition: 
+      width 0.32s cubic-bezier(.4,0,.2,1),
+      height 0.32s cubic-bezier(.4,0,.2,1),
+      transform 0.32s cubic-bezier(.4,0,.2,1);
+    z-index: 0;
+    opacity: 0.18;
+  }
+
+  &:hover::before,
+  &:focus::before {
+    width: 100%;
+    height: 100%;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.22;
+  }
 
   &.math {
-    --color-dot: #f8fafc;
+    --color-dot: #E6B800;      /* vibrant, elegant gold */
   }
-
   &.haskell {
-    --color-dot: #BCA2FF;
+    --color-dot: #6C2EB7;      /* deep purple */
   }
-
   &.workflow {
-    --color-dot: #2196f3;
+    --color-dot: #1565C0;      /* strong blue */
   }
-
   &.empty {
-    border: 2px dashed var(--color-lightning);
+    border-style: dashed;
+    --color-dot: #bbb;
+    pointer-events: none;
   }
 
   &.interactive {
@@ -328,7 +328,8 @@ ul.theme-legend {
   margin:                0 auto 2rem auto;
   max-width:             fit-content;
   list-style-type:       none;
-  padding:               0;
+  padding:               16px;
+  border:                2px solid #222;
 
   li {
     display:         flex;
