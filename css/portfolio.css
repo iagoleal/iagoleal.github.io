@@ -200,49 +200,48 @@ a.pub-venue:hover {
     padding:         10px 7px;
 
     &:hover, &:focus {
-      z-index:    2;
       transition: background 1.2s cubic-bezier(.4,1.7,.7,1.1), color 0.18s;
     }
 
-    &::before {
+    &::before,
+    &::after {
       content:        '';
       position:       absolute;
       top:            0;
       left:           0;
       width:          100%;
       height:         100%;
-      border-top:     2px solid var(--color-typography);
-      border-bottom:  2px solid var(--color-typography);
-      transform:      scaleY(2);
-      opacity:        0;
-      transition:     0.5s;
       pointer-events: none;
+      z-index:        1;
+      box-sizing:     border-box;
+      transition:     clip-path 0.3s cubic-bezier(.4,0,1,1);
+    }
+
+    &::before {
+      border-top:  2px solid var(--color-typography);
+      border-left: 2px solid var(--color-typography);
+      box-sizing:  border-box;
+      /* Start hidden */
+      clip-path:   polygon(0 0, 0 0, 0 0, 0 0);
     }
 
     &::after {
-      content: '';
-      position: absolute;
-      left: 50%;
-      width: 0;
-      height: 100%;
-      background-color: none;
-      opacity: 0;
-      transition: width 1.2s cubic-bezier(.4,1.7,.7,1.1), left 1.2s cubic-bezier(.4,1.7,.7,1.1), opacity 0.5s;
-      z-index: -1;
-      pointer-events: none;
+      border-bottom: 2px solid var(--color-typography);
+      border-right:  2px solid var(--color-typography);
+      /* Start hidden */
+      clip-path:     polygon(100% 100%, 100% 100%, 100% 100%, 100% 100%);
     }
 
     &:hover::before,
     &:focus::before {
-      transform: scaleY(1);
-      opacity: 1;
+      /* Draw top border to 50% width, left border full */
+      clip-path: polygon(0 0, 20% 0, 0 70%, 0 0);
     }
 
     &:hover::after,
     &:focus::after {
-      left: 0;
-      width: 100%;
-      opacity: 1;
+      /* Draw bottom border from right to 50%, right border full */
+      clip-path: polygon(100% 100%, 80% 100%, 100% 30%, 100% 100%);
     }
   }
 
