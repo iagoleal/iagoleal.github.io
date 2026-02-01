@@ -205,7 +205,7 @@ a.pub-venue:hover {
       bottom: 6px;
       height: 2px;
       width: 0;
-      background: var(--theme-color, var(--color-typography));
+      background: var(--color-typography);
       transition: width 0.44s cubic-bezier(.33,1,.68,1);
       z-index: 2;
       opacity: 0.7;
