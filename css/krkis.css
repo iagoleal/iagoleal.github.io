@@ -260,31 +260,32 @@ blockquote p {
 table {
   margin:               1rem auto;
   border-collapse:      collapse;
-  width:                100%;
+  max-width:                100%;
   overflow-x:           auto;
-  display:              block;
+  display:              table;
   font-variant-numeric: lining-nums tabular-nums;
-  text-align:           justify;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 table caption {
   margin-bottom: 0.75rem;
 }
 
-tbody {
-  margin-top:    0.5em;
-  border-top:    1px solid var(--color-typography);
-  border-bottom: 1px solid var(--color-typography);
-}
-
 th {
-  border-top: 1px solid var(--color-typography);
+  text-align: center;
+  background: var(--color-lightning);
 }
-
 
 td, th {
-  padding: 0.5em;
-  border-bottom: 1px solid var(--color-faded);
+  padding: 1rem;
+}
+
+tr {
+  transition: background 0.6s;
+
+  &:hover {
+    background: var(--color-super);
+  }
 }
 
 /*
