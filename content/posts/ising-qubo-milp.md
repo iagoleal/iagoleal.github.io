@@ -1,5 +1,5 @@
 ---
-title: Your Favorite Problem is an Ising Model
+title: Your Favorite Problem as an Ising Model
 keywords: [math, optimization, quantum-computing]
 date: 2026-01-29
 thumbnail: "thumbnail.png"
@@ -165,14 +165,21 @@ and rotating clockwise represent spin $-1$ particles.
   </svg>
 </figure>
 
-For each edge there is an interaction energy $J_{ij} \in \R$
-indicating how costly it is for them to remain aligned.
+
+The interaction energies $J_{ij} \in \R$
+indicate how costly it is for the particles to remain aligned.
 A positive factor $J_{ij} > 0$
 means that the particles require energy to stay aligned,
-while a negative factor $J_{ij} < 0$ means that the particles "pull each other",
-and thus want to align.
-The system's total energy --- called its _Hamiltonian_ --- is the sum of all interaction energies
-considering the particles' alignment,
+while a negative factor $J_{ij} < 0$ means that the particles "pull each other" for alignment,
+as summarized below.
+
+| Interaction   | Interpretation               |
+|:--------------|:-----------------------------|
+| $J_{ij} < 0$  | Profit from alignment        |
+| $J_{ij} = 0$  | No interaction               |
+| $J_{ij} > 0$  | Require energy for alignment |
+
+The system's total energy --- called its _Hamiltonian_ --- is the sum of all interaction energies weighted by the particles' alignment,
 $$H(s) \coloneqq \sum_{(i,j)} J_{ij} s_i s_j.$$
 
 <figure id="figure-ising" class="diagram-container">
@@ -183,6 +190,15 @@ $$H(s) \coloneqq \sum_{(i,j)} J_{ij} s_i s_j.$$
 One also considers external influences $h_i \in \R$
 biasing each particle towards one of the states.
 Keeping up with the physics theme, we call it a _magnetic field_.
+Again, the field--particle interaction depends on its sign,
+
+| Field       | Interpretation     |
+|:------------|:-------------------|
+| $h_{i} < 0$ | Pulls towards $+1$ |
+| $h_{i} = 0$ | Indifferent        |
+| $h_{i} > 0$ | Pulls towards $-1$ |
+
+
 With this field, the total energy becomes
 $$H(s) \coloneqq \sum_{(i, j)} J_{ij} s_i s_j + \sum_{i} h_i s_i.$$
 
@@ -557,10 +573,9 @@ the accompanying paper [@qubojl] is a great place to further understand the tech
   ];
 
   const Jh = Array.from(J);
-  Jh.h = [-5, 3, 2, 1, -2, 4];
+  Jh.h = [-5, 0, 2, 1, -2, 4];
 
   const Q = figures.isingToQubo(J, Jh.h);
-
 
   new figures.Diagram("#figure-spin", states, J)
     .graph()
