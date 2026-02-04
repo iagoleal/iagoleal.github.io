@@ -1,6 +1,4 @@
 svg.diagram {
-  background:      #f9f9fb;
-  perspective:     600px;
   --color-active:  hsl(140 50% 40%);
 }
 
@@ -40,6 +38,7 @@ svg.diagram {
     filter:           drop-shadow(0 0 4px #b3c6e0);
     transform-origin: center;
     transform-box:    fill-box;
+    transform-style:  preserve-3d;
 
     &[state="1"] {
       stroke:    #1976d2;
@@ -50,16 +49,15 @@ svg.diagram {
       stroke:    #3b4a6b;
       animation: spin-cw 10s linear infinite;
     }
+
   }
 
   .edge {
     &[product="1"] {
-      stroke: #9a6868;
       filter: drop-shadow(0 0 6px #ffcdd2) drop-shadow(0 0 12px #ffcdd2);
     }
 
     &[product="-1"] {
-      stroke: #4f7751;
       filter: drop-shadow(0 0 4px #b7e1cd);
     }
   }
@@ -67,26 +65,45 @@ svg.diagram {
 
 .qubo {
   .site {
-    fill:    #e9ecf3;
-    stroke:  #b0b6c1;
-    filter:  none;
+    fill: #f5f7fa;
+    stroke: #b0b6c1;
+    filter: drop-shadow(0 1px 6px rgba(60, 120, 80, 0.04));
+    transition:
+      fill 0.3s cubic-bezier(.4,0,.2,1),
+      stroke 0.3s cubic-bezier(.4,0,.2,1),
+      filter 0.3s cubic-bezier(.4,0,.2,1);
 
     &[state="1"] {
-      stroke:       var(--color-active);
+      stroke: var(--color-active);
       stroke-width: 5px;
-      filter:       drop-shadow(0 0 4px hsl(142 71% 45% / 50%));
-      animation:    pulse-shadow 1.2s infinite;
+      filter: drop-shadow(0 0 10px hsl(142 71% 45% / 30%));
+      animation: pulse-shadow 1.2s infinite;
+      fill: #e0f7ef;
+    }
+
+    &:hover {
+      filter: drop-shadow(0 2px 16px hsl(142 71% 45% / 18%));
+      fill: #e6f2fa;
+      stroke: hsl(140 50% 50%);
     }
   }
 
   .edge {
     stroke:       #b0b6c1;
     stroke-width: 4px;
+    transition:
+      stroke 0.3s cubic-bezier(.4,0,.2,1),
+      filter 0.3s cubic-bezier(.4,0,.2,1);
 
     &[product="1"] {
       stroke:    var(--color-active);
-      filter:    drop-shadow(0 0 4px hsl(142 71% 45% / 50%));
+      filter:    drop-shadow(0 0 8px hsl(142 71% 45% / 40%));
       animation: pulse-shadow 1.2s infinite;
+    }
+
+    &:hover {
+      stroke: hsl(140 50% 50%);
+      filter: drop-shadow(0 0 12px hsl(142 71% 45% / 25%));
     }
   }
 }
@@ -113,6 +130,7 @@ svg.diagram {
 /* Popup */
 .diagram-container {
   .popup {
+    display:        block;
     position:       absolute;
     z-index:        10;
     pointer-events: none;
@@ -124,9 +142,24 @@ svg.diagram {
     border:         1px solid #e0e3ea;
     font-size:      1rem;
     transition:     opacity 0.25s cubic-bezier(.4,0,.2,1);
-    display:        block;
     white-space:    nowrap;
     opacity:        0;
+    transform: translate(-50%, -150%);
+
+    &::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -8px; /* distance below popup */
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid #fff; /* match popup background */
+      filter: drop-shadow(0 1px 2px rgba(60,60,80,0.08));
+      pointer-events: none;
+    }
 
     &.visible {
       opacity:        1;

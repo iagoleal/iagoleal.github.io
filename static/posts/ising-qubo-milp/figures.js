@@ -1,3 +1,7 @@
+//
+// General Helpers =========================================
+//
+
 function renderMath(el, expr) {
   if (window.katex) {
     window.katex.render(expr, el, { displayMode: false });
@@ -20,9 +24,12 @@ function draw(el, tag, attrs, styles) {
   return el.appendChild(node);
 }
 
-function weight(edges, i, j) {
-    const se = edges.find(([[s, t], _]) => s === i && t === j);
-      return se ? se[1] : 0;
+function blink(el, c, duration=180) {
+  el.classList.remove(c);
+  el.classList.add(c);
+  setTimeout(() => { el.classList.remove(c); }, duration);
+
+  return el;
 }
 
 function ArrayListener(xs) {
@@ -54,6 +61,93 @@ function ArrayListener(xs) {
     }
   );
 }
+
+//
+// Geometry =========================================
+//
+
+function getSvgBBoxAnchor(el) {
+  const svg  = el.ownerSVGElement;
+  const ctm  = svg.getScreenCTM();
+  const rect = el.getBBox();
+
+  const point = svg.createSVGPoint();
+  point.x = rect.x + rect.width / 2;
+  point.y = rect.y + rect.height / 2;
+
+  const screenPoint = point.matrixTransform(ctm);
+  return {
+    x: screenPoint.x,
+    y: screenPoint.y,
+  };
+}
+
+function edgeGeometry(p, q) {
+  const mx = (p.x + q.x) / 2;
+  const my = (p.y + q.y) / 2;
+  const dx = q.y - p.y;
+  const dy = p.x - q.x;
+  const norm = Math.sqrt(dx*dx + dy*dy) || 1;
+  return {
+    mid:    { x: mx, y: my },
+    normal: {x: dx / norm, y: dy / norm},
+    norm,
+  };
+}
+
+//
+// UI Classes =========================================
+//
+
+class MathLabel {
+  #label;
+  #value;
+
+  constructor(container, label = "", value = "") {
+    this.element = document.createElement("div");
+    this.element.className = "math-label";
+    container.appendChild(this.element);
+
+    // Create label and value spans
+    this.labelSpan = document.createElement("span");
+    this.valueSpan = document.createElement("span");
+    this.valueSpan.className = "energy-value";
+
+    this.element.appendChild(this.labelSpan);
+    this.element.appendChild(document.createTextNode(" = "));
+    this.element.appendChild(this.valueSpan);
+
+    this.#value = value;
+    this.#label = label;
+    this.render();
+  }
+
+  set value(val) {
+    if (val !== this.#value) {
+      this.#value = val;
+      this.render();
+
+      blink(this.valueSpan, "energy-changed");
+
+      return val;
+    }
+  }
+
+  render() {
+    renderMath(this.labelSpan, this.#label);
+    renderMath(this.valueSpan, this.#value.toString());
+  }
+}
+
+function binaryCoeffs(lb, ub) {
+  const bits = Math.ceil(Math.log2(ub - lb + 1));
+  const coeffs = Array.from({ length: bits }, (_, j) => {
+    return j < bits - 1 ? 2 ** j : (ub - lb - (2 ** (bits - 1)) + 1)
+  });
+
+  return coeffs;
+}
+
 
 class Popup {
   constructor(container, className = "popup") {
@@ -100,20 +194,14 @@ class Popup {
   }
 }
 
-function wavyPath(x1, y1, x2, y2, t, amplitude = 3, frequency = 2) {
-  // Midpoint
-  const mx = (x1 + x2) / 2;
-  const my = (y1 + y2) / 2;
-  // Perpendicular direction
-  const dx = y2 - y1;
-  const dy = x1 - x2;
-  const len = Math.sqrt(dx*dx + dy*dy) || 1;
-  // Animate the amplitude with time
+function wavyPath(p, q, t, amplitude = 3, frequency = 2) {
+  const { mid, normal} = edgeGeometry(p, q);
   const phase = Math.sin(t * frequency) * amplitude;
-  const cx = mx + phase * dx / len;
-  const cy = my + phase * dy / len;
-  // Quadratic Bezier from (x1,y1) to (x2,y2) with control (cx,cy)
-  return `M${x1},${y1} Q${cx},${cy} ${x2},${y2}`;
+
+  const cx = mid.x + phase * normal.x;
+  const cy = mid.y + phase * normal.y;
+
+  return `M${p.x},${p.y} Q${cx},${cy} ${q.x},${q.y}`;
 }
 
 function edgeTensionController(edge, a, b) {
@@ -122,7 +210,7 @@ function edgeTensionController(edge, a, b) {
   const setShape = (wavy, t = 0) =>
     edge.setAttribute(
       "d",
-      wavy ? wavyPath(a.x, a.y, b.x, b.y, t) : `M${a.x},${a.y} ${b.x},${b.y}`
+      wavy ? wavyPath(a, b, t) : `M${a.x},${a.y} ${b.x},${b.y}`
     );
 
   const animate = () => {
@@ -144,39 +232,9 @@ function edgeTensionController(edge, a, b) {
   };
 }
 
-export function isingToQubo(adjacency, h) {
-  const N = h.length;
-
-  // Build full J matrix (symmetric)
-  const J = Array.from({ length: N }, () => Array(N).fill(0));
-  for (const [[i, j], w] of adjacency) {
-    J[i][j] = w;
-    J[j][i] = w;
-  }
-
-  // Q = 4J - 2*Diag((J + J^T)1 + h)
-  // (J + J^T)1 = 2 * row sums (since J is symmetric)
-  const diag = [];
-  for (let i = 0; i < N; ++i) {
-    let rowSum = 0;
-    for (let j = 0; j < N; ++j)
-      rowSum += J[i][j];
-    diag[i] = -2 * (2 * rowSum + h[i]);
-  }
-
-  // QUBO adjacency list
-  const qubo = [];
-  for (let i = 0; i < N; ++i) {
-    for (let j = i; j < N; ++j) {
-      let val = 4 * J[i][j];
-      if (i === j)
-        val += diag[i];
-      if (val !== 0)
-        qubo.push([[i, j], val]);
-    }
-  }
-  return qubo;
-}
+//
+// State Management ==============================================
+//
 
 class StateVector {
   constructor(states) {
@@ -266,6 +324,54 @@ class QuboStateVector extends StateVector {
   }
 }
 
+
+export function isingToQubo(adjacency, h) {
+  const N = h.length;
+
+  // Build full J matrix (symmetric)
+  const J = Array.from({ length: N }, () => Array(N).fill(0));
+  for (const [[i, j], w] of adjacency) {
+    J[i][j] = w;
+    J[j][i] = w;
+  }
+
+  // Q = 4J - 2*Diag((J + J^T)1 + h)
+  // (J + J^T)1 = 2 * row sums (since J is symmetric)
+  const diag = [];
+  for (let i = 0; i < N; ++i) {
+    let rowSum = 0;
+    for (let j = 0; j < N; ++j)
+      rowSum += J[i][j];
+    diag[i] = -2 * (2 * rowSum + h[i]);
+  }
+
+  // QUBO adjacency list
+  const qubo = [];
+  for (let i = 0; i < N; ++i) {
+    for (let j = i; j < N; ++j) {
+      let val = 4 * J[i][j];
+      if (i === j)
+        val += diag[i];
+      if (val !== 0)
+        qubo.push([[i, j], val]);
+    }
+  }
+  return qubo;
+}
+
+//
+//  Graph Diagrams ==============================================
+//
+
+function weight(edges, i, j = null) {
+  if (j === null) {
+    return edges.h?.[i] ?? 0;
+  }
+
+  const se = edges.find(([[s, t], _]) => s === i && t === j);
+  return se?.[1] ?? 0;
+}
+
 export class Diagram {
   #messages;
 
@@ -308,23 +414,23 @@ export class Diagram {
     const gs = draw(this.svg, "g");
 
     for (const [i, site] of pos.entries()) {
-      const g = draw(gs, "g", {});
+      const g = draw(gs, "g", {class: "site-wrapper"});
 
       const node = draw(g, "circle", {
         cx: site.x,
         cy: site.y,
         class: "site",
-        tabindex: 0,
         },
       );
 
       node.setAttribute("state", states.spin(i))
 
+      node.addEventListener("click", () => this.states.flip(i));
+
       states.observe(i, (_, v) => {
         node.setAttribute("state", this.states.spin(i)) // TODO: adjust status such that v = +/- 1
       });
 
-      node.addEventListener("click", () => this.states.flip(i));
     }
 
     this.#messages.nodes.push(
@@ -418,14 +524,10 @@ export class Diagram {
         x = pos[s].x;
         y = pos[s].y;
       } else { // Edge midpoint
-        const mx = (pos[s].x + pos[t].x) / 2;
-        const my = (pos[s].y + pos[t].y) / 2;
-        const dx = pos[t].y - pos[s].y;
-        const dy = pos[s].x - pos[t].x;
-        const len = Math.sqrt(dx*dx + dy*dy) || 1;
+        const { mid, normal} = edgeGeometry(pos[s], pos[t]);
         const offset = 28;
-        x = mx + offset * dx / len;
-        y = my + offset * dy / len;
+        x = mid.x + offset * normal.x;
+        y = mid.y + offset * normal.y;
       }
 
       draw(gw, "text", {
@@ -525,7 +627,7 @@ export class Diagram {
 
     const redraw = () => {
       const energy = states.energy(edges);
-      mathLabel.setValue(energy);
+      mathLabel.value = energy;
     };
 
     states.observe(redraw);
@@ -569,15 +671,17 @@ export class Diagram {
         return `\\begin{aligned} ${lines.join(' \\\\[1ex] ')} \\end{aligned}`;
       };
 
-      el.addEventListener('mousemove', (e) => {
+      el.addEventListener('pointerenter', (e) => {
         const containerRect = popup.container.getBoundingClientRect();
+        const anchor = getSvgBBoxAnchor(el);
+
         popup.show(
           processMessages(),
-          e.clientX - containerRect.left,
-          e.clientY - containerRect.top
+          anchor.x - containerRect.left,
+          anchor.y - containerRect.top,
         );
       });
-      el.addEventListener('mouseleave', () => popup.hide());
+      el.addEventListener('pointerleave', () => popup.hide());
 
       states.observe(() => {
         if (popup.visible && el.matches(':hover')) {
@@ -590,62 +694,10 @@ export class Diagram {
   }
 }
 
-class MathLabel {
-  #label;
-  #value;
 
-  constructor(container, label = "", value = "") {
-    this.element = document.createElement("div");
-    this.element.className = "math-label";
-    container.appendChild(this.element);
-
-    // Create label and value spans
-    this.labelSpan = document.createElement("span");
-    this.valueSpan = document.createElement("span");
-    this.valueSpan.className = "energy-value";
-
-    this.element.appendChild(this.labelSpan);
-    this.element.appendChild(document.createTextNode(" = "));
-    this.element.appendChild(this.valueSpan);
-
-    this.#value = value;
-    this.#label = label;
-    this.show();
-  }
-
-  setLabel(label) {
-    this.#label = label;
-    this.show();
-  }
-
-  setValue(val) {
-    if (val === this.#value)
-      return;
-    this.#value = val;
-    this.show();
-
-    // Blink
-    this.valueSpan.classList.remove("energy-changed");
-    this.valueSpan.classList.add("energy-changed");
-    setTimeout(() => {
-      this.valueSpan.classList.remove("energy-changed");
-    }, 180);
-  }
-
-  show() {
-    renderMath(this.labelSpan, this.#label);
-    renderMath(this.valueSpan, this.#value.toString());
-  }
-}
-
-function binaryCoeffs(lb, ub) {
-  const bits = Math.ceil(Math.log2(ub - lb + 1));
-  const coeffs = Array.from({ length: bits }, (_, j) => {
-    return j < bits - 1 ? 2 ** j : (ub - lb - (2 ** (bits - 1)) + 1)
-  });
-
-  return coeffs;
-}
+//
+//  Encoding Diagrams ==============================================
+//
 
 const EncodingModes = {
   onehot: {
@@ -735,7 +787,6 @@ export class EncodingElement {
     return this;
   }
 
-
   #addLabel(writer) {
     let div = this.#container.querySelector('.math-label-container');
     if (!div) {
@@ -747,9 +798,7 @@ export class EncodingElement {
     const [formula, cb] = writer();
     const label = new MathLabel(div, formula, cb());
 
-    // Define the callback ONCE
-    const update = () => label.setValue(cb());
-    this.#states.observe(update);
+    this.#states.observe(() => label.value = cb());
 
     return label;
   }
