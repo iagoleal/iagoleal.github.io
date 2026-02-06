@@ -1,0 +1,33 @@
+/*
+  ~*~ Post Typography ~*~
+*/
+
+article {
+  width: calc(var(--article-width));
+  margin: auto;
+  margin-bottom: 40px;
+}
+
+#title-block-header {
+  margin: 15vh 20px 15vh;
+
+  h1.title {
+    font-size: max(2rem, calc(1rem + 3vw));
+    margin-bottom: 20px;
+    font-weight: 400;
+  }
+
+  .subtitle {
+    display:       block;
+    color:         var(--color-faded);
+    font-style:    italic;
+    margin-bottom: 0.5rem;
+    text-indent:   1.5rem;
+  }
+
+  .date {
+    text-align: center;
+    font-size:  1.3rem;
+    color:      var(--color-faded);
+  }
+}
