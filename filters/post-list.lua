@@ -75,8 +75,8 @@ function Block(elem)
 
       local div = pandoc.Div({
         pandoc.BulletList(postlist)
-      }, {
-        class = "post-list",
+        }, {
+          class = "post-list",
       })
 
       return div

@@ -85,98 +85,95 @@
     </li>
   </ul>
 </section>
-```
 
+<!-- Publications panel -->
+<section id="publications" class="panel" style="grid-column: 1 / -1;">
+  <h2 class="section-title">Publications</h2>
 
-```{=html}
-  <!-- Publications panel -->
-  <section id="publications" class="panel" style="grid-column: 1 / -1;">
-    <h2 class="section-title">Publications</h2>
+  <ol class="pub-list" aria-label="Publications">
+    <li>
+      <div class="title">
+        <span class="date">2025</span>
+        <a href="https://openreview.net/forum?id=EL002DTBRA">
+          Quantum-Inspired Tensor Network Methods for Quadratic Unconstrained Binary Optimization
+        </a>
+      </div>
+      <div class="meta">
+        <span class="authors">
+          Iago Leal de Freitas, João Victor Paim de Cerqueira Melo Souza, David E. Bernal Neira
+        </span>
+        <a class="venue" href="https://openreview.net/forum?id=EL002DTBRA">NeurIPS 2025 ScaleOpt Workshop</a>
+      </div>
+    </li>
 
-    <ul class="pub-list" aria-label="Publications">
-      <li class="pub-item">
-        <div class="pub-title">
-          <span class="pub-year">2025</span>
-          <a href="https://openreview.net/forum?id=EL002DTBRA">
-            Quantum-Inspired Tensor Network Methods for Quadratic Unconstrained Binary Optimization
-          </a>
-        </div>
-        <div class="pub-meta">
-          <span class="pub-authors">
-            Iago Leal de Freitas, João Victor Paim de Cerqueira Melo Souza, David E. Bernal Neira
-          </span>
-          <a class="pub-venue" href="https://openreview.net/forum?id=EL002DTBRA">NeurIPS 2025 ScaleOpt Workshop</a>
-        </div>
-      </li>
+    <li>
+      <div class="title">
+        <span class="date">2025</span>
+        <a href="https://arxiv.org/abs/2502.16783">
+          Generalizing the Invertible Matrix Theorem with Linear Relations using Graphical Linear Algebra
+        </a>
+      </div>
+      <div class="meta">
+        <span class="authors">Iago Leal de Freitas, Júlia Mota, João Paixão, Lucas Rufino</span>
+        <span class="venue">Submitted to Fundamenta Informaticae</span>
+        <a class="venue arxiv" href="https://arxiv.org/abs/2502.16783">arXiv:2502.16783</a>
+      </div>
+    </li>
 
-      <li class="pub-item">
-        <div class="pub-title">
-          <span class="pub-year">2025</span>
-          <a href="https://arxiv.org/abs/2502.16783">
-            Generalizing the Invertible Matrix Theorem with Linear Relations using Graphical Linear Algebra 
-          </a>
-        </div>
-        <div class="pub-meta">
-          <span class="pub-authors">Iago Leal de Freitas, Júlia Mota, João Paixão, Lucas Rufino</span>
-          <span class="pub-venue">Submitted to Fundamenta Informaticae</span>
-          <a class="pub-venue pub-arxiv" href="https://arxiv.org/abs/2502.16783">arXiv:2502.16783</a>
-        </div>
-      </li>
+    <li>
+      <div class="title">
+        <span class="date">2025</span>
+        <a href="https://pubs.acs.org/doi/10.1021/acs.iecr.4c03805">
+          Federated Learning in Chemical Engineering: A Tutorial on a Framework for Privacy-Preserving Collaboration across Distributed Data Sources
+        </a>
+      </div>
+      <div class="meta">
+        <span class="authors">Siddhant Dutta, Iago Leal de Freitas, Pedro Maciel Xavier, Claudio Miceli de Farias, David E. Bernal Neira</span>
+        <a class="venue" href="https://pubs.acs.org/doi/10.1021/acs.iecr.4c03805">I&ECR 2025, 64, 15</a>
+        <a class="venue arxiv" href="https://arxiv.org/abs/2411.16737">arxiv:2411.16737</a>
+      </div>
+    </li>
 
-      <li class="pub-item">
-        <div class="pub-title">
-          <span class="pub-year">2025</span>
-          <a href="https://pubs.acs.org/doi/10.1021/acs.iecr.4c03805">
-            Federated Learning in Chemical Engineering: A Tutorial on a Framework for Privacy-Preserving Collaboration across Distributed Data Sources
-          </a>
-        </div>
-        <div class="pub-meta">
-          <span class="pub-authors">Siddhant Dutta, Iago Leal de Freitas, Pedro Maciel Xavier, Claudio Miceli de Farias, David E. Bernal Neira</span>
-          <a class="pub-venue" href="https://pubs.acs.org/doi/10.1021/acs.iecr.4c03805">I&ECR 2025, 64, 15</a>
-          <a class="pub-venue pub-arxiv" href="https://arxiv.org/abs/2411.16737">arxiv:2411.16737</a>
-        </div>
-      </li>
+    <li>
+      <div class="title">
+        <span class="date">2024</span>
+        <a href="https://arxiv.org/abs/2409.11430">
+          Federated Learning with Quantum Computing and Fully Homomorphic Encryption: A Novel Computing Paradigm Shift in Privacy-Preserving ML
+        </a>
+      </div>
+      <span class="authors">Siddhant Dutta, Pavana P Karanth, Pedro Maciel Xavier, Iago Leal de Freitas, Nouhaila Innan, Sadok Ben Yahia, Muhammad Shafique, David E. Bernal Neira</span>
+      <div class="meta">
+        <a class="venue" href="https://openreview.net/group?id=NeurIPS.cc/2024/Workshop/MLNCP#tab-accept-poster">NeurIPS 2024 MLNCP Workshop</a>
+        <a class="venue arxiv" href="https://arxiv.org/abs/2409.11430">arxiv:2409.11430</a>
+      </div>
+    </li>
 
-      <li class="pub-item">
-        <div class="pub-title">
-          <span class="pub-year">2024</span>
-          <a href="https://arxiv.org/abs/2409.11430">
-            Federated Learning with Quantum Computing and Fully Homomorphic Encryption: A Novel Computing Paradigm Shift in Privacy-Preserving ML
-          </a>
-        </div>
-        <span class="pub-authors">Siddhant Dutta, Pavana P Karanth, Pedro Maciel Xavier, Iago Leal de Freitas, Nouhaila Innan, Sadok Ben Yahia, Muhammad Shafique, David E. Bernal Neira</span>
-        <div class="pub-meta">
-          <a class="pub-venue" href="https://openreview.net/group?id=NeurIPS.cc/2024/Workshop/MLNCP#tab-accept-poster">NeurIPS 2024 MLNCP Workshop</a>
-          <a class="pub-venue pub-arxiv" href="https://arxiv.org/abs/2409.11430">arxiv:2409.11430</a>
-        </div>
-      </li>
+    <li>
+      <div class="title">
+        <span class="date">2023</span>
+        <a href="https://arxiv.org/abs/2307.13190">
+          A Multicut Approach to Compute Upper Bounds for Risk-Averse SDDP
+        </a>
+      </div>
+      <span class="authors">Joaquim Dias Garcia, Iago Leal de Freitas, Raphael Chabar, Mario Veiga Pereira</span>
+      <div class="meta">
+        <a class="venue arxiv" href="https://arxiv.org/abs/2307.13190">arxiv:2307.13190</a>
+      </div>
+    </li>
 
-      <li class="pub-item">
-        <div class="pub-title">
-          <span class="pub-year">2023</span>
-          <a href="https://arxiv.org/abs/2307.13190">
-            A Multicut Approach to Compute Upper Bounds for Risk-Averse SDDP
-          </a>
-        </div>
-        <span class="pub-authors">Joaquim Dias Garcia, Iago Leal de Freitas, Raphael Chabar, Mario Veiga Pereira</span>
-        <div class="pub-meta">
-          <a class="pub-venue pub-arxiv" href="https://arxiv.org/abs/2307.13190">arxiv:2307.13190</a>
-        </div>
-      </li>
-
-      <li class="pub-item">
-        <div class="pub-title">
-          <span class="pub-year">2019</span>
-          <a href="/data/mscthesis.pdf">
-            Convexification by Averages
-          </a>
-        </div>
-        <span class="pub-authors">Iago Leal de Freitas</span>
-        <div class="pub-meta">
-          <a class="pub-venue" href="/data/mscthesis.pdf">Master's Thesis</a>
-        </div>
-      </li>
-    </ul>
-  </section>
+    <li>
+      <div class="title">
+        <span class="date">2019</span>
+        <a href="/data/mscthesis.pdf">
+          Convexification by Averages
+        </a>
+      </div>
+      <span class="authors">Iago Leal de Freitas</span>
+      <div class="meta">
+        <a class="venue" href="/data/mscthesis.pdf">Master's Thesis</a>
+      </div>
+    </li>
+  </ol>
+</section>
 ```
 :::

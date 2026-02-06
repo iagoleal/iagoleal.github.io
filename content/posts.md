@@ -5,7 +5,7 @@ title: Posts
 # Posts
 
 ```{=html}
-<ul class="theme-legend" role="list">
+<ul class="theme-legend">
   <li>
     <span class="theme-marker math" title="math"></span>
     <span>math</span>
