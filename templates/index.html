@@ -60,11 +60,13 @@
     $include-before$
     $endfor$
 
-    $if(post)$
-      $ post.html() $
-    $else$
-      $body$
-    $endif$
+    <main id="main-content">
+      $if(post)$
+        $ post.html() $
+      $else$
+        $body$
+      $endif$
+    </main>
 
     $for(include-after)$
     $include-after$

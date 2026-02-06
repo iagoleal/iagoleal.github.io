@@ -10,8 +10,7 @@ local Date = setmetatable({
   end,
 
   __tostring = function(self)
-    local delimiter = "."
-    return fmt("%04d%s%02d%s%02d", self.year, delimiter, self.month, delimiter, self.day)
+    return self:string("-")
   end,
 
 }, {
@@ -49,6 +48,11 @@ local months = {
 function Date.rfc822(self)
   month = months[self.month]
   return fmt("%02d %s %4d 00:00:00 GMT", self.day, month, self.year)
+end
+
+function Date.string(self, delimiter)
+  delimiter = delimiter or "-"
+  return fmt("%04d%s%02d%s%02d", self.year, delimiter, self.month, delimiter, self.day)
 end
 
 return Date

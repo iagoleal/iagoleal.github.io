@@ -25,6 +25,5 @@ title: Posts
 </ul>
 ```
 
-<article>
+
 {{post-list}}
-</article>

@@ -10,25 +10,6 @@ local function getfilename(path)
   return fname
 end
 
-local function theme_marker(themes)
-  local classes = {"theme-marker", table.unpack(themes)}
-
-  return pandoc.RawInline("html", string.format(
-    '<span class="%s"></span>', table.concat(classes, " ")))
-end
-
-local function makeitem(meta)
-  return pandoc.List {
-    pandoc.Plain {
-      theme_marker(meta.theme),
-      pandoc.Link({
-        pandoc.Span(meta.title, {class = "title"}),
-        pandoc.Span(tostring(meta.date), {class = "date"})
-      }, meta.href)
-    }
-  }
-end
-
 --- Extracts a list of themes as strings from a pandoc List or single element.
 --- @param xs pandoc.List|string A pandoc List of themes or a single theme
 --- @return string[] List of theme names as strings
@@ -40,6 +21,40 @@ local function extract_strings(xs)
   return xs:map(pandoc.utils.stringify)
 end
 
+local function theme_marker(themes)
+  local classes = {"theme-marker", table.unpack(themes)}
+
+  return table.concat(classes, " ")
+end
+
+local function makeitem(meta)
+  return fmt([[
+    <li>
+      <span class="%s" aria-hidden="true"></span>
+      <a href="%s">
+        <span class="title">%s</span>
+        <time class="date" datetime="%s">%s</time>
+      </a>
+    </li>
+    ]],
+    theme_marker(meta.theme),
+    meta.href,
+    meta.title,
+    meta.date:string("-"),
+    meta.date:string(".")
+  )
+end
+
+local function makelist(postlist)
+  return fmt([[
+    <ol class="post-list">
+      %s
+    </ol>
+    ]],
+    table.concat(postlist, "\n")
+  )
+end
+
 local function make_postlist(path, n)
   local posts = pandoc.system.list_directory(path)
   n = math.min(n or math.huge, #posts)
@@ -48,21 +63,24 @@ local function make_postlist(path, n)
 
 
   local metadata = map(posts, function(post)
-    local meta = fs.read_metadata(pandoc.path.join{path, post})
-
     pandoc.log.info("Post list: reading post " .. post)
 
-    meta.href       = fmt("/posts/%s/", getfilename(post))
-    meta.date       = Date(meta.date)
-    meta.theme      = extract_strings(meta.theme)
-    meta.requisites = extract_strings(meta.requisites)
+    local meta = fs.read_metadata(pandoc.path.join{path, post})
 
-    return meta
+    return {
+      href       = fmt("/posts/%s/", getfilename(post)),
+      date       = Date(meta.date),
+      theme      = extract_strings(meta.theme),
+      title      = pandoc.utils.stringify(meta.title),
+      requisites = extract_strings(meta.requisites),
+    }
   end)
 
   table.sort(metadata, function(a, b) return a.date > b.date end)
 
-  return map(take(metadata, n), makeitem)
+  local items = map(take(metadata, n), makeitem)
+
+  return makelist(items)
 end
 
 function Block(elem)
@@ -73,11 +91,7 @@ function Block(elem)
     if num then
       local postlist = make_postlist("content/posts", tonumber(num))
 
-      local div = pandoc.Div({
-        pandoc.BulletList(postlist)
-        }, {
-          class = "post-list",
-      })
+      local div = pandoc.RawBlock("html", postlist)
 
       return div
     end

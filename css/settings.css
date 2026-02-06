@@ -17,7 +17,7 @@
   --color-typography-dark: var(--color-background, #fdfdfd);
 
   --base-padding:     16px;
-  --article-width:    min(40rem, 100% - 32px); /* ~80 chars or full page with 16px margin */
+  --article-width:    min(40rem, 100vw - 32px); /* ~80 chars or full page with 16px margin */
 
   --font-base:    'Montserrat', 'Avenir', 'Avenir Next LT Pro', 'Corbel', 'URW Gothic', source-sans-pro, sans-serif;
   --font-heading: 'Montserrat', 'Lato', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', 'Noto Sans', sans-serif;
