@@ -32,59 +32,59 @@
 :::
 
 ```{=html}
-    <section id="libraries" class="panel">
-      <h2 class="section-title">Scientific Libraries</h2>
+<section id="libraries" class="panel">
+  <h2 class="section-title">Scientific Libraries</h2>
 
-      <ul class="lib-list">
-        <li>
-          <a class="lib-item" href="https://github.com/SECQUOIA/TenSolver.jl">
-            <div class="lib-icon">
-              <img style="display: inline-block;" class="" src="/img/portfolio/secquoia.png" alt="TS">
-            </div>
-            <div class="lib-body">
-              <div class="lib-name">TenSolver.jl</div>
-              <div class="lib-desc">Quantum-Inspired Tensor Network Solver for Quadratic Unconstrained Binary Optimization.</div>
-            </div>
-          </a>
-        </li>
+  <ul class="lib-list">
+    <li>
+      <a href="https://github.com/SECQUOIA/TenSolver.jl">
+        <figure class="icon">
+          <img style="display: inline-block;" class="" src="/img/portfolio/secquoia.png" alt="TS">
+        </figure>
+        <div>
+          <h3 class="title">TenSolver.jl</h3>
+          <p class="description">Quantum-Inspired Tensor Network Solver for Quadratic Unconstrained Binary Optimization.</p>
+        </div>
+      </a>
+    </li>
 
-        <li>
-          <a class="lib-item" href="https://iagoleal.github.io/RankRevealing.jl">
-            <div class="lib-icon">
-              <img class="lib-icon" src="/img/portfolio/rank-revealing.svg" alt="RR">
-            </div>
-            <div class="lib-body">
-              <div class="lib-name">RankRevealing.jl</div>
-              <div class="lib-desc">Rank-sensitive algorithms for matrix decompositions over arbitrary fields.</div>
-            </div>
-          </a>
-        </li>
+    <li>
+      <a href="https://iagoleal.github.io/RankRevealing.jl">
+        <figure class="icon">
+          <img class="icon" src="/img/portfolio/rank-revealing.svg" alt="RR">
+        </figure>
+        <div>
+          <h3 class="title">RankRevealing.jl</h3>
+          <p class="description">Rank-sensitive algorithms for matrix decompositions over arbitrary fields.</p>
+        </div>
+      </a>
+    </li>
 
-        <li>
-          <a class="lib-item" href="https://iagoleal.github.io/Hodge.jl">
-            <div class="lib-icon">
-              <img style="display: inline-block;" class="" src="/img/portfolio/hodge.svg" alt="H">
-            </div>
-            <div class="lib-body">
-              <div class="lib-name">Hodge.jl</div>
-              <div class="lib-desc">A clean way to calculate Betti numbers of simplicial complexes and (discrete) Hodge decompositions of cochains.</div>
-            </div>
-          </a>
-        </li>
+    <li>
+      <a href="https://iagoleal.github.io/Hodge.jl">
+        <figure class="icon">
+          <img  class="" src="/img/portfolio/hodge.svg" alt="H">
+        </figure>
+        <div>
+          <h3 class="title">Hodge.jl</h3>
+          <p class="description">A clean way to calculate Betti numbers of simplicial complexes and (discrete) Hodge decompositions of cochains.</p>
+        </div>
+      </a>
+    </li>
 
-        <li>
-          <a class="lib-item" href="https://iagoleal.github.io/DeformableBodies.jl/stable/">
-            <div class="lib-icon">
-              <img class="lib-icon" src="/img/portfolio/deformable-bodies.svg" alt="DB">
-            </div>
-            <div class="lib-body">
-              <div class="lib-name">DeformableBodies.jl</div>
-              <div class="lib-desc">Dynamics simulator for the change of reference frame problem of self-deforming bodies.</div>
-            </div>
-          </a>
-        </li>
-      </ul>
-    </section>
+    <li>
+      <a href="https://iagoleal.github.io/DeformableBodies.jl/stable/">
+        <figure class="icon">
+          <img class="icon" src="/img/portfolio/deformable-bodies.svg" alt="DB">
+        </figure>
+        <div>
+          <h3 class="title">DeformableBodies.jl</h3>
+          <p class="description">Dynamics simulator for the change of reference frame problem of self-deforming bodies.</p>
+        </div>
+      </a>
+    </li>
+  </ul>
+</section>
 ```
 
 

@@ -1,5 +1,5 @@
 # Compilation parameters
-template: templates/default.html
+template: templates/index.html
 standalone: true
 self-contained: false
 writer: html5

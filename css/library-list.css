@@ -1,0 +1,74 @@
+/*
+* Libraries List *
+*/
+
+ul.lib-list {
+  list-style: none;
+  margin:     0;
+  padding:    0;
+  display:    grid;
+  gap:        0.5rem;
+
+  > li {
+    display:     flex;
+    gap:         0.75rem;
+    align-items: center;
+    padding:     12px;
+    border:      1px solid var(--color-faded);
+    transition:  box-shadow .12s, border-color .12s, transform .08s;
+    min-width:   0;
+
+    &:hover,
+    &:focus-within {
+      border-color: hsl(from var(--color-typography) h s l / 90%);
+      box-shadow:   5px 4px 4px rgba(36, 36, 36, 0.5);
+      transform:    translateY(-2px);
+      color:        currentColor;
+    }
+
+    > a {
+      flex:            1 1 0;
+      display:         flex;
+      gap:             0.75rem;
+      align-items:     center;
+      text-decoration: none;
+      color:           inherit;
+      min-width:       0;
+      outline:         none;
+    }
+  }
+
+  .icon {
+    display:         flex;
+    flex:            0 0 5cqw;
+    width:           5cqw;
+    height:          5cqw;
+    align-items:     center;
+    justify-content: center;
+    margin:          0;
+    transition: width 0.3s, height 0.3s, flex-basis 0.3s;
+
+    @media (max-width:540px) {
+      width:     15qw;
+      height:    15cqw;
+      flex:      0 0 15cqw;
+    }
+  }
+
+  .title {
+    font-weight:   700;
+    font-family:   var(--font-heading);
+    font-size:     1rem;
+    margin: 0;
+    white-space:   nowrap;
+    overflow:      hidden;
+    text-overflow: ellipsis;
+  }
+
+  .description {
+    font-size:  var(--font-size-small);
+    color:      var(--color-faded);
+    text-align: left;
+  }
+
+}

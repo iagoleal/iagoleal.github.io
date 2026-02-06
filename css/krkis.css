@@ -257,6 +257,7 @@ blockquote p {
 }
 
 /* Tables -- PANDOC + Sakura */
+
 table {
   margin:               1rem auto;
   border-collapse:      collapse;
@@ -371,31 +372,30 @@ article {
   margin-bottom: 40px;
 }
 
-
 #title-block-header {
   margin: 15vh 20px 15vh;
+
+  h1.title {
+    font-size: max(2rem, calc(1rem + 3vw));
+    margin-bottom: 20px;
+    font-weight: 400;
+  }
+
+  .subtitle {
+    display:       block;
+    color:         var(--color-faded);
+    font-style:    italic;
+    margin-bottom: 0.5rem;
+    text-indent:   1.5rem;
+  }
+
+  .date {
+    text-align: center;
+    font-size:  1.3rem;
+    color:      var(--color-faded);
+  }
 }
 
-h1.title {
-  font-size: max(2rem, calc(1rem + 3vw));
-  margin-bottom: 20px;
-  font-weight: 400;
-}
-
-.subtitle {
-  display:       block;
-  color:         var(--color-faded);
-  font-style:    italic;
-  margin-bottom: 0.5rem;
-  text-indent:   1.5rem;
-}
-
-
-#title-block-header .date {
-  text-align: center;
-  font-size:  1.3rem;
-  color:      var(--color-faded);
-}
 
 /*
   ~*~ Toggle Button for Checkbox ~*~
