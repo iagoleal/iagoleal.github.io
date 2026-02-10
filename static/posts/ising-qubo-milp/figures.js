@@ -717,6 +717,9 @@ const EncodingModes = {
     value(state, lb) {
       return lb + state.findIndex(Boolean);
     },
+
+    inputtype: "radio",
+    title: "One-hot"
   },
   binary: {
     init(lb, ub, initial) {
@@ -741,7 +744,10 @@ const EncodingModes = {
     value(state, lb, ub) {
       const coeffs = binaryCoeffs(lb, ub);
       return lb + state.reduce((sum, bit, i) => sum + (bit ? coeffs[i] : 0), 0);
-    }
+    },
+
+    inputtype: "checkbox",
+    title: "Binary",
   }
 };
 
@@ -751,39 +757,74 @@ export class EncodingElement {
   #mode;
   #lb;
   #ub;
+  #uuid;
+  #onChange;
 
-  constructor(id, lower, upper, initial = 0, mode = "onehot") {
+  constructor(id, lower, upper, initial = 0, mode = "onehot", options = {}) {
     this.#container = document.querySelector(id);
-    this.#mode = EncodingModes[mode];
-    this.#lb   = lower;
-    this.#ub   = upper;
-    this.#states = ArrayListener(this.#mode.init(lower, upper, initial));
+    this.#mode      = EncodingModes[mode];
+    this.#lb        = lower;
+    this.#ub        = upper;
+    this.#states    = ArrayListener(this.#mode.init(lower, upper, initial));
+    this.#uuid      = `encoding-group-${crypto.randomUUID()}`;
+
+    this.render();
   }
 
-  buttons() {
-    const row = document.createElement("div");
-    row.className = "encoding-diagram";
+  render() {
+    this.#container.classList.add("encoding-diagram");
+    this.#container.innerHTML = "";
 
-    const buttons = this.#states.map((state, j) => {
-      const button = document.createElement("div");
-      button.className   = "encoding-button";
-      renderMath(button, `z_{${j+1}}`);
-      button.classList.toggle("active", state);
+    const fieldset = document.createElement("fieldset");
 
-      button.addEventListener("click", () => {
+    const legend = document.createElement("legend");
+    legend.textContent = `${this.#mode.title} Encoding`;
+    fieldset.append(legend);
+
+    this.#states.forEach((state, j) => {
+      const label = document.createElement("label");
+
+      const mathSpan = document.createElement("span");
+      renderMath(mathSpan, `z_{${j+1}}`);
+
+      const input   = document.createElement("input");
+      input.type    = this.#mode.inputtype;
+      input.id      = `${this.#uuid}-z${j+1}`;
+      input.name    = this.#uuid;
+      input.value   = j;
+      input.checked = state;
+
+      input.addEventListener("change", () => {
         this.#mode.toggle(this.#states, j);
-        buttons.forEach((button, i) => button.classList.toggle("active", this.#states[i]));
       });
 
-      row.appendChild(button);
+      this.#states.observe(j, () => {
+        input.checked = this.#states[j];
+      });
 
-      this.#states.observe(j, () => button.classList.toggle("active", this.#states[j]));
-
-      return button;
+      label.append(mathSpan, input);
+      fieldset.append(label);
     });
 
-    this.#container.appendChild(row);
 
+    this.#container.append(fieldset);
+
+    this.#addLabel(() => {
+      return ["K", () => this.#states.length]
+    });
+
+    this.#addLabel(() => {
+      return ["x", () => this.#mode.value(this.#states, this.#lb, this.#ub)]
+    });
+
+    return this;
+  }
+
+  setBounds(lb, ub, initial = 0) {
+    this.#lb = lb;
+    this.#ub = ub;
+    this.#states = ArrayListener(this.#mode.init(lb, ub, initial));
+    this.render();
     return this;
   }
 
@@ -792,24 +833,13 @@ export class EncodingElement {
     if (!div) {
       div = document.createElement('div');
       div.className = 'math-label-container';
-      this.#container.appendChild(div);
+      this.#container.append(div);
     }
 
     const [formula, cb] = writer();
     const label = new MathLabel(div, formula, cb());
-
     this.#states.observe(() => label.value = cb());
 
     return label;
-  }
-
-  label() {
-    this.#addLabel(() => ["x", () => this.#mode.value(this.#states, this.#lb, this.#ub)]);
-    return this;
-  }
-
-  labelNvar() {
-    this.#addLabel(() => ["K", () => this.#states.length]);
-    return this;
   }
 }

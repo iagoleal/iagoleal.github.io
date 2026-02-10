@@ -157,6 +157,7 @@ $$
 
 In the figure below, we represent an Ising model with 6 particles.
 The graph is interactive and you can click on the nodes to flip their spin.
+Hovering (or long pressing on mobile) a node or edge tells you its current state.
 Nodes rotating counterclockwise represent spin $+1$ particles,
 and rotating clockwise represent spin $-1$ particles.
 
@@ -302,14 +303,117 @@ For most problems,
 you can estimate appropriate bounds that every variable should satisfy,
 so it is not a big deal of an assumption.
 
-Binarize All the Variables
+To tackle this full form, we proceed in "steps",
+showing how to convert MILP with increasingly complicated parts to QUBO.
+
+Equality Penalization
+---------------------
+
+We start with a pure binary linear program
+in standard form,
+$$
+  \begin{array}{rl}
+    \min\limits_{x} & c^\top z \\
+    \textrm{s.t.}   & A z = b, \\
+                    & z \in \{0, 1\}^N.
+  \end{array}
+$$
+
+This problem becomes a QUBO by turning the constraints into a quadratic regularization term.
+More formally,
+we choose a _penalty factor_ $\rho > 0$ and move the constraint into the objective as
+$$
+  \begin{array}{rl}
+    \min\limits_{x} & c^\top z  + \rho (Az - b)^\top (A z - b)\\
+    \textrm{s.t.}   & z \in \{0, 1\}^N.
+  \end{array}
+$$
+
+This is already a QUBO!
+But we can find an explicit formula for the $Q$ matrix with some high school algebra.
+$$ \begin{array}{rcl}
+  & &c^\top z  + \rho (Az - b)^\top (A z - b)\\
+  &=& c^\top z + \rho \Big[ z^\top (A^\top A) z - 2b^\top A z + b^\top b \Big] \\
+  &=& z^\top (\rho A^\top A) z + (c - 2\rho A^\top b )^\top z + \rho b^\top b
+  \end{array}
+$$
+
+The constant $b^\top b$ is irrelevant for the minimization
+and you can safely ignore it.
+Also, as before, being binary makes the linear term equivalent to a quadratic diagonal.
+Taking all this into account,
+the final Q matrix is
+$$ Q = \rho A^\top A + \mathrm{Diag}(c - 2\rho A^\top b ).$$
+
+The only thing missing is how to properly choose the parameter $\rho$.
+We want to preserve the original solutions,
+so it should be large enough to force the minimum to "cancel it"
+by being at an originally feasible point.
+That is, whenever $Az = b$ the penalization term disappears and we are left with the original objective.
+
+More rigorously,
+let $M$ be the maximum attainable objective value,
+$M = \max_{z \in \{0,1\}^N} |c^\top z|$
+and $v$ be the constraint's _minimal squared violation_,
+$$ v =
+  \begin{array}{rl}
+    \min\limits_{z} & \norm{Az - b}^2_2 \\
+                    & A z \ne b \\
+    \textrm{s.t.}   & z \in \{0, 1\}^N,
+  \end{array}
+$$
+Choosing any penalty $\rho > \frac{M}{v}$
+guarantees that the QUBO objective function coincides with the MILP.
+
+Furthermore,
+we can always estimate $M \le \sum_i \abs{c_i}$.
+Also, if $A$ and $b$ have only integer components,
+the minimal violation must be at least one, i.e., $v \ge 1$.
+Thus, for integer programs a safe penalty choice is
+$\rho = \textstyle\sum_i \abs{c_i} + 1$.
+
+The discussion above works for a general equality constraint,
+but for more specific constraint there are simpler penalizations.
+I recommend the paper by @{glover_quantum_2019} for more details.
+
+
+Inequalities to Equalities
 --------------------------
 
-The first step in our conversion is to make all variables binary.
+If your problem has inequality constraints,
+you can use _slack variables_ to put it into QUBO form.
+Consider a constraint of the form $M x \le w$.
+This is the same as an equality constraint together with an additional variable
+representing the "inequality gap",
+$$
+\begin{aligned}
+  M x + s &= w, \\
+  s &\ge 0.
+\end{aligned}
+$$
+Moreover, since we're assuming $x$ to be bounded,
+we can calculate upper bounds for the components $s_i$
+by checking the maximum possible value for ${w_i - \sum_{j}M_{ij}x_j}$.
+This additional variable is, at first continuous,
+but in the next section we will learn how to substitute
+a continuous variable into binary ones.
+
+
+Encoding Variables as Binaries
+------------------------------
+
+The next step in our conversion is to make all variables binary.
 There are many other available encodings with their own pros and cons.
 For reasons of scope, we focus on the (in my opinion) most straightforward and useful ones:
 one-hot and binary expansion.
 But there are great surveys in the literature about all methods.[@qubojl] [@tamura_performance_2021]
+
+All the examples take a bounded (integer or real) variable $L \le x \le U$
+and substitute
+$x \mapsto \sum Y(j) z_j$
+with, perhaps, additional constraints.
+The $z_j$ are binary variables and
+$Y$ is an encoding-dependent function.
 
 ### One-Hot Encoding
 
@@ -324,7 +428,7 @@ $$x \in \{Y^{1},\ldots, Y^{K}\}.$$
 To binarize it,
 we associate a new variable $z_j \in \B$ to each $Y^j$,
 with the constraints that exactly one $z_j$ equals $1$
-and that $x$ equals to corresponding $Y^j$ value,
+and that $x$ equals the corresponding $Y^j$,
 $$
 \begin{aligned}
   \textstyle\sum_{j = 1}^{K} z_j &= 1, \\
@@ -342,7 +446,7 @@ This is a general framework we can apply to any kind of variable.
 Suppose $x \in \Z$ bounded by $L \le x \le U$.
 There are exactly ${K \coloneqq \floor{U} - \ceil{L}} + 1$
 values it can take.
-All you must do is to apply the procedure to
+All you must do is apply the procedure to
 $V = \{\ceil{L}, \ceil{L} + 1,\ldots, \floor{U}\}$.
 
 The graph below is a visualization of one-hot encoding
@@ -359,6 +463,17 @@ $$ L \le Y^{1} < Y^{j} < Y^{K} \le U.$$
 A common choice is uniformly with $Y^{j} =  L + j\frac{U - L}{K}.$
 Now we can proceed as before by implementing the "choice" constraints
 for the $Y^{j}$ values.
+
+Although this looks like a lot of variables at first
+(specially when compared to the binary encoding from next section),
+one-hot has a couple of advantages.
+First, it adds very mild coefficients to the objective function,
+which is great for numerical stability.
+Also, this is the only encoding that can be "tuned" for strange regions of multiple variables.
+For example, if we now that the constraints force $(x, y)$
+to only take a handful of values,
+we can adapt the one-hot encoding to directly represent this feasible region.
+This is out-of-scope for this post, however.
 
 ### Binary Expansion Encoding
 
@@ -393,95 +508,6 @@ The representation taking account the upper bound correction is
 $$ x = L + \sum_{j = -R}^{K-2} 2^j z_j + (U - 2^{K-1} + 1 - \Delta) z_{K-1}.$$
 Similarly to one-hot encoding,
 you can eliminate the $x$ variable by substituting this constraint everywhere in the program.
-
-Equality Penalization
----------------------
-
-At this point,
-we are left with a pure binary LP with only equality constraints.
-$$
-  \begin{array}{rl}
-    \min\limits_{x} & c^\top z \\
-    \textrm{s.t.}   & A z = b, \\
-                    & z \in \{0, 1\}^N.
-  \end{array}
-$$
-
-This problem becomes a QUBO by turning the constraints into a quadratic regularization term.
-More formally,
-we choose a _penalty factor_ $\rho > 0$ and move the constraint into the objective as
-$$
-  \begin{array}{rl}
-    \min\limits_{x} & c^\top z  + \rho (Az - b)^\top (A z - b)\\
-    \textrm{s.t.}   & z \in \{0, 1\}^N.
-  \end{array}
-$$
-
-This is already a QUBO!
-But we can find an explicit formula for the $Q$ matrix with some high school algebra.
-$$ \begin{array}{rcl}
-  & &c^\top z  + \rho (Az - b)^\top (A z - b)\\
-  &=& c^\top z + \rho \Big[ z^\top (A^\top A) z - 2b^\top A z + b^\top b \Big] \\
-  &=& z^\top (\rho A^\top A) z + (c - 2\rho A^\top b )^\top z + \rho b^\top b
-  \end{array}
-$$
-
-The constant $b^\top b$ is irrelevant for the minimization
-and you can safely ignore it.
-And, as before, being binary makes the linear term equivalent to a quadratic diagonal.
-Taking all this into account,
-the final Q matrix is
-$$ Q = \rho A^\top A + \mathrm{Diag}(c - 2\rho A^\top b ).$$
-
-The only thing missing is how to properly choose the parameter $\rho$.
-We want to preserve the original solutions,
-so it should be large enough to force the minimum to "cancel it"
-by being at an originally feasible point.
-That is, whenever $Az = b$ the penalization term disappears and we are left with the original objective.
-
-More rigorously,
-let $M$ be the maximum attainable objective value,
-$M = \max_{z \in \{0,1\}^N} |c^\top z|$
-and $v$ be the constraint's _minimal squared violation_,
-$$ v =
-  \begin{array}{rl}
-    \min\limits_{z} & \norm{Az - b}^2_2 \\
-                    & A z \ne b \\
-    \textrm{s.t.}   & z \in \{0, 1\}^N,
-  \end{array}
-$$
-Choosing any penalty $\rho > \frac{M}{v}$
-guarantees that the QUBO objective function coincides with the MILP.
-
-Furthermore,
-we can always estimate $M \le \sum_i \abs{c_i}$.
-Also, if $A$ and $b$ have only integer components,
-the minimal violation must be at least one, i.e., $v \ge 1$.
-Thus, for integer programs a safe choice of penalty is
-$\rho  = \textstyle\sum_i \abs{c_i} + 1$.
-
-The discussion above works for a general equality constraint,
-but for more specific constraint there are simpler penalizations.
-I recommend the paper by @{glover_quantum_2019} for more details.
-
-Inequalities to Equalities
---------------------------
-
-If your MILP also has inequality constraints,
-you can use _slack variables_ to put it into QUBO form.
-Consider a constraint of the form $M x \le w$.
-This is the same as an equality constraint together with an additional variable
-representing the "inequality gap",
-$$
-\begin{aligned}
-  M x + s &= w, \\
-  s &\ge 0.
-\end{aligned}
-$$
-Moreover, since we're assuming $x$ to be bounded,
-we can calculate upper bounds for the components $s_i$
-by checking the maximum possible value for ${w_i - \sum_{j}M_{ij}x_j}$.
-Binarize $s$ and penalize the equality constraint to get a QUBO.
 
 
 Conclusion
@@ -600,13 +626,7 @@ the accompanying paper [@qubojl] is a great place to further understand the tech
     .energyLabel("x^T Q x")
     .popup();
 
-  new figures.EncodingElement("#figure-one-hot", -4, 5, 2, "onehot")
-    .buttons()
-    .labelNvar()
-    .label();
+  const enc =new figures.EncodingElement("#figure-one-hot", -4, 5, 2, "onehot");
 
-  new figures.EncodingElement("#figure-binary", -4, 5, 2, "binary")
-    .buttons()
-    .labelNvar()
-    .label();
+  new figures.EncodingElement("#figure-binary", -4, 5, 2, "binary");
 </script>
