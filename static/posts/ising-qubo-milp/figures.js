@@ -82,16 +82,21 @@ function getSvgBBoxAnchor(el) {
   };
 }
 
-function edgeGeometry(p, q) {
-  const mx = (p.x + q.x) / 2;
-  const my = (p.y + q.y) / 2;
+function midpoint(p, q) {
+  return {
+    x: (p.x + q.x) / 2,
+    y: (p.y + q.y) / 2,
+  };
+}
+
+function normalVector(p, q) {
   const dx = q.y - p.y;
   const dy = p.x - q.x;
   const norm = Math.sqrt(dx*dx + dy*dy) || 1;
+
   return {
-    mid:    { x: mx, y: my },
-    normal: {x: dx / norm, y: dy / norm},
-    norm,
+    x: dx / norm,
+    y: dy / norm,
   };
 }
 
@@ -195,8 +200,9 @@ class Popup {
 }
 
 function wavyPath(p, q, t, amplitude = 3, frequency = 2) {
-  const { mid, normal} = edgeGeometry(p, q);
-  const phase = Math.sin(t * frequency) * amplitude;
+  const mid    = midpoint(p, q);
+  const normal = normalVector(p, q);
+  const phase  = Math.sin(t * frequency) * amplitude;
 
   const cx = mid.x + phase * normal.x;
   const cy = mid.y + phase * normal.y;
@@ -524,7 +530,8 @@ export class Diagram {
         x = pos[s].x;
         y = pos[s].y;
       } else { // Edge midpoint
-        const { mid, normal} = edgeGeometry(pos[s], pos[t]);
+        const mid    = midpoint(pos[s], pos[t]);
+        const normal = normalVector(pos[s], pos[t]);
         const offset = 28;
         x = mid.x + offset * normal.x;
         y = mid.y + offset * normal.y;
@@ -721,6 +728,24 @@ const EncodingModes = {
     inputtype: "radio",
     title: "One-hot"
   },
+  unary: {
+    init(lb, ub, initial) {
+      const K = ub - lb;
+
+      return  Array.from({ length: K }, (_, i) => i < initial);
+    },
+
+    toggle(state, j) {
+      state[j] = !state[j];
+    },
+
+    value(state, lb) {
+      return state.reduce((sum, acc) => sum + (acc ? 1 : 0), lb);
+    },
+
+    inputtype: "checkbox",
+    title: "Unary",
+  },
   binary: {
     init(lb, ub, initial) {
       const coeffs = binaryCoeffs(lb, ub);
@@ -782,8 +807,6 @@ export class EncodingElement {
     fieldset.append(legend);
 
     this.#states.forEach((state, j) => {
-      const label = document.createElement("label");
-
       const mathSpan = document.createElement("span");
       renderMath(mathSpan, `z_{${j+1}}`);
 
@@ -802,6 +825,9 @@ export class EncodingElement {
         input.checked = this.#states[j];
       });
 
+      const label = document.createElement("label");
+      label.htmlFor = input.id;
+
       label.append(mathSpan, input);
       fieldset.append(label);
     });
@@ -817,14 +843,6 @@ export class EncodingElement {
       return ["x", () => this.#mode.value(this.#states, this.#lb, this.#ub)]
     });
 
-    return this;
-  }
-
-  setBounds(lb, ub, initial = 0) {
-    this.#lb = lb;
-    this.#ub = ub;
-    this.#states = ArrayListener(this.#mode.init(lb, ub, initial));
-    this.render();
     return this;
   }
 

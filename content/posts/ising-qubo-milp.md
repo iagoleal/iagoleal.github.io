@@ -626,7 +626,9 @@ the accompanying paper [@qubojl] is a great place to further understand the tech
     .energyLabel("x^T Q x")
     .popup();
 
-  const enc =new figures.EncodingElement("#figure-one-hot", -4, 5, 2, "onehot");
+  const lb = -4, ub = 5, init = 2;
 
-  new figures.EncodingElement("#figure-binary", -4, 5, 2, "binary");
+  new figures.EncodingElement("#figure-one-hot", lb, ub, init, "onehot");
+
+  new figures.EncodingElement("#figure-binary", lb, ub, init, "binary");
 </script>
