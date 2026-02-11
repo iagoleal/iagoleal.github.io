@@ -102,6 +102,15 @@ function intersectionPointCircle(point, circle) {
   return norm(v) <= circle.r;
 }
 
+function intersectionPointConvex(point, path) {
+  // pathElem: SVGPathElement
+  // point: {x, y}
+  // Returns true if point is inside the path's fill or stroke
+  return path?.isPointInFill
+    ? path.isPointInFill(new DOMPoint(point.x, point.y))
+    : false;
+}
+
 function intersectionCircleCircle(a, b) {
   const v = {x: a.x - b.x, y: a.y - b.y};
 
@@ -120,6 +129,43 @@ function circleDisjointSeparator(c1, c2) {
   return new Hyperplane({x: mid.x, y: mid.y, normal});
 }
 
+function convexGradient(pathElem, point) {
+  // Find the closest point on the path to 'point'
+  const totalLength = pathElem.getTotalLength();
+  let minDist = Infinity;
+  let best = 0;
+
+  // Sample points along the path
+  const steps = 200;
+  for (let i = 0; i <= steps; ++i) {
+    const len = (i / steps) * totalLength;
+    const p = pathElem.getPointAtLength(len);
+    const dx = p.x - point.x;
+    const dy = p.y - point.y;
+    const dist = dx * dx + dy * dy;
+    if (dist < minDist) {
+      minDist = dist;
+      best = len;
+    }
+  }
+
+  // Compute tangent at bestLen
+  const delta = 1;
+  const p1 = pathElem.getPointAtLength(Math.max(0, best - delta));
+  const p2 = pathElem.getPointAtLength(Math.min(totalLength, best + delta));
+  const tangent = {
+    x: p2.x - p1.x,
+    y: p2.y - p1.y,
+  };
+
+  // Closest point on path
+  const normal  = { x: -tangent.y, y: tangent.x };
+  const closest = pathElem.getPointAtLength(best);
+
+  return {closest, normal};
+}
+
+
 /*
   Drawing figures
 */
@@ -129,13 +175,21 @@ function mouseUnscale(event, scale) {
   return [scale.x.invert(mx), scale.y.invert(my)]
 }
 
-function updateConvexSets(selector, data) {
+function updateConvexCircles(selector, data) {
   return selector.selectAll(".convex-set")
     .data(data)
     .join("circle")
     .attr("cx", d => d.x)
     .attr("cy", d => d.y)
     .attr("r",  d => d.r)
+    .attr("class", "convex-set");
+}
+
+function updateConvexSets(selector, data) {
+  return selector.selectAll(".convex-set")
+    .data(data)
+    .join("path")
+    .attr("d", d => d.d)
     .attr("class", "convex-set");
 }
 
@@ -401,24 +455,35 @@ class Diagram {
   }
 }
 
+const convexPath = {
+  d: `
+    M -25 -120
+    C -100 -145 -200 -20 -175 80
+    C -150 155 -50 130 0 105
+    C 75 55 206 -40 125 -70
+    Z`
+};
 
 export function figureSetPointHyperplane(id) {
   const svg = d3.select(`${id} svg`);
-  const circle = { x: 0, y: 0, r: 100 };
 
   // Our convex set
   const gSet   = svg.append("g");
   const gPlane = svg.append("g");
 
+  updateConvexSets(gSet, [convexPath]);
+  const pathElem = gSet.select(".convex-set").node();
+
   function updateScene(x, y) {
-    const isInside = intersectionPointCircle({x, y}, circle);
+    const isInside = intersectionPointConvex({x, y}, pathElem);
 
     // Update convex set
     gSet.selectAll(".convex-set")
       .classed("not-good", isInside);
 
     // Update hyperplane
-    const pos = new Hyperplane({x, y, normal: {x: circle.x - x, y: circle.y - y}});
+    const { normal, closest } = convexGradient(pathElem, {x, y});
+    const pos = new Hyperplane ({x, y, normal});
 
     updateHyperplanes(gPlane, isInside ? [] : [pos]);
     updateMarks(gPlane, isInside ? [] : [pos]);
@@ -426,29 +491,29 @@ export function figureSetPointHyperplane(id) {
 
   svg.on("mousemove", event => updateScene(...d3.pointer(event)));
 
-  updateConvexSets(gSet, [circle]);
-  updateScene(circle.r, circle.r);
+  updateScene(200, 0);
 }
 
 export function figureSetSupportingHyperplane(id) {
   const svg = d3.select(`${id} svg`);
-  const circle = { x: 0, y: 0, r: 100 };
 
   // Our convex set
   const gSet   = svg.append("g");
   const gPlane = svg.append("g");
 
+  updateConvexSets(gSet, [convexPath]);
+  const pathElem = gSet.select(".convex-set").node();
+
   function updateScene(x, y) {
-    const isInside = intersectionPointCircle({x, y}, circle);
+    const isInside = intersectionPointConvex({x, y}, pathElem);
 
     // Update convex set
     gSet.selectAll(".convex-set")
       .classed("not-good", isInside);
 
     // Update Hyperplane
-    const normal = normalize({x: circle.x - x, y: circle.y - y});
-    const border = {x: circle.x - normal.x * circle.r, y: circle.y - normal.y * circle.r};
-    const pos    = new Hyperplane ({x: border.x, y: border.y, normal});
+    const { normal, closest } = convexGradient(pathElem, {x, y});
+    const pos = new Hyperplane ({x: closest.x, y: closest.y, normal});
 
     updateHyperplanes(gPlane, isInside ? [] : [pos]);
     updateMarks(gPlane, isInside ? [] : [pos]);
@@ -456,8 +521,7 @@ export function figureSetSupportingHyperplane(id) {
 
   svg.on("mousemove", event => updateScene(...d3.pointer(event)));
 
-  updateConvexSets(gSet, [circle]);
-  updateScene(circle.r, circle.r);
+  updateScene(200, 0);
 }
 
 export function figureSetSeparatingHyperplane(id) {
@@ -482,7 +546,7 @@ export function figureSetSeparatingHyperplane(id) {
     updateHyperplanes(gPlane, inter ? [] : [circleDisjointSeparator(c1, c2)]);
   }
 
-  updateConvexSets(gBodies, bodies)
+  updateConvexCircles(gBodies, bodies)
     .classed("draggable", true)
     .call(d3.drag()
       .on("drag", function(event, c) {
