@@ -129,7 +129,7 @@ function circleDisjointSeparator(c1, c2) {
   return new Hyperplane({x: mid.x, y: mid.y, normal});
 }
 
-function convexGradient(pathElem, point) {
+function supportingHyperplane(pathElem, point) {
   // Find the closest point on the path to 'point'
   const totalLength = pathElem.getTotalLength();
   let minDist = Infinity;
@@ -162,7 +162,7 @@ function convexGradient(pathElem, point) {
   const normal  = { x: -tangent.y, y: tangent.x };
   const closest = pathElem.getPointAtLength(best);
 
-  return {closest, normal};
+  return new Hyperplane({x: closest.x, y: closest.y, normal});
 }
 
 
@@ -455,22 +455,20 @@ class Diagram {
   }
 }
 
-const convexPath = {
-  d: `
-    M -25 -120
-    C -100 -145 -200 -20 -175 80
-    C -150 155 -50 130 0 105
-    C 75 55 206 -40 125 -70
-    Z`
-};
-
-export function figureSetPointHyperplane(id) {
+function figureConvexSetHyperplane(id, hyperplaneFn, initialPoint = {x: 200, y: 0}) {
   const svg = d3.select(`${id} svg`);
+  const convexPath = {
+    d: `
+      M -25 -120
+      C -100 -145 -200 -20 -175 80
+      C -150 155 -50 130 0 105
+      C 75 55 206 -40 125 -70
+      Z`
+  };
 
-  // Our convex set
+  // Draw convex set
   const gSet   = svg.append("g");
   const gPlane = svg.append("g");
-
   updateConvexSets(gSet, [convexPath]);
   const pathElem = gSet.select(".convex-set").node();
 
@@ -481,48 +479,35 @@ export function figureSetPointHyperplane(id) {
     gSet.selectAll(".convex-set")
       .classed("not-good", isInside);
 
-    // Update hyperplane
-    const { normal, closest } = convexGradient(pathElem, {x, y});
-    const pos = new Hyperplane ({x, y, normal});
+    // Compute hyperplane
+    const pos = hyperplaneFn(pathElem, {x, y});
 
     updateHyperplanes(gPlane, isInside ? [] : [pos]);
     updateMarks(gPlane, isInside ? [] : [pos]);
   }
 
   svg.on("mousemove", event => updateScene(...d3.pointer(event)));
+  updateScene(initialPoint.x, initialPoint.y);
+}
 
-  updateScene(200, 0);
+// Point hyperplane: normal from mouse to boundary (at mouse location)
+function pointHyperplane(pathElem, point) {
+  const hp = supportingHyperplane(pathElem, point);
+  hp.x = point.x;
+  hp.y = point.y;
+
+  return hp;
+}
+
+// Usage:
+export function figureSetPointHyperplane(id) {
+  figureConvexSetHyperplane(id, pointHyperplane, {x: 200, y: 0});
 }
 
 export function figureSetSupportingHyperplane(id) {
-  const svg = d3.select(`${id} svg`);
-
-  // Our convex set
-  const gSet   = svg.append("g");
-  const gPlane = svg.append("g");
-
-  updateConvexSets(gSet, [convexPath]);
-  const pathElem = gSet.select(".convex-set").node();
-
-  function updateScene(x, y) {
-    const isInside = intersectionPointConvex({x, y}, pathElem);
-
-    // Update convex set
-    gSet.selectAll(".convex-set")
-      .classed("not-good", isInside);
-
-    // Update Hyperplane
-    const { normal, closest } = convexGradient(pathElem, {x, y});
-    const pos = new Hyperplane ({x: closest.x, y: closest.y, normal});
-
-    updateHyperplanes(gPlane, isInside ? [] : [pos]);
-    updateMarks(gPlane, isInside ? [] : [pos]);
-  }
-
-  svg.on("mousemove", event => updateScene(...d3.pointer(event)));
-
-  updateScene(200, 0);
+  figureConvexSetHyperplane(id, supportingHyperplane, {x: 200, y: 0});
 }
+
 
 export function figureSetSeparatingHyperplane(id) {
   const svg = d3.select(`${id} svg`);
