@@ -262,7 +262,7 @@ $$ \begin{aligned}
 $$
 The constant part does not affect the optimization process and
 you can get rid of the linear terms by noticing that for binary variables,
-$x_i^2 = x_i$.
+$z_i^2 = z_i$.
 This lets you absorb the linear part into the diagonal of the matrix by defining
 $$ Q =  4J  -2\mathrm{Diag}\left((J + J^\top) 1 + h\right) $$
 Of course, the equivalence's other direction is equally straightforward.
@@ -358,8 +358,8 @@ and $v$ be the constraint's _minimal squared violation_,
 $$ v =
   \begin{array}{rl}
     \min\limits_{z} & \norm{Az - b}^2_2 \\
-                    & A z \ne b \\
-    \textrm{s.t.}   & z \in \{0, 1\}^N,
+    \textrm{s.t.}   & A z \ne b \\
+                    & z \in \{0, 1\}^N,
   \end{array}
 $$
 Choosing any penalty $\rho > \frac{M}{v}$
@@ -470,7 +470,7 @@ one-hot has a couple of advantages.
 First, it adds very mild coefficients to the objective function,
 which is great for numerical stability.
 Also, this is the only encoding that can be "tuned" for strange regions of multiple variables.
-For example, if we now that the constraints force $(x, y)$
+For example, if we know that the constraints force $(x, y)$
 to only take a handful of values,
 we can adapt the one-hot encoding to directly represent this feasible region.
 This is out-of-scope for this post, however.
@@ -481,11 +481,11 @@ For variables taking multiple values, the one-hot encoding can produce too many 
 An alternative is to use a binary expansion,
 since it only requires a logarithm amount of variables.
 Again, let's start with an integer decision variable $x \in \Z$
-bounded as $L \le x \le U$
-and call $K \coloneqq \floor{\log_2 (U - L)}$.
+bounded as $L \le x \le U$.
 To represent all integers from $L$ to $U$ in binary,
-we need a boolean vector $z$ with $K + 1$ components.
-The straightforward representation amounts to $x = L + \sum_{j = 0}^{K} 2^j z_j$.
+we use a boolean vector $z$ with
+$K \coloneqq \floor{\log_2 (U - L)} + 1$ components.
+The straightforward representation amounts to $x = L + \sum_{j = 0}^{K-1} 2^j z_j$.
 
 Notice, however, that if the most significant bit is on,
 the variable may go above its upper bound $U$.
