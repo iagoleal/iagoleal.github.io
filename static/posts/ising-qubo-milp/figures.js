@@ -783,9 +783,8 @@ export class EncodingElement {
   #lb;
   #ub;
   #uuid;
-  #onChange;
 
-  constructor(id, lower, upper, initial = 0, mode = "onehot", options = {}) {
+  constructor(id, lower, upper, initial = 0, mode = "onehot") {
     this.#container = document.querySelector(id);
     this.#mode      = EncodingModes[mode];
     this.#lb        = lower;
