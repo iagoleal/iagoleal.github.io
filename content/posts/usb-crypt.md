@@ -1,10 +1,10 @@
 ---
 title: Encrypting an external device with LUKS
-keywords: [linux, encryption, LUKS, cryptsetup, dm-crypt, usb drive, udiskie, udisks2, automation]
-date: 2026-03-24
+keywords: [linux, encryption, LUKS, cryptsetup, dm-crypt, usb drive, udiskie, udisks2, automation, keyfile]
+date: 2026-04-13
 theme: workflow
 description:
-  A tutorial on how to wipe, encrypt, auto mount and decrypt an external usd drive on linux.
+  A tutorial on how to wipe, encrypt, auto mount, and decrypt an external usd drive on linux.
 ---
 
 I, like many other folks out there,
@@ -35,12 +35,11 @@ but useful if you are already storing something in the device.
 Let's shred this device to zeros.
 
 ```sh
-dd if=/dev/zero of=/dev/sdX status=progress bs=1M
+sudo shred -v -n 1 /dev/sdX
 ```
-You can also use `/dev/urandom` if you want,
-but writing zeros is faster and later, when encrypted, this will look like random data.
-You can check the [Arch Wiki](https://wiki.archlinux.org/title/Securely_wipe_disk)
-for other methods of wiping a disk.
+You can also use `dd` to write from `/dev/urandom` if you prefer.
+Check the [Arch Wiki](https://wiki.archlinux.org/title/Securely_wipe_disk)
+for possible methods of wiping a disk.
 
 Encrypt Drive
 =============
@@ -186,19 +185,20 @@ I ended up with this one, which leaves most of the magic to the Linux kernel its
 Below is a small proof-of-concept script automating the whole process.
 Make sure to edit it when adapting to your workflow.
 
+<details>
+  <summary>See full script</summary>
 
 ```sh
 #!/bin/sh
-# This script requires root access to work.
-# Use it by passing the device name and an optional keyfile name.
-#   usb-encrypt "/dev/sdX" "/path/to/keyfile"
 
 DEVICE=$1
 KEYFILE=$2
 NAME=$(uuidgen)
 
+
 # Wipe the drive
-sudo dd if=/dev/urandom of="$DEVICE" bs=4096 iflag=fullblock status=progress
+# dd if=/dev/zero of="$DEVICE" status=progress bs=1M
+sudo shred -v -n 1 "$DEVICE"
 
 # Encrypt and format
 sudo cryptsetup luksFormat --type luks2 --label drive "$DEVICE"
@@ -212,8 +212,8 @@ if [ -n "$KEYFILE" ] ; then
 
   # Configure udiskie if the executable exists
   if command -v udiskie >/dev/null 2>&1 ; then
-    UUID="$(lsblk -ndo UUID "$DEVICE")"
-    cat >>"${XDG_CONFIG_HOME:-$HOME/.config}/udiskie/config.yml" <<EOF
+    UUID="$(lsblk -dno UUID "$DEVICE")"
+    cat >> "${XDG_CONFIG_HOME:-$HOME/.config}/udiskie/config.yml" <<EOF
 device_config:
 - id_uuid: $UUID
   keyfile: $KEYFILE
@@ -221,8 +221,9 @@ EOF
   fi
 fi
 
-cryptsetup close "$NAME"
+sudo cryptsetup close "$NAME"
 ```
+</details>
 
 
 Reference
