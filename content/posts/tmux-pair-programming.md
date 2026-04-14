@@ -1,6 +1,6 @@
 ---
 title: Pair Programming in the Pandemic
-keywords: [linux, tmux, ssh]
+keywords: [linux, tmux, ssh, ngrok, pair programming, bash]
 date: 2021-08-03
 theme: workflow
 description:
@@ -394,6 +394,9 @@ Below is a script based on the one found at the end of
 Also notice that if `sshd` service is inactive,
 you will need the root password to start it.
 
+<details>
+  <summary>See full script</summary>
+
 ```sh
 #!/usr/bin/env bash
 
@@ -444,6 +447,7 @@ fi
 # Attach to the shared session
 tmux -u -S "$tmux_file" attach -t "$tmux_session"
 ```
+</details>
 
 References
 ==========
