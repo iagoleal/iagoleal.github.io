@@ -32,7 +32,7 @@ First of all let's substitute everything
 This step is optional,
 but useful if you are already storing something in the device.
 
-Let's shred this device to zeros.
+Make sure the device is unmount and let's shred it.
 
 ```sh
 sudo shred -v -n 1 /dev/sdX
@@ -114,9 +114,12 @@ Let's allow it to also be opened using a **keyfile**.
 This can be any file you want: random bytes, a giant riddle written in a txt, your dog's picture, etc.
 For the sake of simplicity and entropy,
 we are going with `4kB` of randomness.
+For good measure, also only allow your user to see and edit the file.
 
 ```sh
 dd if=/dev/urandom of=/path/to/keyfile bs=1024 count=4
+chown "$USER":"$USER" /path/to/keyfile
+chmod 600 /path/to/keyfile
 ```
 
 Remember that `/path/to/keyfile` must be somewhere safe,
@@ -190,14 +193,15 @@ Make sure to edit it when adapting to your workflow.
 
 ```sh
 #!/bin/sh
+# Use this script by passing the device name
+# and an optional keyfile name.
+#     usb-encrypt "/dev/sdX" "/path/to/keyfile"
 
 DEVICE=$1
 KEYFILE=$2
 NAME=$(uuidgen)
 
-
 # Wipe the drive
-# dd if=/dev/zero of="$DEVICE" status=progress bs=1M
 sudo shred -v -n 1 "$DEVICE"
 
 # Encrypt and format
@@ -207,8 +211,10 @@ sudo mkfs.ext4 "/dev/mapper/$NAME"
 
 # Create and assign keyfile
 if [ -n "$KEYFILE" ] ; then
-  sudo dd if=/dev/urandom of="$KEYFILE" bs=1024 count=4
+  dd if=/dev/urandom of="$KEYFILE" bs=1024 count=4
   sudo cryptsetup luksAddKey "$DEVICE" "$KEYFILE"
+  chown "$USER":"$USER" "$KEYFILE"
+  chmod 600 "$KEYFILE"
 
   # Configure udiskie if the executable exists
   if command -v udiskie >/dev/null 2>&1 ; then
@@ -226,8 +232,8 @@ sudo cryptsetup close "$NAME"
 </details>
 
 
-Reference
-=========
+References
+==========
 
 - [cryptsetup's man page](https://man.voidlinux.org/cryptsetup);
 - [The one and only Arch wiki entry on dm-crypt](https://wiki.archlinux.org/title/Dm-crypt).
