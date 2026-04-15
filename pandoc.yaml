@@ -20,7 +20,7 @@ verbosity: WARNING
 
 # Styling
 strip-comments:  true
-highlight-style: kate
+highlight-style: null
 
 html-math-method:
   method: katex

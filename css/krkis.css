@@ -408,6 +408,55 @@ input[type="checkbox"]:hover {
 }
 
 /*
+  ~*~ Collapsible details / summary ~*~
+*/
+details {
+  box-shadow:       rgba(0, 0, 0, 0.1) 0px 4px 12px;
+  padding: 0.75rem;
+
+  summary {
+    display:         flex;
+    align-items:     center;
+    justify-content: space-between;
+    gap:             1rem;
+
+    [open] & {
+      margin-bottom: 1rem;
+    }
+
+    /* General styling */
+    cursor: pointer;
+    font-weight: 600;
+
+    /* Fallback code to hide standard marker, especially on Safari */
+    &::marker {
+      display: none;
+    }
+
+    &::after {
+      /* from: https://css-shape.com/chevron/ */
+      --shape-chevron-width: 1em;
+      --s: calc(var(--shape-chevron-width) / 4);
+
+      width:        var(--shape-chevron-width);
+      content:      "";
+      aspect-ratio: 8/5;
+      background:   currentColor;
+      clip-path:    polygon(0 0, 0 var(--s), 50% 100%, 100% var(--s), 100% 0, 50% calc(100% - var(--s)));
+
+      /* Animation */
+      transform: rotate(0turn);
+      transition: transform 0.7s ease;
+    }
+  }
+
+  &[open] summary::after {
+    transform: rotate(-1.5turn);
+  }
+}
+
+
+/*
   ~*~ Vendored ~*~
 */
 
