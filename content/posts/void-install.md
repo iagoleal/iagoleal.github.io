@@ -184,7 +184,7 @@ Inside the chroot
 =================
 
 Everything from now on will happen inside the `chroot`,
-thus you have no access to external packages from the Live CD.
+thus you are already in your new system with no access to external packages from the Live CD.
 
 Configure the root user,
 
@@ -203,58 +203,104 @@ Configure locale for glibc,
     xbps-reconfigure -f glibc-locales
 
 
-Bootloader
-==========
+EFI Stub
+========
+
+We are using the kernel itself as an EFI stub,
+in contrast to the Void docs, [which use GRUB](https://docs.voidlinux.org/installation/guides/fde.html#grub-configuration).
+
 
 Void ships with a kernel hook in `/etc/default/efibootmgr-kernel-hook`
-for configuring efibootmgr after every update.
-Let's edit it
+for configuring how `efibootmgr` should create a new boot entry after every update.
+It's just a shell script defining some environment variables sourced in `/etc/kernel.d/post-install`.
+Let's edit it:
 
     vi /etc/default/efibootmgr-kernel-hook
 
-We need to write proper options,
-so the kernel can handle decrypting the filesystem
-as well as hibernating from the swapfile.
+You should enable the hook and properly set where the EFI partition is.
 
 ```conf
-    # Options for the kernel hook script installed by the efibootmgr package.
-    # To allow efibootmgr to modify boot entries, set
-    MODIFY_EFI_ENTRIES=1
+# To allow efibootmgr to modify boot entries, set
+MODIFY_EFI_ENTRIES=1
 
-    # Kernel command-line options.  Example:
-    OPTIONS="loglevel=4 rd.md=0 rd.dm=0 \
-      rd.luks.uuid=4581f162-f661-48f6-aaa4-e2355f06aa6b \
-      rd.lvm.lv=void/root rd.lvm.lv=void/home \
-      root=/dev/mapper/void-root rootfstype=ext4 rootflags=rw,relatime \
-      rd.luks.key.tout=5 rd.luks.key=/chave:UUID=d40ec382-7984-4d36-9a37-46866ed5610a \
-      resume=/dev/mapper/void-root resume_offset=12818432"
+# Disk where EFI Partition is.  Default is /dev/sda
+DISK="/dev/nvme0n1"
 
-    # Disk where EFI Partition is.  Default is /dev/sda
-    DISK="/dev/nvme0n1"
-
-    # Partition number of EFI Partition.  Default is 1
-    PART=1
+# Partition number of EFI Partition.  Default is 1
+PART=1
 ```
 
-Bonus: Swap file {#swapfile}
-----------------
+The fourth variable, `OPTIONS`, sets the kernel command-line options.
+You have to carefully set it up so the kernel can properly
+decrypt the filesystem during boot.
+After careful reading of `dracut(8)`,
+Matthias Totschnig's post on [Booting Void Linux using the EFI boot stub](https://mth.st/blog/void-efistub/),
+and lots of tweaking,
+I arrived at these options
+
+```conf
+OPTIONS="rd.luks.uuid=4581f162-f661-48f6-aaa4-e2355f06aa6b \
+         rd.lvm.lv=void/root \
+         rd.lvm.lv=void/home \
+         root=/dev/mapper/void-root \
+         rootfstype=ext4 \
+         rootflags=rw,relatime"
+```
+
+You can get the UUID of the encrypted partition through
+
+    lsblk /dev/nvme0n1p2 -o UUID --nodeps --noheadings
+
+The other options establish the LVM volumes,
+a device descriptor (we could also use a label or UUID here) for the root filesystem,
+its type and desired flags.
+
+Finally, you can also append any other kernel parameters to it.
+I, for one, like to have `loglevel=4`.
+
+Bonus: Hibernation using a Swap File {#swapfile}
+------------------------------------
+
+I like to enable hibernation on my systems.
+By using a swapfile, it is encrypted for free,
+since it lies inside the root filesystem.
+
+Begin by creating and activating the swap file:
 
     mkswap -U clear --size 8G --file /swapfile
     swapon /swapfile
 
-Edit `/etc/fstab` and add the line
+Now edit `/etc/fstab` so it can know how to locate our swap file.
+Just add the line
 
     /swapfile             none            swap        defaults      0 0
+
+To enable hibernation,
+you must edit the kernel command-line parameters
+to tell it which volume contains the swap (`resume`)
+and what is its offset in the disk (`resume_offset`).
+You can get the offset doing
+
+    filefrag -v /swapfile | awk '$1=="0:" {print substr($4, 1, length($4)-2)}'
+
+The additional parameters will look like this:
+
+        resume=/dev/mapper/void-root   # LVM volume or UUID or LABEL
+        resume_offset=12818432"
+
+If you're using an LVM volume as swap, point `resume` to it.
+In this case, there's no need for an offset.
+
 
 Bonus: USB Keyfile
 ------------------
 
 The manpage for `dracut.cmdline(7)` is very well-written,
 so we are basically following what they recommend in there.
+A lot of this is similar to my previous post on [Encrypting an external device with LUKS](/posts/usb-crypt).
 
 Let's mount the pendrive to store the keyfile.
-I just recommend not using `/mnt` because we will need it
-for the root filesystem in the next step.
+I just recommend not using `/mnt` for the risk of mixing it up with our installation.
 Supposing the device in `/dev/sdX` and the filesystem is in its first partition,
 
     mkdir -p /media/usb
@@ -265,7 +311,7 @@ but you can use absolutely any file you want (GPG key, family photo, etc.)
 
     dd if=/dev/urandom of=/media/usb/keyfile bs=4096 count=1
 
-Now add it to the LUKS encrypted partiton.
+Now add it to the LUKS encrypted partition with
 
     cryptsetup luksAddKey /dev/nvme0n1p2 /media/sd128/keyfile
 
@@ -273,7 +319,7 @@ You can verify that it works with the `luksDump` command.
 Check that there are two keyslots in the output
 (one for the password, and another for the keyfile).
 
-    cryptsetup luksDump /dev/nvme0n1p2 | grep "Keyslots:" -A20
+    cryptsetup luksDump /dev/nvme0n1p2
 
 Finally, edit `/etc/default/efibootmgr-kernel-hook`
 to add the respective kernel parameters.
@@ -295,16 +341,27 @@ For a 5s timeout,
 
     rf.luks.key.tout=5
 
-Note that if you leave it a `0` (the default),
+Note that if you leave it at `0` (the default),
 it will never ask for the password.
 
 Reconfigure the kernel
 ----------------------
 
+The currently installed kernel lacks our command-line options.
+Let's fix it by telling xbps to reconfigure the linux package.
+
 Check your current linux kernel version with `xbps-query linux`.
 It will appear in `run_depends` as a package `linux<major>.<minor>`.
+Or invoke the power of `awk` to do it as a oneliner,
+
+    xbps-query linux | awk -F'[_: ]+' '/pkgver:/ {print $2}'
+
+Finally, reconfigure the package with the proper version.
 
     xbps-reconfigure -f linux<major>.<minor>
+
+I am recommending doing this in two steps because all this parsing can be fragile.
+You do not want to reconfigure the wrong package.
 
 
 User creation with filesystem encryption
@@ -316,7 +373,7 @@ begin by installing your favorite shell.
     xbps-install -S zsh
 
 Let's add a non-root user with a zsh default shell and some useful groups.
-See the [documentation(https://docs.voidlinux.org/config/users-and-groups.html)
+See the [documentation](https://docs.voidlinux.org/config/users-and-groups.html)
 for all default groups in Void.
 
     useradd iago:iago             \
@@ -359,4 +416,5 @@ References
 * [Void installation docs](https://docs.voidlinux.org/installation/guides/fde.html);
 * Matthias Totschnig's post on [Booting Void Linux using the EFI boot stub](https://mth.st/blog/void-efistub/);
 * The Arch wiki entry on [Encrypting an entire system](https://wiki.archlinux.org/title/Dm-crypt/Encrypting_an_entire_system).
+* The Arch wiki entry on [Swap file creation](https://wiki.archlinux.org/title/Swap#Swap_file).
   (but watch out for  `systemd` specific stuff)
