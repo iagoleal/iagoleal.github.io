@@ -45,11 +45,31 @@ Then load it without the `.map.gz` suffix. For example,
     loadkeys br-abnt2
 
 The installer comes with `wpa_supplicant`.
-Use its CLI to setup an wi-fi connection.
+To setup an wi-fi connection,
+let's run its CLI in iteractive mode
 
-TODO
-TODO
-TOD
+    wpa_cli
+
+Inside its repl,
+scan for networks and take note if your desired SSID (the network name advertised by your router) appears
+
+    > scan
+    > scan_results
+
+Add and enable a new network.
+Substitute `MYSSID` and `MYPASSWORD` for your actual network name and password.
+
+    > add_network
+    0
+    > set_network 0 ssid "MYSSID"
+    > set_network 0 psk "MYPASSWORD"
+    > enable_network 0
+
+Finally, save and quit
+
+    > save_config
+    > quit
+
 
 Partitioning
 ============
