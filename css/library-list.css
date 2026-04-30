@@ -49,7 +49,7 @@ ul.lib-list {
     transition: width 0.3s, height 0.3s, flex-basis 0.3s;
 
     @media (max-width:540px) {
-      width:     15qw;
+      width:     15cqw;
       height:    15cqw;
       flex:      0 0 15cqw;
     }

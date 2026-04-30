@@ -1,7 +1,7 @@
 :::layout
 
 ```{=html}
-<div style="grid-column: 1 / -1;" class="hero panel">
+<header style="grid-column: 1 / -1;" class="hero panel">
   <div class="description">
     <div class="name">
       <h1 class="title">iago leal de&nbsp;freitas</h1>
@@ -17,7 +17,7 @@
     </span>
     </div>
   </div>
-</div>
+</header>
 ```
 
 

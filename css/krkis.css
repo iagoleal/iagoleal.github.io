@@ -411,8 +411,12 @@ input[type="checkbox"]:hover {
   ~*~ Collapsible details / summary ~*~
 */
 details {
-  box-shadow:       rgba(0, 0, 0, 0.1) 0px 4px 12px;
-  padding: 0.75rem;
+  box-shadow:                 rgba(0, 0, 0, 0.1) 0px 4px 12px;
+  padding:                    0.75rem;
+  border-top-left-radius:     0px 20px;
+  border-top-right-radius:    0px 20px;
+  border-bottom-left-radius:  0px 20px;
+  border-bottom-right-radius: 0px 20px;
 
   summary {
     display:         flex;
