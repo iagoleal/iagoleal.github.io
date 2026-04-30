@@ -1,11 +1,11 @@
 ---
 title: Encrypted Void Linux Installation Booting From EFI Stub
-keywords: [linux, encryption, LUKS, cryptsetup, hibernation, efistub, swapfile, keyfile]
-date: 2026-04-29
+keywords: [linux, encryption, privacy, LUKS, dm-crypt, cryptsetup, fscrypt, hibernation, efistub, swapfile, keyfile]
+date: 2026-04-30
 theme: workflow
 description:
   How to install Void Linux with LVM over LUKS for full-disk encryption,
-  EFI Stub as bootloader, hibernation, and per-user encryption.
+  boot directly from kernel EFI Stub, hibernation, and per-user encryption.
 ---
 
 Recently I changed my notebook's distro from Arch to [Void Linux](https://voidlinux.org/).
@@ -326,20 +326,20 @@ to add the respective kernel parameters.
 There are two important to us, `rd.luks.key` and `rd.luke.key.tout`.
 The first takes the form
 
-    rf.luks.key=<path to key>:<device where it is stored>
+        rf.luks.key=<path to key>:<device where it is stored>
 
 The path is an absolute path from the device's filesystem root,
 whereas the device can specified in any of the usual ways,
 such LABEL or UUID.
 For example, if its UUID is `<UUID>`, you should write,
 
-    rf.luks.key=/keyfile:UUID=<UUID>
+        rf.luks.key=/keyfile:UUID=<UUID>
 
 The second parameter establishes how long the kernel
 will search for the keyfile before giving up and asking for a password.
 For a 5s timeout,
 
-    rf.luks.key.tout=5
+        rf.luks.key.tout=5
 
 Note that if you leave it at `0` (the default),
 it will never ask for the password.
@@ -363,8 +363,14 @@ Finally, reconfigure the package with the proper version.
 I am recommending doing this in two steps because all this parsing can be fragile.
 You do not want to reconfigure the wrong package.
 
+Depending on your system,
+the kernel may not be the first EFI entry.
+You can change the boot order by first checking it with `efibootmgr` (no parameters)
+and then reordering it with a comma-separated list
 
-User creation with filesystem encryption
+    efibootmgr --bootorder XXXX,YYYY,ZZZZ...
+
+User Creation With Filesystem Encryption
 ========================================
 
 If you're not much of a bash person,
@@ -376,10 +382,11 @@ Let's add a non-root user with a zsh default shell and some useful groups.
 See the [documentation](https://docs.voidlinux.org/config/users-and-groups.html)
 for all default groups in Void.
 
-    useradd iago:iago             \
+    useradd iago:iago               \
         --create-home               \
         --shell /usr/bin/zsh        \
         --groups wheel,users,audio,video
+
     passwd iago
 
 Run (some variation of) the above for each user you want in the new machine.
@@ -391,7 +398,8 @@ You can also change the shell later with
 Allow sudo for wheel group
 --------------------------
 
-Run `visudo` and uncomment the line
+To allow `sudo` access to all users on the whell group,
+run `visudo` and uncomment the line
 
     #%wheel ALL=(ALL) ALL
 
@@ -399,11 +407,68 @@ Run `visudo` and uncomment the line
 Encrypt home folders {#fscrypt}
 --------------------
 
+While full-disk encryption secures the whole disk from external threats,
+you may also want to allow users files to only be accessible when they are logged.
+This can be specially useful for multiuser systems.
+
+We employ the kernel's support for filesystem-level encryption in here.
+Notice that I'm assuming your `/home` partition is on ext4,
+as we've done previously.
+This is important because most filesystems have no support for `fscrypt`.
+
+If you've not done it already,
+install `fscrypt` and tune the `/home` filesystem for encryption
+
+    tune2fs -O encrypt /dev/mapper/void-home
     xbps-install -S fscrypt
+
+Setup it globally and for the home folder
+
+    fscrypt setup
+    fscrypt setup /home
+
+Instead of yet another password,
+we want to allow decryption on user login.
+We achieve this by using PAM modules.
+Void uses a slightly different setup from the official `fscrypt` manual,
+so keep up with me.
+We are just adding `pam_fscrypt.so` permissions to a couple configuration files.
+
+Add the following line to the end of `/etc/pam.d/passwd`,
+_after_ `pam_unix.so`:
+
+```pamconf
+password   optional   pam_fscrypt.so
+```
+
+Edit `/etc/pam.d/system-login`.
+In the `auth` section, append the line
+
+```pamconf
+auth       optional   pam_fscrypt.so
+```
+
+In the `session` section of this same file, append the line
+
+```pamconf
+session    optional   pam_fscrypt.so
+```
+
+Encrypt the (empty) home directory for each user you already created.
+In our example, it is
+
+    fscrypt encrypt /home/iago --user=iago
+
+Follow the prompts and select "Your login passphrase"
+when asked to choose a protector.
 
 
 Complete installation
 =====================
+
+The "system" part of your new installation is done!
+You can exit the chroot, unmount all filesystems
+and (hopefully) reboot into your freshly-installed Void system.
 
     exit
     umount -R /mnt
@@ -413,8 +478,9 @@ Complete installation
 References
 ==========
 
-* [Void installation docs](https://docs.voidlinux.org/installation/guides/fde.html);
-* Matthias Totschnig's post on [Booting Void Linux using the EFI boot stub](https://mth.st/blog/void-efistub/);
+* [Void installation docs](https://docs.voidlinux.org/installation/guides/fde.html).
+* Matthias Totschnig's post on [Booting Void Linux using the EFI boot stub](https://mth.st/blog/void-efistub/).
 * The Arch wiki entry on [Encrypting an entire system](https://wiki.archlinux.org/title/Dm-crypt/Encrypting_an_entire_system).
 * The Arch wiki entry on [Swap file creation](https://wiki.archlinux.org/title/Swap#Swap_file).
   (but watch out for  `systemd` specific stuff)
+* The [fscrypt documentation](https://github.com/google/fscrypt).
